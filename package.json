@@ -8,6 +8,7 @@
         "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",
+        "og:banners": "node scripts/generateOgBanners.ts",
         "typegen": "npx @chakra-ui/cli typegen ./src/theme/index.ts",
         "postinstall": "npm run typegen"
     },
@@ -40,6 +41,7 @@
         "eslint-plugin-react-refresh": "^0.5.6",
         "globals": "^17.12.0",
         "prettier": "^3.9.9",
+        "sharp": "^0.35.5",
         "typescript": "~6.0.2",
         "typescript-eslint": "^8.69.0",
         "vite": "^8.3.0"
