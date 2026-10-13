@@ -7,6 +7,8 @@ import { routeTree } from "./routeTree.gen"
 // Set up a Router instance
 const router = createRouter({
     routeTree,
+    // Matches Vite's `base`, so routes work when hosted under a subpath.
+    basepath: import.meta.env.BASE_URL,
     defaultPreload: "intent",
     scrollRestoration: true,
 })

@@ -23,7 +23,7 @@ import {
     SurvivalWillpower,
     SwordAuraRampage,
 } from "@assets/gladiator"
-import { defineClassPreset } from ".."
+import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "gladiator",
