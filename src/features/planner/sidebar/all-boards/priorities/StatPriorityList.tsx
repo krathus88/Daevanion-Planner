@@ -1,6 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { Flex, Switch, Text } from "@chakra-ui/react"
 import { STAT_TYPES } from "@planner/config/stats"
+import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
 import { StatusText } from "@common/StatusText"
 import { StatPriorityRow } from "./StatPriorityRow"
@@ -11,6 +12,7 @@ type StatPriorityListProps = {
 
 export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
     const { settings, error, update } = useStatSettings(classPreset.id)
+    const nodeCounts = useStatNodeCounts(classPreset.id)
 
     const handleSpendLeftoverChange = (
         details: Switch.CheckedChangeDetails,
@@ -20,12 +22,11 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
 
     return (
         <Flex flexDir="column" gap="2">
-            <Text textStyle="label">Stats</Text>
-
             <Text textStyle="hint">
                 When two routes cost the same, the one through better stats
                 wins. Stats never make a route cost more, unless you let it
-                spend leftover points below.
+                spend leftover points below. The count shows stat nodes taken
+                across all boards, out of how many exist.
             </Text>
 
             {STAT_TYPES.map((stat) => (
@@ -33,6 +34,7 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
                     key={stat}
                     stat={stat}
                     settings={settings}
+                    count={nodeCounts.counts?.[stat]}
                     onSettingsChange={update}
                 />
             ))}
@@ -56,6 +58,8 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
             </Text>
 
             {error && <StatusText>{error}</StatusText>}
+
+            {nodeCounts.error && <StatusText>{nodeCounts.error}</StatusText>}
         </Flex>
     )
 }

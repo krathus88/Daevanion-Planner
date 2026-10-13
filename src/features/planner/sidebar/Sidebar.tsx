@@ -4,7 +4,6 @@ import { useAllBoardsResults } from "@planner/hooks/useAllBoardsResults"
 import type { SidebarTab } from "../types"
 import { SharedPointAllocation } from "./all-boards/SharedPointAllocation"
 import { PlanTab } from "./plan/PlanTab"
-import { PrioritiesTab } from "./priorities/PrioritiesTab"
 import { SavedPanel } from "./saved/SavedPanel"
 import { SidebarMessage } from "./SidebarMessage"
 import { SidebarTabList } from "./SidebarTabList"
@@ -25,10 +24,11 @@ export const Sidebar = () => {
             as="aside"
             pos={{ xl: "sticky" }}
             top={{ xl: "headerOffset" }}
-            w={{ base: "full", xl: "sidebar" }}
-            minW="0"
+            w="full"
+            minW={{ base: "0", xl: "sidebar" }}
             maxH={{ xl: "sidebarMaxH" }}
-            flexShrink="0"
+            // Fills the width the board leaves, never narrower than sidebar.
+            flex={{ xl: "1 0 0%" }}
             flexDir="column"
             overflow="hidden"
             bg="app.panel"
@@ -57,10 +57,6 @@ export const Sidebar = () => {
 
                     <Tabs.Content value="saved" p="4">
                         <SavedPanel />
-                    </Tabs.Content>
-
-                    <Tabs.Content value="priorities" p="4">
-                        <PrioritiesTab />
                     </Tabs.Content>
 
                     <Tabs.Content value="all-boards" p="4">

@@ -35,4 +35,13 @@ export const layerStyles = defineLayerStyles({
             borderWidth: "1px",
         },
     },
+    // A box that flags a problem, e.g. a budget shortfall.
+    alert: {
+        value: {
+            bg: "app.dangerMuted",
+            borderColor: "app.dangerBorder",
+            borderRadius: "md",
+            borderWidth: "1px",
+        },
+    },
 })

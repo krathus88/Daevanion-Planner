@@ -1,17 +1,22 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { STAT_NAMES, type StatTier, type StatType } from "@planner/config/stats"
-import type { StatSettings } from "@planner/storage/statPriorities"
+import type {
+    StatNodeCount,
+    StatSettings,
+} from "@planner/storage/statPriorities"
 import { StatTierPicker } from "./StatTierPicker"
 
 type StatPriorityRowProps = {
     stat: StatType
     settings: StatSettings
+    count?: StatNodeCount
     onSettingsChange: (settings: StatSettings) => void
 }
 
 export const StatPriorityRow = ({
     stat,
     settings,
+    count,
     onSettingsChange,
 }: StatPriorityRowProps) => {
     const handleTierChange = (tier: StatTier) => {
@@ -26,6 +31,18 @@ export const StatPriorityRow = ({
             <Text minW="0" flex="1" fontSize="sm" truncate>
                 {STAT_NAMES[stat]}
             </Text>
+
+            {count && (
+                <Text
+                    flexShrink="0"
+                    color={count.taken > 0 ? "app.success" : "app.subtle"}
+                    fontSize="xs"
+                    whiteSpace="nowrap"
+                    title={`${count.taken} of ${count.total} ${STAT_NAMES[stat]} nodes taken across all boards`}
+                >
+                    {count.taken} / {count.total}
+                </Text>
+            )}
 
             <StatTierPicker
                 value={settings.tiers[stat]}

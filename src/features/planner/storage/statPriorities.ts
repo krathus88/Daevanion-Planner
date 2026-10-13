@@ -1,3 +1,4 @@
+import { LAYOUT_NAMES, layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
     STAT_TIERS,
@@ -5,6 +6,7 @@ import {
     type StatTier,
     type StatType,
 } from "@planner/config/stats"
+import { readBoardProgress } from "./boardStorage"
 import { isRecord } from "./isRecord"
 
 export type StatSettings = {
@@ -72,4 +74,40 @@ export const writeStatSettings = (classId: string, settings: StatSettings) => {
             ? `Could not save stat priorities: ${error.message}`
             : "Could not save stat priorities."
     }
+}
+
+export type StatNodeCount = {
+    // Stat nodes on the boards' current routes.
+    taken: number
+    // Stat nodes on all four boards.
+    total: number
+}
+
+// Stat nodes taken versus available, per stat, across every board.
+export const readSharedStatNodeCounts = (classId: string) => {
+    const counts = {} as Record<StatType, StatNodeCount>
+    for (const stat of STAT_TYPES) {
+        counts[stat] = { taken: 0, total: 0 }
+    }
+
+    for (const layout of LAYOUT_NAMES) {
+        const progress = readBoardProgress(classId, layout)
+        if (progress.error) {
+            throw new Error(progress.error)
+        }
+
+        const nodeStats = layouts[layout].nodeStats
+        for (const stat of Object.values(nodeStats)) {
+            counts[stat].total += 1
+        }
+
+        for (const key of progress.value?.plannedPath ?? []) {
+            const stat = nodeStats[key]
+            if (stat) {
+                counts[stat].taken += 1
+            }
+        }
+    }
+
+    return counts
 }

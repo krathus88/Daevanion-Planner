@@ -18,10 +18,11 @@ export const BoardCanvas = () => {
 
     return (
         <Flex
-            w="full"
+            w={{ base: "full", xl: "board" }}
             minW="0"
-            maxW={{ xl: "board" }}
-            flex="1"
+            // Keeps its width beside the sidebar and only shrinks when space
+            // runs out; the sidebar takes the rest.
+            flex={{ base: "1", xl: "0 1 auto" }}
             flexDir="column"
             alignItems="stretch"
             gap="3"

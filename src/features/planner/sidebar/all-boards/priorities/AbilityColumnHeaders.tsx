@@ -16,13 +16,8 @@ export const AbilityColumnHeaders = () => {
                 Max
             </Text>
 
-            <Text
-                w={PLANNED_COLUMN_WIDTH}
-                textAlign="right"
-                whiteSpace="nowrap"
-            >
-                Planned
-            </Text>
+            {/* The planned "+N" column needs no header; each value has a tooltip. */}
+            <Flex w={PLANNED_COLUMN_WIDTH} flexShrink="0" />
         </Flex>
     )
 }

@@ -9,6 +9,7 @@ import { useOptimizeAllBoards } from "@planner/hooks/useOptimizeAllBoards"
 import { ProgressBar } from "@common/ProgressBar"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
+import { ShortfallWarning } from "./ShortfallWarning"
 
 type OptimizeAllBoardsProps = {
     classPreset: ClassPreset
@@ -21,8 +22,14 @@ export const OptimizeAllBoards = ({
     totalPoints,
     onComplete,
 }: OptimizeAllBoardsProps) => {
-    const { isOptimizing, progress, message, warning, optimizeAll, cancel } =
-        useOptimizeAllBoards({
+    const {
+        isOptimizing,
+        progress,
+        message,
+        shortfall,
+        optimizeAll,
+        cancel,
+    } = useOptimizeAllBoards({
             classPreset: classPreset,
             totalPoints: totalPoints,
             onComplete: onComplete,
@@ -84,7 +91,7 @@ export const OptimizeAllBoards = ({
 
             {message && <StatusText tone="muted">{message}</StatusText>}
 
-            {warning && <StatusText role="alert">{warning}</StatusText>}
+            {shortfall && <ShortfallWarning shortfall={shortfall} />}
         </Flex>
     )
 }
