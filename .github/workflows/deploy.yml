@@ -32,6 +32,8 @@ jobs:
               env:
                   # The site is served from https://<user>.github.io/<repo>/
                   BASE_PATH: /${{ github.event.repository.name }}/
+                  # Link previews need absolute image/page URLs.
+                  SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
 
             # Pages has no SPA routing: serve the app for unknown paths so
             # links like /<repo>/gladiator/zikel load on refresh.
