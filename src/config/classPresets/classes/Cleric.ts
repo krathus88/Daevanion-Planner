@@ -37,6 +37,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: Condemnation,
+            tooltip:
+                "Selects a target within 20m afflicted with Chain of Torment and deals X Earth damage to up to 4 enemies within 4m of the target.\n\n7 Stagger Gauge Damage",
+            cooldown: 3,
+            unlocks: [
+                { level: 8, effect: "Restores 100 MP on hit" },
+                { level: 8, effect: "Up to +12% damage when less targets hit" },
+                { level: 8, effect: "20% chance to inflict Root for 3s" },
+                {
+                    level: 12,
+                    effect: "Resets cooldown on landing a Critical Hit with [Condemnation]",
+                },
+                { level: 16, effect: "Multi-Hit on hit" },
+            ],
         },
         {
             id: "b",
@@ -44,6 +57,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: Bolt,
+            tooltip:
+                "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target.\n\nMax 3 Charge Levels\n20-35 Stagger Gauge Damage",
+            cooldown: 45,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "30% chance to inflict Stun for 3s when fully charged",
+                },
+                { level: 8, effect: "+300 Skill Accuracy" },
+                { level: 8, effect: "+30% Skill Speed" },
+                {
+                    level: 12,
+                    effect: "Up to +20% damage when less targets hit",
+                },
+                { level: 16, effect: "Critical Hit on hit" },
+            ],
         },
         {
             id: "jt",
@@ -51,6 +80,27 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: JudgmentThunder,
+            tooltip:
+                "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target.\n\n2 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP consumed" },
+                {
+                    level: 8,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                {
+                    level: 8,
+                    effect: "-10% enemy Combat Speed for 5s on landing [Divine Punishment]",
+                },
+                {
+                    level: 12,
+                    effect: "10% chance to inflict Root for 2s on landing [Divine Punishment]",
+                },
+                {
+                    level: 16,
+                    effect: "Activates [Divine Punishment] 1 extra time",
+                },
+            ],
         },
         {
             id: "er",
@@ -58,6 +108,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: EarthsRetribution,
+            tooltip:
+                "Deals X Earth damage to a target within 20m and restores 110 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                {
+                    level: 8,
+                    effect: "+20% [Discharge] Chain Skill trigger chance",
+                },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                {
+                    level: 12,
+                    effect: "-7s [Bolt] cooldown on landing [Discharge]",
+                },
+                { level: 16, effect: "Ignores Block and Evasion" },
+            ],
         },
         {
             id: "da",
@@ -65,6 +130,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: DivineAura,
+            tooltip:
+                "Summons a Divine Aura near the caster that lasts for 5s. The Aura is stationary and periodically deals X Earth damage to a selected target within 20m.",
+            cooldown: 30,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "-40% Move Speed for 3s to up to 4 enemies within 4m of the Aura",
+                },
+                { level: 8, effect: "Changes to AoE Skill" },
+                { level: 8, effect: "+50% [Divine Aura] attacking speed" },
+                { level: 12, effect: "+3s [Divine Aura] duration" },
+                { level: 16, effect: "-10s cooldown" },
+            ],
         },
         {
             id: "rr",
@@ -72,6 +150,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: RadiantRecovery,
+            tooltip:
+                "Restores 379-417 HP and removes 1 debuff for the caster and party members within 40m.",
+            cooldown: 12,
+            unlocks: [
+                { level: 8, effect: "Removes up to 2 debuffs" },
+                { level: 8, effect: "+1 consecutive use" },
+                { level: 8, effect: "-3s cooldown" },
+                { level: 12, effect: "+10% Incoming Heal for 10s" },
+                { level: 16, effect: "+5% HP restored" },
+            ],
         },
         {
             id: "lss",
@@ -79,6 +167,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: LightningStrikeScattershot,
+            tooltip:
+                "Deals X damage to a target afflicted with Stagger within 20m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all skill cooldowns on hit" },
+            ],
         },
         {
             id: "hl",
@@ -86,6 +183,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: HealingLight,
+            tooltip:
+                "Restores 192-211 HP to the caster and the party member with the lowest HP within 40m.",
+            cooldown: 6,
+            unlocks: [
+                { level: 8, effect: "+2 consecutive uses" },
+                {
+                    level: 8,
+                    effect: "+20% amount healed when HP is 50% or less",
+                },
+                { level: 8, effect: "50% chance to remove 1 debuff" },
+                { level: 12, effect: "+2% HP restored" },
+                { level: 16, effect: "-2s cooldown" },
+            ],
         },
         {
             id: "cot",
@@ -93,6 +203,25 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: ChainOfTorment,
+            tooltip:
+                "Selects a target within 20m and deals X Earth damage to up to 4 enemies within 4m of the target. Reduces enemy PvE Damage Tolerance by 5%, PvP Damage Tolerance by 2.5%, and deals X Damage over Time every 1s for 10s.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Slows target for 5s" },
+                { level: 8, effect: "+3s Damage over Time" },
+                {
+                    level: 8,
+                    effect: "Has a 20% chance to inflict Knockdown on the target for 3s",
+                },
+                {
+                    level: 12,
+                    effect: "+10% PvE Damage Tolerance reduction and +5% PvP Damage Tolerance reduction",
+                },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and reduces Damage over Time interval by 50%",
+                },
+            ],
         },
         {
             id: "dm",
@@ -100,6 +229,28 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: DebilitatingMark,
+            tooltip:
+                "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target. Reduces enemy PvE Damage Boost by 5%, PvP Damage Boost by 2.5%, and deals X Damage over Time every 1s for 10s.\n\n10 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "Removes MP Consumed and restores 150 MP" },
+                {
+                    level: 8,
+                    effect: "-15% target Defense for duration of Damage over Time",
+                },
+                {
+                    level: 8,
+                    effect: "Has a 20% chance to inflict Stun on the target for 3s",
+                },
+                {
+                    level: 12,
+                    effect: "+10% PvE Damage Boost reduction and +5% PvP Damage Boost reduction",
+                },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and reduces Damage over Time interval by 50%",
+                },
+            ],
         },
         {
             id: "d",
@@ -107,6 +258,25 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "Adds [Blessing of Regeneration] Chain Skill",
+                },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 10% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
         {
             id: "lor",
@@ -114,6 +284,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: LightOfRegeneration,
+            tooltip:
+                "Restores X HP every 2s for 30s to the caster and party members within 40m.",
+            cooldown: 30,
+            unlocks: [
+                { level: 8, effect: "+5% Defense while healing" },
+                {
+                    level: 8,
+                    effect: "+20% amount healed when HP is 50% or less",
+                },
+                { level: 8, effect: "+5% Incoming Heal during healing" },
+                { level: 12, effect: "+5% Move Speed during healing" },
+                {
+                    level: 16,
+                    effect: "+5% PvE Damage Tolerance and +2.5% PvP Damage Tolerance during healing",
+                },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +309,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: EmpyreanLordsGrace,
+            tooltip:
+                "Increases the caster's Critical Hit by 100, Double Chance by 0.2% and deals X extra damage on landing an attack on a target.\n\nCooldown: 1s",
         },
         {
             id: "phe",
@@ -130,6 +318,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: HealingEnhancement,
+            tooltip: "Increases the caster's Heal Boost by 22400% of Attack.",
         },
         {
             id: "peg",
@@ -137,6 +326,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: EarthsGrace,
+            tooltip:
+                "Increases the caster's Critical Damage Boost by 10.5% and Accuracy by 100.",
         },
         {
             id: "prb",
@@ -144,6 +335,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: RadiantBenediction,
+            tooltip:
+                "Restores 384-461 HP to the caster and party members within 40m on landing an attack.\n\nCooldown: 5s",
         },
         {
             id: "pwb",
@@ -151,6 +344,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: WarmBenediction,
+            tooltip: "Increases the caster's Max HP by 6% and Max MP by 7.",
         },
         {
             id: "piv",
@@ -158,6 +352,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: ImmortalVeil,
+            tooltip:
+                "Increases the caster's Defense by 2% and Critical Hit Resist by 100.",
         },
         {
             id: "phb",
@@ -165,6 +361,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: HealBlock,
+            tooltip:
+                "Has a 7% chance to reduce the target's Incoming Heal by 32% for 5s on landing an attack.\n\nCooldown: 5s",
         },
         {
             id: "psw",
@@ -172,6 +370,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: SurvivalWillpower,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "ppoc",
@@ -179,6 +379,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: PrayerOfConcentration,
+            tooltip:
+                "Forms a Protective Shield which blocks 424 damage and increases the caster's Heal Boost by 20% for 30s when HP is 50% or less.\n\nCooldown: 60s",
         },
         {
             id: "pelb",
@@ -186,6 +388,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 99,
             icon: EmpyreanLordsBenediction,
+            tooltip:
+                "Increases the caster's Block by 200 and restores 53-64 HP on Block.\n\nCooldown: 3s",
         },
     ],
     assignments: {

@@ -9,6 +9,7 @@ import type { ClassAbility } from "../../../../config/classPresets"
 import { SPECIAL_BONUSES, type SpecialBonusType } from "../config/specialNodes"
 import { STAT_NAMES, STAT_TOOLTIPS, type StatType } from "../config/stats"
 import { Tooltip } from "@ui/tooltip"
+import { formatSearchTime } from "./searchTime"
 
 const tooltipContentProps = {
     background: "app.raised",
@@ -16,6 +17,7 @@ const tooltipContentProps = {
     borderWidth: "1px",
     color: "app.fg",
     fontSize: "xs",
+    maxWidth: "20rem",
     "--tooltip-bg": "colors.app.raised",
 } as const
 
@@ -196,11 +198,39 @@ export const BoardCell = ({
                 lineHeight="short"
             >
                 {appearance.name} · {pointCost} pts
+                {ability?.cooldown
+                    ? ` · ${formatSearchTime(ability.cooldown)} cooldown`
+                    : ""}
             </Text>
             {nodeTooltip && (
-                <Text lineHeight="short" mt="1.5">
+                <Text lineHeight="short" mt="1.5" whiteSpace="pre-line">
                     {nodeTooltip}
                 </Text>
+            )}
+            {ability?.unlocks && ability.unlocks.length > 0 && (
+                <Flex
+                    borderColor="app.border"
+                    borderTopWidth="1px"
+                    direction="column"
+                    gap="1"
+                    mt="2"
+                    pt="2"
+                >
+                    {ability.unlocks.map((unlock, index) => (
+                        <Flex gap="2" key={index}>
+                            <Text
+                                color="app.muted"
+                                flexShrink="0"
+                                fontWeight="semibold"
+                                lineHeight="short"
+                                width="2.25rem"
+                            >
+                                Lv {unlock.level}
+                            </Text>
+                            <Text lineHeight="short">{unlock.effect}</Text>
+                        </Flex>
+                    ))}
+                </Flex>
             )}
         </Flex>
     )

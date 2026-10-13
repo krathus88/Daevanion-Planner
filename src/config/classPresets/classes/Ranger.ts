@@ -37,6 +37,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: Deadshot,
+            tooltip:
+                "Deals X Wind damage to a target within 20m. Increases damage by 35% if the caster has Precision.\n\nMax 3 Charge Levels\n10-16 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Removes MP consumed" },
+                { level: 8, effect: "+30% Skill Speed" },
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 12,
+                    effect: "Ignores Block and Evasion and lands as Multi-Hit",
+                },
+                { level: 16, effect: "[Deadshot] grants extra damage on hit" },
+            ],
         },
         {
             id: "ga",
@@ -44,6 +57,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: GaleArrow,
+            tooltip:
+                "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target. Grants Gale to the caster for 10s.\nGale: Increases Combat Speed by 7%, PvE Damage Boost by 7%, and PvP Damage Boost by 3.5%\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "+5s duration" },
+                { level: 8, effect: "50% chance to inflict Knock Back on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 12,
+                    effect: "Increases Combat Speed, PvE Damage Boost, and PvP Damage Boost when less targets hit",
+                },
+                { level: 16, effect: "-10s cooldown" },
+            ],
         },
         {
             id: "dd",
@@ -51,6 +77,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: DrillDart,
+            tooltip:
+                "Selects a target within 20m and deals X Fire damage to up to 4 enemies within 4m of the target and restores 100 MP on landing a Critical Hit. Inflicts Bleed on targets, dealing X Fire damage every 1s for 6s and reducing Incoming Heal by 60%.\n\nIncoming Heal reduction from [Drill Dart], [Debilitating Smash], and [Firestorm] does not stack.\n\n5 Stagger Gauge Damage",
+            cooldown: 5,
+            unlocks: [
+                { level: 8, effect: "Absorbs 3% HP" },
+                { level: 8, effect: "+2s Bleed duration" },
+                { level: 8, effect: "+20% Skill Speed" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "Activates [Drill Dart] 1 extra time" },
+            ],
         },
         {
             id: "s",
@@ -58,6 +94,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: Snipe,
+            tooltip:
+                "Deals X Wind damage to a target within 20m and restores 120 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                { level: 8, effect: "Absorbs 0.7% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 12, effect: "-1s [Deadshot] cooldown on hit" },
+                { level: 16, effect: "Adds [Tempest Arrow] Chain Skill" },
+            ],
         },
         {
             id: "ts",
@@ -65,6 +110,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: TempestShot,
+            tooltip:
+                "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target.\n\n1 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP consumed" },
+                { level: 8, effect: "+10% skill Critical Hit" },
+                {
+                    level: 8,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                {
+                    level: 12,
+                    effect: "5% chance to inflict Knock Back on Critical Hit",
+                },
+                { level: 16, effect: "+20% Skill Speed" },
+            ],
         },
         {
             id: "ss",
@@ -72,6 +132,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: SnareShot,
+            tooltip:
+                "Selects a target within 20m and deals X Earth damage to up to 4 enemies within 4m of the target. Inflicts Slow, reducing Move Speed by 40% for 5s.\n\n10 Stagger Gauge Damage",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "+20% Move Speed reduction" },
+                { level: 8, effect: "+20% Skill Speed" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Adds [Shackling Arrow] Chain Skill" },
+                { level: 16, effect: "+2s Slow and Root duration" },
+            ],
         },
         {
             id: "ms",
@@ -79,6 +149,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: MarkingShot,
+            tooltip:
+                "Deals X Wind damage to a target within 20m. Moves the caster in the input direction and grants Precision for 10s.\nPrecision: Increases Critical Hit by 300\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "+5% Perfect Chance for the duration" },
+                { level: 8, effect: "30% chance to inflict Knock Back on hit" },
+                { level: 8, effect: "+5s duration" },
+                { level: 12, effect: "+1 consecutive use" },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and lands as a Critical Hit",
+                },
+            ],
         },
         {
             id: "ba",
@@ -86,6 +169,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: BurstArrow,
+            tooltip:
+                "Selects a target afflicted with Slow or Root within 20m and deals X Wind damage to up to 4 enemies within 4m of the target.\n\n15 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Absorbs 10% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 12,
+                    effect: "Up to +20% damage when less targets hit",
+                },
+                { level: 16, effect: "25% chance to reset cooldown on hit" },
+            ],
         },
         {
             id: "et",
@@ -93,6 +189,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 6,
             icon: ExplosionTrap,
+            tooltip:
+                "Sets an explosive trap at the caster's location. The trap lasts for 10 seconds and deals X Earth damage to up to 4 enemies within 5m when stepped on. Has a 40% chance to inflict Stun for 3s.\n100% chance to inflict Stun on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Pulls enemies on explosion" },
+                { level: 8, effect: "+1s Stun duration" },
+                { level: 8, effect: "Extra damage after 3s on hit" },
+                { level: 12, effect: "+20% Stun Chance" },
+                { level: 16, effect: "+1 consecutive use" },
+            ],
         },
         {
             id: "sa",
@@ -100,6 +206,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 99,
             icon: SuppressingArrow,
+            tooltip:
+                "Deals X Wind damage to a target within 20m with a 40% chance to inflict Stun for 3s while Precision is active.\n100% chance to inflict Stun on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 8, effect: "+1s Stun duration" },
+                { level: 8, effect: "+20% Skill Speed" },
+                { level: 12, effect: "+20% Stun Chance" },
+                { level: 16, effect: "25% chance to reset cooldown on hit" },
+            ],
         },
         {
             id: "as",
@@ -107,6 +223,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: ArrowScattershot,
+            tooltip:
+                "Deals X Wind damage to a target afflicted with Stagger within 20m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all cooldowns on hit" },
+            ],
         },
         {
             id: "def",
@@ -114,6 +239,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Adds [Lightning Arrow] Chain Skill" },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 20% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +264,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: FocusedEye,
+            tooltip:
+                "Increases the caster's Accuracy by 100, PvE Damage Boost by 1%, PvP Damage Boost by 0.5%, and Double Chance by 0.2%.",
         },
         {
             id: "phr",
@@ -130,6 +273,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: HuntersResolve,
+            tooltip: "Increases the caster's Critical Damage Boost by 6%.",
         },
         {
             id: "phs",
@@ -137,6 +281,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: HuntersSoul,
+            tooltip:
+                "Has a 50% chance to deal X Wind damage on a Critical Hit.\n\nCooldown: 1s",
         },
         {
             id: "pcf",
@@ -144,6 +290,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: ConcentratedFire,
+            tooltip:
+                "Has a 50% chance to deal X Wind damage to a target taking Damage over Time.\n\nCooldown: 1s",
         },
         {
             id: "pre",
@@ -151,6 +299,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: RootingEye,
+            tooltip:
+                "Has a 50% chance to deal X Wind damage when landing an attack on a target afflicted with Slow or Root.\n\nCooldown: 1s",
         },
         {
             id: "pmf",
@@ -158,6 +308,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: MeleeFire,
+            tooltip:
+                "Has a 25% chance to inflict X extra Wind damage when landing an attack. Has a 5% chance to inflict Knock Back when landing an attack on a target within 5m.\n\nCooldown: 1s",
         },
         {
             id: "pve",
@@ -165,6 +317,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: VigilantEye,
+            tooltip:
+                "Increases the caster's Evasion by 200, Max HP by 6%, and restores 85-102 HP on Evasion.\n\nCooldown: 3s",
         },
         {
             id: "prc",
@@ -172,6 +326,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: RevitalizationContract,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
         {
             id: "pur",
@@ -179,6 +335,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: UnyieldingResolve,
+            tooltip:
+                "Increases the caster's Ailment-type Resist and Impact-type Resist by 11.2%.",
         },
         {
             id: "pwv",
@@ -186,6 +344,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 6,
             icon: WindVigor,
+            tooltip:
+                "Increases Max Stamina by 15. Increases Move Speed by 10% for 1s when attacked.\n\nCooldown: 5s",
         },
     ],
     assignments: {
