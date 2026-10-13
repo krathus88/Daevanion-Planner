@@ -36,17 +36,17 @@ type AllocationSnapshot = {
     error: string | null
 }
 
-const readSnapshot = (): AllocationSnapshot => {
-    const storedAllocation = readSharedAllocation()
+const readSnapshot = (classId: string): AllocationSnapshot => {
+    const storedAllocation = readSharedAllocation(classId)
     const planners = {} as Record<BoardLayoutName, PlannerOption[]>
     const selected = {} as Record<BoardLayoutName, string>
     const routeCosts = {} as Record<BoardLayoutName, number>
     const errors = [storedAllocation.error]
 
     for (const layout of Object.keys(layouts) as BoardLayoutName[]) {
-        const progress = readBoardProgress(layout)
-        const saved = readSavedPlanners(layout)
-        const history = readPlannerHistory(layout)
+        const progress = readBoardProgress(classId, layout)
+        const saved = readSavedPlanners(classId, layout)
+        const history = readPlannerHistory(classId, layout)
         errors.push(progress.error, saved.error, history.error)
 
         const options: PlannerOption[] = []
@@ -114,16 +114,17 @@ export const SharedPointAllocation = ({
     onCompareOpenChange,
     onOptimizeAllComplete,
 }: SharedPointAllocationProps) => {
-    const [snapshot, setSnapshot] = useState(readSnapshot)
+    const classId = classPreset.id
+    const [snapshot, setSnapshot] = useState(() => readSnapshot(classId))
 
     useEffect(
-        () => subscribeToBoardStorage(() => setSnapshot(readSnapshot())),
-        [],
+        () => subscribeToBoardStorage(() => setSnapshot(readSnapshot(classId))),
+        [classId],
     )
 
     const updateAllocation = (allocation: SharedAllocation) => {
         setSnapshot((current) => ({ ...current, allocation }))
-        const error = writeSharedAllocation(allocation)
+        const error = writeSharedAllocation(classId, allocation)
         if (error) {
             setSnapshot((current) => ({ ...current, error }))
         }
@@ -134,7 +135,7 @@ export const SharedPointAllocation = ({
         layout: BoardLayoutName,
         plannerId: string,
     ) => {
-        const applyError = applyPlannerToBoard(layout, plannerId)
+        const applyError = applyPlannerToBoard(classId, layout, plannerId)
         if (applyError) {
             setSnapshot((current) => ({ ...current, error: applyError }))
             return

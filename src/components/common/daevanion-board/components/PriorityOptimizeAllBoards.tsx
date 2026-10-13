@@ -26,7 +26,12 @@ import {
 
 type PriorityWorkerMessage =
     | { type: "progress"; progress: PriorityPlannerProgress }
-    | { type: "done"; plans: PriorityPlans; shortfalls: MinimumShortfall[] }
+    | {
+          type: "done"
+          plans: PriorityPlans
+          shortfalls: MinimumShortfall[]
+          specialNodes: { taken: number; total: number }
+      }
     | { type: "error"; message: string }
 
 type PriorityOptimizeAllBoardsProps = {
@@ -73,7 +78,7 @@ export const PriorityOptimizeAllBoards = ({
         const errors: string[] = []
 
         for (const layoutName of Object.keys(layouts) as BoardLayoutName[]) {
-            const stored = readPlannerHistory(layoutName)
+            const stored = readPlannerHistory(classPreset.id, layoutName)
             if (stored.error) {
                 errors.push(`${layoutName}: ${stored.error}`)
                 continue
@@ -90,7 +95,11 @@ export const PriorityOptimizeAllBoards = ({
                 availablePoints: plan.plannedCost,
             }
             const nextHistory = [entry, ...(stored.value ?? [])]
-            const saveError = writePlannerHistory(layoutName, nextHistory)
+            const saveError = writePlannerHistory(
+                classPreset.id,
+                layoutName,
+                nextHistory,
+            )
             if (saveError) {
                 errors.push(`${layoutName}: ${saveError}`)
                 continue
@@ -128,7 +137,10 @@ export const PriorityOptimizeAllBoards = ({
                 continue
             }
 
-            const previousProgress = readBoardProgress(layoutName)
+            const previousProgress = readBoardProgress(
+                classPreset.id,
+                layoutName,
+            )
             if (previousProgress.error) {
                 errors.push(`${layoutName}: ${previousProgress.error}`)
                 continue
@@ -139,14 +151,18 @@ export const PriorityOptimizeAllBoards = ({
                 name: entry.name,
                 source: "history",
             }
-            const progressError = writeBoardProgress(layoutName, {
-                selectedCells: previousProgress.value?.selectedCells ?? [],
-                availablePoints: entry.availablePoints,
-                targetCells: entry.targetCells,
-                plannedPath: entry.plannedPath,
-                plannedCost: entry.plannedCost,
-                activePlanner,
-            })
+            const progressError = writeBoardProgress(
+                classPreset.id,
+                layoutName,
+                {
+                    selectedCells: previousProgress.value?.selectedCells ?? [],
+                    availablePoints: entry.availablePoints,
+                    targetCells: entry.targetCells,
+                    plannedPath: entry.plannedPath,
+                    plannedCost: entry.plannedCost,
+                    activePlanner,
+                },
+            )
             if (progressError) {
                 errors.push(`${layoutName}: ${progressError}`)
             }
@@ -208,9 +224,15 @@ export const PriorityOptimizeAllBoards = ({
                 try {
                     const entries = recordPlans(event.data.plans)
                     onComplete(() => applyPlans(entries))
-                    const { shortfalls } = event.data
+                    const { shortfalls, specialNodes } = event.data
+                    const warnings: string[] = []
+                    if (specialNodes.taken < specialNodes.total) {
+                        warnings.push(
+                            `Not enough points for every special node: ${specialNodes.taken} of ${specialNodes.total} taken.`,
+                        )
+                    }
                     if (shortfalls.length > 0) {
-                        setWarning(
+                        warnings.push(
                             `Not enough points for every minimum: ${shortfalls
                                 .map(
                                     (shortfall) =>
@@ -219,6 +241,7 @@ export const PriorityOptimizeAllBoards = ({
                                 .join(", ")}.`,
                         )
                     }
+                    setWarning(warnings.join(" "))
                 } catch (error) {
                     setMessage(
                         error instanceof Error

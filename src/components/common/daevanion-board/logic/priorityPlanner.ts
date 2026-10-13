@@ -23,6 +23,7 @@ export type PriorityPlannerProgress = {
 export type PriorityPlannerResult = {
     plans: PriorityPlans
     shortfalls: MinimumShortfall[]
+    specialNodes: { taken: number; total: number }
 }
 
 type PriorityTarget = {
@@ -31,6 +32,7 @@ type PriorityTarget = {
     priority: number
     cost: number
     abilityId?: string
+    isSpecial?: boolean
 }
 
 // Share of the run spent on the first greedy pass; the rest refines it.
@@ -85,6 +87,7 @@ export const optimizePriorityPlans = async (
                         key,
                         priority: 1,
                         cost: POINTS_PER_NODE_TYPE.special,
+                        isSpecial: true,
                     })
                     continue
                 }
@@ -226,6 +229,32 @@ export const optimizePriorityPlans = async (
         .filter((ability) => (minimums[ability.id] ?? 0) > 0)
         .sort((left, right) => priorityOf(left.id) - priorityOf(right.id))
 
+    const specialTargets = targets.filter((target) => target.isSpecial)
+
+    // Top priority: take every special node on every board before anything
+    // else. Each step takes the special node that adds the fewest points.
+    const fillSpecials = async (stepMs: number, until: number) => {
+        while (performance.now() < until) {
+            let best: Awaited<ReturnType<typeof tryAddTarget>> = null
+            for (const target of specialTargets) {
+                if (isOnRoute(target)) {
+                    continue
+                }
+                const candidate = await tryAddTarget(target, stepMs)
+                if (
+                    candidate &&
+                    (best === null || candidate.nextTotal < best.nextTotal)
+                ) {
+                    best = candidate
+                }
+            }
+            if (!best) {
+                return
+            }
+            commit(best)
+        }
+    }
+
     // Reserve minimum upgrades in rank order. Each step takes the ability's
     // node that adds the fewest points to the shared total.
     const fillMinimums = async (stepMs: number, until: number) => {
@@ -310,17 +339,21 @@ export const optimizePriorityPlans = async (
                     .length,
         0,
     )
+    // Picking the cheapest special each step tries every remaining one.
+    const specialCalls =
+        (specialTargets.length * (specialTargets.length + 1)) / 2
     const greedyStepMs = Math.min(
         MAX_STEP_MS,
         Math.max(
             MIN_STEP_MS,
             (timeBudgetMs * GREEDY_SHARE) /
-                Math.max(1, minimumCalls + targets.length),
+                Math.max(1, specialCalls + minimumCalls + targets.length),
         ),
     )
 
     reportProgress(true)
     // The first pass always completes so every run returns a full plan.
+    await fillSpecials(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
 
@@ -329,6 +362,7 @@ export const optimizePriorityPlans = async (
         if (performance.now() >= deadline) {
             break
         }
+        await fillSpecials(MIN_STEP_MS, deadline)
         await fillMinimums(MIN_STEP_MS, deadline)
         await fillByRank(MIN_STEP_MS, deadline)
     }
@@ -350,5 +384,12 @@ export const optimizePriorityPlans = async (
             : []
     })
 
-    return { plans, shortfalls }
+    return {
+        plans,
+        shortfalls,
+        specialNodes: {
+            taken: specialTargets.filter(isOnRoute).length,
+            total: specialTargets.length,
+        },
+    }
 }

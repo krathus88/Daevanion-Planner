@@ -1,12 +1,14 @@
 import { useRef, useState } from "react"
 import { Box, Flex, Tabs, Text } from "@chakra-ui/react"
-import type { BoardView, BoardWorkspaceProps } from "./BoardWorkspace"
+import type {
+    BoardView,
+    BoardWorkspaceProps,
+    SidebarTab,
+} from "./BoardWorkspace"
 import { BoardModePanel } from "./BoardModePanel"
 import { AbilityPriorityList } from "./AbilityPriorityList"
 import { SavedPanel } from "./SavedPanel"
 import { SharedPointAllocation } from "./SharedPointAllocation"
-
-type SidebarTab = "plan" | "saved" | "priorities" | "all-boards"
 
 const modes: { value: BoardView; label: string }[] = [
     { value: "planner", label: "Planner" },
@@ -15,7 +17,7 @@ const modes: { value: BoardView; label: string }[] = [
 
 export const BoardControls = (props: BoardWorkspaceProps) => {
     const { view, changeView, classPreset, message } = props
-    const [tab, setTab] = useState<SidebarTab>("plan")
+    const { sidebarTab: tab, changeSidebarTab } = props
     // Set when "Optimize all boards" finishes while another tab is open: the
     // All boards tab glows until visited. The results are only applied to the
     // boards then, so a finished run doesn't replace what you're looking at.
@@ -35,7 +37,7 @@ export const BoardControls = (props: BoardWorkspaceProps) => {
             setHasUnseenResults(false)
         }
         tabRef.current = nextTab
-        setTab(nextTab)
+        changeSidebarTab(nextTab)
     }
 
     const handleOptimizeAllComplete = (applyResults: () => void) => {

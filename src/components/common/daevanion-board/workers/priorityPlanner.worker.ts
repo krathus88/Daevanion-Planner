@@ -40,8 +40,13 @@ globalThis.addEventListener(
                 globalThis.postMessage({ type: "progress", progress })
             },
         )
-            .then(({ plans, shortfalls }) =>
-                globalThis.postMessage({ type: "done", plans, shortfalls }),
+            .then(({ plans, shortfalls, specialNodes }) =>
+                globalThis.postMessage({
+                    type: "done",
+                    plans,
+                    shortfalls,
+                    specialNodes,
+                }),
             )
             .catch((error: unknown) => {
                 globalThis.postMessage({

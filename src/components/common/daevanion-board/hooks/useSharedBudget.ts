@@ -15,9 +15,9 @@ type SharedBudget = {
     availablePoints: number
 }
 
-const readBudget = (layout: BoardLayoutName): SharedBudget => {
-    const totalPoints = readSharedTotalPoints()
-    const usedByOtherBoards = readRouteCostOfOtherBoards(layout)
+const readBudget = (classId: string, layout: BoardLayoutName): SharedBudget => {
+    const totalPoints = readSharedTotalPoints(classId)
+    const usedByOtherBoards = readRouteCostOfOtherBoards(classId, layout)
     return {
         totalPoints,
         usedByOtherBoards,
@@ -26,17 +26,20 @@ const readBudget = (layout: BoardLayoutName): SharedBudget => {
 }
 
 // One point budget shared by every board and by the All boards tab.
-export const useSharedBudget = (layout: BoardLayoutName) => {
-    const [budget, setBudget] = useState(() => readBudget(layout))
+export const useSharedBudget = (classId: string, layout: BoardLayoutName) => {
+    const [budget, setBudget] = useState(() => readBudget(classId, layout))
 
     useEffect(
-        () => subscribeToBoardStorage(() => setBudget(readBudget(layout))),
-        [layout],
+        () =>
+            subscribeToBoardStorage(() =>
+                setBudget(readBudget(classId, layout)),
+            ),
+        [classId, layout],
     )
 
     const setTotalPoints = (totalPoints: number) => {
-        const error = writeSharedTotalPoints(totalPoints)
-        setBudget(readBudget(layout))
+        const error = writeSharedTotalPoints(classId, totalPoints)
+        setBudget(readBudget(classId, layout))
         return error
     }
 
