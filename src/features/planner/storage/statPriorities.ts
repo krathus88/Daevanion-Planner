@@ -1,11 +1,9 @@
 import { LAYOUT_NAMES, layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
-    FOCUS_SCOPES,
     FOCUS_TIERS,
     STAT_TIERS,
     STAT_TYPES,
-    type FocusScope,
     type FocusTier,
     type StatTier,
     type StatType,
@@ -14,9 +12,11 @@ import { readBoardProgress } from "./boardStorage"
 import { isRecord } from "./isRecord"
 
 export type StatFocusTier = {
-    // Abilities ranked after this wait behind the tier's stat nodes. Null
-    // leaves the tier out.
-    afterRank: number | null
+    // Passives ranked after this wait behind the tier's stat nodes. Null
+    // never makes passives wait.
+    passiveAfter: number | null
+    // The same for skills.
+    skillAfter: number | null
     // Most of the tier's stat nodes across all boards; null takes all the
     // budget allows.
     cap: number | null
@@ -25,7 +25,6 @@ export type StatFocusTier = {
 // "Stat focus": stat nodes take points ahead of low-ranked abilities.
 export type StatFocus = {
     enabled: boolean
-    scope: FocusScope
     // Most points spent on other nodes to reach one stat node.
     detour: number
     tiers: Record<FocusTier, StatFocusTier>
@@ -40,12 +39,11 @@ export type StatSettings = {
 
 export const DEFAULT_STAT_FOCUS: StatFocus = {
     enabled: false,
-    scope: "passives",
     detour: 1,
     tiers: {
-        best: { afterRank: 3, cap: null },
-        good: { afterRank: 4, cap: null },
-        okay: { afterRank: null, cap: null },
+        best: { passiveAfter: 3, skillAfter: null, cap: null },
+        good: { passiveAfter: 4, skillAfter: null, cap: null },
+        okay: { passiveAfter: null, skillAfter: null, cap: null },
     },
 }
 
@@ -63,13 +61,6 @@ const isTier = (value: unknown): value is StatTier => {
     return (
         typeof value === "string" &&
         (STAT_TIERS as readonly string[]).includes(value)
-    )
-}
-
-const isScope = (value: unknown): value is FocusScope => {
-    return (
-        typeof value === "string" &&
-        (FOCUS_SCOPES as readonly string[]).includes(value)
     )
 }
 
@@ -99,7 +90,6 @@ const readStatFocus = (value: unknown): StatFocus => {
 
     return {
         enabled: value.enabled === true,
-        scope: isScope(value.scope) ? value.scope : DEFAULT_STAT_FOCUS.scope,
         detour: isCount(value.detour, 0)
             ? value.detour
             : DEFAULT_STAT_FOCUS.detour,
@@ -107,14 +97,33 @@ const readStatFocus = (value: unknown): StatFocus => {
             FOCUS_TIERS.map((tier) => {
                 const saved = isRecord(tiers[tier]) ? tiers[tier] : {}
                 const fallback = DEFAULT_STAT_FOCUS.tiers[tier]
+                // Older saves had one `afterRank` plus a scope of "passives"
+                // or "all" (passives and skills).
+                const legacyRank = readOptionalCount(
+                    saved.afterRank,
+                    1,
+                    fallback.passiveAfter,
+                )
+                const isLegacy = "afterRank" in saved
                 return [
                     tier,
                     {
-                        afterRank: readOptionalCount(
-                            saved.afterRank,
-                            1,
-                            fallback.afterRank,
-                        ),
+                        passiveAfter: isLegacy
+                            ? legacyRank
+                            : readOptionalCount(
+                                  saved.passiveAfter,
+                                  1,
+                                  fallback.passiveAfter,
+                              ),
+                        skillAfter: isLegacy
+                            ? value.scope === "all"
+                                ? legacyRank
+                                : null
+                            : readOptionalCount(
+                                  saved.skillAfter,
+                                  1,
+                                  fallback.skillAfter,
+                              ),
                         cap: readOptionalCount(saved.cap, 0, fallback.cap),
                     },
                 ]

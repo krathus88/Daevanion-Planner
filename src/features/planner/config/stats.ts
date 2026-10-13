@@ -58,16 +58,6 @@ export const FOCUS_TIERS = ["best", "good", "okay"] as const
 
 export type FocusTier = (typeof FOCUS_TIERS)[number]
 
-// Which abilities Stat focus may put behind stats.
-export const FOCUS_SCOPES = ["passives", "all"] as const
-
-export type FocusScope = (typeof FOCUS_SCOPES)[number]
-
-export const FOCUS_SCOPE_NAMES: Record<FocusScope, string> = {
-    passives: "Passives only",
-    all: "Passives & skills",
-}
-
 // Far apart so one node of a higher tier outweighs any number of nodes of a
 // lower tier.
 const TIER_WEIGHTS: Record<StatTier, number> = {

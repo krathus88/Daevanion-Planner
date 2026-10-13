@@ -27,10 +27,17 @@ export const StatFocusTierRow = ({
     value,
     onChange,
 }: StatFocusTierRowProps) => {
-    const handleAfterRankChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const handlePassiveAfterChange = (event: ChangeEvent<HTMLInputElement>) => {
         onChange(tier, {
             ...value,
-            afterRank: toOptionalCount(event.target.value, 1, 99),
+            passiveAfter: toOptionalCount(event.target.value, 1, 99),
+        })
+    }
+
+    const handleSkillAfterChange = (event: ChangeEvent<HTMLInputElement>) => {
+        onChange(tier, {
+            ...value,
+            skillAfter: toOptionalCount(event.target.value, 1, 99),
         })
     }
 
@@ -59,10 +66,20 @@ export const StatFocusTierRow = ({
                 max={99}
                 min={1}
                 placeholder="–"
-                value={value.afterRank ?? ""}
-                title="Leave empty to leave this tier out"
-                aria-label={`${name} stats come before abilities ranked after`}
-                onChange={handleAfterRankChange}
+                value={value.passiveAfter ?? ""}
+                title="Leave empty so passives never wait for these stats"
+                aria-label={`${name} stats come before passives ranked after`}
+                onChange={handlePassiveAfterChange}
+            />
+
+            <LimitInput
+                max={99}
+                min={1}
+                placeholder="–"
+                value={value.skillAfter ?? ""}
+                title="Leave empty so skills never wait for these stats"
+                aria-label={`${name} stats come before skills ranked after`}
+                onChange={handleSkillAfterChange}
             />
 
             <LimitInput

@@ -163,30 +163,37 @@ export const optimizePriorityPlans = async (
             left.key.localeCompare(right.key, undefined, { numeric: true }),
     )
 
-    // Stat focus puts each tier's stat nodes just before the first ability,
-    // in scope, ranked after the tier's rank. Skills out of scope keep their
-    // place in rank order.
+    // Stat focus puts each tier's stat nodes just before the first passive
+    // ranked after the tier's passive rank, or the first skill ranked after
+    // its skill rank, whichever comes first. Abilities of a type with no
+    // rank set keep their place in rank order.
     const focus = statSettings.focus
-    const isInScope = (target: PriorityTarget) => {
+    const waitsBehind = (target: PriorityTarget, tier: FocusTier) => {
         if (target.abilityId === undefined) {
             return false
         }
 
-        return (
-            focus.scope === "all" ||
-            abilitiesById.get(target.abilityId)?.ability.type === "passive"
-        )
+        const type = abilitiesById.get(target.abilityId)?.ability.type
+        const afterRank =
+            type === "passive"
+                ? focus.tiers[tier].passiveAfter
+                : focus.tiers[tier].skillAfter
+
+        return afterRank !== null && target.priority > afterRank
     }
     const blockIndexes = new Map<FocusTier, number>()
     if (focus.enabled) {
         for (const tier of FOCUS_TIERS) {
-            const afterRank = focus.tiers[tier].afterRank
-            if (afterRank === null) {
+            const settings = focus.tiers[tier]
+            if (
+                settings.passiveAfter === null &&
+                settings.skillAfter === null
+            ) {
                 continue
             }
 
-            const index = targets.findIndex(
-                (target) => isInScope(target) && target.priority > afterRank,
+            const index = targets.findIndex((target) =>
+                waitsBehind(target, tier),
             )
             blockIndexes.set(tier, index < 0 ? targets.length : index)
         }
