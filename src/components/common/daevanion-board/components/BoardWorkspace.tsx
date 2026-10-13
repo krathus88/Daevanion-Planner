@@ -14,6 +14,8 @@ import { BoardCanvas } from "./BoardCanvas"
 
 export type BoardView = "board" | "planner"
 
+export type SidebarTab = "plan" | "saved" | "priorities" | "all-boards"
+
 export type BoardWorkspaceProps = {
     layout: BoardLayout
     view: BoardView
@@ -60,6 +62,9 @@ export type BoardWorkspaceProps = {
     plannedPath: Set<string>
     message: string
     formatPlannerDuration: (milliseconds: number) => string
+    // Kept by the page so the open tab survives switching board or class.
+    sidebarTab: SidebarTab
+    changeSidebarTab: (tab: SidebarTab) => void
 }
 
 export const BoardWorkspace = (props: BoardWorkspaceProps) => {

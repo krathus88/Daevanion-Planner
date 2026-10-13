@@ -32,6 +32,7 @@ type PlannerWorkerMessage =
 
 type UsePlannerOptimizationProps = {
     layout: BoardLayout
+    classId: string
     layoutName: BoardLayoutName
     start: Position
     targetCells: Set<string>
@@ -49,6 +50,7 @@ type UsePlannerOptimizationProps = {
 
 export const usePlannerOptimization = ({
     layout,
+    classId,
     layoutName,
     start,
     targetCells,
@@ -178,6 +180,7 @@ export const usePlannerOptimization = ({
                     25,
                 )
                 const historyError = writePlannerHistory(
+                    classId,
                     layoutName,
                     nextHistory,
                 )

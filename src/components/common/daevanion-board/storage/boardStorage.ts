@@ -50,13 +50,15 @@ type StorageRead<T> = {
 }
 
 const MAX_PLANNER_HISTORY = 25
-const ACTIVE_CLASS_ID = "default"
 const STORAGE_VERSION = "v1"
 const STORAGE_CHANGE_EVENT = "daevanion-storage-change"
 const PLANS_REPLACED_EVENT = "daevanion-plans-replaced"
-const SHARED_ALLOCATION_KEY = `daevanion:${STORAGE_VERSION}:${ACTIVE_CLASS_ID}:shared-allocation`
+// Everything is stored per class: plans for one class don't apply to another.
+const sharedAllocationKey = (classId: string) =>
+    `daevanion:${STORAGE_VERSION}:${classId}:shared-allocation`
 
 const keyFor = (
+    classId: string,
     kind:
         | "progress"
         | "board-undo"
@@ -65,7 +67,7 @@ const keyFor = (
         | "saved-planners"
         | "planner-history",
     layout: BoardLayoutName,
-) => `daevanion:${STORAGE_VERSION}:${ACTIVE_CLASS_ID}:${layout}:${kind}`
+) => `daevanion:${STORAGE_VERSION}:${classId}:${layout}:${kind}`
 
 const read = <T>(
     key: string,
@@ -187,32 +189,38 @@ const isSharedAllocation = (value: unknown): value is SharedAllocation =>
             Object.hasOwn(layouts, layout) && typeof id === "string",
     )
 
-export const readSharedAllocation = () =>
-    read(SHARED_ALLOCATION_KEY, isSharedAllocation)
+export const readSharedAllocation = (classId: string) =>
+    read(sharedAllocationKey(classId), isSharedAllocation)
 
-export const writeSharedAllocation = (allocation: SharedAllocation) =>
-    write(SHARED_ALLOCATION_KEY, allocation)
+export const writeSharedAllocation = (
+    classId: string,
+    allocation: SharedAllocation,
+) => write(sharedAllocationKey(classId), allocation)
 
-export const DEFAULT_TOTAL_POINTS = 390
+export const DEFAULT_TOTAL_POINTS = 225
 
 // The one point budget shared by every board.
-export const readSharedTotalPoints = () =>
-    readSharedAllocation().value?.totalPoints ?? DEFAULT_TOTAL_POINTS
+export const readSharedTotalPoints = (classId: string) =>
+    readSharedAllocation(classId).value?.totalPoints ?? DEFAULT_TOTAL_POINTS
 
-export const writeSharedTotalPoints = (totalPoints: number) =>
-    writeSharedAllocation({
+export const writeSharedTotalPoints = (classId: string, totalPoints: number) =>
+    writeSharedAllocation(classId, {
         selectedPlannerIds: {},
-        ...readSharedAllocation().value,
+        ...readSharedAllocation(classId).value,
         totalPoints,
     })
 
 // Points the other boards' current planner routes already use.
-export const readRouteCostOfOtherBoards = (layout: BoardLayoutName) =>
+export const readRouteCostOfOtherBoards = (
+    classId: string,
+    layout: BoardLayoutName,
+) =>
     (Object.keys(layouts) as BoardLayoutName[])
         .filter((other) => other !== layout)
         .reduce(
             (total, other) =>
-                total + (readBoardProgress(other).value?.plannedCost ?? 0),
+                total +
+                (readBoardProgress(classId, other).value?.plannedCost ?? 0),
             0,
         )
 
@@ -221,9 +229,7 @@ export const subscribeToBoardStorage = (onChange: () => void) => {
     const handleStorageChange = (event: StorageEvent) => {
         if (
             event.key === null ||
-            event.key.startsWith(
-                `daevanion:${STORAGE_VERSION}:${ACTIVE_CLASS_ID}:`,
-            )
+            event.key.startsWith(`daevanion:${STORAGE_VERSION}:`)
         ) {
             onChange()
         }
@@ -256,69 +262,79 @@ export const subscribeToPlansReplaced = (
     return () => window.removeEventListener(PLANS_REPLACED_EVENT, handle)
 }
 
-export const readBoardProgress = (layout: BoardLayoutName) =>
-    read(keyFor("progress", layout), isBoardProgress)
+export const readBoardProgress = (classId: string, layout: BoardLayoutName) =>
+    read(keyFor(classId, "progress", layout), isBoardProgress)
 
 export const writeBoardProgress = (
+    classId: string,
     layout: BoardLayoutName,
     progress: BoardProgress,
-) => write(keyFor("progress", layout), progress)
+) => write(keyFor(classId, "progress", layout), progress)
 
-export const readBoardUndo = (layout: BoardLayoutName) =>
-    read(keyFor("board-undo", layout), isBoardUndo)
+export const readBoardUndo = (classId: string, layout: BoardLayoutName) =>
+    read(keyFor(classId, "board-undo", layout), isBoardUndo)
 
-export const writeBoardUndo = (layout: BoardLayoutName, undo: BoardUndo) =>
-    write(keyFor("board-undo", layout), undo)
+export const writeBoardUndo = (
+    classId: string,
+    layout: BoardLayoutName,
+    undo: BoardUndo,
+) => write(keyFor(classId, "board-undo", layout), undo)
 
-export const clearBoardUndo = (layout: BoardLayoutName) =>
-    remove(keyFor("board-undo", layout))
+export const clearBoardUndo = (classId: string, layout: BoardLayoutName) =>
+    remove(keyFor(classId, "board-undo", layout))
 
-export const readPlannerUndo = (layout: BoardLayoutName) =>
-    read(keyFor("planner-undo", layout), isPlannerUndo)
+export const readPlannerUndo = (classId: string, layout: BoardLayoutName) =>
+    read(keyFor(classId, "planner-undo", layout), isPlannerUndo)
 
-export const writePlannerUndo = (layout: BoardLayoutName, undo: PlannerUndo) =>
-    write(keyFor("planner-undo", layout), undo)
+export const writePlannerUndo = (
+    classId: string,
+    layout: BoardLayoutName,
+    undo: PlannerUndo,
+) => write(keyFor(classId, "planner-undo", layout), undo)
 
-export const clearPlannerUndo = (layout: BoardLayoutName) =>
-    remove(keyFor("planner-undo", layout))
+export const clearPlannerUndo = (classId: string, layout: BoardLayoutName) =>
+    remove(keyFor(classId, "planner-undo", layout))
 
-export const readSavedBoards = (layout: BoardLayoutName) =>
+export const readSavedBoards = (classId: string, layout: BoardLayoutName) =>
     read(
-        keyFor("saved-boards", layout),
+        keyFor(classId, "saved-boards", layout),
         (value): value is SavedBoard[] =>
             Array.isArray(value) && value.every(isSavedBoard),
     )
 
 export const writeSavedBoards = (
+    classId: string,
     layout: BoardLayoutName,
     saved: SavedBoard[],
-) => write(keyFor("saved-boards", layout), saved)
+) => write(keyFor(classId, "saved-boards", layout), saved)
 
-export const readSavedPlanners = (layout: BoardLayoutName) =>
+export const readSavedPlanners = (classId: string, layout: BoardLayoutName) =>
     read(
-        keyFor("saved-planners", layout),
+        keyFor(classId, "saved-planners", layout),
         (value): value is SavedPlanner[] =>
             Array.isArray(value) && value.every(isSavedPlanner),
     )
 
 export const writeSavedPlanners = (
+    classId: string,
     layout: BoardLayoutName,
     saved: SavedPlanner[],
-) => write(keyFor("saved-planners", layout), saved)
+) => write(keyFor(classId, "saved-planners", layout), saved)
 
-export const readPlannerHistory = (layout: BoardLayoutName) =>
+export const readPlannerHistory = (classId: string, layout: BoardLayoutName) =>
     read(
-        keyFor("planner-history", layout),
+        keyFor(classId, "planner-history", layout),
         (value): value is SavedPlanner[] =>
             Array.isArray(value) && value.every(isSavedPlanner),
     )
 
 export const writePlannerHistory = (
+    classId: string,
     layout: BoardLayoutName,
     history: SavedPlanner[],
 ) =>
     write(
-        keyFor("planner-history", layout),
+        keyFor(classId, "planner-history", layout),
         history.slice(0, MAX_PLANNER_HISTORY),
     )
 
@@ -326,6 +342,7 @@ export const writePlannerHistory = (
 // route when plannerId is empty (keeping an undo, like "Clear planner").
 // "current" leaves the board unchanged. Returns an error message or null.
 export const applyPlannerToBoard = (
+    classId: string,
     layout: BoardLayoutName,
     plannerId: string,
 ): string | null => {
@@ -333,7 +350,7 @@ export const applyPlannerToBoard = (
         return null
     }
 
-    const progress = readBoardProgress(layout)
+    const progress = readBoardProgress(classId, layout)
     if (progress.error) {
         return progress.error
     }
@@ -348,12 +365,12 @@ export const applyPlannerToBoard = (
         }
 
         return (
-            writePlannerUndo(layout, {
+            writePlannerUndo(classId, layout, {
                 targetCells: current.targetCells,
                 plannedPath: current.plannedPath,
                 plannedCost: current.plannedCost,
             }) ??
-            writeBoardProgress(layout, {
+            writeBoardProgress(classId, layout, {
                 ...current,
                 targetCells: [],
                 plannedPath: [],
@@ -366,8 +383,8 @@ export const applyPlannerToBoard = (
     const source = plannerId.startsWith("saved:") ? "saved" : "history"
     const entries =
         source === "saved"
-            ? readSavedPlanners(layout)
-            : readPlannerHistory(layout)
+            ? readSavedPlanners(classId, layout)
+            : readPlannerHistory(classId, layout)
     if (entries.error) {
         return entries.error
     }
@@ -378,7 +395,7 @@ export const applyPlannerToBoard = (
         return "That route no longer exists."
     }
 
-    return writeBoardProgress(layout, {
+    return writeBoardProgress(classId, layout, {
         selectedCells: progress.value?.selectedCells ?? [],
         availablePoints: entry.availablePoints,
         targetCells: entry.targetCells,

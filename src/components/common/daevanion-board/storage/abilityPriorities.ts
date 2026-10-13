@@ -244,7 +244,7 @@ export const writeAbilityMinimums = (
 export const readSharedAbilityUpgradeCounts = (classPreset: ClassPreset) => {
     const counts = new Map<string, number>()
     for (const layoutName of Object.keys(layouts) as BoardLayoutName[]) {
-        const progress = readBoardProgress(layoutName)
+        const progress = readBoardProgress(classPreset.id, layoutName)
         if (progress.error) {
             throw new Error(progress.error)
         }

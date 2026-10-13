@@ -1,14 +1,13 @@
-import {
-    Box,
-    Container,
-    Flex,
-    Link,
-    NativeSelect,
-    Text,
-} from "@chakra-ui/react"
-import { useEffect } from "react"
+import { Box, Container, Flex, Link, Text } from "@chakra-ui/react"
+import { useEffect, useState } from "react"
 import { Link as RouterLink, useNavigate } from "@tanstack/react-router"
+import { Footer } from "@layout/Footer"
+import { ClassSelect } from "./ClassSelect"
 import { DaevanionBoard } from "@components/daevanion-board/components/DaevanionBoard"
+import type {
+    BoardView,
+    SidebarTab,
+} from "@components/daevanion-board/components/BoardWorkspace"
 import {
     layouts,
     type LayoutType,
@@ -18,10 +17,20 @@ import { classPresets } from "@config/classPresets"
 type DaevanionProps = {
     classId: string
     layout: LayoutType
+    boardView: BoardView
+    onBoardViewChange: (view: BoardView) => void
 }
 
-export const Daevanion = ({ classId, layout }: DaevanionProps) => {
+export const Daevanion = ({
+    classId,
+    layout,
+    boardView,
+    onBoardViewChange,
+}: DaevanionProps) => {
     const navigate = useNavigate()
+    // Lives here, above the per-board state, so switching board keeps the
+    // sidebar tab. The page is keyed by class, so a new class starts on Plan.
+    const [sidebarTab, setSidebarTab] = useState<SidebarTab>("plan")
     const selectedClass = classPresets[classId]
 
     // Show the selected class's emblem as the favicon.
@@ -42,7 +51,7 @@ export const Daevanion = ({ classId, layout }: DaevanionProps) => {
     }, [selectedClass.name])
 
     return (
-        <Box minH="100vh">
+        <Flex direction="column" minH="100vh">
             <Box
                 as="header"
                 backdropFilter="blur(10px)"
@@ -149,57 +158,41 @@ export const Daevanion = ({ classId, layout }: DaevanionProps) => {
                             marginLeft="auto"
                             order={{ base: 2, md: 3 }}
                         >
-                            <Text asChild color="app.muted" fontSize="sm">
-                                <label htmlFor="class-select">Class</label>
-                            </Text>
-                            <NativeSelect.Root size="sm" width="40">
-                                <NativeSelect.Field
-                                    background="app.raised"
-                                    borderColor="app.borderStrong"
-                                    color="app.fg"
-                                    fontWeight="medium"
-                                    id="class-select"
-                                    onChange={(event) =>
-                                        navigate({
-                                            to: "/$classId/$layout",
-                                            params: {
-                                                classId: event.target.value,
-                                                layout,
-                                            },
-                                            resetScroll: false,
-                                        })
-                                    }
-                                    value={classId}
-                                    _focusVisible={{
-                                        borderColor: "app.accent",
-                                        outline: "1px solid",
-                                        outlineColor: "app.accent",
-                                    }}
-                                >
-                                    {Object.values(classPresets).map(
-                                        (preset) => (
-                                            <option
-                                                key={preset.id}
-                                                value={preset.id}
-                                                style={{
-                                                    background: "#1c2230",
-                                                }}
-                                            >
-                                                {preset.name}
-                                            </option>
-                                        ),
-                                    )}
-                                </NativeSelect.Field>
-                                <NativeSelect.Indicator color="app.muted" />
-                            </NativeSelect.Root>
+                            <ClassSelect
+                                classId={classId}
+                                onChange={(nextClassId) =>
+                                    navigate({
+                                        to: "/$classId/$layout",
+                                        params: {
+                                            classId: nextClassId,
+                                            layout,
+                                        },
+                                        resetScroll: false,
+                                    })
+                                }
+                            />
                         </Flex>
                     </Flex>
                 </Container>
             </Box>
 
-            <Container as="main" maxW="8xl" py={{ base: "4", md: "6" }}>
-                <DaevanionBoard classPreset={selectedClass} layout={layout} />
+            <Container
+                as="main"
+                flex="1"
+                maxW="8xl"
+                py={{ base: "4", md: "6" }}
+            >
+                <DaevanionBoard
+                    classPreset={selectedClass}
+                    layout={layout}
+                    onSidebarTabChange={setSidebarTab}
+                    onViewChange={onBoardViewChange}
+                    sidebarTab={sidebarTab}
+                    view={boardView}
+                />
             </Container>
-        </Box>
+
+            <Footer />
+        </Flex>
     )
 }

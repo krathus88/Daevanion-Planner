@@ -13,7 +13,15 @@ export interface ColorModeProviderProps extends ThemeProviderProps {}
 
 export function ColorModeProvider(props: ColorModeProviderProps) {
     return (
-        <ThemeProvider attribute="class" disableTransitionOnChange {...props} />
+        <ThemeProvider
+            attribute="class"
+            disableTransitionOnChange
+            // next-themes renders an inline script meant for server rendering;
+            // this app renders client-side, where React never runs it and warns.
+            // A data-block type keeps it inert and silences the warning.
+            scriptProps={{ type: "application/json" }}
+            {...props}
+        />
     )
 }
 

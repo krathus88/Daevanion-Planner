@@ -12,7 +12,11 @@ import {
 } from "../config/layouts"
 import { formatPlannerDuration } from "../logic/plannerLogic"
 import type { ClassAbility, ClassPreset } from "../../../../config/classPresets"
-import { BoardWorkspace, type BoardView } from "./BoardWorkspace"
+import {
+    BoardWorkspace,
+    type BoardView,
+    type SidebarTab,
+} from "./BoardWorkspace"
 import { usePlannerOptimization } from "../hooks/usePlannerOptimization"
 import { useSharedBudget } from "../hooks/useSharedBudget"
 import {
@@ -42,23 +46,39 @@ import {
 type DaevanionBoardProps = {
     layout: BoardLayoutName
     classPreset: ClassPreset
+    sidebarTab: SidebarTab
+    onSidebarTabChange: (tab: SidebarTab) => void
+    view: BoardView
+    onViewChange: (view: BoardView) => void
 }
 
 type BoardInstanceProps = {
     layout: BoardLayout
     layoutName: BoardLayoutName
     classPreset: ClassPreset
+    sidebarTab: SidebarTab
+    onSidebarTabChange: (tab: SidebarTab) => void
+    view: BoardView
+    onViewChange: (view: BoardView) => void
 }
 
 export const DaevanionBoard = ({
     layout,
     classPreset,
+    sidebarTab,
+    onSidebarTabChange,
+    view,
+    onViewChange,
 }: DaevanionBoardProps) => (
     <BoardInstance
         key={`${layout}-${classPreset.id}`}
         classPreset={classPreset}
         layout={layouts[layout]}
         layoutName={layout}
+        onSidebarTabChange={onSidebarTabChange}
+        sidebarTab={sidebarTab}
+        onViewChange={onViewChange}
+        view={view}
     />
 )
 
@@ -66,20 +86,25 @@ const BoardInstance = ({
     layout,
     layoutName,
     classPreset,
+    sidebarTab,
+    onSidebarTabChange,
+    view,
+    onViewChange,
 }: BoardInstanceProps) => {
     const start = getStart(layout)
     const startKey = `${start.row},${start.column}`
     const excludeStart = (keys: string[]) =>
         keys.filter((key) => key !== startKey)
     const [initialStorage] = useState(() => ({
-        progress: readBoardProgress(layoutName),
-        boardUndo: readBoardUndo(layoutName),
-        plannerUndo: readPlannerUndo(layoutName),
-        plannerHistory: readPlannerHistory(layoutName),
-        savedBoards: readSavedBoards(layoutName),
-        savedPlanners: readSavedPlanners(layoutName),
+        progress: readBoardProgress(classPreset.id, layoutName),
+        boardUndo: readBoardUndo(classPreset.id, layoutName),
+        plannerUndo: readPlannerUndo(classPreset.id, layoutName),
+        plannerHistory: readPlannerHistory(classPreset.id, layoutName),
+        savedBoards: readSavedBoards(classPreset.id, layoutName),
+        savedPlanners: readSavedPlanners(classPreset.id, layoutName),
     }))
-    const [view, setView] = useState<BoardView>("planner")
+    // Planner/Manual mode is kept by the page so it survives board switches.
+    const setView = onViewChange
     const [selectedCells, setSelectedCells] = useState(
         () =>
             new Set(
@@ -119,7 +144,7 @@ const BoardInstance = ({
             .join(" "),
     )
     const { totalPoints, usedByOtherBoards, availablePoints, setTotalPoints } =
-        useSharedBudget(layoutName)
+        useSharedBudget(classPreset.id, layoutName)
     const [boardUndo, setBoardUndo] = useState<BoardUndo | null>(
         initialStorage.boardUndo.value,
     )
@@ -186,7 +211,7 @@ const BoardInstance = ({
             activePlanner,
             ...updates,
         }
-        const error = writeBoardProgress(layoutName, progress)
+        const error = writeBoardProgress(classPreset.id, layoutName, progress)
         if (error) {
             setMessage(error)
         }
@@ -201,6 +226,7 @@ const BoardInstance = ({
         cancelOptimization,
     } = usePlannerOptimization({
         layout,
+        classId: classPreset.id,
         layoutName,
         start,
         targetCells,
@@ -222,10 +248,10 @@ const BoardInstance = ({
                 return
             }
 
-            const progress = readBoardProgress(layoutName)
-            const undo = readPlannerUndo(layoutName)
-            const saved = readSavedPlanners(layoutName)
-            const history = readPlannerHistory(layoutName)
+            const progress = readBoardProgress(classPreset.id, layoutName)
+            const undo = readPlannerUndo(classPreset.id, layoutName)
+            const saved = readSavedPlanners(classPreset.id, layoutName)
+            const history = readPlannerHistory(classPreset.id, layoutName)
             const error = progress.error ?? saved.error ?? history.error
             if (error || !progress.value) {
                 setMessage(error ?? "")
@@ -311,7 +337,7 @@ const BoardInstance = ({
 
     const resetSelection = () => {
         const undo: BoardUndo = { selectedCells: [...selectedCells] }
-        const undoError = writeBoardUndo(layoutName, undo)
+        const undoError = writeBoardUndo(classPreset.id, layoutName, undo)
         if (undoError) {
             setMessage(undoError)
             return
@@ -328,7 +354,7 @@ const BoardInstance = ({
             return
         }
 
-        const error = clearBoardUndo(layoutName)
+        const error = clearBoardUndo(classPreset.id, layoutName)
         if (error) {
             setMessage(error)
             return
@@ -348,7 +374,7 @@ const BoardInstance = ({
             plannedPath: [...plannedPath],
             plannedCost,
         }
-        const error = writePlannerUndo(layoutName, undo)
+        const error = writePlannerUndo(classPreset.id, layoutName, undo)
         if (error) {
             setMessage(error)
             return
@@ -374,7 +400,7 @@ const BoardInstance = ({
             return
         }
 
-        const error = clearPlannerUndo(layoutName)
+        const error = clearPlannerUndo(classPreset.id, layoutName)
         if (error) {
             setMessage(error)
             return
@@ -409,7 +435,11 @@ const BoardInstance = ({
             availablePoints,
         }
         const nextSavedBoards = [saved, ...savedBoards]
-        const error = writeSavedBoards(layoutName, nextSavedBoards)
+        const error = writeSavedBoards(
+            classPreset.id,
+            layoutName,
+            nextSavedBoards,
+        )
         if (error) {
             setMessage(error)
             return
@@ -437,7 +467,11 @@ const BoardInstance = ({
             availablePoints,
         }
         const nextSavedPlanners = [saved, ...savedPlanners]
-        const error = writeSavedPlanners(layoutName, nextSavedPlanners)
+        const error = writeSavedPlanners(
+            classPreset.id,
+            layoutName,
+            nextSavedPlanners,
+        )
         if (error) {
             setMessage(error)
             return
@@ -491,7 +525,11 @@ const BoardInstance = ({
 
     const deleteBoard = (id: string) => {
         const nextSavedBoards = savedBoards.filter((saved) => saved.id !== id)
-        const error = writeSavedBoards(layoutName, nextSavedBoards)
+        const error = writeSavedBoards(
+            classPreset.id,
+            layoutName,
+            nextSavedBoards,
+        )
         if (error) {
             setMessage(error)
             return
@@ -505,7 +543,11 @@ const BoardInstance = ({
         const nextSavedPlanners = savedPlanners.filter(
             (saved) => saved.id !== id,
         )
-        const error = writeSavedPlanners(layoutName, nextSavedPlanners)
+        const error = writeSavedPlanners(
+            classPreset.id,
+            layoutName,
+            nextSavedPlanners,
+        )
         if (error) {
             setMessage(error)
             return
@@ -517,7 +559,11 @@ const BoardInstance = ({
 
     const deletePlannerHistoryEntry = (id: string) => {
         const nextHistory = plannerHistory.filter((entry) => entry.id !== id)
-        const error = writePlannerHistory(layoutName, nextHistory)
+        const error = writePlannerHistory(
+            classPreset.id,
+            layoutName,
+            nextHistory,
+        )
         if (error) {
             setMessage(error)
             return
@@ -588,6 +634,8 @@ const BoardInstance = ({
             plannedPath={plannedPath}
             message={message}
             formatPlannerDuration={formatPlannerDuration}
+            sidebarTab={sidebarTab}
+            changeSidebarTab={onSidebarTabChange}
         />
     )
 }
