@@ -43,6 +43,9 @@ const typeColors: Partial<Record<BoardNodeAppearance["type"], string>> = {
     special: "#efc05b",
 }
 
+const DIAMOND = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
+const ZOOM_TRANSITION = "transform 160ms ease, filter 160ms ease"
+
 const BASIC_SIZE = "1.875rem"
 const SPECIAL_SIZE = "3.75rem"
 const START_SIZE = "3.25rem"
@@ -120,11 +123,9 @@ export const BoardCell = ({
             ? "white"
             : "rgba(255, 255, 255, 0.12)"
         : isSpecial
-          ? "#d9a441"
+          ? "linear-gradient(135deg, #f6d68a 0%, #d9a441 45%, #9a6a22 100%)"
           : appearance.backgroundColor
-    const shapeClipPath = isSpecial
-        ? "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
-        : undefined
+    const shapeClipPath = isSpecial ? DIAMOND : undefined
     const borderColor = targeted
         ? "yellow.500"
         : selected
@@ -140,6 +141,40 @@ export const BoardCell = ({
                 : isSpecial
                   ? "#efc05b"
                   : "gray.300"
+    const shapeShadow =
+        selected && ability
+            ? "0 0 0 3px rgba(250, 204, 21, 0.9), 0 0 14px rgba(250, 204, 21, 0.45)"
+            : selected && !isSpecial
+              ? "0 0 0 2px rgba(37, 99, 235, 0.55), 0 0 14px rgba(37, 99, 235, 0.6)"
+              : adjacentAvailable && !isSpecial
+                ? "0 0 10px 2px rgba(45, 212, 191, 0.55)"
+                : "none"
+    // Hovering zooms the artwork inside the frame instead of growing the node.
+    // Stat nodes have no artwork, so they light up instead.
+    const hoverCss = canSelect
+        ? {
+              "&:hover [data-zoom]": {
+                  transform: "scale(1.15)",
+                  filter: "brightness(1.12)",
+              },
+              ...(isBasic && {
+                  "&:hover [data-shape]": {
+                      background: selected
+                          ? "white"
+                          : "rgba(255, 255, 255, 0.32)",
+                      boxShadow: [
+                          shapeShadow === "none" ? null : shapeShadow,
+                          "0 0 10px rgba(255, 255, 255, 0.45)",
+                      ]
+                          .filter(Boolean)
+                          .join(", "),
+                  },
+              }),
+              "@media (prefers-reduced-motion: reduce)": {
+                  "& [data-zoom]": { transition: "none" },
+              },
+          }
+        : undefined
     const nodeName =
         ability?.name ??
         (stat && STAT_NAMES[stat]) ??
@@ -221,15 +256,7 @@ export const BoardCell = ({
                     clipPath={shapeClipPath}
                     cursor={canSelect ? "pointer" : "not-allowed"}
                     zIndex="1"
-                    _hover={
-                        canSelect
-                            ? {
-                                  transform:
-                                      "translate(-50%, -50%) scale(1.06)",
-                                  zIndex: 2,
-                              }
-                            : undefined
-                    }
+                    css={hoverCss}
                     color="gray.900"
                 >
                     {isSpecial && (
@@ -266,15 +293,9 @@ export const BoardCell = ({
                                   ? "3px"
                                   : "1px"
                         }
-                        boxShadow={
-                            selected && ability
-                                ? "0 0 0 3px rgba(250, 204, 21, 0.9), 0 0 14px rgba(250, 204, 21, 0.45)"
-                                : selected && !isSpecial
-                                  ? "0 0 0 2px rgba(37, 99, 235, 0.55), 0 0 14px rgba(37, 99, 235, 0.6)"
-                                  : adjacentAvailable && !isSpecial
-                                    ? "0 0 10px 2px rgba(45, 212, 191, 0.55)"
-                                    : "none"
-                        }
+                        boxShadow={shapeShadow}
+                        data-shape=""
+                        transition="background 160ms ease, box-shadow 160ms ease"
                         clipPath={shapeClipPath}
                         height={isSpecial ? "calc(100% - 6px)" : visualSize}
                         left="50%"
@@ -285,6 +306,7 @@ export const BoardCell = ({
                         width={isSpecial ? "calc(100% - 6px)" : visualSize}
                         zIndex={isSpecial ? "2" : undefined}
                     >
+                        {isSpecial && <SpecialGem />}
                         {imageSource && !imageFailed && (
                             <img
                                 aria-hidden="true"
@@ -294,8 +316,10 @@ export const BoardCell = ({
                                         appearance.imageBackground ?? null,
                                     )
                                 }
+                                data-zoom=""
                                 src={imageSource}
                                 style={{
+                                    transition: ZOOM_TRANSITION,
                                     height: "100%",
                                     inset: 0,
                                     objectFit: ability?.icon
@@ -357,3 +381,41 @@ export const BoardCell = ({
         </Box>
     )
 }
+
+// Facets inside a special node's diamond: a sheen across the top-left, an
+// inset diamond outline and a bright centre stone. Zooms on hover.
+const SpecialGem = () => (
+    <>
+        <Box
+            background="linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 45%)"
+            inset="0"
+            position="absolute"
+        />
+        <Box
+            data-zoom=""
+            inset="0"
+            position="absolute"
+            transition={ZOOM_TRANSITION}
+        >
+            <Box
+                background="rgba(110, 68, 14, 0.4)"
+                clipPath={DIAMOND}
+                inset="22%"
+                position="absolute"
+            />
+            <Box
+                background="linear-gradient(135deg, #fff3cc 0%, #ebbd5e 50%, #b5802c 100%)"
+                clipPath={DIAMOND}
+                inset="calc(22% + 2px)"
+                position="absolute"
+            />
+            <Box
+                background="radial-gradient(circle at 40% 35%, #ffffff 0%, #fff4d1 45%, #f0c66a 100%)"
+                boxShadow="0 0 6px rgba(255, 244, 209, 0.9)"
+                clipPath={DIAMOND}
+                inset="39%"
+                position="absolute"
+            />
+        </Box>
+    </>
+)
