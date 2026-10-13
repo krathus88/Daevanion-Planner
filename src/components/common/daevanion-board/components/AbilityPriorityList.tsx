@@ -307,7 +307,7 @@ export const AbilityPriorityList = ({
                     textAlign="right"
                     title={`${upgrades} ${upgrades === 1 ? "upgrade" : "upgrades"} across all boards${isBelowMinimum ? ` (minimum +${minimum})` : ""}`}
                     whiteSpace="nowrap"
-                    width="3.5rem"
+                    width="2.875rem"
                 >
                     +{upgrades}
                 </Text>
@@ -339,7 +339,7 @@ export const AbilityPriorityList = ({
                 <Text textAlign="center" width="3rem">
                     Max
                 </Text>
-                <Text textAlign="right" whiteSpace="nowrap" width="3.5rem">
+                <Text textAlign="right" whiteSpace="nowrap" width="2.875rem">
                     Planned
                 </Text>
             </Flex>

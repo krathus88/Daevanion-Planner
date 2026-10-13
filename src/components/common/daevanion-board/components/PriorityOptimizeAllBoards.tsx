@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Box, Flex, Text } from "@chakra-ui/react"
 import { PrimaryButton, SearchTimeSelect, SecondaryButton } from "./PanelKit"
-import { DEFAULT_SEARCH_SECONDS } from "./searchTime"
+import { DEFAULT_SEARCH_SECONDS, formatSearchTime } from "./searchTime"
 import { formatPlanTime } from "../logic/formatPlanTime"
 import type { ClassPreset } from "../../../../config/classPresets"
 import { layouts, type BoardLayoutName } from "../config/layouts"
@@ -301,7 +301,7 @@ export const PriorityOptimizeAllBoards = ({
                             role="status"
                         >
                             {progress
-                                ? `Searching… ${Math.floor(progress.elapsedMs / 1000)}s of ${progress.timeBudgetMs / 1000}s · ${progress.pointsUsed} points used`
+                                ? `Searching… ${formatSearchTime(progress.elapsedMs / 1000)} of ${formatSearchTime(progress.timeBudgetMs / 1000)} · ${progress.pointsUsed} points used`
                                 : "Preparing all-board optimization…"}
                         </Text>
                         <SecondaryButton onClick={cancel} size="sm">

@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react"
 import { LuChevronRight } from "react-icons/lu"
 import { appInputStyles } from "./panelStyles"
-import { SEARCH_TIME_OPTIONS } from "./searchTime"
+import { formatSearchTime, SEARCH_TIME_OPTIONS } from "./searchTime"
 
 export const PrimaryButton = (props: ButtonProps) => (
     <Button
@@ -306,7 +306,7 @@ export const SearchTimeSelect = ({
                     style={{ backgroundColor: "#1c2230" }}
                     value={seconds}
                 >
-                    {seconds}s
+                    {formatSearchTime(seconds)}
                 </option>
             ))}
         </NativeSelect.Field>
