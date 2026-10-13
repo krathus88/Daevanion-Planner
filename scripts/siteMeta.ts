@@ -41,7 +41,7 @@ export const readClasses = (): SiteClass[] => {
 
 export const readBoardNames = (): string[] => {
     const source = readFileSync(
-        join(root, "src/components/common/daevanion-board/config/layouts.ts"),
+        join(root, "src/features/planner/config/layouts.ts"),
         "utf-8",
     )
     const union = /export type LayoutType\s*=\s*([^\n]+)/.exec(source)?.[1]

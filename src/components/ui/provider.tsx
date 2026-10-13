@@ -1,13 +1,8 @@
-"use client"
-
 import { ChakraProvider } from "@chakra-ui/react"
 import { system } from "@theme/index"
-import { ColorModeProvider, type ColorModeProviderProps } from "./color-mode"
+import type { ReactNode } from "react"
 
-export const Provider = (props: ColorModeProviderProps) => {
-    return (
-        <ChakraProvider value={system}>
-            <ColorModeProvider {...props} />
-        </ChakraProvider>
-    )
+// The app is dark-only: index.html sets the `dark` class on <html>.
+export const Provider = ({ children }: { children: ReactNode }) => {
+    return <ChakraProvider value={system}>{children}</ChakraProvider>
 }

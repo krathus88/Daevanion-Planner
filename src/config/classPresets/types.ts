@@ -1,6 +1,6 @@
-import type { BoardLayoutName } from "@components/daevanion-board/config/layouts"
+import type { LayoutType } from "@planner/config/layouts"
 
-export type ClassAbilityType = "skill" | "passive"
+type ClassAbilityType = "skill" | "passive"
 
 export type ClassAbility = {
     id: string
@@ -17,7 +17,7 @@ export type ClassAbility = {
     unlocks?: readonly AbilityUnlock[]
 }
 
-export type AbilityUnlock = {
+type AbilityUnlock = {
     level: number
     effect: string
 }
@@ -32,7 +32,7 @@ export type ClassPreset<
     abilities: Abilities
     assignments: Readonly<
         Record<
-            BoardLayoutName,
+            LayoutType,
             Readonly<Record<string, Abilities[number]["id"]>> | undefined
         >
     >
@@ -63,4 +63,6 @@ export const defineClassPreset = <
     const Abilities extends readonly ClassAbility[],
 >(
     preset: ClassPreset<Abilities> & UniqueAbilityIds<Abilities>,
-): ClassPreset<Abilities> => preset
+): ClassPreset<Abilities> => {
+    return preset
+}
