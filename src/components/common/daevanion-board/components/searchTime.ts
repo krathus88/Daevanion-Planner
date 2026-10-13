@@ -1,0 +1,2 @@
+export const SEARCH_TIME_OPTIONS = [10, 30, 60]
+export const DEFAULT_SEARCH_SECONDS = 30
