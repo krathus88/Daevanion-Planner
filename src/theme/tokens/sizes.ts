@@ -9,7 +9,8 @@ export const sizes = defineTokens.sizes({
     sidebarMaxH: { value: "calc(100vh - 7rem)" },
     board: { value: "880px" },
     searchTimeSelect: { value: "5.5rem" },
-    plannedColumn: { value: "2.875rem" },
+    // Fits "+N" in the abilities' planned column.
+    plannedColumn: { value: "1.5rem" },
     // Node shapes inside a 3.5rem board cell.
     node: {
         stat: { value: "1.875rem" },

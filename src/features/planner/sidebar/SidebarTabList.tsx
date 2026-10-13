@@ -18,7 +18,6 @@ export const SidebarTabList = ({
             value: "saved",
             label: savedCount > 0 ? `Saved · ${savedCount}` : "Saved",
         },
-        { value: "priorities", label: "Priorities" },
         { value: "all-boards", label: "All boards" },
     ]
 

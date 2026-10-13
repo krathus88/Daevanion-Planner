@@ -42,29 +42,10 @@ type UseOptimizeAllBoardsOptions = {
     onComplete: (applyResults: () => void) => void
 }
 
-const describeShortfalls = (
-    shortfalls: MinimumShortfall[],
-    specialNodes: { taken: number; total: number },
-) => {
-    const warnings: string[] = []
-    if (specialNodes.taken < specialNodes.total) {
-        warnings.push(
-            `Not enough points for every special node: ${specialNodes.taken} of ${specialNodes.total} taken.`,
-        )
-    }
-
-    if (shortfalls.length > 0) {
-        warnings.push(
-            `Not enough points for every minimum: ${shortfalls
-                .map(
-                    (shortfall) =>
-                        `${shortfall.name} +${shortfall.achieved} of +${shortfall.required}`,
-                )
-                .join(", ")}.`,
-        )
-    }
-
-    return warnings.join(" ")
+// What the last run couldn't fit in the budget.
+export type OptimizeShortfall = {
+    shortfalls: MinimumShortfall[]
+    specialNodes: { taken: number; total: number }
 }
 
 // Runs the all-board priority optimizer in a worker.
@@ -77,7 +58,9 @@ export const useOptimizeAllBoards = ({
         null,
     )
     const [message, setMessage] = useState("")
-    const [warning, setWarning] = useState("")
+    const [shortfall, setShortfall] = useState<OptimizeShortfall | null>(
+        null,
+    )
     const [isOptimizing, setIsOptimizing] = useState(false)
     const workerRef = useRef<Worker | null>(null)
 
@@ -206,7 +189,17 @@ export const useOptimizeAllBoards = ({
         try {
             const entries = recordPlans(data.plans)
             onComplete(() => applyPlans(entries))
-            setWarning(describeShortfalls(data.shortfalls, data.specialNodes))
+            const isShort =
+                data.shortfalls.length > 0 ||
+                data.specialNodes.taken < data.specialNodes.total
+            setShortfall(
+                isShort
+                    ? {
+                          shortfalls: data.shortfalls,
+                          specialNodes: data.specialNodes,
+                      }
+                    : null,
+            )
         } catch (error) {
             setMessage(
                 error instanceof Error
@@ -218,7 +211,7 @@ export const useOptimizeAllBoards = ({
 
     const optimizeAll = (searchSeconds: number) => {
         setMessage("")
-        setWarning("")
+        setShortfall(null)
         setProgress(null)
 
         let settings
@@ -287,7 +280,7 @@ export const useOptimizeAllBoards = ({
         workerRef.current = null
         setIsOptimizing(false)
         setProgress(null)
-        setWarning("")
+        setShortfall(null)
         setMessage("All-board optimization cancelled.")
     }
 
@@ -295,7 +288,7 @@ export const useOptimizeAllBoards = ({
         isOptimizing: isOptimizing,
         progress: progress,
         message: message,
-        warning: warning,
+        shortfall: shortfall,
         optimizeAll: optimizeAll,
         cancel: cancel,
     }
