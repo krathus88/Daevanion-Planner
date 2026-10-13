@@ -37,6 +37,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: HeartGore,
+            tooltip:
+                "Triggers on landing a Critical Hit, dealing X damage to up to 4 enemies within 4m and restores 100 MP.\n\n5 Stagger Gauge Damage",
+            cooldown: 5,
+            unlocks: [
+                { level: 8, effect: "Absorbs 0.7% HP" },
+                { level: 8, effect: "Engraves 1 Insignia for 10s on hit" },
+                {
+                    level: 8,
+                    effect: "Up to +20% Critical Hit when less targets hit",
+                },
+                { level: 12, effect: "Multi-Hit on hit" },
+                {
+                    level: 16,
+                    effect: "Resets [Heart Gore] cooldown on landing a Critical Hit",
+                },
+            ],
         },
         {
             id: "ie",
@@ -44,6 +60,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: InsigniaExplosion,
+            tooltip:
+                "Selects a target within 20m and deals X damage to up to 4 enemies within 4m, inflicting Stun for 3s.\nStun chance is doubled on NPC targets.\n\nDamage and Stun chance increase based on Insignia stacks.\n1 stack: X damage, 10% Stun chance\n2 stacks: X damage, 20% Stun chance\n3 stacks: X damage, 30% Stun chance\n4 stacks: X damage, 40% Stun chance\n5 stacks: X damage, 50% Stun chance\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "Adds rotate effect" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                {
+                    level: 8,
+                    effect: "Keep 2 stacks of Insignias after [Insignia Explosion]",
+                },
+                { level: 12, effect: "+1s Stun duration" },
+                { level: 16, effect: "-3s cooldown" },
+            ],
         },
         {
             id: "qs",
@@ -51,6 +80,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: QuickSlice,
+            tooltip:
+                "Deals X damage to up to 4 enemies within 4m and restores 100 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                { level: 8, effect: "Absorbs 0.7% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                {
+                    level: 12,
+                    effect: "-1s [Insignia Explosion] cooldown on hit",
+                },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and lands as a Critical Hit",
+                },
+            ],
         },
         {
             id: "a",
@@ -58,6 +102,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: Ambush,
+            tooltip:
+                "Deals X damage to a target within 4m. Increases damage by 30% on landing as a Back attack.\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "Engraves 2 Insignias for 10s on landing as a Back attack",
+                },
+                { level: 8, effect: "Absorbs 3% HP" },
+                { level: 8, effect: "Breaks Protective Shields on hit" },
+                {
+                    level: 12,
+                    effect: "50% chance to trigger [Whirlwind Slice] on hit",
+                },
+                { level: 16, effect: "+2 consecutive uses" },
+            ],
         },
         {
             id: "sr",
@@ -65,6 +125,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: StormRampage,
+            tooltip:
+                "Deals X damage to a target afflicted with Stagger within 4m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all skill cooldowns on hit" },
+            ],
         },
         {
             id: "def",
@@ -72,6 +141,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Adds [Storm Slice] Chain Skill" },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 20% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
         {
             id: "sro",
@@ -79,6 +164,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: SavageRoar,
+            tooltip:
+                "Deals X damage to up to 4 enemies within 4m and engraves 1 Insignia for 10s.\n\n2 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP consumed" },
+                { level: 8, effect: "+20% Skill Speed" },
+                {
+                    level: 8,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                { level: 12, effect: "-1s [Shadowstrike] cooldown on hit" },
+                {
+                    level: 16,
+                    effect: "Pulls nearby targets on using [Savage Smash]",
+                },
+            ],
         },
         {
             id: "ss",
@@ -86,6 +186,25 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: Shadowstrike,
+            tooltip:
+                "Moves behind a target within 20m and deals X damage, rotates, and inflicts Stun for 3s.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "+1s Stun duration" },
+                {
+                    level: 8,
+                    effect: "+20% caster Critical Damage Boost for 10s on hit",
+                },
+                {
+                    level: 8,
+                    effect: "50% chance to inflict Seal for 5s on hit",
+                },
+                {
+                    level: 12,
+                    effect: "50% chance to inflict Root for 5s on hit",
+                },
+                { level: 16, effect: "Changes to AoE Skill" },
+            ],
         },
         {
             id: "fs",
@@ -93,6 +212,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: FlashSlice,
+            tooltip:
+                "Moves to the opposite side of a target within 4m and deals X damage to up to 4 enemies, with a 40% chance to inflict Blind for 3s.\n100% chance to inflict Blind on NPC targets.\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "+2s Blind duration" },
+                { level: 8, effect: "+6m Range" },
+                { level: 8, effect: "Up to +20% damage when more targets hit" },
+                { level: 12, effect: "+1 consecutive use" },
+                {
+                    level: 16,
+                    effect: "50% chance to rotate and inflict Stun for 3s on hitting a target afflicted with Blind",
+                },
+            ],
         },
         {
             id: "i",
@@ -100,6 +232,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: Infiltrate,
+            tooltip:
+                "Moves behind a target within 10m and deals X damage with a 50% chance to inflict Blind for 3s after using [Dodge] or while flying.\n100% chance to inflict Blind on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "Restores 300 Stamina on landing [Infiltrate]",
+                },
+                { level: 8, effect: "+10m [Infiltrate] range" },
+                {
+                    level: 8,
+                    effect: "Breaks Protective Shields on landing [Infiltrate]",
+                },
+                { level: 12, effect: "Adds [Dark Strike] Chain Skill" },
+                { level: 16, effect: "+20% [Infiltrate] Blind Chance" },
+            ],
         },
         {
             id: "ws",
@@ -107,6 +255,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: WhirlwindSlice,
+            tooltip:
+                "Deals X damage to a target within 4m with a 40% chance to rotate and inflict Stun for 3s on Evasion.\n100% to inflict Stun on NPC targets.\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 8, effect: "Changes to AoE damage" },
+                { level: 8, effect: "+16m range" },
+                { level: 12, effect: "+20% Stun Chance" },
+                {
+                    level: 16,
+                    effect: "25% chance to reset [Whirlwind Slice] cooldown on Evasion",
+                },
+            ],
         },
         {
             id: "sf",
@@ -114,6 +275,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 6,
             icon: ShadowFall,
+            tooltip:
+                "Moves to a target afflicted with Stun within 10m, deals X damage, and inflicts Knockdown for 3s.\nHas a 5% chance to trigger on attacking a target with Incapacitated Immunity.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Absorbs 10% HP" },
+                { level: 8, effect: "Engraves 3 Insignias for 10s on hit" },
+                { level: 8, effect: "-5s cooldown" },
+                { level: 12, effect: "+1s Knockdown duration" },
+                {
+                    level: 16,
+                    effect: "Can be used on targets afflicted with Blind",
+                },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +297,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: RearSmite,
+            tooltip:
+                "Increases the caster's Back Attack Damage Boost by 3%, PvE Damage Boost by 3%, and PvP Damage Boost by 1.5%.",
         },
         {
             id: "pew",
@@ -130,6 +306,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: ExploitWeakness,
+            tooltip:
+                "Increases caster's Critical Hit by 100. Has a 25% chance to increase Attack by 5.5% for 10s, and a 7% chance to summon up to 5 clones on landing a Critical Hit. Each clone deals X damage and inflicts Insignia that lasts for 10s (up to 5 Insignia stacks).\n\nClone cooldown: 1s\nAttack increase cooldown: 1s",
         },
         {
             id: "pas",
@@ -137,6 +315,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: AssaultStance,
+            tooltip: "Increases the caster's Critical Damage Boost by 6%.",
         },
         {
             id: "pd",
@@ -144,6 +323,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: Determination,
+            tooltip:
+                "Deals X damage when landing an attack on a target with 30% HP or less.\n\nCooldown: 1s",
         },
         {
             id: "pih",
@@ -151,6 +332,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: ImpactHit,
+            tooltip:
+                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
         },
         {
             id: "pams",
@@ -158,6 +341,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: AmbushStance,
+            tooltip:
+                "Grants Ambush Stance for 10s when using skills that rush or involve movement.\nAmbush Stance: Has a 50% chance to deal X damage on landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "phss",
@@ -165,6 +350,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: HeightenedSixthSense,
+            tooltip:
+                "Increases the caster's Evasion by 200 and HP by 150. Increases Max HP by an extra 6% and restores 85-102 HP on Evasion.\n\nCooldown: 3s",
         },
         {
             id: "prc",
@@ -172,6 +359,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 6,
             icon: RevitalizationContract,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
         {
             id: "pap",
@@ -179,6 +368,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 99,
             icon: ApplyPoison,
+            tooltip:
+                "Has a 15% chance to reduce the target's Incoming Heal by 12% and inflict Poison for 10s on landing an attack. Poison deals X Damage over Time every 1s.\n\nCooldown: 1s",
         },
         {
             id: "pdb",
@@ -186,6 +377,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 99,
             icon: DefenseBreak,
+            tooltip:
+                "Reduces the target's Defense by 12% and Status Effect Resist by 11% for 10s when landing an attack on a target afflicted with Stagger or an Impact-type status.\n\nCooldown: 20s",
         },
     ],
     assignments: {

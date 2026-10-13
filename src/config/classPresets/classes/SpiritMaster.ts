@@ -37,6 +37,18 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: ElementalFusion,
+            tooltip:
+                "The Spiritmaster receives an element each time a Spirit uses its skill. Grants Four Elements status and the ability to use the [Elemental Fusion] skill upon reaching 4 stacks. [Elemental Fusion] can only be used when granted Four Elements, and using [Elemental Fusion] will immediately remove Four Elements. Cannot receive additional elements while in Four Elements status.\n\nDeals X damage to a target within 20m.\n\n10 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "Changes to AoE Skill" },
+                { level: 8, effect: "Extra damage after 3s on hit" },
+                { level: 8, effect: "+10 all Element Boost on hit" },
+                {
+                    level: 12,
+                    effect: "Changes to Charge Skill, dealing up to 200% more damage",
+                },
+                { level: 16, effect: "25% chance to regain Four Elements" },
+            ],
         },
         {
             id: "c",
@@ -44,6 +56,18 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: Combustion,
+            tooltip:
+                "Selects a target within 20m and deals X Fire damage to up to 4 enemies within 4m of the target.\n\n3 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP consumed" },
+                {
+                    level: 8,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                { level: 8, effect: "+100 Skill Accuracy" },
+                { level: 12, effect: "+20% Skill Speed" },
+                { level: 16, effect: "Adds [Ashy Call] Chain Skill" },
+            ],
         },
         {
             id: "sfs",
@@ -51,6 +75,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: SummonFireSpirit,
+            tooltip:
+                "Summons a Fire Spirit.\nThe Fire Spirit rushes towards a target within 20m and uses a skill that deals X damage to up to 4 enemies within 5m.\nThe Fire Spirit fights alongside the caster using basic attacks, with a 15% chance to use its skill each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Fire Spirit's Attack and Defense by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "-50% MP Cost" },
+                { level: 8, effect: "+20% Fire Spirit Critical Hit damage" },
+                {
+                    level: 8,
+                    effect: "10% chance to activate skill when Fire Spirit lands attack",
+                },
+                {
+                    level: 12,
+                    effect: "5% chance to inflict Knockdown for 3s on landing Fire Spirit attack",
+                },
+                { level: 16, effect: "+20% Fire Spirit Stats" },
+            ],
         },
         {
             id: "cs",
@@ -58,6 +98,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: ColdShock,
+            tooltip:
+                "Deals X Water damage to a target within 20m and restores 100 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                { level: 8, effect: "Absorbs 1% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                {
+                    level: 12,
+                    effect: "+2% Attack on landing [Earth Tremor] (Up to 5 stacks)",
+                },
+                {
+                    level: 16,
+                    effect: "10% chance to remove 1 buff on landing [Earth Tremor]",
+                },
+            ],
         },
         {
             id: "swas",
@@ -65,6 +120,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: SummonWaterSpirit,
+            tooltip:
+                "Summons a Water Spirit.\nThe Water Spirit uses a skill that deals X Water damage to a target within 20m.\nThe Water Spirit fights alongside the caster using basic attacks, with a 15% chance to use its skill and restoring 20 of the Spiritmaster's MP each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Water Spirit's Attack and Critical Hit by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "-50% MP Cost" },
+                { level: 8, effect: "+10% Water Spirit Attack" },
+                {
+                    level: 8,
+                    effect: "10% chance to activate skill when Water Spirit lands attack",
+                },
+                {
+                    level: 12,
+                    effect: "5% chance to inflict Root for 2s on landing Water Spirit attack",
+                },
+                { level: 16, effect: "+20% Water Spirit Stats" },
+            ],
         },
         {
             id: "jc",
@@ -72,6 +143,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: JointstrikeCurse,
+            tooltip:
+                "Selects a target within 20m and deals X damage to up to 4 enemies within 4m of the target, and inflicts Curse.\n\nCurse: Deals X Damage over Time every 1s and reduces damage dealt to the Spiritmaster by 10% for 5s.\n\nThe Spirit joins for a coordinated assault.\nFire: X AoE damage\nWater: X damage\nEarth: X damage and reduces Status Effect Resist by 10%\nWind: X AoE damage and X Damage over Time\nAncient: X AoE damage\n\n10 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "+2s Curse duration" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "-2s cooldown" },
+                {
+                    level: 16,
+                    effect: "[Jointstrike: Curse] ignores Block and Evasion and lands as a Critical Hit",
+                },
+            ],
         },
         {
             id: "dc",
@@ -79,6 +163,18 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: DimensionalControl,
+            tooltip:
+                "A skill that is triggered briefly each time a Spirit uses its skill.\nSelects a target within 20m and deals X damage to up to 4 enemies within 4m of the target and inflicts Slow, reducing Move Speed by 40% for 3s on hit. Restores 100 MP.\n\n5 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "+20% Slow effect" },
+                { level: 8, effect: "Extra damage after 3s on hit" },
+                { level: 8, effect: "+50% Multi-Hit chance on hit" },
+                { level: 12, effect: "Pull in nearby targets" },
+                {
+                    level: 16,
+                    effect: "30% chance to inflict Root for 3s on hit",
+                },
+            ],
         },
         {
             id: "ses",
@@ -86,6 +182,25 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: SummonEarthSpirit,
+            tooltip:
+                "Summons an Earth Spirit.\nThe Earth Spirit uses a skill that deals X Earth damage to a target within 20m and increases Enmity by 3750. Has a 30% chance to inflict Taunt for 2s if the target is a player.\nThe Earth Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and increasing Enmity each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Earth Spirit's Defense and HP by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "-50% MP Cost" },
+                {
+                    level: 8,
+                    effect: "+20% PvE Damage Tolerance and +10 PvP Damage Tolerance to Earth Spirit",
+                },
+                {
+                    level: 8,
+                    effect: "10% chance to activate skill when Earth Spirit lands attack",
+                },
+                {
+                    level: 12,
+                    effect: "5% chance to restore 5% of Spirit HP when landing Earth Spirit attack",
+                },
+                { level: 16, effect: "+20% Earth Spirit Stats" },
+            ],
         },
         {
             id: "rs",
@@ -93,6 +208,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: RapidScattershot,
+            tooltip:
+                "Deals X damage to a target afflicted with Stagger within 20m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all skill cooldowns on hit" },
+            ],
         },
         {
             id: "swis",
@@ -100,6 +224,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 98,
             icon: SummonWindSpirit,
+            tooltip:
+                "Summons a Wind Spirit.\nThe Wind Spirit selects a target within 20m and uses a skill that deals X Wind damage to up to 4 enemies within 5m of the target and restores 134-147 HP to the Spiritmaster.\nThe Wind Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and restores 1.5% of the Spiritmaster's HP each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Wind Spirit's Accuracy and Critical Hit by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "-50% MP Cost" },
+                { level: 8, effect: "+20% Wind Spirit Critical Hit" },
+                {
+                    level: 8,
+                    effect: "10% chance to activate skill when Wind Spirit lands attack",
+                },
+                {
+                    level: 12,
+                    effect: "5% chance to reduce enemy Attack Speed by 30% for 10s on landing Wind Spirit attack",
+                },
+                { level: 16, effect: "+20% Wind Spirit Stats" },
+            ],
         },
         {
             id: "sc",
@@ -107,6 +247,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 99,
             icon: SoulsCry,
+            tooltip:
+                "Deals X damage to a target within 20m, with a 70% chance to inflict Fear for 5s.\n100% chance to inflict Fear on NPC targets. \n\n15 Stagger Gauge Damage",
+            cooldown: 45,
+            unlocks: [
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 8, effect: "Inflicts Root for 5s" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "-10s cooldown" },
+                { level: 16, effect: "+2s Fear duration" },
+            ],
         },
         {
             id: "def",
@@ -114,6 +264,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Adds [Curse of Despair] Chain Skill" },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 20% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +289,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: SpiritStrike,
+            tooltip:
+                "Increases the caster's PvE Damage Boost by 6%, PvP Damage Boost by 3%, and Perfect Chance by 0.4%. Increases the Spirit's PvE Damage Boost by 6%, PvP Damage Boost by 3%, and Perfect Chance 0.4%.",
         },
         {
             id: "pmf",
@@ -130,6 +298,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: MentalFocus,
+            tooltip:
+                "Increases the caster's Mental-type Chance(s) by 11% and Double Chance by 0.3%.",
         },
         {
             id: "peu",
@@ -137,6 +307,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: ElementUnification,
+            tooltip:
+                "Increases Critical Damage Boost by 1.1% for the caster and Spirit for 10s upon landing a Spirit skill attack. Stacks up to 5 times.\n\nCooldown: 1s",
         },
         {
             id: "psr",
@@ -144,6 +316,9 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: SpiritRevitalization,
+            tooltip:
+                "Has a 11% chance to reduce the cooldown of Spirit summon skills by 1s on hit. Immediately heals the Spirit for 12% of its Max HP when its HP is 50% or less.\n\nCooldown: 1s\nSpirit Healing Cooldown: 30s",
+            cooldown: 30,
         },
         {
             id: "psd",
@@ -151,6 +326,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: SpiritsDescent,
+            tooltip:
+                "Has a 50% chance to deal X extra damage whenever the Spiritmaster's attacks land within 10 seconds of summoning a Spirit. Duration is increased to 30s when an Ancient Spirit is summoned.\n\nCooldown: 1s",
         },
         {
             id: "pcc",
@@ -158,6 +335,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: ConsecutiveCountercurrent,
+            tooltip:
+                "Has a 50% chance to deal X extra damage on landing an attack on a target that is taking Damage over Time.\n\nCooldown: 1s",
         },
         {
             id: "pc",
@@ -165,6 +344,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: Corrode,
+            tooltip:
+                "Increases the caster's Critical Hit by 100, with a 50% chance to deal X damage on landing a Critical Hit.\n\nCooldown: 1s",
         },
         {
             id: "psp",
@@ -172,6 +353,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: SpiritProtection,
+            tooltip:
+                "Increases the caster's Defense by 2% and Spirit's Defense by 2%.",
         },
         {
             id: "psc",
@@ -179,6 +362,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: SpiritCommunion,
+            tooltip:
+                "Increases the caster's Accuracy by 100. Has a 10% chance to restore the caster's and Spirit's HP by 182-200 when landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "prc",
@@ -186,6 +371,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: RevitalizationContract,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
     ],
     assignments: {

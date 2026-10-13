@@ -37,6 +37,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: KeenStrike,
+            tooltip:
+                "Deals X damage to up to 4 enemies within 4m and increases Enmity. Restores 100 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                { level: 8, effect: "Absorbs 1% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                { level: 12, effect: "-1s [Ruinous Blow] cooldown on hit" },
+                { level: 16, effect: "Adds [Reckless Strike] Chain Skill" },
+            ],
         },
         {
             id: "reb",
@@ -44,6 +53,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: RendingBlow,
+            tooltip:
+                "Deals X damage to up to 4 enemies within 4m and increases Enmity.\n\n2 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP consumed" },
+                { level: 8, effect: "+200 Block while using skill" },
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 12,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                {
+                    level: 16,
+                    effect: "Restores 50 MP on landing a Critical Hit",
+                },
+            ],
         },
         {
             id: "ls",
@@ -51,6 +75,28 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: LeapingSlam,
+            tooltip:
+                "Leaps to a target within 20m and deals X damage.\n\n10 Stagger Gauge Damage",
+            cooldown: 15,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "Prepare for Battle effect on the caster for 3s",
+                },
+                {
+                    level: 8,
+                    effect: "50% chance to trigger [Ankle Slice] on hit",
+                },
+                { level: 8, effect: "Resets cooldown on defeating an enemy" },
+                {
+                    level: 12,
+                    effect: "+20% PvE Damage Tolerance and +10 PvP Damage Tolerance for 3s",
+                },
+                {
+                    level: 16,
+                    effect: "Changes to AoE skill and pulls in enemies",
+                },
+            ],
         },
         {
             id: "mb",
@@ -58,6 +104,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: MockingBlade,
+            tooltip:
+                "Deals X damage to a target within 4m and inflicts Knockdown for 3s. Changes skill motion when attacking targets with Incapacitated Immunity.\n\n15 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "Absorbs 4% HP, absorbs 15% HP of target with Incapacitated Immunity",
+                },
+                { level: 8, effect: "Changes to AoE damage on down strike" },
+                { level: 8, effect: "Adds 2 additional strikes" },
+                { level: 12, effect: "+1s Knockdown duration" },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and lands as Multi-Hit",
+                },
+            ],
         },
         {
             id: "os",
@@ -65,6 +127,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: OverheadSlam,
+            tooltip:
+                "Deals X damage to a target afflicted with Knockdown within 4m and increases Enmity.\nHas a 7% chance to trigger when attacking a target with Incapacitated Immunity.\n\n5 Stagger Gauge Damage",
+            cooldown: 5,
+            unlocks: [
+                { level: 8, effect: "Absorbs 0.7% HP" },
+                { level: 8, effect: "Changes to AoE Skill" },
+                { level: 8, effect: "Adds [Upward Strike] Chain Skill" },
+                { level: 12, effect: "Critical Hit on hit" },
+                { level: 16, effect: "Remove cooldown" },
+            ],
         },
         {
             id: "sar",
@@ -72,6 +144,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: SwordAuraRampage,
+            tooltip:
+                "Deals X damage to a target afflicted with Stagger within 4m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all skill cooldowns on hit" },
+            ],
         },
         {
             id: "ans",
@@ -79,6 +160,25 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: AnkleSlice,
+            tooltip:
+                "Selects a target within 4m and deals X damage to up to 4 enemies within 4m with a 50% chance to inflict Root for 3s on Block.\n100% chance to inflict Root on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                {
+                    level: 8,
+                    effect: "30% chance to inflict Knockdown for 3s on landing [Ankle Slice]",
+                },
+                { level: 8, effect: "Adds [Ankle Smash] Chain Skill" },
+                { level: 8, effect: "+16m [Ankle Slice] range" },
+                {
+                    level: 12,
+                    effect: "Ignores Block and Evasion and lands as Multi-Hit",
+                },
+                {
+                    level: 16,
+                    effect: "25% chance to reset [Ankle Slice] cooldown on Block",
+                },
+            ],
         },
         {
             id: "cw",
@@ -86,6 +186,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 99,
             icon: CrushingWave,
+            tooltip:
+                "Deals X damage to up to 4 enemies within 5m of the caster.\n\n5 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Absorbs 2% HP" },
+                {
+                    level: 8,
+                    effect: "Restores 50 MP on landing a Critical Hit",
+                },
+                { level: 8, effect: "Up to +20% damage when more targets hit" },
+                {
+                    level: 12,
+                    effect: "Resets cooldown on landing a Critical Hit",
+                },
+                { level: 16, effect: "50% chance to pull" },
+            ],
         },
         {
             id: "rs",
@@ -93,6 +209,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: RushStrike,
+            tooltip:
+                "Moves to a target within 10m and deals X damage with a 30% chance to inflict Knockdown for 3s after using [Dodge] or while flying.\n100% chance to inflict Knockdown on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 20,
+            unlocks: [
+                { level: 8, effect: "Restores 300 Stamina on hit" },
+                { level: 8, effect: "+10m range" },
+                {
+                    level: 8,
+                    effect: "Changes to Charge Skill and deals AoE damage",
+                },
+                { level: 12, effect: "-10s cooldown" },
+                { level: 16, effect: "+25% Knockdown Chance" },
+            ],
         },
         {
             id: "aes",
@@ -100,6 +229,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: AerialSnare,
+            tooltip:
+                "Deals X damage to a target afflicted with Knockdown within 4m with a 50% chance to inflict Airborne for 3s.\n100% chance to inflict Airborne on NPC targets.\nHas a 5% chance to trigger on attacking a target with Incapacitated Immunity.\n\n20 Stagger Gauge Damage",
+            cooldown: 45,
+            unlocks: [
+                { level: 8, effect: "Multi-Hit on hit" },
+                { level: 8, effect: "+25% [Aerial Snare] Airborne Chance" },
+                {
+                    level: 8,
+                    effect: "+100% damage to targets with Incapacitated Immunity",
+                },
+                { level: 12, effect: "Adds [Forced Fall] Chain Skill" },
+                { level: 16, effect: "-50% [Aerial Snare] cooldown" },
+            ],
         },
         {
             id: "rub",
@@ -107,6 +249,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: RuinousBlow,
+            tooltip:
+                "Rushes to a target within 7.5m to deal X damage to up to 4 enemies nearby and grants Prepare for Battle for 20s.\nPrepare for Battle: Increases PvE Damage Boost by 20%, PvP Damage Boost by 10%, Critical Hit by 100, and Status Effect Chance by 15%\n\n25 Stagger Gauge Damage",
+            cooldown: 45,
+            unlocks: [
+                { level: 8, effect: "+20% Skill Speed" },
+                { level: 8, effect: "+12.5m Range" },
+                { level: 8, effect: "+30% Skill Critical Hit" },
+                { level: 12, effect: "Extra damage on hit" },
+                {
+                    level: 16,
+                    effect: "Ignores Block and Evasion and lands as Multi-Hit",
+                },
+            ],
         },
         {
             id: "def",
@@ -114,6 +269,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Adds [Wrath Burst] Chain Skill" },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 20% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +294,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: SurvivalStance,
+            tooltip:
+                "Increases the caster's HP by 200. Increases Max HP by an additional 7%, Natural HP Regen by 20, PvE Damage Tolerance by 5.5%, and PvP Damage Tolerance by 2.75%.",
         },
         {
             id: "ppa",
@@ -130,6 +303,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 99,
             icon: ProtectionArmor,
+            tooltip:
+                "Increases the caster's Block by 200 and restores 53-64 HP on Block.\n\nCooldown: 1s",
         },
         {
             id: "pba",
@@ -137,6 +312,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: BloodAbsorption,
+            tooltip:
+                "The caster has a 50% chance to restore 20-24 HP and 1.6% Max HP on landing an attack.\nImmediately restores 26% Max HP when HP drops to 50% or less.\n\nCooldown: 1s\nInstant Healing Cooldown: 60s",
         },
         {
             id: "piw",
@@ -144,6 +321,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: IdentifyWeakness,
+            tooltip:
+                "Increases the caster's Critical Hit by 100 and Perfect Chance by 0.5%.",
         },
         {
             id: "pap",
@@ -151,6 +330,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: AttackPreparation,
+            tooltip:
+                "Increases the caster's PvE Damage Boost by 5.5%, PvP Damage Boost by 2.75%, Defense by 2%, and Accuracy by 100.",
         },
         {
             id: "pih",
@@ -158,6 +339,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: ImpactHit,
+            tooltip:
+                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
         },
         {
             id: "pdi",
@@ -165,6 +348,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: DestructiveImpulse,
+            tooltip:
+                "Deals X extra damage to targets afflicted with Stagger or an Impact-type status.",
         },
         {
             id: "pec",
@@ -172,6 +357,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: ExperiencedCounterstrike,
+            tooltip:
+                "Increases Front Attack Damage Boost by 0.4%. Increases PvE Damage Boost by 5.4%, PvP Damage Boost by 2.7% for 20s for the caster and party members on Block.\n\nPvE Damage Boost and PvP Damage Boost does not stack with Templar's [Fury] effect.",
         },
         {
             id: "psw",
@@ -179,6 +366,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: SurvivalWillpower,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "pmb",
@@ -186,6 +375,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: MurderousBurst,
+            tooltip:
+                "Grants a stack of Menace for 3s when landing an attack. Removes Menace at 5 stacks and deals X damage to up to 4 enemies within 5m of the caster and increases the caster's Critical Damage Boost by 5.5% for 3s.",
         },
     ],
     assignments: {

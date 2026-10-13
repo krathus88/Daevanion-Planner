@@ -10,6 +10,16 @@ export type ClassAbility = {
     icon?: string
     // Shown under the name and cost in the node's tooltip.
     tooltip?: string
+    // Seconds; left out when there is none.
+    cooldown?: number
+    // Specializations unlocked as the skill levels up, listed in the tooltip.
+    // Levels are per unlock since they differ between skills and stigmas.
+    unlocks?: readonly AbilityUnlock[]
+}
+
+export type AbilityUnlock = {
+    level: number
+    effect: string
 }
 
 export type ClassPreset<

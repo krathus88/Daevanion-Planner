@@ -37,6 +37,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 1,
             icon: Hellfire,
+            tooltip:
+                "Selects a target within 20m and deals X Fire damage to up to 4 enemies within 4m of the target.\n\nMax 3 Charge Levels\n20-35 Stagger Gauge Damage",
+            cooldown: 45,
+            unlocks: [
+                { level: 8, effect: "+30% Skill Speed" },
+                { level: 8, effect: "Fire Damage over Time for 10s on hit" },
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 12,
+                    effect: "Ignores Block and Evasion and lands as Multi-Hit",
+                },
+                { level: 16, effect: "-15s cooldown" },
+            ],
         },
         {
             id: "woc",
@@ -44,6 +57,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: WishOfConcentration,
+            tooltip:
+                "Increases the caster's Attack by 10% and Accuracy by 100 for 10s.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Reduces MP Cost by 10%" },
+                { level: 8, effect: "+10% additional Attack" },
+                { level: 8, effect: "+500 Max MP" },
+                { level: 12, effect: "+10% Combat Speed" },
+                { level: 16, effect: "-10s all skill cooldowns" },
+            ],
         },
         {
             id: "b",
@@ -51,6 +74,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: Blaze,
+            tooltip:
+                "Deals X Fire damage to a target afflicted with Fire Mark within 20m and restores 100 MP.\n\n7 Stagger Gauge Damage",
+            cooldown: 5,
+            unlocks: [
+                { level: 8, effect: "Absorbs 3% HP" },
+                { level: 8, effect: "+50% MP restored" },
+                { level: 8, effect: "Delayed Damage after 3s" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                {
+                    level: 16,
+                    effect: "-3s [Wish of Concentration] cooldown on hit",
+                },
+            ],
         },
         {
             id: "f",
@@ -58,6 +94,16 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: Firestorm,
+            tooltip:
+                "Deals X Fire damage to a target within 20m.\n\n5 Stagger Gauge Damage",
+            cooldown: 5,
+            unlocks: [
+                { level: 8, effect: "-50% MP Cost" },
+                { level: 8, effect: "+20% Skill Speed" },
+                { level: 8, effect: "-60% Incoming Heal for 5s on hit" },
+                { level: 12, effect: "-2s [Hellfire] cooldown per fireball" },
+                { level: 16, effect: "+15% damage per fireball, up to +75%" },
+            ],
         },
         {
             id: "bw",
@@ -65,6 +111,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 2,
             icon: BittercoldWind,
+            tooltip:
+                "Selects a target within 20m and summons a Bittercold Wind lasting for 2s at their location. Deals X Water damage to up to 4 enemies within 4m of the Bittercold Wind, with a 60% chance to inflict Root for 3s.\n100% chance to inflict Root on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 15,
+            unlocks: [
+                { level: 8, effect: "+1s [Bittercold Wind] summon duration" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 8, effect: "Pull effect" },
+                {
+                    level: 12,
+                    effect: "Ignores Block and Evasion and lands as a Critical Hit",
+                },
+                { level: 16, effect: "-1s [Frost] cooldown on hit" },
+            ],
         },
         {
             id: "ws",
@@ -72,6 +131,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: WintersShackles,
+            tooltip:
+                "Selects a target within 20m and deals X Water damage to up to 4 enemies within 4m. Inflicts Slow for 3s.",
+            cooldown: 45,
+            unlocks: [
+                { level: 8, effect: "Changes to mobile skill" },
+                {
+                    level: 8,
+                    effect: "30% chance to inflict Frost for 3s on landing [Winter's Shackles]",
+                },
+                {
+                    level: 8,
+                    effect: "+20% PvE Damage Boost and +10% PvP Damage Boost for 5s on landing [Winter's Shackles]",
+                },
+                { level: 12, effect: "Adds [Winter's Illusion] Chain Skill" },
+                { level: 16, effect: "-15s [Winter's Shackles] cooldown" },
+            ],
         },
         {
             id: "fa",
@@ -79,6 +154,21 @@ export default defineClassPreset({
             type: "skill",
             priority: 3,
             icon: FlameArrow,
+            tooltip:
+                "Deals X Fire damage to a target within 20m and restores 100 MP.",
+            unlocks: [
+                { level: 8, effect: "+20% MP restored" },
+                { level: 8, effect: "Absorbs 1% HP" },
+                { level: 8, effect: "+50% Multi-Hit on hit" },
+                {
+                    level: 12,
+                    effect: "+5% Fire Damage Boost for 10s on activating [Pyroclasm]",
+                },
+                {
+                    level: 16,
+                    effect: "Reset [Blaze] cooldown on landing [Pyroclasm]",
+                },
+            ],
         },
         {
             id: "ic",
@@ -86,6 +176,24 @@ export default defineClassPreset({
             type: "skill",
             priority: 4,
             icon: IceChain,
+            tooltip:
+                "Selects a target within 20m and deals X Water damage to up to 4 enemies within 4m of the target and inflicts Slow, reducing Move Speed by 40% for 5s.\n\n2 Stagger Gauge Damage",
+            unlocks: [
+                { level: 8, effect: "-20% MP Cost" },
+                { level: 8, effect: "+20% Skill Speed" },
+                {
+                    level: 8,
+                    effect: "Deals up to 12% more damage when less targets are hit",
+                },
+                {
+                    level: 12,
+                    effect: "-1s [Winter's Shackles] cooldown on hit",
+                },
+                {
+                    level: 16,
+                    effect: "5% chance to inflict Frost for 2s on landing [Cold Wave]",
+                },
+            ],
         },
         {
             id: "d",
@@ -93,6 +201,22 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: Defiance,
+            tooltip:
+                "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
+            cooldown: 60,
+            unlocks: [
+                { level: 8, effect: "Adds [Curse: Old Tree] Chain Skill" },
+                {
+                    level: 8,
+                    effect: "Restores 1000 Stamina on using [Defiance]",
+                },
+                { level: 8, effect: "Restores 20% HP on using [Defiance]" },
+                { level: 12, effect: "+2s Tenacity duration" },
+                {
+                    level: 16,
+                    effect: "+50% PvE Damage Tolerance and +25% PvP Damage Tolerance for Tenacity duration",
+                },
+            ],
         },
         {
             id: "fs",
@@ -100,6 +224,15 @@ export default defineClassPreset({
             type: "skill",
             priority: 5,
             icon: FlameScattershot,
+            tooltip:
+                "Deals X Fire damage to a target afflicted with Stagger within 20m.",
+            unlocks: [
+                { level: 8, effect: "Absorbs 5% HP" },
+                { level: 8, effect: "Restores 120 MP" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 12, effect: "Multi-Hit on hit" },
+                { level: 16, effect: "-1s all skill cooldowns on hit" },
+            ],
         },
         {
             id: "fb",
@@ -107,6 +240,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 99,
             icon: FrostBurst,
+            tooltip:
+                "Selects a target afflicted with Frost within 20m and deals X Water damage to up to 4 enemies within 4m of the target. Has a 7% chance to trigger on attacking a target with Incapacitated Immunity.\n\n7 Stagger Gauge Damage",
+            cooldown: 10,
+            unlocks: [
+                { level: 8, effect: "Absorbs 7% HP" },
+                { level: 8, effect: "Changes to mobile skill" },
+                { level: 8, effect: "75% chance to Knock Back 2m" },
+                {
+                    level: 12,
+                    effect: "Ignores Block and Evasion and lands as a Critical Hit",
+                },
+                { level: 16, effect: "50% chance to reset cooldown" },
+            ],
         },
         {
             id: "fr",
@@ -114,6 +260,19 @@ export default defineClassPreset({
             type: "skill",
             priority: 99,
             icon: Frost,
+            tooltip:
+                "Selects a target within 20m and deals X Water damage to up to 4 enemies within 4m of the target, with a 50% chance to inflict Frost on the target for 3s.\n100% chance to inflict Frost on NPC targets.\n\n10 Stagger Gauge Damage",
+            cooldown: 30,
+            unlocks: [
+                { level: 8, effect: "Restores 200 MP" },
+                { level: 8, effect: "-5s cooldown" },
+                {
+                    level: 8,
+                    effect: "Reset [Frost Burst] cooldown on landing Frost",
+                },
+                { level: 12, effect: "+25% PC target Frost Chance" },
+                { level: 16, effect: "+1s Frost duration" },
+            ],
         },
 
         // PASSIVES
@@ -123,6 +282,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: RobeOfFlame,
+            tooltip:
+                "Increases the caster's Accuracy by 100, PvE Damage Boost by 1%, PvP Damage Boost by 0.5%, and Double Chance by 0.2%.",
         },
         {
             id: "proe",
@@ -130,6 +291,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: RobeOfEarth,
+            tooltip:
+                "Increases Max MP by 7% and Natural MP Regen by 5. Increases Critical Hit by 105 when MP is 50% or more.",
         },
         {
             id: "pfm",
@@ -137,6 +300,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: FireMark,
+            tooltip:
+                "Inflicts Fire Mark for 5s on landing a Fire attack.\nFire Mark: Has a 20% chance to take X extra damage when taking Fire damage while afflicted with Fire Mark.\n\nCooldown: 1s",
         },
         {
             id: "pgoe",
@@ -144,6 +309,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 3,
             icon: GraceOfEnhancement,
+            tooltip:
+                "Increases the caster's PvE Damage Boost by 20% and PvP Damage Boost by 10% when the caster's MP is 25% or more, and has a 50% chance to deal X damage on landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "pcs",
@@ -151,6 +318,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: ColdSnap,
+            tooltip:
+                "Has a 50% chance to deal X extra damage when landing an attack on a target afflicted with Slow.\n\nCooldown: 1s",
         },
         {
             id: "pve",
@@ -158,6 +327,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: VitalityEvaporation,
+            tooltip:
+                "Deals X damage on hit if the target's HP is above 70%.\n\nCooldown: 1s",
         },
         {
             id: "proc",
@@ -165,6 +336,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 5,
             icon: RobeOfCold,
+            tooltip:
+                "Increases the caster's Defense by 1% and Critical Hit Resist by 55 and inflicts Slow on an enemy when struck by them, reducing the enemy's Move Speed by 25% for 2s.\n\nCooldown: 10s",
         },
         {
             id: "pae",
@@ -172,6 +345,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 6,
             icon: AbsorbEssence,
+            tooltip:
+                "Increases Ailment-type and Mental-type Chance by 10.7% and restores 25 MP on landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "pgor",
@@ -179,6 +354,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 6,
             icon: GraceOfResistance,
+            tooltip:
+                "Increases the caster's Mental-type Resist and Impact-type Resist by 11.2%.",
         },
         {
             id: "prc",
@@ -186,6 +363,8 @@ export default defineClassPreset({
             type: "passive",
             priority: 6,
             icon: RevitalizationContract,
+            tooltip:
+                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
     ],
     assignments: {
