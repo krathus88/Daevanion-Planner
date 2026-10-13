@@ -8,6 +8,8 @@ export type ClassAbility = {
     type: ClassAbilityType
     priority?: number
     icon?: string
+    // Shown under the name and cost in the node's tooltip.
+    tooltip?: string
 }
 
 export type ClassPreset<

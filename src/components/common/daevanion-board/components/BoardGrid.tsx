@@ -251,6 +251,10 @@ export const BoardGrid = ({
                                     adjacentAvailable={adjacentAvailable}
                                     targeted={targetCells.has(key)}
                                     ability={ability}
+                                    stat={layout.nodeStats[key]}
+                                    specialBonus={
+                                        layout.specialNodeBonuses[key]
+                                    }
                                     mainNode={layout.mainNode}
                                     startNode={layout.startNode}
                                     specialNodes={layout.specialNodes}

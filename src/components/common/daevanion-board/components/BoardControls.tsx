@@ -7,6 +7,7 @@ import type {
 } from "./BoardWorkspace"
 import { BoardModePanel } from "./BoardModePanel"
 import { AbilityPriorityList } from "./AbilityPriorityList"
+import { StatPriorityList } from "./StatPriorityList"
 import { SavedPanel } from "./SavedPanel"
 import { SharedPointAllocation } from "./SharedPointAllocation"
 
@@ -205,7 +206,10 @@ export const BoardControls = (props: BoardWorkspaceProps) => {
                     </Tabs.Content>
 
                     <Tabs.Content p="4" value="priorities">
-                        <AbilityPriorityList classPreset={classPreset} />
+                        <Flex direction="column" gap="6">
+                            <AbilityPriorityList classPreset={classPreset} />
+                            <StatPriorityList classPreset={classPreset} />
+                        </Flex>
                     </Tabs.Content>
 
                     <Tabs.Content p="4" value="all-boards">

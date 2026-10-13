@@ -12,6 +12,11 @@ import {
     type PlannerProgress,
 } from "../logic/plannerLogic"
 import { formatPlanTime } from "../logic/formatPlanTime"
+import { routeStatScore, statWeights } from "../config/stats"
+import {
+    DEFAULT_STAT_SETTINGS,
+    readStatSettings,
+} from "../storage/statPriorities"
 import {
     writePlannerHistory,
     type ActivePlanner,
@@ -20,7 +25,15 @@ import {
 } from "../storage/boardStorage"
 
 type SerializedPlannerResult =
-    { ok: true; path: string[]; cost: number } | { ok: false; reason: string }
+    | {
+          ok: true
+          path: string[]
+          cost: number
+          statScore: number
+          // Grown with stat nodes from leftover points; costs more on purpose.
+          extended?: boolean
+      }
+    | { ok: false; reason: string }
 type PlannerWorkerMessage =
     | { type: "progress"; progress?: PlannerProgress | number }
     | {
@@ -77,6 +90,13 @@ export const usePlannerOptimization = ({
     useEffect(() => () => plannerWorker.current?.terminate(), [])
 
     const optimizePlanner = (timeBudgetMs = 1500) => {
+        let statSettings = DEFAULT_STAT_SETTINGS
+        try {
+            statSettings = readStatSettings(classId)
+        } catch {
+            // Fall back to the default stat priorities.
+        }
+        const weights = statWeights(layout.nodeStats, statSettings.tiers)
         const previousBest =
             plannedCost === null
                 ? null
@@ -84,6 +104,7 @@ export const usePlannerOptimization = ({
                       ok: true as const,
                       path: [...plannedPath],
                       cost: plannedCost,
+                      statScore: routeStatScore(plannedPath, weights),
                   }
         cancelOptimization()
         setOptimizationProgress(null)
@@ -114,11 +135,17 @@ export const usePlannerOptimization = ({
                 }
 
                 if (resultMessage.type === "candidate") {
-                    if (
-                        bestPlannerResult.current &&
-                        bestPlannerResult.current.cost <=
-                            resultMessage.result.cost
-                    ) {
+                    const best = bestPlannerResult.current
+                    const candidate = resultMessage.result
+                    // Cheaper wins; at equal cost, better stats win. Routes
+                    // grown with leftover stat points are always taken.
+                    const isBetter =
+                        !best ||
+                        candidate.extended ||
+                        candidate.cost < best.cost ||
+                        (candidate.cost === best.cost &&
+                            candidate.statScore > best.statScore)
+                    if (!isBetter) {
                         return
                     }
                     bestPlannerResult.current = resultMessage.result
@@ -236,6 +263,9 @@ export const usePlannerOptimization = ({
                 start,
                 targets: [...targetCells],
                 timeBudgetMs,
+                statTiers: statSettings.tiers,
+                spendLeftover: statSettings.spendLeftover,
+                availablePoints,
             })
         } catch (error) {
             plannerWorker.current?.terminate()

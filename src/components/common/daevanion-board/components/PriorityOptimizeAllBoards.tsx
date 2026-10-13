@@ -3,6 +3,7 @@ import { Box, Flex, Text } from "@chakra-ui/react"
 import { PrimaryButton, SearchTimeSelect, SecondaryButton } from "./PanelKit"
 import { DEFAULT_SEARCH_SECONDS, formatSearchTime } from "./searchTime"
 import { formatPlanTime } from "../logic/formatPlanTime"
+import { readStatSettings, type StatSettings } from "../storage/statPriorities"
 import type { ClassPreset } from "../../../../config/classPresets"
 import { layouts, type BoardLayoutName } from "../config/layouts"
 import type { PriorityPlannerProgress } from "../logic/priorityPlanner"
@@ -182,6 +183,7 @@ export const PriorityOptimizeAllBoards = ({
         let priorities: ReturnType<typeof readAbilityPriorities>
         let minimums: ReturnType<typeof readAbilityMinimums>
         let maximums: ReturnType<typeof readAbilityMaximums>
+        let statSettings: StatSettings
         try {
             priorities = readAbilityPriorities(classPreset)
             minimums = resolveAbilityMinimums(
@@ -190,6 +192,7 @@ export const PriorityOptimizeAllBoards = ({
                 readAbilityMinimums(classPreset),
             )
             maximums = readAbilityMaximums(classPreset)
+            statSettings = readStatSettings(classPreset.id)
         } catch (error) {
             setMessage(
                 error instanceof Error
@@ -267,6 +270,7 @@ export const PriorityOptimizeAllBoards = ({
                 maximums,
                 pointBudget: totalPoints,
                 timeBudgetMs: searchSeconds * 1000,
+                statSettings,
             })
         } catch (error) {
             workerRef.current?.terminate()

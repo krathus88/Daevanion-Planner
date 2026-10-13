@@ -1,5 +1,6 @@
 import ChanterPreset from "./classes/Chanter"
 import GladiatorPreset from "./classes/Gladiator"
+import RangerPreset from "./classes/Ranger"
 import SpiritMasterPreset from "./classes/SpiritMaster"
 import type { ClassPreset } from "./types"
 
@@ -9,10 +10,11 @@ export * from "./types"
 
 export const classPresets: Record<string, ClassPreset> = {
     gladiator: GladiatorPreset,
-
-    chanter: ChanterPreset,
+    ranger: RangerPreset,
 
     "spirit-master": SpiritMasterPreset,
+
+    chanter: ChanterPreset,
 }
 
 export const DEFAULT_CLASS_ID = "gladiator"
