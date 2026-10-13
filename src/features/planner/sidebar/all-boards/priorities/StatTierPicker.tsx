@@ -4,13 +4,7 @@ import {
     STAT_TIERS,
     type StatTier,
 } from "@planner/config/stats"
-
-const tierColors = {
-    best: "app.accent",
-    good: "app.success",
-    okay: "app.info",
-    ignore: "app.subtle",
-} as const
+import { STAT_TIER_COLORS } from "./tierColors"
 
 type StatTierPickerProps = {
     value: StatTier
@@ -42,8 +36,8 @@ export const StatTierPicker = ({
                     key={tier}
                     value={tier}
                     color="app.subtle"
-                    _checked={{ color: tierColors[tier] }}
-                    _hover={{ color: tierColors[tier] }}
+                    _checked={{ color: STAT_TIER_COLORS[tier] }}
+                    _hover={{ color: STAT_TIER_COLORS[tier] }}
                 >
                     <SegmentGroup.ItemText>
                         {STAT_TIER_NAMES[tier]}

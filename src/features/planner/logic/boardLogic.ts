@@ -1,13 +1,13 @@
 import { isNode, keyOf, type Position } from "@planner/config/boardConfig"
 import { POINTS_PER_NODE_TYPE, type BoardLayout } from "@planner/config/layouts"
 
-const positionOf = (key: string): Position => {
+export const positionOf = (key: string): Position => {
     const [row, column] = key.split(",").map(Number)
 
     return { row: row, column: column }
 }
 
-const neighborsOf = ({ row, column }: Position): Position[] => {
+export const neighborsOf = ({ row, column }: Position): Position[] => {
     return [
         { row: row - 1, column: column },
         { row: row + 1, column: column },

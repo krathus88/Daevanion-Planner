@@ -3,7 +3,9 @@ import { Flex, Switch, Text } from "@chakra-ui/react"
 import { STAT_TYPES } from "@planner/config/stats"
 import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
+import type { StatFocus } from "@planner/storage/statPriorities"
 import { StatusText } from "@common/StatusText"
+import { StatFocusSettings } from "./StatFocusSettings"
 import { StatPriorityRow } from "./StatPriorityRow"
 
 type StatPriorityListProps = {
@@ -18,6 +20,10 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
         details: Switch.CheckedChangeDetails,
     ) => {
         update({ ...settings, spendLeftover: details.checked })
+    }
+
+    const handleFocusChange = (focus: StatFocus) => {
+        update({ ...settings, focus: focus })
     }
 
     return (
@@ -56,6 +62,11 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
                 When on, points left after special nodes, Min and ranks go to
                 the best stat nodes, without giving up anything else.
             </Text>
+
+            <StatFocusSettings
+                focus={settings.focus}
+                onChange={handleFocusChange}
+            />
 
             {error && <StatusText>{error}</StatusText>}
 

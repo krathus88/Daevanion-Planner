@@ -1,23 +1,58 @@
 import { LAYOUT_NAMES, layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
+    FOCUS_SCOPES,
+    FOCUS_TIERS,
     STAT_TIERS,
     STAT_TYPES,
+    type FocusScope,
+    type FocusTier,
     type StatTier,
     type StatType,
 } from "@planner/config/stats"
 import { readBoardProgress } from "./boardStorage"
 import { isRecord } from "./isRecord"
 
+export type StatFocusTier = {
+    // Abilities ranked after this wait behind the tier's stat nodes. Null
+    // leaves the tier out.
+    afterRank: number | null
+    // Most of the tier's stat nodes across all boards; null takes all the
+    // budget allows.
+    cap: number | null
+}
+
+// "Stat focus": stat nodes take points ahead of low-ranked abilities.
+export type StatFocus = {
+    enabled: boolean
+    scope: FocusScope
+    // Most points spent on other nodes to reach one stat node.
+    detour: number
+    tiers: Record<FocusTier, StatFocusTier>
+}
+
 export type StatSettings = {
     tiers: Record<StatType, StatTier>
     // Spend points left after special nodes, Min and ranks on stat nodes.
     spendLeftover: boolean
+    focus: StatFocus
+}
+
+export const DEFAULT_STAT_FOCUS: StatFocus = {
+    enabled: false,
+    scope: "passives",
+    detour: 1,
+    tiers: {
+        best: { afterRank: 3, cap: null },
+        good: { afterRank: 4, cap: null },
+        okay: { afterRank: null, cap: null },
+    },
 }
 
 export const DEFAULT_STAT_SETTINGS: StatSettings = {
     tiers: DEFAULT_STAT_TIERS,
     spendLeftover: false,
+    focus: DEFAULT_STAT_FOCUS,
 }
 
 const keyFor = (classId: string) => {
@@ -29,6 +64,63 @@ const isTier = (value: unknown): value is StatTier => {
         typeof value === "string" &&
         (STAT_TIERS as readonly string[]).includes(value)
     )
+}
+
+const isScope = (value: unknown): value is FocusScope => {
+    return (
+        typeof value === "string" &&
+        (FOCUS_SCOPES as readonly string[]).includes(value)
+    )
+}
+
+const isCount = (value: unknown, min: number): value is number => {
+    return typeof value === "number" && Number.isInteger(value) && value >= min
+}
+
+// A whole number of at least `min`, or null when the field was cleared.
+const readOptionalCount = (
+    value: unknown,
+    min: number,
+    fallback: number | null,
+) => {
+    if (value === null) {
+        return null
+    }
+
+    return isCount(value, min) ? value : fallback
+}
+
+const readStatFocus = (value: unknown): StatFocus => {
+    if (!isRecord(value)) {
+        return DEFAULT_STAT_FOCUS
+    }
+
+    const tiers = isRecord(value.tiers) ? value.tiers : {}
+
+    return {
+        enabled: value.enabled === true,
+        scope: isScope(value.scope) ? value.scope : DEFAULT_STAT_FOCUS.scope,
+        detour: isCount(value.detour, 0)
+            ? value.detour
+            : DEFAULT_STAT_FOCUS.detour,
+        tiers: Object.fromEntries(
+            FOCUS_TIERS.map((tier) => {
+                const saved = isRecord(tiers[tier]) ? tiers[tier] : {}
+                const fallback = DEFAULT_STAT_FOCUS.tiers[tier]
+                return [
+                    tier,
+                    {
+                        afterRank: readOptionalCount(
+                            saved.afterRank,
+                            1,
+                            fallback.afterRank,
+                        ),
+                        cap: readOptionalCount(saved.cap, 0, fallback.cap),
+                    },
+                ]
+            }),
+        ) as Record<FocusTier, StatFocusTier>,
+    }
 }
 
 export const readStatSettings = (classId: string): StatSettings => {
@@ -54,6 +146,7 @@ export const readStatSettings = (classId: string): StatSettings => {
                 ]),
             ) as Record<StatType, StatTier>,
             spendLeftover: value.spendLeftover === true,
+            focus: readStatFocus(value.focus),
         }
     } catch (error) {
         throw new Error(
