@@ -20,6 +20,9 @@ export const BoardCanvas = () => {
         <Flex
             w={{ base: "full", xl: "board" }}
             minW="0"
+            maxW="board"
+            // Centred when the sidebar stacks below it.
+            alignSelf={{ base: "center", xl: "auto" }}
             // Keeps its width beside the sidebar and only shrinks when space
             // runs out; the sidebar takes the rest.
             flex={{ base: "1", xl: "0 1 auto" }}
