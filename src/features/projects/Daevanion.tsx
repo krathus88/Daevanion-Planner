@@ -71,7 +71,15 @@ export const Daevanion = ({
                         py={{ base: "2", md: "0" }}
                         wrap="wrap"
                     >
-                        <Flex alignItems="baseline" gap="2" flexShrink="0">
+                        {/* Two lines on phones so the class picker fits
+                            beside it; one line from md up. */}
+                        <Flex
+                            alignItems={{ base: "flex-start", md: "baseline" }}
+                            columnGap="2"
+                            direction={{ base: "column", md: "row" }}
+                            flexShrink="0"
+                            lineHeight={{ base: "1.15", md: "normal" }}
+                        >
                             <Text
                                 color="app.accent"
                                 fontSize="lg"
