@@ -21,7 +21,8 @@ const nodeCost = (layout: BoardLayout, index: number, width: number) => {
 }
 
 export type PlannerResult =
-    | { ok: true; path: Set<string>; cost: number }
+    // statScore: total stat weight of the route (see config/stats.ts).
+    | { ok: true; path: Set<string>; cost: number; statScore: number }
     | { ok: false; reason: string }
 
 export type PlannerProgress = {
@@ -116,7 +117,7 @@ const findConnection = (
     tree: Set<number>,
     component: number[],
     neighbors: number[][],
-    costs: Uint8Array,
+    costs: Float64Array,
 ) => {
     const distances = new Float64Array(neighbors.length).fill(
         Number.POSITIVE_INFINITY,
@@ -201,7 +202,7 @@ const createRoute = (
     componentOrder: number[][],
     startIndex: number,
     neighbors: number[][],
-    costs: Uint8Array,
+    costs: Float64Array,
 ) => {
     const tree = new Set<number>([startIndex])
     for (const component of componentOrder) {
@@ -234,6 +235,9 @@ export const findPlannerPath = async (
     targets: Set<string>,
     timeBudgetMs: number,
     callbacks: PlannerSearchCallbacks,
+    // "row,col" -> stat weight. Among routes of equal cost, the one through
+    // better stats wins; stats never make a route cost more points.
+    statWeights: ReadonlyMap<string, number> = new Map(),
 ): Promise<PlannerResult> => {
     if (targets.size === 0) {
         return {
@@ -265,9 +269,20 @@ export const findPlannerPath = async (
         }
     }
 
-    const costs = new Uint8Array(gridIndices.length)
+    const keyAt = (node: number) => keyOf(positionOf(gridIndices[node], width))
+    // Each stat node gets a tiny discount by weight. All discounts together
+    // stay under half a point, so they only decide between equal-cost paths.
+    let totalWeight = 0
+    for (const weight of statWeights.values()) {
+        totalWeight += weight
+    }
+    const costs = new Float64Array(gridIndices.length)
     for (let index = 0; index < gridIndices.length; index += 1) {
         costs[index] = nodeCost(layout, gridIndices[index], width)
+        const weight = statWeights.get(keyAt(index)) ?? 0
+        if (weight > 0 && costs[index] > 0) {
+            costs[index] -= weight / (totalWeight * 2)
+        }
     }
     for (
         let componentIndex = 0;
@@ -281,6 +296,7 @@ export const findPlannerPath = async (
 
     let bestRoute: Set<number> | null = null
     let bestCost = Number.POSITIVE_INFINITY
+    let bestScore = Number.NEGATIVE_INFINITY
     let attempts = 0
     const startedAt = performance.now()
     const deadline = startedAt + Math.max(0, timeBudgetMs)
@@ -293,24 +309,25 @@ export const findPlannerPath = async (
         attempts += 1
 
         if (route) {
-            const cost = [...route].reduce(
-                (total, node) =>
-                    total + nodeCost(layout, gridIndices[node], width),
-                0,
-            )
-            if (cost < bestCost) {
+            let cost = 0
+            let score = 0
+            for (const node of route) {
+                cost += nodeCost(layout, gridIndices[node], width)
+                score += statWeights.get(keyAt(node)) ?? 0
+            }
+            if (cost < bestCost || (cost === bestCost && score > bestScore)) {
                 bestRoute = route
                 bestCost = cost
+                bestScore = score
                 callbacks.onBest({
                     ok: true,
                     path: new Set(
                         [...route]
                             .filter((node) => node !== startIndex)
-                            .map((node) =>
-                                keyOf(positionOf(gridIndices[node], width)),
-                            ),
+                            .map(keyAt),
                     ),
                     cost,
+                    statScore: score,
                 })
             }
         }
@@ -338,11 +355,9 @@ export const findPlannerPath = async (
     }
 
     const path = new Set(
-        [...bestRoute]
-            .filter((node) => node !== startIndex)
-            .map((node) => keyOf(positionOf(gridIndices[node], width))),
+        [...bestRoute].filter((node) => node !== startIndex).map(keyAt),
     )
-    return { ok: true, path, cost: bestCost }
+    return { ok: true, path, cost: bestCost, statScore: bestScore }
 }
 
 export const formatPlannerDuration = (milliseconds: number) => {

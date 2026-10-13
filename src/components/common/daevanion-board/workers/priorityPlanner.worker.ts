@@ -3,6 +3,7 @@ import {
     optimizePriorityPlans,
     type PriorityPlannerProgress,
 } from "../logic/priorityPlanner"
+import type { StatSettings } from "../storage/statPriorities"
 import type {
     AbilityMaximums,
     AbilityMinimums,
@@ -16,6 +17,7 @@ type OptimizeMessage = {
     maximums: AbilityMaximums
     pointBudget: number
     timeBudgetMs: number
+    statSettings: StatSettings
 }
 
 globalThis.addEventListener(
@@ -28,6 +30,7 @@ globalThis.addEventListener(
             maximums,
             pointBudget,
             timeBudgetMs,
+            statSettings,
         } = event.data
         void optimizePriorityPlans(
             classPreset,
@@ -36,6 +39,7 @@ globalThis.addEventListener(
             maximums,
             pointBudget,
             timeBudgetMs,
+            statSettings,
             (progress: PriorityPlannerProgress) => {
                 globalThis.postMessage({ type: "progress", progress })
             },

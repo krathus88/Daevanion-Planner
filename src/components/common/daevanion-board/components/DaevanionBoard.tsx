@@ -201,6 +201,35 @@ const BoardInstance = ({
 
         abilitiesByPosition[key] = ability
     }
+    for (const key of Object.keys(layout.nodeStats)) {
+        const [row, column] = key.split(",").map(Number)
+        const kind = layout.grid[row]?.[column]
+        if (kind !== "#") {
+            throw new Error(
+                `Invalid stat at ${layoutName} ${key} in layouts.ts: that position is ${
+                    kind === undefined || kind === "."
+                        ? "not a node"
+                        : "not a stat node"
+                }. Only stat nodes ("#") can have a stat.`,
+            )
+        }
+    }
+    for (const key of Object.keys(layout.specialNodeBonuses)) {
+        const [row, column] = key.split(",").map(Number)
+        const kind = layout.grid[row]?.[column]
+        if (
+            kind === undefined ||
+            layout.specialNodes[kind]?.type !== "special"
+        ) {
+            throw new Error(
+                `Invalid special node bonus at ${layoutName} ${key} in layouts.ts: that position is ${
+                    kind === undefined || kind === "."
+                        ? "not a node"
+                        : "not a special node"
+                }. Only special nodes can have a special node bonus.`,
+            )
+        }
+    }
     const persistProgress = (updates: Partial<BoardProgress> = {}) => {
         const progress: BoardProgress = {
             selectedCells: [...selectedCells],

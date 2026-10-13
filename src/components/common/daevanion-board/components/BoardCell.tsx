@@ -1,11 +1,13 @@
 import { useState } from "react"
-import { Box, Button, Text } from "@chakra-ui/react"
+import { Box, Button, Flex, Text } from "@chakra-ui/react"
 import type { Position } from "../config/boardConfig"
 import {
     POINTS_PER_NODE_TYPE,
     type BoardNodeAppearance,
 } from "../config/layouts"
 import type { ClassAbility } from "../../../../config/classPresets"
+import { SPECIAL_BONUSES, type SpecialBonusType } from "../config/specialNodes"
+import { STAT_NAMES, STAT_TOOLTIPS, type StatType } from "../config/stats"
 import { Tooltip } from "@ui/tooltip"
 
 const tooltipContentProps = {
@@ -28,7 +30,17 @@ type BoardCellProps = {
     adjacentAvailable: boolean
     targeted: boolean
     ability?: ClassAbility
+    stat?: StatType
+    specialBonus?: SpecialBonusType
     onSelect: (position: Position) => void
+}
+
+// Tooltip type line, matching the node's colour on the board.
+const typeColors: Partial<Record<BoardNodeAppearance["type"], string>> = {
+    basic: "app.fg",
+    skill: "blue.400",
+    passive: "green.400",
+    special: "#efc05b",
 }
 
 const BASIC_SIZE = "1.875rem"
@@ -46,6 +58,8 @@ export const BoardCell = ({
     adjacentAvailable,
     targeted,
     ability,
+    stat,
+    specialBonus,
     onSelect,
 }: BoardCellProps) => {
     const [failedImageSource, setFailedImageSource] = useState<string | null>(
@@ -126,15 +140,37 @@ export const BoardCell = ({
                 : isSpecial
                   ? "#efc05b"
                   : "gray.300"
+    const nodeName =
+        ability?.name ??
+        (stat && STAT_NAMES[stat]) ??
+        (specialBonus && SPECIAL_BONUSES[specialBonus].name)
+    const nodeTooltip =
+        ability?.tooltip ??
+        (stat && STAT_TOOLTIPS[stat]) ??
+        (specialBonus && SPECIAL_BONUSES[specialBonus].tooltip)
+    const tooltipContent = (
+        <Flex direction="column" gap="0.5" px="1" py="1">
+            {nodeName && (
+                <Text fontSize="md" fontWeight="semibold" lineHeight="short">
+                    {nodeName}
+                </Text>
+            )}
+            <Text
+                color={typeColors[ability?.type ?? appearance.type]}
+                fontSize="sm"
+                lineHeight="short"
+            >
+                {appearance.name} · {pointCost} pts
+            </Text>
+            {nodeTooltip && (
+                <Text lineHeight="short" mt="1.5">
+                    {nodeTooltip}
+                </Text>
+            )}
+        </Flex>
+    )
     // Special nodes are recognisable by shape (name in the tooltip), and a
     // selected basic node is already shown by its fill, so neither gets text.
-    const tooltipLabel = [
-        ability?.name,
-        appearance.name,
-        `${pointCost} point${pointCost === 1 ? "" : "s"}`,
-    ]
-        .filter(Boolean)
-        .join(" · ")
     const cellLabel =
         isSpecial || isBasic
             ? ""
@@ -147,7 +183,7 @@ export const BoardCell = ({
     return (
         <Box height="3.5rem" position="relative" width="3.5rem">
             <Tooltip
-                content={tooltipLabel}
+                content={tooltipContent}
                 contentProps={tooltipContentProps}
                 openDelay={100}
                 showArrow
@@ -156,7 +192,7 @@ export const BoardCell = ({
                     aria-label={[
                         `Row ${position.row + 1}, column ${position.column + 1}`,
                         appearance.name,
-                        ability?.name,
+                        nodeName,
                         `${pointCost} point${pointCost === 1 ? "" : "s"}`,
                         targeted ? "required target" : "",
                         selected ? "selected" : "not selected",

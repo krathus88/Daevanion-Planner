@@ -12,6 +12,8 @@ import type {
     MinimumShortfall,
     PriorityPlans,
 } from "../storage/abilityPriorities"
+import { statWeights } from "../config/stats"
+import type { StatSettings } from "../storage/statPriorities"
 import { findPlannerPath } from "./plannerLogic"
 
 export type PriorityPlannerProgress = {
@@ -33,6 +35,8 @@ type PriorityTarget = {
     cost: number
     abilityId?: string
     isSpecial?: boolean
+    // Stat node added with leftover points; not shown as a required target.
+    isStat?: boolean
 }
 
 // Share of the run spent on the first greedy pass; the rest refines it.
@@ -41,6 +45,10 @@ const MIN_STEP_MS = 12
 const MAX_STEP_MS = 250
 const MAX_REFINE_SLICE_MS = 1500
 const PROGRESS_INTERVAL_MS = 250
+// With "spend leftover points" on, the last part of the run adds stat nodes,
+// after everything else has had the full budget.
+const STAT_FILL_SHARE = 0.15
+const STAT_STEP_MS = 30
 
 export const optimizePriorityPlans = async (
     classPreset: ClassPreset,
@@ -49,6 +57,7 @@ export const optimizePriorityPlans = async (
     maximums: AbilityMaximums,
     pointBudget: number,
     timeBudgetMs: number,
+    statSettings: StatSettings,
     onProgress: (progress: PriorityPlannerProgress) => void,
 ): Promise<PriorityPlannerResult> => {
     const startedAt = performance.now()
@@ -143,6 +152,26 @@ export const optimizePriorityPlans = async (
         triniel: emptyPlan(),
     } satisfies PriorityPlans
     let totalCost = 0
+    // Stats only break ties: equal total cost -> higher total stat score.
+    const weightsByBoard = Object.fromEntries(
+        (Object.keys(layouts) as BoardLayoutName[]).map((layoutName) => [
+            layoutName,
+            statWeights(layouts[layoutName].nodeStats, statSettings.tiers),
+        ]),
+    ) as Record<BoardLayoutName, Map<string, number>>
+    const scores: Record<BoardLayoutName, number> = {
+        nezekan: 0,
+        zikel: 0,
+        vaizel: 0,
+        triniel: 0,
+    }
+    let totalScore = 0
+    const statTargetKeys: Record<BoardLayoutName, Set<string>> = {
+        nezekan: new Set(),
+        zikel: new Set(),
+        vaizel: new Set(),
+        triniel: new Set(),
+    }
 
     let lastProgressAt = Number.NEGATIVE_INFINITY
     const reportProgress = (force = false) => {
@@ -164,10 +193,14 @@ export const optimizePriorityPlans = async (
         ms: number,
     ) => {
         const layout = layouts[layoutName]
-        return findPlannerPath(layout, getStart(layout), keys, ms, {
-            onBest: () => {},
-            onProgress: () => {},
-        })
+        return findPlannerPath(
+            layout,
+            getStart(layout),
+            keys,
+            ms,
+            { onBest: () => {}, onProgress: () => {} },
+            weightsByBoard[layoutName],
+        )
     }
 
     // Tries adding one target to its board's plan and returns the result
@@ -196,6 +229,8 @@ export const optimizePriorityPlans = async (
         return {
             target,
             nextTotal,
+            nextScore: totalScore - scores[target.layout] + result.statScore,
+            statScore: result.statScore,
             plan: {
                 targetCells: [...candidateTargets],
                 plannedPath: [...result.path],
@@ -209,7 +244,20 @@ export const optimizePriorityPlans = async (
     ) => {
         plans[added.target.layout] = added.plan
         totalCost = added.nextTotal
+        scores[added.target.layout] = added.statScore
+        totalScore = added.nextScore
+        if (added.target.isStat) {
+            statTargetKeys[added.target.layout].add(added.target.key)
+        }
     }
+
+    type Candidate = NonNullable<Awaited<ReturnType<typeof tryAddTarget>>>
+    // Fewer total points first; at equal points, better stats.
+    const isBetter = (candidate: Candidate, best: Candidate | null) =>
+        best === null ||
+        candidate.nextTotal < best.nextTotal ||
+        (candidate.nextTotal === best.nextTotal &&
+            candidate.nextScore > best.nextScore)
 
     // A node counts as an upgrade once any route passes through it.
     const isOnRoute = (target: PriorityTarget) =>
@@ -235,16 +283,13 @@ export const optimizePriorityPlans = async (
     // else. Each step takes the special node that adds the fewest points.
     const fillSpecials = async (stepMs: number, until: number) => {
         while (performance.now() < until) {
-            let best: Awaited<ReturnType<typeof tryAddTarget>> = null
+            let best: Candidate | null = null
             for (const target of specialTargets) {
                 if (isOnRoute(target)) {
                     continue
                 }
                 const candidate = await tryAddTarget(target, stepMs)
-                if (
-                    candidate &&
-                    (best === null || candidate.nextTotal < best.nextTotal)
-                ) {
+                if (candidate && isBetter(candidate, best)) {
                     best = candidate
                 }
             }
@@ -264,16 +309,13 @@ export const optimizePriorityPlans = async (
             }
             const required = minimums[ability.id] ?? 0
             while (upgradesFor(ability.id) < required) {
-                let best: Awaited<ReturnType<typeof tryAddTarget>> = null
+                let best: Candidate | null = null
                 for (const target of targets) {
                     if (target.abilityId !== ability.id || isOnRoute(target)) {
                         continue
                     }
                     const candidate = await tryAddTarget(target, stepMs)
-                    if (
-                        candidate &&
-                        (best === null || candidate.nextTotal < best.nextTotal)
-                    ) {
+                    if (candidate && isBetter(candidate, best)) {
                         best = candidate
                     }
                 }
@@ -303,7 +345,41 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    // Search each board's current targets again for a cheaper route.
+    // "Spend leftover points": add stat nodes, best weight first, while the
+    // shared budget allows. Existing targets stay, so nothing major is lost.
+    const statCandidates = (Object.keys(layouts) as BoardLayoutName[])
+        .flatMap((layoutName) =>
+            [...weightsByBoard[layoutName].entries()].map(([key, weight]) => ({
+                target: {
+                    layout: layoutName,
+                    key,
+                    priority: Number.MAX_SAFE_INTEGER,
+                    cost: POINTS_PER_NODE_TYPE.basic,
+                    isStat: true,
+                } satisfies PriorityTarget,
+                weight,
+            })),
+        )
+        .sort((left, right) => right.weight - left.weight)
+        .map(({ target }) => target)
+
+    const fillStats = async (until: number) => {
+        for (const target of statCandidates) {
+            if (performance.now() >= until || totalCost >= pointBudget) {
+                return
+            }
+            if (isOnRoute(target)) {
+                continue
+            }
+            const added = await tryAddTarget(target, STAT_STEP_MS)
+            if (added) {
+                commit(added)
+            }
+        }
+    }
+
+    // Search each board's current targets again for a cheaper route, or an
+    // equally cheap one through better stats.
     const refineRoutes = async () => {
         const boards = (Object.keys(plans) as BoardLayoutName[]).filter(
             (layoutName) => plans[layoutName].targetCells.length > 0,
@@ -320,8 +396,15 @@ export const optimizePriorityPlans = async (
                 Math.min(MAX_REFINE_SLICE_MS, remainingMs / boards.length),
             )
             reportProgress()
-            if (result.ok && result.cost < plan.plannedCost) {
+            if (
+                result.ok &&
+                (result.cost < plan.plannedCost ||
+                    (result.cost === plan.plannedCost &&
+                        result.statScore > scores[layoutName]))
+            ) {
                 totalCost += result.cost - plan.plannedCost
+                totalScore += result.statScore - scores[layoutName]
+                scores[layoutName] = result.statScore
                 plans[layoutName] = {
                     ...plan,
                     plannedPath: [...result.path],
@@ -357,14 +440,25 @@ export const optimizePriorityPlans = async (
     await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
 
-    while (performance.now() < deadline) {
+    const mainDeadline = statSettings.spendLeftover
+        ? startedAt + timeBudgetMs * (1 - STAT_FILL_SHARE)
+        : deadline
+    while (performance.now() < mainDeadline) {
         await refineRoutes()
-        if (performance.now() >= deadline) {
+        if (performance.now() >= mainDeadline) {
             break
         }
-        await fillSpecials(MIN_STEP_MS, deadline)
-        await fillMinimums(MIN_STEP_MS, deadline)
-        await fillByRank(MIN_STEP_MS, deadline)
+        await fillSpecials(MIN_STEP_MS, mainDeadline)
+        await fillMinimums(MIN_STEP_MS, mainDeadline)
+        await fillByRank(MIN_STEP_MS, mainDeadline)
+    }
+
+    if (statSettings.spendLeftover) {
+        await fillStats(deadline)
+        while (performance.now() < deadline) {
+            await refineRoutes()
+            await fillStats(deadline)
+        }
     }
 
     reportProgress(true)
@@ -383,6 +477,14 @@ export const optimizePriorityPlans = async (
               ]
             : []
     })
+
+    // Stat nodes from leftover points stay on the route but aren't shown as
+    // required targets.
+    for (const layoutName of Object.keys(plans) as BoardLayoutName[]) {
+        plans[layoutName].targetCells = plans[layoutName].targetCells.filter(
+            (key) => !statTargetKeys[layoutName].has(key),
+        )
+    }
 
     return {
         plans,

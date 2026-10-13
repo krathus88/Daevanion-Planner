@@ -1,45 +1,95 @@
 import type { Position } from "../config/boardConfig"
-import { findPlannerPath, type PlannerProgress } from "../logic/plannerLogic"
 import type { BoardLayout } from "../config/layouts"
+import { statWeights, type StatTier, type StatType } from "../config/stats"
+import {
+    findPlannerPath,
+    type PlannerProgress,
+    type PlannerResult,
+} from "../logic/plannerLogic"
+import { addStatNodes } from "../logic/statFill"
 
 type OptimizeMessage = {
     layout: BoardLayout
     start: Position
     targets: string[]
     timeBudgetMs: number
+    statTiers: Record<StatType, StatTier>
+    spendLeftover: boolean
+    availablePoints: number
 }
+
+// Share of the run left for spending leftover points on stats.
+const STAT_FILL_SHARE = 0.2
+
+const postCandidate = (
+    result: Extract<PlannerResult, { ok: true }>,
+    extended = false,
+) =>
+    globalThis.postMessage({
+        type: "candidate",
+        result: {
+            ok: true,
+            path: [...result.path],
+            cost: result.cost,
+            statScore: result.statScore,
+            extended,
+        },
+    })
 
 globalThis.addEventListener(
     "message",
     (event: MessageEvent<OptimizeMessage>) => {
-        const { layout, start, targets, timeBudgetMs } = event.data
+        const {
+            layout,
+            start,
+            targets,
+            timeBudgetMs,
+            statTiers,
+            spendLeftover,
+            availablePoints,
+        } = event.data
+        const startedAt = performance.now()
+        const weights = statWeights(layout.nodeStats, statTiers)
+        const targetSet = new Set(targets)
 
-        void findPlannerPath(layout, start, new Set(targets), timeBudgetMs, {
-            onProgress: (progress: PlannerProgress) => {
-                globalThis.postMessage({ type: "progress", progress })
-            },
-            onBest: (result) => {
-                globalThis.postMessage({
-                    type: "candidate",
-                    result: {
-                        ok: true,
-                        path: [...result.path],
-                        cost: result.cost,
+        const run = async () => {
+            const result = await findPlannerPath(
+                layout,
+                start,
+                targetSet,
+                spendLeftover
+                    ? timeBudgetMs * (1 - STAT_FILL_SHARE)
+                    : timeBudgetMs,
+                {
+                    onProgress: (progress: PlannerProgress) => {
+                        globalThis.postMessage({ type: "progress", progress })
                     },
-                })
-            },
-        })
+                    onBest: (best) => postCandidate(best),
+                },
+                weights,
+            )
+            if (!result.ok) {
+                return result
+            }
+            postCandidate(result)
+
+            if (!spendLeftover || result.cost >= availablePoints) {
+                return result
+            }
+            return addStatNodes({
+                layout,
+                start,
+                targets: targetSet,
+                route: result,
+                budget: availablePoints,
+                weights,
+                until: startedAt + timeBudgetMs,
+                onImproved: (route) => postCandidate(route, true),
+            })
+        }
+
+        void run()
             .then((result) => {
-                if (result.ok) {
-                    globalThis.postMessage({
-                        type: "candidate",
-                        result: {
-                            ok: true,
-                            path: [...result.path],
-                            cost: result.cost,
-                        },
-                    })
-                }
                 globalThis.postMessage({
                     type: "done",
                     result: result.ok ? { ok: true } : result,
