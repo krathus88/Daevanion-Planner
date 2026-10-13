@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .claude/*
+
+# TanStack Router generator temp files
+.tanstack

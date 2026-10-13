@@ -4,16 +4,15 @@ import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
-// Set up a Router instance
 const router = createRouter({
-    routeTree,
+    routeTree: routeTree,
     // Matches Vite's `base`, so routes work when hosted under a subpath.
     basepath: import.meta.env.BASE_URL,
     defaultPreload: "intent",
     scrollRestoration: true,
 })
 
-// Register things for typesafety
+// Registers the router type so links, params and navigate are type-safe.
 declare module "@tanstack/react-router" {
     interface Register {
         router: typeof router

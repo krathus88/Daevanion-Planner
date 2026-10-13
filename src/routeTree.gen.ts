@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ClassIdLayoutRouteImport } from './routes/$classId.$layout'
-import { Route as BoardsLayoutRouteImport } from './routes/boards.$layout'
+import { Route as ClassIdLayoutRouteImport } from './routes/$classId/$layout'
+import { Route as BoardsLayoutRouteImport } from './routes/boards/$layout'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',

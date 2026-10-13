@@ -12,7 +12,7 @@ import type { ClassPreset } from "./types"
 // without a circular import through this index.
 export * from "./types"
 
-export const classPresets: Record<string, ClassPreset> = {
+export const classPresets = {
     templar: TemplarPreset,
     gladiator: GladiatorPreset,
     assassin: AssassinPreset,
@@ -21,9 +21,12 @@ export const classPresets: Record<string, ClassPreset> = {
     "spirit-master": SpiritMasterPreset,
     chanter: ChanterPreset,
     cleric: ClericPreset,
+} satisfies Record<string, ClassPreset>
+
+export type ClassId = keyof typeof classPresets
+
+export const DEFAULT_CLASS_ID: ClassId = "gladiator"
+
+export const isClassId = (classId: string): classId is ClassId => {
+    return Object.hasOwn(classPresets, classId)
 }
-
-export const DEFAULT_CLASS_ID = "gladiator"
-
-export const isClassId = (classId: string) =>
-    Object.hasOwn(classPresets, classId)

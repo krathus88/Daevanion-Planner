@@ -1,0 +1,302 @@
+import type { ClassPreset } from "@config/classPresets"
+import { useEffect, useRef, useState } from "react"
+import { LAYOUT_NAMES, type LayoutType } from "@planner/config/layouts"
+import { errorMessage } from "@planner/logic/errorMessage"
+import { formatPlanTime } from "@planner/logic/formatPlanTime"
+import type { PriorityPlannerProgress } from "@planner/logic/priorityPlanner"
+import {
+    readAbilityMaximums,
+    readAbilityMinimums,
+    readAbilityPriorities,
+    resolveAbilityMinimums,
+    type MinimumShortfall,
+    type PriorityPlans,
+} from "@planner/storage/abilityPriorities"
+import {
+    notifyPlansReplaced,
+    readBoardProgress,
+    readPlannerHistory,
+    writeBoardProgress,
+    writePlannerHistory,
+    type ActivePlanner,
+    type SavedPlanner,
+} from "@planner/storage/boardStorage"
+import { readStatSettings } from "@planner/storage/statPriorities"
+
+type PriorityWorkerMessage =
+    | { type: "progress"; progress: PriorityPlannerProgress }
+    | {
+          type: "done"
+          plans: PriorityPlans
+          shortfalls: MinimumShortfall[]
+          specialNodes: { taken: number; total: number }
+      }
+    | { type: "error"; message: string }
+
+type RecordedPlans = Partial<Record<LayoutType, SavedPlanner>>
+
+type UseOptimizeAllBoardsOptions = {
+    classPreset: ClassPreset
+    totalPoints: number
+    // Receives a callback that applies the results to the boards.
+    onComplete: (applyResults: () => void) => void
+}
+
+const describeShortfalls = (
+    shortfalls: MinimumShortfall[],
+    specialNodes: { taken: number; total: number },
+) => {
+    const warnings: string[] = []
+    if (specialNodes.taken < specialNodes.total) {
+        warnings.push(
+            `Not enough points for every special node: ${specialNodes.taken} of ${specialNodes.total} taken.`,
+        )
+    }
+
+    if (shortfalls.length > 0) {
+        warnings.push(
+            `Not enough points for every minimum: ${shortfalls
+                .map(
+                    (shortfall) =>
+                        `${shortfall.name} +${shortfall.achieved} of +${shortfall.required}`,
+                )
+                .join(", ")}.`,
+        )
+    }
+
+    return warnings.join(" ")
+}
+
+// Runs the all-board priority optimizer in a worker.
+export const useOptimizeAllBoards = ({
+    classPreset,
+    totalPoints,
+    onComplete,
+}: UseOptimizeAllBoardsOptions) => {
+    const [progress, setProgress] = useState<PriorityPlannerProgress | null>(
+        null,
+    )
+    const [message, setMessage] = useState("")
+    const [warning, setWarning] = useState("")
+    const [isOptimizing, setIsOptimizing] = useState(false)
+    const workerRef = useRef<Worker | null>(null)
+
+    useEffect(() => () => workerRef.current?.terminate(), [])
+
+    const finish = (worker: Worker) => {
+        worker.terminate()
+        if (workerRef.current === worker) {
+            workerRef.current = null
+        }
+
+        setIsOptimizing(false)
+    }
+
+    // Records each board's result in its optimizer history right away.
+    const recordPlans = (plans: PriorityPlans) => {
+        const now = Date.now()
+        const planName = `Priority plan · ${formatPlanTime(now)}`
+        const entries: RecordedPlans = {}
+        const errors: string[] = []
+
+        for (const layoutName of LAYOUT_NAMES) {
+            const stored = readPlannerHistory(classPreset.id, layoutName)
+            if (stored.error) {
+                errors.push(`${layoutName}: ${stored.error}`)
+                continue
+            }
+
+            const plan = plans[layoutName]
+            const entry: SavedPlanner = {
+                id: crypto.randomUUID(),
+                name: planName,
+                createdAt: now,
+                targetCells: plan.targetCells,
+                plannedPath: plan.plannedPath,
+                plannedCost: plan.plannedCost,
+                availablePoints: plan.plannedCost,
+            }
+            const saveError = writePlannerHistory(classPreset.id, layoutName, [
+                entry,
+                ...(stored.value ?? []),
+            ])
+            if (saveError) {
+                errors.push(`${layoutName}: ${saveError}`)
+                continue
+            }
+
+            entries[layoutName] = entry
+        }
+
+        if (errors.length > 0) {
+            setMessage(
+                `Some board plans could not be fully saved: ${errors.join(" ")}`,
+            )
+        } else {
+            const spent = Object.values(plans).reduce(
+                (sum, plan) => sum + plan.plannedCost,
+                0,
+            )
+            setMessage(
+                `Optimized all four boards using ${spent} of ${totalPoints} shared points.`,
+            )
+        }
+
+        return entries
+    }
+
+    // Makes the recorded results every board's current route. The sidebar
+    // calls this once the All boards tab is open, so a finished run doesn't
+    // replace the board while you're working elsewhere.
+    const applyPlans = (entries: RecordedPlans) => {
+        const errors: string[] = []
+        for (const layoutName of Object.keys(entries) as LayoutType[]) {
+            const entry = entries[layoutName]
+            if (!entry) {
+                continue
+            }
+
+            const previous = readBoardProgress(classPreset.id, layoutName)
+            if (previous.error) {
+                errors.push(`${layoutName}: ${previous.error}`)
+                continue
+            }
+
+            const activePlanner: ActivePlanner = {
+                id: entry.id,
+                name: entry.name,
+                source: "history",
+            }
+            const progressError = writeBoardProgress(
+                classPreset.id,
+                layoutName,
+                {
+                    selectedCells: previous.value?.selectedCells ?? [],
+                    availablePoints: entry.availablePoints,
+                    targetCells: entry.targetCells,
+                    plannedPath: entry.plannedPath,
+                    plannedCost: entry.plannedCost,
+                    activePlanner: activePlanner,
+                },
+            )
+            if (progressError) {
+                errors.push(`${layoutName}: ${progressError}`)
+            }
+        }
+
+        if (errors.length > 0) {
+            setMessage(`Some boards could not be updated: ${errors.join(" ")}`)
+        }
+
+        notifyPlansReplaced()
+    }
+
+    const handleMessage = (worker: Worker, data: PriorityWorkerMessage) => {
+        if (data.type === "progress") {
+            setProgress(data.progress)
+            return
+        }
+
+        finish(worker)
+        if (data.type === "error") {
+            setMessage(data.message)
+            return
+        }
+
+        try {
+            const entries = recordPlans(data.plans)
+            onComplete(() => applyPlans(entries))
+            setWarning(describeShortfalls(data.shortfalls, data.specialNodes))
+        } catch (error) {
+            setMessage(
+                error instanceof Error
+                    ? `Plans were found but could not be saved: ${error.message}`
+                    : "Plans were found but could not be saved.",
+            )
+        }
+    }
+
+    const optimizeAll = (searchSeconds: number) => {
+        setMessage("")
+        setWarning("")
+        setProgress(null)
+
+        let settings
+        try {
+            const priorities = readAbilityPriorities(classPreset)
+            settings = {
+                priorities: priorities,
+                minimums: resolveAbilityMinimums(
+                    classPreset,
+                    priorities,
+                    readAbilityMinimums(classPreset),
+                ),
+                maximums: readAbilityMaximums(classPreset),
+                statSettings: readStatSettings(classPreset.id),
+            }
+        } catch (error) {
+            setMessage(
+                errorMessage(error, "Could not load class ability priorities."),
+            )
+            return
+        }
+
+        try {
+            const worker = new Worker(
+                new URL(
+                    "../workers/priorityPlanner.worker.ts",
+                    import.meta.url,
+                ),
+                { type: "module" },
+            )
+            workerRef.current = worker
+            setIsOptimizing(true)
+            worker.onmessage = (event: MessageEvent<PriorityWorkerMessage>) =>
+                handleMessage(worker, event.data)
+            worker.onerror = (event) => {
+                finish(worker)
+                setMessage(
+                    event.message || "The all-board priority optimizer failed.",
+                )
+            }
+            worker.onmessageerror = () => {
+                finish(worker)
+                setMessage("The all-board optimizer returned unreadable data.")
+            }
+            worker.postMessage({
+                classPreset: classPreset,
+                ...settings,
+                pointBudget: totalPoints,
+                timeBudgetMs: searchSeconds * 1000,
+            })
+        } catch (error) {
+            workerRef.current?.terminate()
+            workerRef.current = null
+            setIsOptimizing(false)
+            setMessage(
+                errorMessage(
+                    error,
+                    "The all-board priority optimizer could not start.",
+                ),
+            )
+        }
+    }
+
+    const cancel = () => {
+        workerRef.current?.terminate()
+        workerRef.current = null
+        setIsOptimizing(false)
+        setProgress(null)
+        setWarning("")
+        setMessage("All-board optimization cancelled.")
+    }
+
+    return {
+        isOptimizing: isOptimizing,
+        progress: progress,
+        message: message,
+        warning: warning,
+        optimizeAll: optimizeAll,
+        cancel: cancel,
+    }
+}

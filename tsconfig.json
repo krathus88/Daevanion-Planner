@@ -28,10 +28,8 @@
             "@config/*": ["./src/config/*"],
             "@layout/*": ["./src/components/layout/*"],
             "@ui/*": ["./src/components/ui/*"],
-            "@components/*": ["./src/components/common/*"],
-            "@features/*": ["./src/features/*"],
-            "@lib/*": ["./src/lib/*"],
-            "@routes/*": ["./src/routes/*"],
+            "@common/*": ["./src/components/common/*"],
+            "@planner/*": ["./src/features/planner/*"],
             "@theme/*": ["./src/theme/*"]
         }
     },
