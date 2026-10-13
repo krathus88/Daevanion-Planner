@@ -1,59 +1,10 @@
-import type { BoardLayoutName } from "@components/daevanion-board/config/layouts"
 import ChanterPreset from "./classes/Chanter"
 import GladiatorPreset from "./classes/Gladiator"
+import type { ClassPreset } from "./types"
 
-export type ClassAbilityType = "skill" | "passive"
-
-export type ClassAbility = {
-    id: string
-    name: string
-    type: ClassAbilityType
-    priority?: number
-    icon?: string
-}
-
-export type ClassPreset<
-    Abilities extends readonly ClassAbility[] = readonly ClassAbility[],
-> = {
-    id: string
-    name: string
-    // Class emblem, also used as the page favicon.
-    icon?: string
-    abilities: Abilities
-    assignments: Readonly<
-        Record<
-            BoardLayoutName,
-            Readonly<Record<string, Abilities[number]["id"]>> | undefined
-        >
-    >
-}
-
-// Ability ids that appear more than once in the abilities tuple.
-type DuplicateAbilityIds<
-    Abilities extends readonly ClassAbility[],
-    Seen extends string = never,
-> = Abilities extends readonly [
-    infer First extends ClassAbility,
-    ...infer Rest extends readonly ClassAbility[],
-]
-    ? First["id"] extends Seen
-        ? First["id"] | DuplicateAbilityIds<Rest, Seen>
-        : DuplicateAbilityIds<Rest, Seen | First["id"]>
-    : never
-
-// Adds an impossible requirement when ids repeat, so the preset fails to
-// type-check and the error names the duplicated ids.
-type UniqueAbilityIds<Abilities extends readonly ClassAbility[]> = [
-    DuplicateAbilityIds<Abilities>,
-] extends [never]
-    ? unknown
-    : { duplicateAbilityIds: DuplicateAbilityIds<Abilities> }
-
-export const defineClassPreset = <
-    const Abilities extends readonly ClassAbility[],
->(
-    preset: ClassPreset<Abilities> & UniqueAbilityIds<Abilities>,
-): ClassPreset<Abilities> => preset
+// Types and defineClassPreset live in ./types so class files can import them
+// without a circular import through this index.
+export * from "./types"
 
 export const classPresets: Record<string, ClassPreset> = {
     gladiator: GladiatorPreset,

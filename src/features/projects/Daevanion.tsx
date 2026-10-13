@@ -33,7 +33,8 @@ export const Daevanion = ({ classId, layout }: DaevanionProps) => {
         }
 
         favicon.type = selectedClass.icon ? "image/webp" : "image/svg+xml"
-        favicon.href = selectedClass.icon ?? "/favicon.svg"
+        favicon.href =
+            selectedClass.icon ?? `${import.meta.env.BASE_URL}favicon.svg`
     }, [selectedClass.icon])
 
     useEffect(() => {

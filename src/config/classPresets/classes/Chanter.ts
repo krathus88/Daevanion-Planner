@@ -25,7 +25,7 @@ import {
     ImpactHit,
     SurvivalWillpower,
 } from "@assets/gladiator"
-import { defineClassPreset } from ".."
+import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "chanter",

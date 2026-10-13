@@ -5,6 +5,9 @@ import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
+    // GitHub Pages serves the app from /<repo>/; the deploy workflow sets
+    // BASE_PATH. Local dev and builds stay at the site root.
+    base: process.env.BASE_PATH ?? "/",
     plugins: [
         tanstackRouter({
             target: "react",
