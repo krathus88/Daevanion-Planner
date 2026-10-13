@@ -14,6 +14,7 @@ import { formatPlannerDuration } from "../logic/plannerLogic"
 import type { ClassAbility, ClassPreset } from "../../../../config/classPresets"
 import { BoardWorkspace, type BoardView } from "./BoardWorkspace"
 import { usePlannerOptimization } from "../hooks/usePlannerOptimization"
+import { useSharedBudget } from "../hooks/useSharedBudget"
 import {
     clearBoardUndo,
     clearPlannerUndo,
@@ -42,8 +43,6 @@ type DaevanionBoardProps = {
     layout: BoardLayoutName
     classPreset: ClassPreset
 }
-
-const DEFAULT_AVAILABLE_POINTS = 50
 
 type BoardInstanceProps = {
     layout: BoardLayout
@@ -119,10 +118,8 @@ const BoardInstance = ({
             .filter(Boolean)
             .join(" "),
     )
-    const [availablePoints, setAvailablePoints] = useState(
-        initialStorage.progress.value?.availablePoints ??
-            DEFAULT_AVAILABLE_POINTS,
-    )
+    const { totalPoints, usedByOtherBoards, availablePoints, setTotalPoints } =
+        useSharedBudget(layoutName)
     const [boardUndo, setBoardUndo] = useState<BoardUndo | null>(
         initialStorage.boardUndo.value,
     )
@@ -239,7 +236,6 @@ const BoardInstance = ({
             setTargetCells(new Set(excludeStart(progress.value.targetCells)))
             setPlannedPath(new Set(excludeStart(progress.value.plannedPath)))
             setPlannedCost(progress.value.plannedCost)
-            setAvailablePoints(progress.value.availablePoints)
             setActivePlanner(progress.value.activePlanner ?? null)
             setSavedPlanners(saved.value ?? [])
             setPlannerHistory(history.value ?? [])
@@ -261,9 +257,11 @@ const BoardInstance = ({
         [],
     )
 
-    const updateAvailablePoints = (value: number) => {
-        setAvailablePoints(value)
-        persistProgress({ availablePoints: value })
+    const updateTotalPoints = (value: number) => {
+        const error = setTotalPoints(value)
+        if (error) {
+            setMessage(error)
+        }
     }
 
     const interactWithCell = (position: Position) => {
@@ -462,10 +460,8 @@ const BoardInstance = ({
     const loadBoard = (saved: SavedBoard) => {
         cancelOptimization()
         setSelectedCells(new Set(excludeStart(saved.selectedCells)))
-        setAvailablePoints(saved.availablePoints)
         const error = persistProgress({
             selectedCells: excludeStart(saved.selectedCells),
-            availablePoints: saved.availablePoints,
         })
         setMessage(error ?? `Loaded "${saved.name}".`)
     }
@@ -484,12 +480,10 @@ const BoardInstance = ({
             source,
         } satisfies ActivePlanner
         setActivePlanner(selectedPlanner)
-        setAvailablePoints(saved.availablePoints)
         const error = persistProgress({
             targetCells: excludeStart(saved.targetCells),
             plannedPath: excludeStart(saved.plannedPath),
             plannedCost: saved.plannedCost,
-            availablePoints: saved.availablePoints,
             activePlanner: selectedPlanner,
         })
         setMessage(error ?? `Loaded "${saved.name}".`)
@@ -562,7 +556,9 @@ const BoardInstance = ({
             selectedCells={selectedCells}
             spentPoints={spentPoints}
             availablePoints={availablePoints}
-            updateAvailablePoints={updateAvailablePoints}
+            totalPoints={totalPoints}
+            usedByOtherBoards={usedByOtherBoards}
+            updateTotalPoints={updateTotalPoints}
             boardSaveName={boardSaveName}
             setBoardSaveName={setBoardSaveName}
             saveBoard={saveBoard}

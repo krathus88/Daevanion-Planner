@@ -1,6 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { BoardWorkspaceProps } from "./BoardWorkspace"
-import { Card, Hint, PointsField, ToneButton } from "./PanelKit"
+import { Card, Hint, SharedBudgetField, ToneButton } from "./PanelKit"
 
 type Props = Pick<
     BoardWorkspaceProps,
@@ -8,7 +8,9 @@ type Props = Pick<
     | "selectedCells"
     | "spentPoints"
     | "availablePoints"
-    | "updateAvailablePoints"
+    | "totalPoints"
+    | "usedByOtherBoards"
+    | "updateTotalPoints"
     | "resetSelection"
     | "boardUndo"
     | "restoreSelection"
@@ -20,7 +22,9 @@ export const BoardSelectionPanel = (props: Props) => {
         selectedCells,
         spentPoints,
         availablePoints,
-        updateAvailablePoints,
+        totalPoints,
+        usedByOtherBoards,
+        updateTotalPoints,
         resetSelection,
         boardUndo,
         restoreSelection,
@@ -34,11 +38,12 @@ export const BoardSelectionPanel = (props: Props) => {
 
     return (
         <Flex direction="column" gap="4">
-            <PointsField
-                id="available-points"
-                label="Available points"
-                onChange={updateAvailablePoints}
-                value={availablePoints}
+            <SharedBudgetField
+                availablePoints={availablePoints}
+                idPrefix="board"
+                onTotalChange={updateTotalPoints}
+                totalPoints={totalPoints}
+                usedByOtherBoards={usedByOtherBoards}
             />
 
             <Card direction="row" gap="3">

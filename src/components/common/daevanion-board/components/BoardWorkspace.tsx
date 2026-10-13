@@ -26,8 +26,11 @@ export type BoardWorkspaceProps = {
     classPreset: ClassPreset
     selectedCells: Set<string>
     spentPoints: number
+    // This board's share of the shared total (total minus other boards).
     availablePoints: number
-    updateAvailablePoints: (value: number) => void
+    totalPoints: number
+    usedByOtherBoards: number
+    updateTotalPoints: (value: number) => void
     boardSaveName: string
     setBoardSaveName: (value: string) => void
     saveBoard: () => void

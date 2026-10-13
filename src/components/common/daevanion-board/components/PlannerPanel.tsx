@@ -4,7 +4,7 @@ import type { BoardWorkspaceProps } from "./BoardWorkspace"
 import {
     Card,
     Hint,
-    PointsField,
+    SharedBudgetField,
     PrimaryButton,
     SearchTimeSelect,
     SecondaryButton,
@@ -16,7 +16,9 @@ type Props = Pick<
     BoardWorkspaceProps,
     | "targetCells"
     | "availablePoints"
-    | "updateAvailablePoints"
+    | "totalPoints"
+    | "usedByOtherBoards"
+    | "updateTotalPoints"
     | "isOptimizing"
     | "optimizePlanner"
     | "plannedCost"
@@ -58,7 +60,9 @@ export const PlannerPanel = (props: Props) => {
     const {
         targetCells,
         availablePoints,
-        updateAvailablePoints,
+        totalPoints,
+        usedByOtherBoards,
+        updateTotalPoints,
         isOptimizing,
         optimizePlanner,
         plannedCost,
@@ -104,12 +108,13 @@ export const PlannerPanel = (props: Props) => {
                 )}
             </Flex>
 
-            <PointsField
+            <SharedBudgetField
+                availablePoints={availablePoints}
                 disabled={isOptimizing}
-                id="planner-available-points"
-                label="Available points"
-                onChange={updateAvailablePoints}
-                value={availablePoints}
+                idPrefix="planner"
+                onTotalChange={updateTotalPoints}
+                totalPoints={totalPoints}
+                usedByOtherBoards={usedByOtherBoards}
             />
 
             <Card>
