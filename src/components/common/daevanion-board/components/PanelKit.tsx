@@ -391,3 +391,42 @@ export const Accordion = ({
         </Box>
     )
 }
+
+type SharedBudgetFieldProps = {
+    idPrefix: string
+    totalPoints: number
+    usedByOtherBoards: number
+    availablePoints: number
+    onTotalChange: (value: number) => void
+    disabled?: boolean
+}
+
+// The shared Total points (same value as the All boards tab) and this
+// board's share of it.
+export const SharedBudgetField = ({
+    idPrefix,
+    totalPoints,
+    usedByOtherBoards,
+    availablePoints,
+    onTotalChange,
+    disabled,
+}: SharedBudgetFieldProps) => (
+    <Flex direction="column" gap="1.5">
+        <PointsField
+            disabled={disabled}
+            id={`${idPrefix}-total-points`}
+            label="Total points (all boards)"
+            onChange={onTotalChange}
+            value={totalPoints}
+        />
+        <Flex color="app.subtle" fontSize="xs" justifyContent="space-between">
+            <Text>Used by other boards · {usedByOtherBoards}</Text>
+            <Text>
+                Available here ·{" "}
+                <Text as="span" color="app.fg" fontWeight="semibold">
+                    {availablePoints}
+                </Text>
+            </Text>
+        </Flex>
+    </Flex>
+)

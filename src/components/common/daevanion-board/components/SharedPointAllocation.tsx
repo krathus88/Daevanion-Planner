@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react"
 import {
     applyPlannerToBoard,
+    DEFAULT_TOTAL_POINTS,
     notifyPlansReplaced,
     readBoardProgress,
     readPlannerHistory,
@@ -34,8 +35,6 @@ type AllocationSnapshot = {
     routeCosts: Record<BoardLayoutName, number>
     error: string | null
 }
-
-const DEFAULT_TOTAL_POINTS = 390
 
 const readSnapshot = (): AllocationSnapshot => {
     const storedAllocation = readSharedAllocation()

@@ -193,6 +193,29 @@ export const readSharedAllocation = () =>
 export const writeSharedAllocation = (allocation: SharedAllocation) =>
     write(SHARED_ALLOCATION_KEY, allocation)
 
+export const DEFAULT_TOTAL_POINTS = 390
+
+// The one point budget shared by every board.
+export const readSharedTotalPoints = () =>
+    readSharedAllocation().value?.totalPoints ?? DEFAULT_TOTAL_POINTS
+
+export const writeSharedTotalPoints = (totalPoints: number) =>
+    writeSharedAllocation({
+        selectedPlannerIds: {},
+        ...readSharedAllocation().value,
+        totalPoints,
+    })
+
+// Points the other boards' current planner routes already use.
+export const readRouteCostOfOtherBoards = (layout: BoardLayoutName) =>
+    (Object.keys(layouts) as BoardLayoutName[])
+        .filter((other) => other !== layout)
+        .reduce(
+            (total, other) =>
+                total + (readBoardProgress(other).value?.plannedCost ?? 0),
+            0,
+        )
+
 export const subscribeToBoardStorage = (onChange: () => void) => {
     const handleLocalChange = () => onChange()
     const handleStorageChange = (event: StorageEvent) => {
