@@ -1,6 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import {
+    LAYOUT_NAMES,
     layouts,
     POINTS_PER_NODE_TYPE,
     type LayoutType,
@@ -12,9 +13,16 @@ import type {
     MinimumShortfall,
     PriorityPlans,
 } from "@planner/storage/abilityPriorities"
-import { statWeights } from "@planner/config/stats"
+import {
+    FOCUS_TIERS,
+    routeStatScore,
+    statWeights,
+    STAT_TIERS,
+    type FocusTier,
+} from "@planner/config/stats"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import { findPlannerPath } from "./plannerLogic"
+import { findStatSteps, type StatStep } from "./statFocus"
 
 export type PriorityPlannerProgress = {
     elapsedMs: number
@@ -38,6 +46,15 @@ type PriorityTarget = {
     // Stat node added with leftover points; not shown as a required target.
     isStat?: boolean
 }
+
+// Stat focus: a tier's stat nodes, taken before `waiting`, the abilities
+// ranked after it.
+type StatBlock = {
+    tier: FocusTier
+    waiting: PriorityTarget[]
+}
+
+type RankStep = { target: PriorityTarget } | { block: StatBlock }
 
 // Share of the run spent on the first greedy pass; the rest refines it.
 const GREEDY_SHARE = 0.4
@@ -145,6 +162,53 @@ export const optimizePriorityPlans = async (
             left.layout.localeCompare(right.layout) ||
             left.key.localeCompare(right.key, undefined, { numeric: true }),
     )
+
+    // Stat focus puts each tier's stat nodes just before the first ability,
+    // in scope, ranked after the tier's rank. Skills out of scope keep their
+    // place in rank order.
+    const focus = statSettings.focus
+    const isInScope = (target: PriorityTarget) => {
+        if (target.abilityId === undefined) {
+            return false
+        }
+
+        return (
+            focus.scope === "all" ||
+            abilitiesById.get(target.abilityId)?.ability.type === "passive"
+        )
+    }
+    const blockIndexes = new Map<FocusTier, number>()
+    if (focus.enabled) {
+        for (const tier of FOCUS_TIERS) {
+            const afterRank = focus.tiers[tier].afterRank
+            if (afterRank === null) {
+                continue
+            }
+
+            const index = targets.findIndex(
+                (target) => isInScope(target) && target.priority > afterRank,
+            )
+            blockIndexes.set(tier, index < 0 ? targets.length : index)
+        }
+    }
+    const rankSteps: RankStep[] = []
+    for (let index = 0; index <= targets.length; index += 1) {
+        for (const tier of FOCUS_TIERS) {
+            if (blockIndexes.get(tier) === index) {
+                rankSteps.push({
+                    block: {
+                        tier: tier,
+                        waiting: targets
+                            .slice(index)
+                            .filter((target) => target.abilityId),
+                    },
+                })
+            }
+        }
+        if (index < targets.length) {
+            rankSteps.push({ target: targets[index] })
+        }
+    }
 
     const emptyPlan = () => {
         return {
@@ -343,11 +407,187 @@ export const optimizePriorityPlans = async (
         }
     }
 
+    const tierAt = (layoutName: LayoutType, key: string) => {
+        const stat = layouts[layoutName].nodeStats[key]
+
+        return stat ? statSettings.tiers[stat] : undefined
+    }
+    const tierNodesOnRoutes = (tier: FocusTier) => {
+        let count = 0
+        for (const layoutName of LAYOUT_NAMES) {
+            for (const key of plans[layoutName].plannedPath) {
+                if (tierAt(layoutName, key) === tier) {
+                    count += 1
+                }
+            }
+        }
+
+        return count
+    }
+
+    // Makes stat nodes targets, so later routes for lower-ranked abilities
+    // can't trade them away. They still aren't shown as required targets.
+    const pinStatNodes = (layoutName: LayoutType, keys: string[]) => {
+        const plan = plans[layoutName]
+        const added = keys.filter((key) => !plan.targetCells.includes(key))
+        plans[layoutName] = {
+            ...plan,
+            targetCells: [...plan.targetCells, ...added],
+        }
+        for (const key of added) {
+            statTargetKeys[layoutName].add(key)
+        }
+    }
+
+    // Adds a stat step's nodes to its board and pins its wanted stat nodes.
+    const commitStatStep = (
+        layoutName: LayoutType,
+        step: StatStep,
+        isFree: (key: string) => boolean,
+    ) => {
+        const plan = plans[layoutName]
+        const plannedPath = [...plan.plannedPath, ...step.connector]
+        const statScore = routeStatScore(
+            plannedPath,
+            weightsByBoard[layoutName],
+        )
+        plans[layoutName] = {
+            ...plan,
+            plannedPath: plannedPath,
+            plannedCost: plan.plannedCost + step.cost,
+        }
+        totalCost += step.cost
+        totalScore += statScore - scores[layoutName]
+        scores[layoutName] = statScore
+        pinStatNodes(layoutName, step.connector.filter(isFree))
+    }
+
+    // Stat focus: takes the tier's stat nodes, least detour first, until its
+    // cap or the shared budget runs out. Among equal detours, nodes closer
+    // to an ability still waiting win, so the branch is more likely to
+    // become part of that ability's route later.
+    const fillStatBlock = (block: StatBlock) => {
+        const tierRank = STAT_TIERS.indexOf(block.tier)
+        const cap = focus.tiers[block.tier].cap ?? Number.POSITIVE_INFINITY
+        const stepsByBoard = new Map<LayoutType, StatStep[]>()
+        let taken = tierNodesOnRoutes(block.tier)
+
+        // The tier's own stat nodes and better ones aren't a detour.
+        const isFreeOn = (layoutName: LayoutType) => {
+            return (key: string) => {
+                const tier = tierAt(layoutName, key)
+                return (
+                    tier !== undefined &&
+                    tier !== "ignore" &&
+                    STAT_TIERS.indexOf(tier) <= tierRank
+                )
+            }
+        }
+
+        // Keep the wanted stat nodes routes already pass through.
+        for (const layoutName of LAYOUT_NAMES) {
+            pinStatNodes(
+                layoutName,
+                plans[layoutName].plannedPath.filter(isFreeOn(layoutName)),
+            )
+        }
+
+        const stepsFor = (layoutName: LayoutType) => {
+            const cached = stepsByBoard.get(layoutName)
+            if (cached) {
+                return cached
+            }
+
+            const layout = layouts[layoutName]
+            const route = new Set([
+                keyOf(getStart(layout)),
+                ...plans[layoutName].plannedPath,
+            ])
+            const wanted = new Set(
+                Object.keys(layout.nodeStats).filter(
+                    (key) =>
+                        tierAt(layoutName, key) === block.tier &&
+                        !route.has(key),
+                ),
+            )
+            const waiting = block.waiting
+                .filter(
+                    (target) =>
+                        target.layout === layoutName &&
+                        !route.has(target.key) &&
+                        !isAtMaximum(target.abilityId),
+                )
+                .map((target) => target.key)
+            const steps = findStatSteps({
+                layout: layout,
+                route: route,
+                wanted: wanted,
+                waiting: waiting,
+                maxDetour: focus.detour,
+                isFree: isFreeOn(layoutName),
+            })
+            stepsByBoard.set(layoutName, steps)
+
+            return steps
+        }
+
+        const countTier = (layoutName: LayoutType, step: StatStep) => {
+            return step.connector.filter(
+                (key) => tierAt(layoutName, key) === block.tier,
+            ).length
+        }
+
+        const isBetterStep = (step: StatStep, best: StatStep | null) => {
+            return (
+                best === null ||
+                step.detour < best.detour ||
+                (step.detour === best.detour &&
+                    (step.toWaiting < best.toWaiting ||
+                        (step.toWaiting === best.toWaiting &&
+                            step.cost < best.cost)))
+            )
+        }
+
+        while (taken < cap && totalCost < pointBudget) {
+            let best: { layoutName: LayoutType; step: StatStep } | null = null
+            for (const layoutName of LAYOUT_NAMES) {
+                // Sorted best first, so the first one that fits is the
+                // board's best.
+                const step = stepsFor(layoutName).find(
+                    (candidate) =>
+                        totalCost + candidate.cost <= pointBudget &&
+                        taken + countTier(layoutName, candidate) <= cap,
+                )
+                if (step && isBetterStep(step, best?.step ?? null)) {
+                    best = { layoutName: layoutName, step: step }
+                }
+            }
+            if (!best) {
+                return
+            }
+
+            taken += countTier(best.layoutName, best.step)
+            commitStatStep(
+                best.layoutName,
+                best.step,
+                isFreeOn(best.layoutName),
+            )
+            stepsByBoard.delete(best.layoutName)
+            reportProgress()
+        }
+    }
+
     const fillByRank = async (stepMs: number, until: number) => {
-        for (const target of targets) {
+        for (const step of rankSteps) {
             if (performance.now() >= until) {
                 return
             }
+            if ("block" in step) {
+                fillStatBlock(step.block)
+                continue
+            }
+
+            const target = step.target
             if (
                 plans[target.layout].targetCells.includes(target.key) ||
                 isAtMaximum(target.abilityId)
