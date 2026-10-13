@@ -2,6 +2,8 @@
 // long runs are fine.
 export const SEARCH_TIME_OPTIONS = [10, 30, 60, 120, 300, 600]
 export const DEFAULT_SEARCH_SECONDS = 30
+// "Optimize all boards" searches four boards at once, so it gets longer.
+export const DEFAULT_ALL_BOARDS_SEARCH_SECONDS = 60
 
 // 45 -> "45s", 60 -> "1m", 125 -> "2m 5s"
 export const formatSearchTime = (totalSeconds: number) => {

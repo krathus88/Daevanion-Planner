@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { Box, Flex, Text } from "@chakra-ui/react"
 import { PrimaryButton, SearchTimeSelect, SecondaryButton } from "./PanelKit"
-import { DEFAULT_SEARCH_SECONDS, formatSearchTime } from "./searchTime"
+import {
+    DEFAULT_ALL_BOARDS_SEARCH_SECONDS,
+    formatSearchTime,
+} from "./searchTime"
 import { formatPlanTime } from "../logic/formatPlanTime"
 import { readStatSettings, type StatSettings } from "../storage/statPriorities"
 import type { ClassPreset } from "../../../../config/classPresets"
@@ -54,7 +57,9 @@ export const PriorityOptimizeAllBoards = ({
     const [message, setMessage] = useState("")
     const [warning, setWarning] = useState("")
     const [isOptimizing, setIsOptimizing] = useState(false)
-    const [searchSeconds, setSearchSeconds] = useState(DEFAULT_SEARCH_SECONDS)
+    const [searchSeconds, setSearchSeconds] = useState(
+        DEFAULT_ALL_BOARDS_SEARCH_SECONDS,
+    )
 
     useEffect(
         () => () => {
