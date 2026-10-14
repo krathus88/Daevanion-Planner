@@ -10,53 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ClassIdLayoutRouteImport } from './routes/$classId/$layout'
-import { Route as BoardsLayoutRouteImport } from './routes/boards/$layout'
+import { Route as TimersRouteImport } from './routes/timers'
+import { Route as PlannerClassIdLayoutRouteImport } from './routes/planner/$classId/$layout'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClassIdLayoutRoute = ClassIdLayoutRouteImport.update({
-  id: '/$classId/$layout',
-  path: '/$classId/$layout',
+const TimersRoute = TimersRouteImport.update({
+  id: '/timers',
+  path: '/timers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BoardsLayoutRoute = BoardsLayoutRouteImport.update({
-  id: '/boards/$layout',
-  path: '/boards/$layout',
+const PlannerClassIdLayoutRoute = PlannerClassIdLayoutRouteImport.update({
+  id: '/planner/$classId/$layout',
+  path: '/planner/$classId/$layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$classId/$layout': typeof ClassIdLayoutRoute
-  '/boards/$layout': typeof BoardsLayoutRoute
+  '/timers': typeof TimersRoute
+  '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$classId/$layout': typeof ClassIdLayoutRoute
-  '/boards/$layout': typeof BoardsLayoutRoute
+  '/timers': typeof TimersRoute
+  '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$classId/$layout': typeof ClassIdLayoutRoute
-  '/boards/$layout': typeof BoardsLayoutRoute
+  '/timers': typeof TimersRoute
+  '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$classId/$layout' | '/boards/$layout'
+  fullPaths: '/' | '/timers' | '/planner/$classId/$layout'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$classId/$layout' | '/boards/$layout'
-  id: '__root__' | '/' | '/$classId/$layout' | '/boards/$layout'
+  to: '/' | '/timers' | '/planner/$classId/$layout'
+  id: '__root__' | '/' | '/timers' | '/planner/$classId/$layout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ClassIdLayoutRoute: typeof ClassIdLayoutRoute
-  BoardsLayoutRoute: typeof BoardsLayoutRoute
+  TimersRoute: typeof TimersRoute
+  PlannerClassIdLayoutRoute: typeof PlannerClassIdLayoutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,18 +68,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$classId/$layout': {
-      id: '/$classId/$layout'
-      path: '/$classId/$layout'
-      fullPath: '/$classId/$layout'
-      preLoaderRoute: typeof ClassIdLayoutRouteImport
+    '/timers': {
+      id: '/timers'
+      path: '/timers'
+      fullPath: '/timers'
+      preLoaderRoute: typeof TimersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/boards/$layout': {
-      id: '/boards/$layout'
-      path: '/boards/$layout'
-      fullPath: '/boards/$layout'
-      preLoaderRoute: typeof BoardsLayoutRouteImport
+    '/planner/$classId/$layout': {
+      id: '/planner/$classId/$layout'
+      path: '/planner/$classId/$layout'
+      fullPath: '/planner/$classId/$layout'
+      preLoaderRoute: typeof PlannerClassIdLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -87,8 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ClassIdLayoutRoute: ClassIdLayoutRoute,
-  BoardsLayoutRoute: BoardsLayoutRoute,
+  TimersRoute: TimersRoute,
+  PlannerClassIdLayoutRoute: PlannerClassIdLayoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

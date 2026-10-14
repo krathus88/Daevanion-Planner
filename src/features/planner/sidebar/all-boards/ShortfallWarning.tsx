@@ -12,13 +12,7 @@ export const ShortfallWarning = ({ shortfall }: ShortfallWarningProps) => {
     const isSpecialShort = specialNodes.taken < specialNodes.total
 
     return (
-        <Flex
-            layerStyle="alert"
-            p="3"
-            flexDir="column"
-            gap="3"
-            role="alert"
-        >
+        <Flex layerStyle="alert" p="3" flexDir="column" gap="3" role="alert">
             <Text color="app.danger" fontSize="sm" fontWeight="semibold">
                 Not enough points
             </Text>

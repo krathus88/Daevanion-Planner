@@ -21,6 +21,8 @@ import {
     type ActivePlanner,
     type SavedPlanner,
 } from "@planner/storage/boardStorage"
+import { readRankOrder } from "@planner/storage/rankOrder"
+import { readSpecialPriorities } from "@planner/storage/specialPriorities"
 import { readStatSettings } from "@planner/storage/statPriorities"
 
 type PriorityWorkerMessage =
@@ -58,9 +60,7 @@ export const useOptimizeAllBoards = ({
         null,
     )
     const [message, setMessage] = useState("")
-    const [shortfall, setShortfall] = useState<OptimizeShortfall | null>(
-        null,
-    )
+    const [shortfall, setShortfall] = useState<OptimizeShortfall | null>(null)
     const [isOptimizing, setIsOptimizing] = useState(false)
     const workerRef = useRef<Worker | null>(null)
 
@@ -225,6 +225,8 @@ export const useOptimizeAllBoards = ({
                     readAbilityMinimums(classPreset),
                 ),
                 maximums: readAbilityMaximums(classPreset),
+                specialPriorities: readSpecialPriorities(classPreset.id),
+                rankOrder: readRankOrder(classPreset.id),
                 statSettings: readStatSettings(classPreset.id),
             }
         } catch (error) {

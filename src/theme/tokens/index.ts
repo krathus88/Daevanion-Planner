@@ -12,9 +12,23 @@ export const tokens = defineTokens({
     opacity: {
         disabled: { value: 0.4 },
         hidden: { value: 0 },
+        visible: { value: 1 },
+    },
+    borderStyles: {
+        // A drop zone.
+        dashed: { value: "dashed" },
+    },
+    cursor: {
+        // A drag handle.
+        grab: { value: "grab" },
     },
     animations: {
         glowPulse: { value: "pulse 1.4s ease-in-out infinite" },
+        timerPulseStrong: {
+            value: "timerPulseStrong 2s ease-in-out infinite",
+        },
+        timerPulseSoft: { value: "timerPulseSoft 2s ease-in-out infinite" },
+        none: { value: "none" },
     },
     lineHeights: {
         tight: { value: 1.15 },
@@ -35,6 +49,8 @@ export const tokens = defineTokens({
     spacing: {
         0: { value: "0" },
         auto: { value: "auto" },
+        // Overlapping a 1px border, e.g. a tab sitting on its panel.
+        "1px": { value: "1px" },
         // Below the sticky header (4rem) with a little room.
         headerOffset: { value: "5.5rem" },
         board: {

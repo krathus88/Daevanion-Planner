@@ -3,6 +3,8 @@ import {
     optimizePriorityPlans,
     type PriorityPlannerProgress,
 } from "@planner/logic/priorityPlanner"
+import type { RankOrder } from "@planner/storage/rankOrder"
+import type { SpecialPriorities } from "@planner/storage/specialPriorities"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import type {
     AbilityMaximums,
@@ -15,6 +17,8 @@ type OptimizeMessage = {
     priorities: AbilityPriorities
     minimums: AbilityMinimums
     maximums: AbilityMaximums
+    specialPriorities: SpecialPriorities
+    rankOrder: RankOrder
     pointBudget: number
     timeBudgetMs: number
     statSettings: StatSettings
@@ -28,6 +32,8 @@ globalThis.addEventListener(
             priorities,
             minimums,
             maximums,
+            specialPriorities,
+            rankOrder,
             pointBudget,
             timeBudgetMs,
             statSettings,
@@ -37,6 +43,8 @@ globalThis.addEventListener(
             priorities,
             minimums,
             maximums,
+            specialPriorities,
+            rankOrder,
             pointBudget,
             timeBudgetMs,
             statSettings,

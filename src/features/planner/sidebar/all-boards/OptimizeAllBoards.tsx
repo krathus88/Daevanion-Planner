@@ -22,14 +22,8 @@ export const OptimizeAllBoards = ({
     totalPoints,
     onComplete,
 }: OptimizeAllBoardsProps) => {
-    const {
-        isOptimizing,
-        progress,
-        message,
-        shortfall,
-        optimizeAll,
-        cancel,
-    } = useOptimizeAllBoards({
+    const { isOptimizing, progress, message, shortfall, optimizeAll, cancel } =
+        useOptimizeAllBoards({
             classPreset: classPreset,
             totalPoints: totalPoints,
             onComplete: onComplete,

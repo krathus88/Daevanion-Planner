@@ -1,10 +1,15 @@
 import { Image } from "@chakra-ui/react"
 
-export const IconImage = ({ icon }: { icon?: string }) => {
+type IconImageProps = {
+    icon?: string
+    size?: "4" | "5"
+}
+
+export const IconImage = ({ icon, size = "5" }: IconImageProps) => {
     return icon ? (
         <Image
             src={icon}
-            boxSize="5"
+            boxSize={size}
             flexShrink="0"
             objectFit="contain"
             alt=""

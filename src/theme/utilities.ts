@@ -12,6 +12,8 @@ export const utilities = {
                 "background, background-color, background-image, background-position",
             // Artwork zooming and brightening on hover.
             zoom: "transform, filter",
+            // Something turning or moving, e.g. a chevron flipping.
+            transform: "transform",
             // A node's fill and glow changing with its state.
             shape: "background, box-shadow",
             none: "none",

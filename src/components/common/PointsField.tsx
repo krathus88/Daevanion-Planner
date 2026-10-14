@@ -1,5 +1,6 @@
-import { Field, Input } from "@chakra-ui/react"
+import { Field } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
+import { WholeNumberInput } from "./WholeNumberInput"
 
 type PointsFieldProps = {
     value: number
@@ -25,13 +26,11 @@ export const PointsField = ({
         <Field.Root orientation="horizontal" gap="3">
             <Field.Label fontSize="sm">{label}</Field.Label>
 
-            <Input
+            <WholeNumberInput
                 size="sm"
-                min={0}
                 value={value}
                 w="24"
                 textAlign="right"
-                type="number"
                 disabled={disabled}
                 onChange={handleChange}
             />

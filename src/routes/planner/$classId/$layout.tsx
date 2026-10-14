@@ -3,8 +3,8 @@ import { BoardRoute } from "@planner/BoardRoute"
 import { DEFAULT_LAYOUT, isLayoutType } from "@planner/config/layouts"
 import { createFileRoute, Navigate, notFound } from "@tanstack/react-router"
 
-export const Route = createFileRoute("/$classId/$layout")({
-    // Every URL lands on the planner, so it loads with the app instead of as
+export const Route = createFileRoute("/planner/$classId/$layout")({
+    // Most URLs land on the planner, so it loads with the app instead of as
     // a separate chunk fetched after it.
     codeSplitGroupings: [],
     params: {
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/$classId/$layout")({
         <Navigate
             params={{ classId: DEFAULT_CLASS_ID, layout: DEFAULT_LAYOUT }}
             replace
-            to="/$classId/$layout"
+            to="/planner/$classId/$layout"
         />
     ),
     // Rendering a board blocks the main thread. Wait a frame for the
