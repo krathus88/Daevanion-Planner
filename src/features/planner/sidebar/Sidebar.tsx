@@ -2,6 +2,7 @@ import { Box, Flex, Tabs, type TabsValueChangeDetails } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
 import { useAllBoardsResults } from "@planner/hooks/useAllBoardsResults"
 import type { SidebarTab } from "../types"
+import { BoardSwitcher } from "./BoardSwitcher"
 import { SharedPointAllocation } from "./all-boards/SharedPointAllocation"
 import { PlanTab } from "./plan/PlanTab"
 import { SavedPanel } from "./saved/SavedPanel"
@@ -37,8 +38,11 @@ export const Sidebar = () => {
             borderRadius="xl"
             boxShadow="lg"
         >
+            <BoardSwitcher mx="3" mt="3" flexShrink="0" hideBelow="md" />
+
             <Tabs.Root
                 variant="line"
+                fitted
                 value={sidebarTab}
                 minH="0"
                 display="flex"

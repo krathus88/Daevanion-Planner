@@ -7,6 +7,8 @@ import { StatusText } from "@common/StatusText"
 import { CompareRoutes } from "./CompareRoutes"
 import { OptimizeAllBoards } from "./OptimizeAllBoards"
 import { AbilityPriorityList } from "./priorities/AbilityPriorityList"
+import { RankOrderList } from "./priorities/RankOrderList"
+import { SpecialPriorityList } from "./priorities/SpecialPriorityList"
 import { StatPriorityList } from "./priorities/StatPriorityList"
 
 type SharedPointAllocationProps = {
@@ -37,12 +39,20 @@ export const SharedPointAllocation = ({
                 onChange={allocation.setTotalPoints}
             />
 
+            <Section title="Special node priorities">
+                <SpecialPriorityList classId={classPreset.id} />
+            </Section>
+
             <Section title="Ability priorities">
                 <AbilityPriorityList classPreset={classPreset} />
             </Section>
 
             <Section title="Stat priorities">
                 <StatPriorityList classPreset={classPreset} />
+            </Section>
+
+            <Section title="Same-rank order">
+                <RankOrderList classId={classPreset.id} />
             </Section>
 
             <OptimizeAllBoards

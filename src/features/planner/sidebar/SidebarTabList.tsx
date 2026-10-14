@@ -13,7 +13,7 @@ export const SidebarTabList = ({
     hasUnseenResults,
 }: SidebarTabListProps) => {
     const tabs: { value: SidebarTab; label: string }[] = [
-        { value: "plan", label: "Plan" },
+        { value: "plan", label: "This board" },
         {
             value: "saved",
             label: savedCount > 0 ? `Saved · ${savedCount}` : "Saved",

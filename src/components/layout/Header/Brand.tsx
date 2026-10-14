@@ -1,7 +1,7 @@
-import { Flex, Text } from "@chakra-ui/react"
+import { Flex, Text, type FlexProps } from "@chakra-ui/react"
 
 // Two lines on phones so the class picker fits beside it; one line from md up.
-export const Brand = () => {
+export const Brand = ({ ...props }: FlexProps) => {
     return (
         <Flex
             flexShrink="0"
@@ -9,6 +9,7 @@ export const Brand = () => {
             alignItems={{ base: "flex-start", md: "baseline" }}
             columnGap="2"
             lineHeight={{ base: "tight", md: "normal" }}
+            {...props}
         >
             <Text
                 color="app.accent"

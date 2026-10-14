@@ -44,4 +44,13 @@ export const layerStyles = defineLayerStyles({
             borderWidth: "1px",
         },
     },
+    // A box that flags something uncertain, e.g. an estimated timer.
+    notice: {
+        value: {
+            bg: "app.accentMuted",
+            borderColor: "app.accent",
+            borderRadius: "md",
+            borderWidth: "1px",
+        },
+    },
 })

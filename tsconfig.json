@@ -30,6 +30,7 @@
             "@ui/*": ["./src/components/ui/*"],
             "@common/*": ["./src/components/common/*"],
             "@planner/*": ["./src/features/planner/*"],
+            "@timers/*": ["./src/features/timers/*"],
             "@theme/*": ["./src/theme/*"]
         }
     },

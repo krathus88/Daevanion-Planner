@@ -59,8 +59,8 @@ export const StatPriorityList = ({ classPreset }: StatPriorityListProps) => {
             </Switch.Root>
 
             <Text textStyle="hint">
-                When on, points left after special nodes, Min and ranks go to
-                the best stat nodes, without giving up anything else.
+                When on, points left after Min and ranks go to the best stat
+                nodes, without giving up anything else.
             </Text>
 
             <StatFocusSettings

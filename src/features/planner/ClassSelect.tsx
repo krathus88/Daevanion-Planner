@@ -9,6 +9,10 @@ import { classPresets, isClassId, type ClassId } from "@config/classPresets"
 import { useNavigate } from "@tanstack/react-router"
 import { IconImage } from "@common/IconImage"
 import type { LayoutType } from "./config/layouts"
+import {
+    readPlannerLocation,
+    writePlannerLocation,
+} from "./storage/plannerLocation"
 
 const classCollection = createListCollection({
     items: Object.values(classPresets).map((preset) => ({
@@ -20,8 +24,9 @@ const classCollection = createListCollection({
 
 type ClassSelectProps = {
     classId: ClassId
-    // Kept when switching class.
-    layout: LayoutType
+    // The board on screen, kept when switching class. Pages without a board
+    // only remember the class for the planner.
+    layout?: LayoutType
 }
 
 export const ClassSelect = ({ classId, layout }: ClassSelectProps) => {
@@ -30,13 +35,24 @@ export const ClassSelect = ({ classId, layout }: ClassSelectProps) => {
     const handleValueChange = (details: SelectValueChangeDetails) => {
         const next = details.value[0]
 
-        if (next && next !== classId && isClassId(next)) {
+        if (!next || next === classId || !isClassId(next)) {
+            return
+        }
+
+        if (layout) {
             navigate({
-                to: "/$classId/$layout",
+                to: "/planner/$classId/$layout",
                 params: { classId: next, layout: layout },
                 resetScroll: false,
             })
+
+            return
         }
+
+        writePlannerLocation({
+            classId: next,
+            layout: readPlannerLocation().layout,
+        })
     }
 
     const selected = classCollection.items.find(
@@ -55,9 +71,13 @@ export const ClassSelect = ({ classId, layout }: ClassSelectProps) => {
             <Select.HiddenSelect />
 
             <Flex alignItems="center" gap="2">
-                <Select.Label>Class</Select.Label>
+                {/* Hidden on phones, where the menu button needs the room. */}
+                <Select.Label srOnly={{ base: true, md: false }}>
+                    Class
+                </Select.Label>
 
-                <Select.Control minW="44" flex="1">
+                {/* Narrower on phones so it fits beside the brand. */}
+                <Select.Control minW={{ base: "40", md: "44" }} flex="1">
                     <Select.Trigger>
                         <Flex minW="0" alignItems="center" gap="2">
                             <IconImage icon={selected?.icon} />

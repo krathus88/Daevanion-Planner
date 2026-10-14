@@ -1,7 +1,5 @@
-import { Container, Flex } from "@chakra-ui/react"
+import { Container } from "@chakra-ui/react"
 import { classPresets, type ClassId } from "@config/classPresets"
-import { Footer } from "@layout/Footer"
-import { Header } from "@layout/Header/Header"
 import { useState } from "react"
 import type { LayoutType } from "./config/layouts"
 import { DaevanionBoard } from "./DaevanionBoard"
@@ -30,26 +28,15 @@ export const PlannerPage = ({
     const [sidebarTab, setSidebarTab] = useState<SidebarTab>("plan")
 
     return (
-        <Flex minH="vh" flexDir="column">
-            <Header classId={classId} layout={layout} />
-
-            <Container
-                as="main"
-                py={{ base: "4", md: "6" }}
-                maxW="8xl"
-                flex="1"
-            >
-                <DaevanionBoard
-                    classPreset={selectedClass}
-                    layout={layout}
-                    sidebarTab={sidebarTab}
-                    view={boardView}
-                    onSidebarTabChange={setSidebarTab}
-                    onViewChange={onBoardViewChange}
-                />
-            </Container>
-
-            <Footer />
-        </Flex>
+        <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
+            <DaevanionBoard
+                classPreset={selectedClass}
+                layout={layout}
+                sidebarTab={sidebarTab}
+                view={boardView}
+                onSidebarTabChange={setSidebarTab}
+                onViewChange={onBoardViewChange}
+            />
+        </Container>
     )
 }

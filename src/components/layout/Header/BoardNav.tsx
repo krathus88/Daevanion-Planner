@@ -12,7 +12,7 @@ export const BoardNav = ({ classId, layout, ...props }: BoardNavProps) => {
     return (
         <Flex
             as="nav"
-            w={{ base: "full", md: "auto" }}
+            w="full"
             minW="0"
             alignSelf="stretch"
             gap="1"

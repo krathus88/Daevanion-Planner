@@ -36,11 +36,11 @@ export const AbilityPriorityList = ({
     return (
         <Flex flexDir="column" alignItems="stretch" gap="2">
             <Text textStyle="hint">
-                Rank each ability, 1 being the highest priority. Special board
-                nodes are always rank 1. Min reserves at least that many
-                upgrades when optimizing all boards; Max stops it choosing more
-                (a cheaper route may still pass through extras). The +N column
-                shows upgrades already planned across all boards.
+                Rank each ability, 1 being the highest priority. Min reserves at
+                least that many upgrades when optimizing all boards; Max stops
+                it choosing more (a cheaper route may still pass through
+                extras). The +N column shows upgrades already planned across all
+                boards.
             </Text>
 
             <AbilityColumnHeaders />

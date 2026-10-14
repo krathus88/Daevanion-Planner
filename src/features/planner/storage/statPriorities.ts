@@ -32,7 +32,7 @@ export type StatFocus = {
 
 export type StatSettings = {
     tiers: Record<StatType, StatTier>
-    // Spend points left after special nodes, Min and ranks on stat nodes.
+    // Spend points left after Min and ranks on stat nodes.
     spendLeftover: boolean
     focus: StatFocus
 }

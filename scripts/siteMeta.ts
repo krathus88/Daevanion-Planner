@@ -8,6 +8,9 @@ export const SITE_NAME = "Daevanion Planner"
 export const SITE_DESCRIPTION =
     "Plan and optimize your AION 2 Daevanion boards: pick nodes, set ability priorities, and find the cheapest routes across all four boards."
 
+export const TIMERS_DESCRIPTION =
+    "AION 2 timers for EU servers: Eternal Gartua, Spacetime Rift, Shugo Festival, and the daily and weekly resets, in your local time."
+
 export type SiteClass = {
     id: string
     name: string

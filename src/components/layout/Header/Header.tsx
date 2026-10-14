@@ -1,19 +1,34 @@
 import { Box, Container, Flex } from "@chakra-ui/react"
-import type { ClassId } from "@config/classPresets"
 import { ClassSelect } from "@planner/ClassSelect"
-import type { LayoutType } from "@planner/config/layouts"
+import { usePlannerLocation } from "@planner/hooks/usePlannerLocation"
+import { useMatch } from "@tanstack/react-router"
+import { PinnedTimers } from "@timers/pinned/PinnedTimers"
+import { PinnedToggleButton } from "@timers/pinned/PinnedToggleButton"
 import { BoardNav } from "./BoardNav"
 import { Brand } from "./Brand"
+import { NavDrawer } from "./NavDrawer"
+import { PageNav } from "./PageNav"
 
-type HeaderProps = {
-    classId: ClassId
-    layout: LayoutType
-}
+// Phones: menu, brand and class, then pinned timers, then the board tabs.
+// Tablets: brand, pages and class, then pinned timers.
+// Desktop: one row. From tablets up the board tabs live in the planner's
+// sidebar, with the rest of the board's controls.
+export const Header = () => {
+    const plannerMatch = useMatch({
+        from: "/planner/$classId/$layout",
+        shouldThrow: false,
+    })
+    const timersMatch = useMatch({ from: "/timers", shouldThrow: false })
+    const plannerLocation = usePlannerLocation()
 
-export const Header = ({ classId, layout }: HeaderProps) => {
+    const plannerParams = plannerMatch?.params
+    const currentPage = plannerMatch ? "planner" : timersMatch ? "timers" : null
+
     return (
         <Box
             as="header"
+            // Hovering the header reveals controls inside it (_groupHover).
+            className="group"
             pos="sticky"
             top="0"
             zIndex="sticky"
@@ -24,29 +39,69 @@ export const Header = ({ classId, layout }: HeaderProps) => {
         >
             <Container maxW="8xl">
                 <Flex
-                    py={{ base: "2", md: "0" }}
+                    py={{ base: "2", xl: "0" }}
                     minH="16"
-                    flexWrap="wrap"
+                    flexWrap={{ base: "wrap", xl: "nowrap" }}
                     alignItems="center"
                     rowGap="2"
-                    columnGap={{ base: "4", md: "8" }}
+                    columnGap={{ base: "2", md: "6" }}
                 >
-                    <Brand />
-
-                    {/* Below the brand and class picker on phones. */}
-                    <BoardNav
-                        classId={classId}
-                        layout={layout}
-                        order={{ base: 3, md: 2 }}
+                    {/* On phones the brand is part of the menu button. */}
+                    <NavDrawer
+                        currentPage={currentPage}
+                        plannerLocation={plannerParams ?? plannerLocation}
+                        hideFrom="md"
                     />
 
+                    <Brand hideBelow="md" />
+
+                    <PageNav
+                        currentPage={currentPage}
+                        plannerLocation={plannerParams ?? plannerLocation}
+                        mr={{ xl: "auto" }}
+                        hideBelow="md"
+                    />
+
+                    {plannerParams && (
+                        <BoardNav
+                            classId={plannerParams.classId}
+                            layout={plannerParams.layout}
+                            order="5"
+                            hideFrom="md"
+                        />
+                    )}
+
+                    {/* One evenly spaced group on desktop. Below that it
+                        dissolves, so its parts can take their own rows. */}
                     <Flex
-                        ml="auto"
-                        order={{ base: 2, md: 3 }}
+                        minW="0"
+                        order={{ xl: 2 }}
+                        display={{ base: "contents", xl: "flex" }}
                         alignItems="center"
                         gap="2"
                     >
-                        <ClassSelect classId={classId} layout={layout} />
+                        <PinnedTimers
+                            w={{ base: "full", xl: "auto" }}
+                            order={{ base: 4, xl: 2 }}
+                        />
+
+                        <Flex
+                            ml={{ base: "auto", xl: "0" }}
+                            flexShrink="0"
+                            order="3"
+                            alignItems="center"
+                            gap="2"
+                        >
+                            <PinnedToggleButton />
+
+                            <ClassSelect
+                                classId={
+                                    plannerParams?.classId ??
+                                    plannerLocation.classId
+                                }
+                                layout={plannerParams?.layout}
+                            />
+                        </Flex>
                     </Flex>
                 </Flex>
             </Container>

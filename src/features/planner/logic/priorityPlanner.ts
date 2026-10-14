@@ -20,6 +20,15 @@ import {
     STAT_TIERS,
     type FocusTier,
 } from "@planner/config/stats"
+import {
+    DEFAULT_SPECIAL_PRIORITY,
+    type SpecialPriorities,
+} from "@planner/storage/specialPriorities"
+import {
+    SAME_RANK_ORDERS,
+    type RankGroup,
+    type RankOrder,
+} from "@planner/storage/rankOrder"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import { findPlannerPath } from "./plannerLogic"
 import { findStatSteps, type StatStep } from "./statFocus"
@@ -40,6 +49,8 @@ type PriorityTarget = {
     layout: LayoutType
     key: string
     priority: number
+    // Place within its rank, from the same-rank order setting.
+    orderLevel: number
     cost: number
     abilityId?: string
     isSpecial?: boolean
@@ -54,7 +65,9 @@ type StatBlock = {
     waiting: PriorityTarget[]
 }
 
-type RankStep = { target: PriorityTarget } | { block: StatBlock }
+// Targets of one rank and same-rank order level, in sort order; none wins
+// over another just for coming first.
+type RankStep = { targets: PriorityTarget[] } | { block: StatBlock }
 
 // Share of the run spent on the first greedy pass; the rest refines it.
 const GREEDY_SHARE = 0.4
@@ -72,6 +85,8 @@ export const optimizePriorityPlans = async (
     priorities: AbilityPriorities,
     minimums: AbilityMinimums,
     maximums: AbilityMaximums,
+    specialPriorities: SpecialPriorities,
+    rankOrder: RankOrder,
     pointBudget: number,
     timeBudgetMs: number,
     statSettings: StatSettings,
@@ -97,6 +112,10 @@ export const optimizePriorityPlans = async (
         )
     }
 
+    const orderLevelOf = (group: RankGroup) => {
+        return SAME_RANK_ORDERS.indexOf(rankOrder[group])
+    }
+
     for (const layoutName of Object.keys(layouts) as LayoutType[]) {
         const layout = layouts[layoutName]
         const assignments = classPreset.assignments[layoutName] ?? {}
@@ -114,10 +133,14 @@ export const optimizePriorityPlans = async (
                 const appearance = layout.specialNodes[kind] ?? layout.mainNode
                 const key = keyOf({ row: row, column: column })
                 if (appearance.type === "special") {
+                    const bonus = layout.specialNodeBonuses[key]
                     targets.push({
                         layout: layoutName,
                         key: key,
-                        priority: 1,
+                        priority: bonus
+                            ? specialPriorities[bonus]
+                            : DEFAULT_SPECIAL_PRIORITY,
+                        orderLevel: orderLevelOf("special"),
                         cost: POINTS_PER_NODE_TYPE.special,
                         isSpecial: true,
                     })
@@ -148,6 +171,7 @@ export const optimizePriorityPlans = async (
                     layout: layoutName,
                     key: key,
                     priority: priorityOf(abilityId),
+                    orderLevel: orderLevelOf(appearance.type),
                     cost: POINTS_PER_NODE_TYPE[appearance.type],
                     abilityId: abilityId,
                 })
@@ -158,6 +182,7 @@ export const optimizePriorityPlans = async (
     targets.sort(
         (left, right) =>
             left.priority - right.priority ||
+            left.orderLevel - right.orderLevel ||
             left.cost - right.cost ||
             left.layout.localeCompare(right.layout) ||
             left.key.localeCompare(right.key, undefined, { numeric: true }),
@@ -213,7 +238,18 @@ export const optimizePriorityPlans = async (
             }
         }
         if (index < targets.length) {
-            rankSteps.push({ target: targets[index] })
+            const target = targets[index]
+            const last = rankSteps.at(-1)
+            if (
+                last &&
+                "targets" in last &&
+                last.targets[0].priority === target.priority &&
+                last.targets[0].orderLevel === target.orderLevel
+            ) {
+                last.targets.push(target)
+            } else {
+                rankSteps.push({ targets: [target] })
+            }
         }
     }
 
@@ -341,6 +377,23 @@ export const optimizePriorityPlans = async (
         )
     }
 
+    // Fewer points spent reaching the node, leaving out its own cost, so
+    // skills, passives and special nodes compete fairly; at equal path
+    // cost, better stats.
+    const isBetterPath = (candidate: Candidate, best: Candidate | null) => {
+        if (best === null) {
+            return true
+        }
+
+        const pathCost = candidate.nextTotal - candidate.target.cost
+        const bestPathCost = best.nextTotal - best.target.cost
+
+        return (
+            pathCost < bestPathCost ||
+            (pathCost === bestPathCost && candidate.nextScore > best.nextScore)
+        )
+    }
+
     // A node counts as an upgrade once any route passes through it.
     const isOnRoute = (target: PriorityTarget) => {
         return plans[target.layout].plannedPath.includes(target.key)
@@ -365,27 +418,6 @@ export const optimizePriorityPlans = async (
         .sort((left, right) => priorityOf(left.id) - priorityOf(right.id))
 
     const specialTargets = targets.filter((target) => target.isSpecial)
-
-    // Top priority: take every special node on every board before anything
-    // else. Each step takes the special node that adds the fewest points.
-    const fillSpecials = async (stepMs: number, until: number) => {
-        while (performance.now() < until) {
-            let best: Candidate | null = null
-            for (const target of specialTargets) {
-                if (isOnRoute(target)) {
-                    continue
-                }
-                const candidate = await tryAddTarget(target, stepMs)
-                if (candidate && isBetter(candidate, best)) {
-                    best = candidate
-                }
-            }
-            if (!best) {
-                return
-            }
-            commit(best)
-        }
-    }
 
     // Reserve minimum upgrades in rank order. Each step takes the ability's
     // node that adds the fewest points to the shared total.
@@ -594,16 +626,31 @@ export const optimizePriorityPlans = async (
                 continue
             }
 
-            const target = step.target
-            if (
-                plans[target.layout].targetCells.includes(target.key) ||
-                isAtMaximum(target.abilityId)
-            ) {
-                continue
-            }
-            const added = await tryAddTarget(target, stepMs)
-            if (added) {
-                commit(added)
+            // Equal ranks: each step takes the target with the cheapest path.
+            // One that doesn't fit now won't fit later in this pass.
+            let remaining = step.targets
+            while (performance.now() < until) {
+                remaining = remaining.filter(
+                    (target) =>
+                        !plans[target.layout].targetCells.includes(
+                            target.key,
+                        ) && !isAtMaximum(target.abilityId),
+                )
+                let best: Candidate | null = null
+                const unfit = new Set<PriorityTarget>()
+                for (const target of remaining) {
+                    const candidate = await tryAddTarget(target, stepMs)
+                    if (!candidate) {
+                        unfit.add(target)
+                    } else if (isBetterPath(candidate, best)) {
+                        best = candidate
+                    }
+                }
+                if (!best) {
+                    break
+                }
+                commit(best)
+                remaining = remaining.filter((target) => !unfit.has(target))
             }
         }
     }
@@ -617,6 +664,7 @@ export const optimizePriorityPlans = async (
                     layout: layoutName,
                     key: key,
                     priority: Number.MAX_SAFE_INTEGER,
+                    orderLevel: 0,
                     cost: POINTS_PER_NODE_TYPE.basic,
                     isStat: true,
                 } satisfies PriorityTarget,
@@ -685,21 +733,25 @@ export const optimizePriorityPlans = async (
                     .length,
         0,
     )
-    // Picking the cheapest special each step tries every remaining one.
-    const specialCalls =
-        (specialTargets.length * (specialTargets.length + 1)) / 2
+    // Picking the cheapest of equal ranks each step tries every remaining one.
+    const rankCalls = rankSteps.reduce(
+        (calls, step) =>
+            "targets" in step
+                ? calls + (step.targets.length * (step.targets.length + 1)) / 2
+                : calls,
+        0,
+    )
     const greedyStepMs = Math.min(
         MAX_STEP_MS,
         Math.max(
             MIN_STEP_MS,
             (timeBudgetMs * GREEDY_SHARE) /
-                Math.max(1, specialCalls + minimumCalls + targets.length),
+                Math.max(1, minimumCalls + rankCalls),
         ),
     )
 
     reportProgress(true)
     // The first pass always completes so every run returns a full plan.
-    await fillSpecials(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
 
@@ -711,7 +763,6 @@ export const optimizePriorityPlans = async (
         if (performance.now() >= mainDeadline) {
             break
         }
-        await fillSpecials(MIN_STEP_MS, mainDeadline)
         await fillMinimums(MIN_STEP_MS, mainDeadline)
         await fillByRank(MIN_STEP_MS, mainDeadline)
     }
