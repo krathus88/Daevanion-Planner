@@ -1,3 +1,4 @@
+import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
 // Node groups that share the rank scale.
@@ -29,10 +30,6 @@ export const DEFAULT_RANK_ORDER: RankOrder = {
     special: "equal",
 }
 
-const keyFor = (classId: string) => {
-    return `daevanion:rank-order:v1:${classId}`
-}
-
 const isOrder = (value: unknown): value is SameRankOrder => {
     return (
         typeof value === "string" &&
@@ -42,12 +39,11 @@ const isOrder = (value: unknown): value is SameRankOrder => {
 
 export const readRankOrder = (classId: string): RankOrder => {
     try {
-        const raw = window.localStorage.getItem(keyFor(classId))
-        if (raw === null) {
+        const value = readClassSettings(classId, "rankOrder")
+        if (value === undefined) {
             return DEFAULT_RANK_ORDER
         }
 
-        const value: unknown = JSON.parse(raw)
         if (!isRecord(value)) {
             throw new Error("Saved same-rank order is invalid.")
         }
@@ -72,7 +68,7 @@ export const readRankOrder = (classId: string): RankOrder => {
 
 export const writeRankOrder = (classId: string, order: RankOrder) => {
     try {
-        window.localStorage.setItem(keyFor(classId), JSON.stringify(order))
+        writeClassSettings(classId, "rankOrder", order)
         return null
     } catch (error) {
         return error instanceof Error

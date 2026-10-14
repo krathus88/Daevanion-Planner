@@ -1,6 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { readBoardProgress } from "./boardStorage"
 import { layouts, type LayoutType } from "@planner/config/layouts"
+import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
 export type AbilityPriorities = Readonly<Record<string, number>>
@@ -20,14 +21,63 @@ export type MinimumShortfall = {
     achieved: number
 }
 
-const keyFor = (classId: string) => {
-    return `daevanion:ability-priorities:v1:${classId}`
+// Saved per ability: its rank plus optional Min and Max.
+type AbilityField = "priority" | "min" | "max"
+
+// Saved abilities by id. Throws if they can't be read.
+const readSavedAbilities = (classId: string) => {
+    const value = readClassSettings(classId, "abilities")
+    if (value === undefined) {
+        return {}
+    }
+
+    if (!isRecord(value)) {
+        throw new Error("Saved ability settings are invalid.")
+    }
+
+    return value
 }
-const maximumsKeyFor = (classId: string) => {
-    return `daevanion:ability-maximums:v1:${classId}`
+
+const readSavedField = (
+    saved: Record<string, unknown>,
+    abilityId: string,
+    field: AbilityField,
+) => {
+    const ability = saved[abilityId]
+    return isRecord(ability) ? ability[field] : undefined
 }
-const minimumsKeyFor = (classId: string) => {
-    return `daevanion:ability-minimums:v1:${classId}`
+
+// Replaces one field on every ability, keeping the other fields. Abilities
+// missing from `values` lose the field.
+const writeAbilityField = (
+    classId: string,
+    field: AbilityField,
+    values: Readonly<Record<string, number>>,
+) => {
+    let saved: Record<string, unknown>
+    try {
+        saved = readSavedAbilities(classId)
+    } catch {
+        saved = {}
+    }
+
+    const ids = new Set([...Object.keys(saved), ...Object.keys(values)])
+    writeClassSettings(
+        classId,
+        "abilities",
+        Object.fromEntries(
+            [...ids].map((id) => {
+                const ability = isRecord(saved[id]) ? { ...saved[id] } : {}
+                if (values[id] === undefined) {
+                    delete ability[field]
+                } else {
+                    ability[field] = values[id]
+                }
+
+                return [id, ability]
+            }),
+        ),
+    )
 }
 
 export const defaultAbilityPriorities = (
@@ -47,19 +97,11 @@ export const readAbilityPriorities = (
     const defaults = defaultAbilityPriorities(classPreset)
 
     try {
-        const raw = window.localStorage.getItem(keyFor(classPreset.id))
-        if (raw === null) {
-            return defaults
-        }
-
-        const value: unknown = JSON.parse(raw)
-        if (!isRecord(value)) {
-            throw new Error("Saved ability priorities are invalid.")
-        }
+        const saved = readSavedAbilities(classPreset.id)
 
         return Object.fromEntries(
             classPreset.abilities.map((ability) => {
-                const priority = value[ability.id]
+                const priority = readSavedField(saved, ability.id, "priority")
                 return [
                     ability.id,
                     typeof priority === "number" &&
@@ -85,7 +127,7 @@ export const writeAbilityPriorities = (
     priorities: AbilityPriorities,
 ) => {
     try {
-        window.localStorage.setItem(keyFor(classId), JSON.stringify(priorities))
+        writeAbilityField(classId, "priority", priorities)
         return null
     } catch (error) {
         return error instanceof Error
@@ -98,19 +140,11 @@ export const readAbilityMinimums = (
     classPreset: ClassPreset,
 ): Record<string, number> => {
     try {
-        const raw = window.localStorage.getItem(minimumsKeyFor(classPreset.id))
-        if (raw === null) {
-            return {}
-        }
-
-        const value: unknown = JSON.parse(raw)
-        if (!isRecord(value)) {
-            throw new Error("Saved ability minimums are invalid.")
-        }
+        const saved = readSavedAbilities(classPreset.id)
 
         return Object.fromEntries(
             classPreset.abilities.flatMap((ability) => {
-                const minimum = value[ability.id]
+                const minimum = readSavedField(saved, ability.id, "min")
                 return typeof minimum === "number" &&
                     Number.isInteger(minimum) &&
                     minimum >= 0
@@ -132,19 +166,11 @@ export const readAbilityMaximums = (
     classPreset: ClassPreset,
 ): Record<string, number> => {
     try {
-        const raw = window.localStorage.getItem(maximumsKeyFor(classPreset.id))
-        if (raw === null) {
-            return {}
-        }
-
-        const value: unknown = JSON.parse(raw)
-        if (!isRecord(value)) {
-            throw new Error("Saved ability maximums are invalid.")
-        }
+        const saved = readSavedAbilities(classPreset.id)
 
         return Object.fromEntries(
             classPreset.abilities.flatMap((ability) => {
-                const maximum = value[ability.id]
+                const maximum = readSavedField(saved, ability.id, "max")
                 return typeof maximum === "number" &&
                     Number.isInteger(maximum) &&
                     maximum >= 0
@@ -167,10 +193,7 @@ export const writeAbilityMaximums = (
     maximums: AbilityMaximums,
 ) => {
     try {
-        window.localStorage.setItem(
-            maximumsKeyFor(classId),
-            JSON.stringify(maximums),
-        )
+        writeAbilityField(classId, "max", maximums)
         return null
     } catch (error) {
         return error instanceof Error
@@ -231,10 +254,7 @@ export const writeAbilityMinimums = (
     minimums: AbilityMinimums,
 ) => {
     try {
-        window.localStorage.setItem(
-            minimumsKeyFor(classId),
-            JSON.stringify(minimums),
-        )
+        writeAbilityField(classId, "min", minimums)
         return null
     } catch (error) {
         return error instanceof Error

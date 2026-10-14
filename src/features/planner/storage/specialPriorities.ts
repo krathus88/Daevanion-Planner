@@ -4,6 +4,7 @@ import {
     type SpecialBonusType,
 } from "@planner/config/specialNodes"
 import { readBoardProgress } from "./boardStorage"
+import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
 // Rank of each special node bonus, on the same scale as ability ranks.
@@ -23,18 +24,13 @@ export const DEFAULT_SPECIAL_PRIORITIES = Object.fromEntries(
     ]),
 ) as SpecialPriorities
 
-const keyFor = (classId: string) => {
-    return `daevanion:special-priorities:v1:${classId}`
-}
-
 export const readSpecialPriorities = (classId: string): SpecialPriorities => {
     try {
-        const raw = window.localStorage.getItem(keyFor(classId))
-        if (raw === null) {
+        const value = readClassSettings(classId, "specialPriorities")
+        if (value === undefined) {
             return DEFAULT_SPECIAL_PRIORITIES
         }
 
-        const value: unknown = JSON.parse(raw)
         if (!isRecord(value)) {
             throw new Error("Saved special node priorities are invalid.")
         }
@@ -67,7 +63,7 @@ export const writeSpecialPriorities = (
     priorities: SpecialPriorities,
 ) => {
     try {
-        window.localStorage.setItem(keyFor(classId), JSON.stringify(priorities))
+        writeClassSettings(classId, "specialPriorities", priorities)
         return null
     } catch (error) {
         return error instanceof Error

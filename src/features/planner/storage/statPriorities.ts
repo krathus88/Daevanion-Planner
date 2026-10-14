@@ -9,6 +9,7 @@ import {
     type StatType,
 } from "@planner/config/stats"
 import { readBoardProgress } from "./boardStorage"
+import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
 export type StatFocusTier = {
@@ -51,10 +52,6 @@ export const DEFAULT_STAT_SETTINGS: StatSettings = {
     tiers: DEFAULT_STAT_TIERS,
     spendLeftover: false,
     focus: DEFAULT_STAT_FOCUS,
-}
-
-const keyFor = (classId: string) => {
-    return `daevanion:stat-priorities:v1:${classId}`
 }
 
 const isTier = (value: unknown): value is StatTier => {
@@ -134,12 +131,11 @@ const readStatFocus = (value: unknown): StatFocus => {
 
 export const readStatSettings = (classId: string): StatSettings => {
     try {
-        const raw = window.localStorage.getItem(keyFor(classId))
-        if (raw === null) {
+        const value = readClassSettings(classId, "stats")
+        if (value === undefined) {
             return DEFAULT_STAT_SETTINGS
         }
 
-        const value: unknown = JSON.parse(raw)
         if (!isRecord(value)) {
             throw new Error("Saved stat priorities are invalid.")
         }
@@ -169,7 +165,7 @@ export const readStatSettings = (classId: string): StatSettings => {
 
 export const writeStatSettings = (classId: string, settings: StatSettings) => {
     try {
-        window.localStorage.setItem(keyFor(classId), JSON.stringify(settings))
+        writeClassSettings(classId, "stats", settings)
         return null
     } catch (error) {
         return error instanceof Error
