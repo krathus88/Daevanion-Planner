@@ -12,7 +12,7 @@ type CellStateInput = {
     layout: BoardLayout
     start: Position
     position: Position
-    mode: "interactive" | "planner"
+    mode: "interactive" | "planner" | "readonly"
     selectedCells: Set<string>
     // Cheapest cost to connect this node to the selection, if reachable.
     connectionCost: number | undefined
@@ -56,14 +56,18 @@ const getCellState = ({
     return {
         selected: selected,
         adjacentAvailable: adjacentAvailable,
-        canSelect: !isStart && (mode === "planner" || affordable),
+        canSelect:
+            mode !== "readonly" &&
+            !isStart &&
+            (mode === "planner" || affordable),
     }
 }
 
 type BoardGridProps = {
     layout: BoardLayout
     abilitiesByPosition: Readonly<Record<string, ClassAbility>>
-    mode: "interactive" | "planner"
+    // "readonly" draws a plan without letting anything be picked.
+    mode: "interactive" | "planner" | "readonly"
     selectedCells: Set<string>
     targetCells: Set<string>
     availablePoints: number
@@ -165,6 +169,7 @@ export const BoardGrid = ({
                                     stat={layout.nodeStats[key]}
                                     targeted={targetCells.has(key)}
                                     position={position}
+                                    readOnly={mode === "readonly"}
                                     onSelect={onSelect}
                                 />
                             )

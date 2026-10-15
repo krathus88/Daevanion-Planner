@@ -21,6 +21,8 @@ export const tokens = defineTokens({
     cursor: {
         // A drag handle.
         grab: { value: "grab" },
+        // Shown but not clickable, e.g. a shared plan's nodes.
+        static: { value: "default" },
     },
     animations: {
         glowPulse: { value: "pulse 1.4s ease-in-out infinite" },

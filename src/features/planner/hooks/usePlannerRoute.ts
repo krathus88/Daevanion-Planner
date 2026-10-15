@@ -1,9 +1,10 @@
 import { useEffect, useEffectEvent, useState } from "react"
 import { keyOf, type Position } from "@planner/config/boardConfig"
-import type { BoardId } from "@config/boards"
+import { BOARD_NAMES, type BoardId } from "@config/boards"
 import type { BoardLayout } from "@planner/config/layouts"
 import {
     clearPlannerUndo,
+    keepHistoryRun,
     readBoardProgress,
     readPlannerHistory,
     readPlannerUndo,
@@ -279,6 +280,56 @@ export const usePlannerRoute = ({
         setMessage("Saved planner deleted.")
     }
 
+    const renamePlanner = (id: string, name: string) => {
+        const nextSavedPlanners = savedPlanners.map((saved) =>
+            saved.id === id ? { ...saved, name: name } : saved,
+        )
+        const error = writeSavedPlanners(classId, layoutName, nextSavedPlanners)
+        if (error) {
+            setMessage(error)
+            return
+        }
+
+        setSavedPlanners(nextSavedPlanners)
+
+        // The board shows the active route's name too.
+        const active = progress.activePlanner
+        if (active?.source === "saved" && active.id === id) {
+            const renamed: ActivePlanner = { ...active, name: name }
+            progress.setActivePlanner(renamed)
+            const progressError = progress.persistProgress({
+                activePlanner: renamed,
+            })
+            if (progressError) {
+                return
+            }
+        }
+
+        setMessage(`Renamed to "${name}".`)
+    }
+
+    // Moves a history entry (with the rest of its all-board run) to Saved.
+    const keepHistoryEntry = (id: string, name: string) => {
+        const result = keepHistoryRun(classId, layoutName, id, name)
+        if ("error" in result) {
+            setMessage(result.error)
+            return
+        }
+
+        setSavedPlanners(readSavedPlanners(classId, layoutName).value ?? [])
+        setPlannerHistory(readPlannerHistory(classId, layoutName).value ?? [])
+        progress.setActivePlanner(
+            readBoardProgress(classId, layoutName).value?.activePlanner ?? null,
+        )
+
+        const boardNames = result.boards.map((board) => BOARD_NAMES[board])
+        setMessage(
+            boardNames.length > 1
+                ? `Saved "${name}" on ${boardNames.slice(0, -1).join(", ")} and ${boardNames.at(-1)}.`
+                : `Saved "${name}".`,
+        )
+    }
+
     const deletePlannerHistoryEntry = (id: string) => {
         const nextHistory = plannerHistory.filter((entry) => entry.id !== id)
         const error = writePlannerHistory(classId, layoutName, nextHistory)
@@ -307,7 +358,9 @@ export const usePlannerRoute = ({
         savePlanner: savePlanner,
         loadPlanner: loadPlanner,
         deletePlanner: deletePlanner,
+        renamePlanner: renamePlanner,
         deletePlannerHistoryEntry: deletePlannerHistoryEntry,
+        keepHistoryEntry: keepHistoryEntry,
         ...optimization,
     }
 }

@@ -4,15 +4,14 @@ import { usePlannerLocation } from "@planner/hooks/usePlannerLocation"
 import { useMatch } from "@tanstack/react-router"
 import { PinnedTimers } from "@timers/pinned/PinnedTimers"
 import { PinnedToggleButton } from "@timers/pinned/PinnedToggleButton"
-import { BoardNav } from "./BoardNav"
 import { Brand } from "./Brand"
 import { NavDrawer } from "./NavDrawer"
 import { PageNav } from "./PageNav"
 
-// Phones: menu, brand and class, then pinned timers, then the board tabs.
+// Phones: menu, brand and class, then pinned timers.
 // Tablets: brand, pages and class, then pinned timers.
-// Desktop: one row. From tablets up the board tabs live in the planner's
-// sidebar, with the rest of the board's controls.
+// Desktop: one row. The board tabs live in the planner's sidebar, with the
+// rest of the board's controls.
 export const Header = () => {
     const plannerMatch = useMatch({
         from: "/planner/$classId/$layout",
@@ -61,15 +60,6 @@ export const Header = () => {
                         mr={{ xl: "auto" }}
                         hideBelow="md"
                     />
-
-                    {plannerParams && (
-                        <BoardNav
-                            classId={plannerParams.classId}
-                            layout={plannerParams.layout}
-                            order="5"
-                            hideFrom="md"
-                        />
-                    )}
 
                     {/* One evenly spaced group on desktop. Below that it
                         dissolves, so its parts can take their own rows. */}

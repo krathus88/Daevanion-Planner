@@ -25,9 +25,12 @@ export const DEFAULT_SPECIAL_PRIORITIES = Object.fromEntries(
     ]),
 ) as SpecialPriorities
 
-export const readSpecialPriorities = (classId: string): SpecialPriorities => {
+export const readSpecialPriorities = (
+    classId: string,
+    source?: Record<string, unknown>,
+): SpecialPriorities => {
     try {
-        const value = readClassSettings(classId, "specialPriorities")
+        const value = readClassSettings(classId, "specialPriorities", source)
         if (value === undefined) {
             return DEFAULT_SPECIAL_PRIORITIES
         }

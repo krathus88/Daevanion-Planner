@@ -26,8 +26,11 @@ export type MinimumShortfall = {
 type AbilityField = "priority" | "min" | "max"
 
 // Saved abilities by id. Throws if they can't be read.
-const readSavedAbilities = (classId: string) => {
-    const value = readClassSettings(classId, "abilities")
+const readSavedAbilities = (
+    classId: string,
+    source?: Record<string, unknown>,
+) => {
+    const value = readClassSettings(classId, "abilities", source)
     if (value === undefined) {
         return {}
     }
@@ -94,11 +97,12 @@ export const defaultAbilityPriorities = (
 
 export const readAbilityPriorities = (
     classPreset: ClassPreset,
+    source?: Record<string, unknown>,
 ): Record<string, number> => {
     const defaults = defaultAbilityPriorities(classPreset)
 
     try {
-        const saved = readSavedAbilities(classPreset.id)
+        const saved = readSavedAbilities(classPreset.id, source)
 
         return Object.fromEntries(
             classPreset.abilities.map((ability) => {
@@ -139,9 +143,10 @@ export const writeAbilityPriorities = (
 
 export const readAbilityMinimums = (
     classPreset: ClassPreset,
+    source?: Record<string, unknown>,
 ): Record<string, number> => {
     try {
-        const saved = readSavedAbilities(classPreset.id)
+        const saved = readSavedAbilities(classPreset.id, source)
 
         return Object.fromEntries(
             classPreset.abilities.flatMap((ability) => {
@@ -165,9 +170,10 @@ export const readAbilityMinimums = (
 
 export const readAbilityMaximums = (
     classPreset: ClassPreset,
+    source?: Record<string, unknown>,
 ): Record<string, number> => {
     try {
-        const saved = readSavedAbilities(classPreset.id)
+        const saved = readSavedAbilities(classPreset.id, source)
 
         return Object.fromEntries(
             classPreset.abilities.flatMap((ability) => {

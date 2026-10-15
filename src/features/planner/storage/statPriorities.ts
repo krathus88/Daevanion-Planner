@@ -129,9 +129,12 @@ const readStatFocus = (value: unknown): StatFocus => {
     }
 }
 
-export const readStatSettings = (classId: string): StatSettings => {
+export const readStatSettings = (
+    classId: string,
+    source?: Record<string, unknown>,
+): StatSettings => {
     try {
-        const value = readClassSettings(classId, "stats")
+        const value = readClassSettings(classId, "stats", source)
         if (value === undefined) {
             return DEFAULT_STAT_SETTINGS
         }

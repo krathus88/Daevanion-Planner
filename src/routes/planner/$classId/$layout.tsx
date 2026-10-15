@@ -20,6 +20,11 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
             layout: layout,
         }),
     },
+    // ?share= opens a plan someone shared, read-only until saved.
+    validateSearch: (search: Record<string, unknown>): { share?: string } =>
+        typeof search.share === "string" && search.share
+            ? { share: search.share }
+            : {},
     notFoundComponent: () => (
         <Navigate
             params={{ classId: DEFAULT_CLASS_ID, layout: DEFAULT_BOARD_ID }}

@@ -23,13 +23,29 @@ const readAll = (classId: string): Record<string, unknown> => {
     return value
 }
 
+// Every section at once, for backups and share links. Throws if storage
+// can't be read.
+export const readAllClassSettings = (classId: string) => {
+    return readAll(classId)
+}
+
+// Replaces every section, e.g. with an imported or shared set. Throws if
+// storage can't be written.
+export const replaceClassSettings = (
+    classId: string,
+    settings: Record<string, unknown>,
+) => {
+    window.localStorage.setItem(keyFor(classId), JSON.stringify(settings))
+}
+
 // Undefined when the section was never saved. Throws if storage can't be
-// read.
+// read. `source` reads from a given set instead, e.g. a shared link's.
 export const readClassSettings = (
     classId: string,
     section: ClassSettingsSection,
+    source?: Record<string, unknown>,
 ): unknown => {
-    return readAll(classId)[section]
+    return (source ?? readAll(classId))[section]
 }
 
 // Replaces one section and keeps the others. Unreadable saved settings are

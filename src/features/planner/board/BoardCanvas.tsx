@@ -1,5 +1,5 @@
-import { Flex } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
+import { BoardColumn } from "./BoardColumn"
 import { BoardGrid } from "./BoardGrid"
 import { BoardLegend } from "./BoardLegend"
 
@@ -17,19 +17,7 @@ export const BoardCanvas = () => {
     const isManual = view === "board"
 
     return (
-        <Flex
-            w={{ base: "full", xl: "board" }}
-            minW="0"
-            maxW="board"
-            // Centred when the sidebar stacks below it.
-            alignSelf={{ base: "center", xl: "auto" }}
-            // Keeps its width beside the sidebar and only shrinks when space
-            // runs out; the sidebar takes the rest.
-            flex={{ base: "1", xl: "0 1 auto" }}
-            flexDir="column"
-            alignItems="stretch"
-            gap="3"
-        >
+        <BoardColumn>
             <BoardGrid
                 abilitiesByPosition={abilitiesByPosition}
                 availablePoints={isManual ? manual.remainingPoints : 0}
@@ -41,6 +29,6 @@ export const BoardCanvas = () => {
             />
 
             <BoardLegend layout={layout} />
-        </Flex>
+        </BoardColumn>
     )
 }

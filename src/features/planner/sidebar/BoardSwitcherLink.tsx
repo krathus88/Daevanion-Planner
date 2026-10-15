@@ -33,6 +33,8 @@ export const BoardSwitcherLink = ({
             <RouterLink
                 params={{ classId: classId, layout: layout }}
                 to="/planner/$classId/$layout"
+                // Keeps a shared plan open while switching board.
+                search={true}
                 resetScroll={false}
                 aria-current={isActive ? "page" : undefined}
             >

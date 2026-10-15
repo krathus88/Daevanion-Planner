@@ -143,6 +143,20 @@ export const useManualBoard = ({
         setMessage("Saved board deleted.")
     }
 
+    const renameBoard = (id: string, name: string) => {
+        const nextSavedBoards = savedBoards.map((saved) =>
+            saved.id === id ? { ...saved, name: name } : saved,
+        )
+        const error = writeSavedBoards(classId, layoutName, nextSavedBoards)
+        if (error) {
+            setMessage(error)
+            return
+        }
+
+        setSavedBoards(nextSavedBoards)
+        setMessage(`Renamed to "${name}".`)
+    }
+
     const spentPoints = selectedNodeCost(layout, progress.selectedCells)
     const remainingPoints = availablePoints - spentPoints
 
@@ -160,5 +174,6 @@ export const useManualBoard = ({
         saveBoard: saveBoard,
         loadBoard: loadBoard,
         deleteBoard: deleteBoard,
+        renameBoard: renameBoard,
     }
 }
