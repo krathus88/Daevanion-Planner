@@ -1,14 +1,14 @@
 import { Container } from "@chakra-ui/react"
 import { classPresets, type ClassId } from "@config/classPresets"
 import { useState } from "react"
-import type { LayoutType } from "./config/layouts"
+import type { BoardId } from "@config/boards"
 import { DaevanionBoard } from "./DaevanionBoard"
 import { useClassDocumentMeta } from "./hooks/useClassDocumentMeta"
 import type { BoardView, SidebarTab } from "./types"
 
 type PlannerPageProps = {
     classId: ClassId
-    layout: LayoutType
+    layout: BoardId
     boardView: BoardView
     onBoardViewChange: (view: BoardView) => void
 }

@@ -1,0 +1,52 @@
+import { Flex, Icon, Text } from "@chakra-ui/react"
+import { Section } from "@common/Section"
+import type { BossLoot as BossLootTable } from "@timers/config/fieldBossLoot"
+import { LuTrophy } from "react-icons/lu"
+import { LootTile } from "./LootTile"
+
+type BossLootProps = {
+    loot: BossLootTable
+}
+
+// A boss's own drops: chest, artwork, gear, then the rest. Folded away
+// until opened.
+export const BossLoot = ({ loot }: BossLootProps) => {
+    return (
+        <Section variant="sub" title="Loot" count={loot.length}>
+            {/* The key to the tiles, up front so a trophy drop doesn't read
+                as sure for everyone. */}
+            <Text fontSize="xs" lineHeight="tall">
+                <Icon
+                    boxSize="3.5"
+                    mr="1"
+                    color="app.accent"
+                    verticalAlign="text-bottom"
+                >
+                    <LuTrophy />
+                </Icon>
+
+                <Text as="span" color="app.accent" fontWeight="semibold">
+                    Top-damage party only
+                </Text>
+
+                <Text as="span" color="app.muted">
+                    {" · % = chance per kill"}
+                </Text>
+            </Text>
+
+            <Flex as="ul" flexWrap="wrap" gap="2">
+                {loot.map((drop) => (
+                    <LootTile key={drop.name} drop={drop} />
+                ))}
+            </Flex>
+
+            <Text textStyle="hint">
+                Every player with contribution gets the loot chest (NCSOFT,
+                Korean patch of 1 July 2026), and likely the refining stones
+                (unconfirmed). Trophy drops go only to the party (or force) that
+                dealt the most damage: Korean players report this, but nothing
+                confirms it for EU yet. Hover an item for details.
+            </Text>
+        </Section>
+    )
+}

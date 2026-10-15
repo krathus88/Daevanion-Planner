@@ -1,6 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { readBoardProgress } from "./boardStorage"
-import { layouts, type LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import { layouts } from "@planner/config/layouts"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
@@ -266,7 +267,7 @@ export const writeAbilityMinimums = (
 // Upgrades per ability across every board's current route.
 export const readSharedAbilityUpgradeCounts = (classPreset: ClassPreset) => {
     const counts = new Map<string, number>()
-    for (const layoutName of Object.keys(layouts) as LayoutType[]) {
+    for (const layoutName of Object.keys(layouts) as BoardId[]) {
         const progress = readBoardProgress(classPreset.id, layoutName)
         if (progress.error) {
             throw new Error(progress.error)
@@ -290,4 +291,4 @@ type PriorityBoardPlan = {
     plannedCost: number
 }
 
-export type PriorityPlans = Record<LayoutType, PriorityBoardPlan>
+export type PriorityPlans = Record<BoardId, PriorityBoardPlan>

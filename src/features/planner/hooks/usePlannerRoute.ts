@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useState } from "react"
 import { keyOf, type Position } from "@planner/config/boardConfig"
-import type { BoardLayout, LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import type { BoardLayout } from "@planner/config/layouts"
 import {
     clearPlannerUndo,
     readBoardProgress,
@@ -21,7 +22,7 @@ import { usePlannerOptimization } from "./usePlannerOptimization"
 
 type UsePlannerRouteOptions = {
     classId: string
-    layoutName: LayoutType
+    layoutName: BoardId
     layout: BoardLayout
     start: Position
     progress: BoardProgressState
@@ -76,7 +77,7 @@ export const usePlannerRoute = ({
     // "Optimize all boards" and the All boards tab replace routes in
     // storage; reload this board's route when that happens.
     const reloadFromStorage = useEffectEvent(
-        (changedLayouts: LayoutType[] | undefined) => {
+        (changedLayouts: BoardId[] | undefined) => {
             if (changedLayouts && !changedLayouts.includes(layoutName)) {
                 return
             }

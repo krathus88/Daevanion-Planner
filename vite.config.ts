@@ -4,9 +4,8 @@ import babel from "@rolldown/plugin-babel"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import react, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
+import { BOARD_IDS, BOARD_NAMES } from "./src/config/boards.ts"
 import {
-    capitalize,
-    readBoardNames,
     readClasses,
     SITE_DESCRIPTION,
     SITE_NAME,
@@ -94,13 +93,13 @@ const sharePreviews = (): Plugin => {
             )
 
             for (const siteClass of readClasses()) {
-                for (const board of readBoardNames()) {
+                for (const board of BOARD_IDS) {
                     const path = `planner/${siteClass.id}/${board}`
 
                     writePage(
                         path,
                         tags(
-                            `Daevanion - ${siteClass.name} · ${capitalize(board)}`,
+                            `Daevanion - ${siteClass.name} · ${BOARD_NAMES[board]}`,
                             `og/${siteClass.id}.png`,
                             path,
                         ),

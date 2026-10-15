@@ -1,11 +1,11 @@
 import { Flex, type FlexProps } from "@chakra-ui/react"
 import type { ClassId } from "@config/classPresets"
-import { LAYOUT_NAMES, type LayoutType } from "@planner/config/layouts"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { BoardNavLink } from "./BoardNavLink"
 
 type BoardNavProps = FlexProps & {
     classId: ClassId
-    layout: LayoutType
+    layout: BoardId
 }
 
 export const BoardNav = ({ classId, layout, ...props }: BoardNavProps) => {
@@ -20,7 +20,7 @@ export const BoardNav = ({ classId, layout, ...props }: BoardNavProps) => {
             aria-label="Select board"
             {...props}
         >
-            {LAYOUT_NAMES.map((layoutName) => (
+            {BOARD_IDS.map((layoutName) => (
                 <BoardNavLink
                     key={layoutName}
                     classId={classId}

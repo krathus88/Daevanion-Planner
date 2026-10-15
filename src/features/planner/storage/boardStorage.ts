@@ -1,4 +1,5 @@
-import { layouts, type LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import { layouts } from "@planner/config/layouts"
 import { isRecord } from "./isRecord"
 
 export type BoardProgress = {
@@ -42,7 +43,7 @@ export type SavedPlanner = PlannerUndo & {
 
 export type SharedAllocation = {
     totalPoints: number
-    selectedPlannerIds: Partial<Record<LayoutType, string>>
+    selectedPlannerIds: Partial<Record<BoardId, string>>
 }
 
 type StorageRead<T> = {
@@ -68,7 +69,7 @@ const keyFor = (
         | "saved-boards"
         | "saved-planners"
         | "planner-history",
-    layout: LayoutType,
+    layout: BoardId,
 ) => {
     return `daevanion:${STORAGE_VERSION}:${classId}:${layout}:${kind}`
 }
@@ -250,9 +251,9 @@ export const writeSharedTotalPoints = (
 // Points the other boards' current planner routes already use.
 export const readRouteCostOfOtherBoards = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
 ) => {
-    return (Object.keys(layouts) as LayoutType[])
+    return (Object.keys(layouts) as BoardId[])
         .filter((other) => other !== layout)
         .reduce(
             (total, other) =>
@@ -286,69 +287,69 @@ export const subscribeToBoardStorage = (onChange: () => void) => {
 // Fired when plans are written for boards from outside the board's own
 // state (e.g. the all-board optimizer), so a mounted board can reload them.
 // Lists the boards whose plans changed; omitted means every board.
-export const notifyPlansReplaced = (layouts?: LayoutType[]) => {
+export const notifyPlansReplaced = (layouts?: BoardId[]) => {
     return window.dispatchEvent(
-        new CustomEvent<LayoutType[] | undefined>(PLANS_REPLACED_EVENT, {
+        new CustomEvent<BoardId[] | undefined>(PLANS_REPLACED_EVENT, {
             detail: layouts,
         }),
     )
 }
 
 export const subscribeToPlansReplaced = (
-    onReplaced: (layouts: LayoutType[] | undefined) => void,
+    onReplaced: (layouts: BoardId[] | undefined) => void,
 ) => {
     const handle = (event: Event) => {
-        onReplaced((event as CustomEvent<LayoutType[] | undefined>).detail)
+        onReplaced((event as CustomEvent<BoardId[] | undefined>).detail)
     }
     window.addEventListener(PLANS_REPLACED_EVENT, handle)
     return () => window.removeEventListener(PLANS_REPLACED_EVENT, handle)
 }
 
-export const readBoardProgress = (classId: string, layout: LayoutType) => {
+export const readBoardProgress = (classId: string, layout: BoardId) => {
     return read(keyFor(classId, "progress", layout), isBoardProgress)
 }
 
 export const writeBoardProgress = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     progress: BoardProgress,
 ) => {
     return write(keyFor(classId, "progress", layout), progress)
 }
 
-export const readBoardUndo = (classId: string, layout: LayoutType) => {
+export const readBoardUndo = (classId: string, layout: BoardId) => {
     return read(keyFor(classId, "board-undo", layout), isBoardUndo)
 }
 
 export const writeBoardUndo = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     undo: BoardUndo,
 ) => {
     return write(keyFor(classId, "board-undo", layout), undo)
 }
 
-export const clearBoardUndo = (classId: string, layout: LayoutType) => {
+export const clearBoardUndo = (classId: string, layout: BoardId) => {
     return remove(keyFor(classId, "board-undo", layout))
 }
 
-export const readPlannerUndo = (classId: string, layout: LayoutType) => {
+export const readPlannerUndo = (classId: string, layout: BoardId) => {
     return read(keyFor(classId, "planner-undo", layout), isPlannerUndo)
 }
 
 export const writePlannerUndo = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     undo: PlannerUndo,
 ) => {
     return write(keyFor(classId, "planner-undo", layout), undo)
 }
 
-export const clearPlannerUndo = (classId: string, layout: LayoutType) => {
+export const clearPlannerUndo = (classId: string, layout: BoardId) => {
     return remove(keyFor(classId, "planner-undo", layout))
 }
 
-export const readSavedBoards = (classId: string, layout: LayoutType) => {
+export const readSavedBoards = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "saved-boards", layout),
         (value): value is SavedBoard[] =>
@@ -358,13 +359,13 @@ export const readSavedBoards = (classId: string, layout: LayoutType) => {
 
 export const writeSavedBoards = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     saved: SavedBoard[],
 ) => {
     return write(keyFor(classId, "saved-boards", layout), saved)
 }
 
-export const readSavedPlanners = (classId: string, layout: LayoutType) => {
+export const readSavedPlanners = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "saved-planners", layout),
         (value): value is SavedPlanner[] =>
@@ -374,13 +375,13 @@ export const readSavedPlanners = (classId: string, layout: LayoutType) => {
 
 export const writeSavedPlanners = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     saved: SavedPlanner[],
 ) => {
     return write(keyFor(classId, "saved-planners", layout), saved)
 }
 
-export const readPlannerHistory = (classId: string, layout: LayoutType) => {
+export const readPlannerHistory = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "planner-history", layout),
         (value): value is SavedPlanner[] =>
@@ -390,7 +391,7 @@ export const readPlannerHistory = (classId: string, layout: LayoutType) => {
 
 export const writePlannerHistory = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     history: SavedPlanner[],
 ) => {
     return write(
@@ -404,7 +405,7 @@ export const writePlannerHistory = (
 // "current" leaves the board unchanged. Returns an error message or null.
 export const applyPlannerToBoard = (
     classId: string,
-    layout: LayoutType,
+    layout: BoardId,
     plannerId: string,
 ): string | null => {
     if (plannerId === "current") {

@@ -51,4 +51,13 @@ export const colors = defineSemanticTokens.colors({
         targetDot: { value: "{colors.yellow.400}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
     },
+    // Item grades, coloured as the game colours item names.
+    grade: {
+        heroic: { value: "{colors.orange.400}" },
+        unique: { value: "{colors.yellow.300}" },
+        epic: { value: "{colors.blue.400}" },
+        rare: { value: "{colors.green.400}" },
+        common: { value: "{colors.ink.50}" },
+        special: { value: "{colors.purple.300}" },
+    },
 })

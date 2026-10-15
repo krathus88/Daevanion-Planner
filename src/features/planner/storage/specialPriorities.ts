@@ -1,4 +1,5 @@
-import { LAYOUT_NAMES, layouts } from "@planner/config/layouts"
+import { BOARD_IDS } from "@config/boards"
+import { layouts } from "@planner/config/layouts"
 import {
     SPECIAL_BONUSES,
     type SpecialBonusType,
@@ -86,7 +87,7 @@ export const readSharedSpecialNodeCounts = (classId: string) => {
         counts[bonus] = { taken: 0, total: 0 }
     }
 
-    for (const layout of LAYOUT_NAMES) {
+    for (const layout of BOARD_IDS) {
         const progress = readBoardProgress(classId, layout)
         if (progress.error) {
             throw new Error(progress.error)

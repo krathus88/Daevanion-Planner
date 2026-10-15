@@ -1,4 +1,5 @@
 import type { ClassAbility } from "@config/classPresets"
+import { STAT_NAMES, type StatType } from "@config/stats/stats"
 import { AbsoluteCenter, Box, Button, Image } from "@chakra-ui/react"
 import { Tooltip } from "@ui/tooltip"
 import { useState } from "react"
@@ -11,7 +12,6 @@ import {
     SPECIAL_BONUSES,
     type SpecialBonusType,
 } from "@planner/config/specialNodes"
-import { STAT_NAMES, type StatType } from "@planner/config/stats"
 import { CellLabel } from "./CellLabel"
 import { CELL_BOX, getNodeStyles } from "./nodeStyles"
 import { NodeTooltip } from "./NodeTooltip"

@@ -1,14 +1,14 @@
 import { Field, NativeSelect } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
-import type { LayoutType } from "@planner/config/layouts"
+import { BOARD_NAMES, type BoardId } from "@config/boards"
 import type { PlannerOption } from "@planner/storage/allocationSnapshot"
 
 type RouteSelectRowProps = {
-    layout: LayoutType
+    layout: BoardId
     // The option id of the board's current route; "" for none.
     value: string
     options: PlannerOption[]
-    onChange: (layout: LayoutType, plannerId: string) => void
+    onChange: (layout: BoardId, plannerId: string) => void
 }
 
 export const RouteSelectRow = ({
@@ -23,8 +23,8 @@ export const RouteSelectRow = ({
 
     return (
         <Field.Root orientation="horizontal" gap="3">
-            <Field.Label w="16" fontSize="sm" textTransform="capitalize">
-                {layout}
+            <Field.Label w="16" fontSize="sm">
+                {BOARD_NAMES[layout]}
             </Field.Label>
 
             <NativeSelect.Root size="sm" minW="0" flex="1">

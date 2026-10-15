@@ -5,12 +5,10 @@ type NavTabProps = {
     // The router link to style.
     children: ReactElement
     isActive: boolean
-    // For labels taken from ids, e.g. board names.
-    capitalize?: boolean
 }
 
 // A header tab, underlined when it's the current page.
-export const NavTab = ({ children, isActive, capitalize }: NavTabProps) => {
+export const NavTab = ({ children, isActive }: NavTabProps) => {
     return (
         <Link
             asChild
@@ -24,7 +22,6 @@ export const NavTab = ({ children, isActive, capitalize }: NavTabProps) => {
             fontSize="sm"
             fontWeight={isActive ? "semibold" : "medium"}
             textDecoration="none"
-            textTransform={capitalize ? "capitalize" : undefined}
             whiteSpace="nowrap"
             _hover={{
                 bg: "app.raised",

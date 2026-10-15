@@ -1,4 +1,4 @@
-import { LAYOUT_NAMES, type LayoutType } from "@planner/config/layouts"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import {
     DEFAULT_TOTAL_POINTS,
     readBoardProgress,
@@ -17,10 +17,10 @@ export type PlannerOption = {
 
 export type AllocationSnapshot = {
     allocation: SharedAllocation
-    planners: Record<LayoutType, PlannerOption[]>
+    planners: Record<BoardId, PlannerOption[]>
     // Each board's current route: which option it matches, and its cost.
-    selected: Record<LayoutType, string>
-    routeCosts: Record<LayoutType, number>
+    selected: Record<BoardId, string>
+    routeCosts: Record<BoardId, number>
     error: string | null
 }
 
@@ -44,12 +44,12 @@ const routeOptions = (
 // Every board's current route and the routes it could switch to.
 export const readAllocationSnapshot = (classId: string): AllocationSnapshot => {
     const storedAllocation = readSharedAllocation(classId)
-    const planners = {} as Record<LayoutType, PlannerOption[]>
-    const selected = {} as Record<LayoutType, string>
-    const routeCosts = {} as Record<LayoutType, number>
+    const planners = {} as Record<BoardId, PlannerOption[]>
+    const selected = {} as Record<BoardId, string>
+    const routeCosts = {} as Record<BoardId, number>
     const errors = [storedAllocation.error]
 
-    for (const layout of LAYOUT_NAMES) {
+    for (const layout of BOARD_IDS) {
         const progress = readBoardProgress(classId, layout)
         const saved = readSavedPlanners(classId, layout)
         const history = readPlannerHistory(classId, layout)

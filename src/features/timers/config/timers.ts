@@ -1,5 +1,7 @@
 import { isRecord } from "@planner/storage/isRecord"
 import { formatDuration } from "@timers/logic/formatTime"
+import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
+import { FIELD_BOSS_LOOT, type BossLoot } from "./fieldBossLoot"
 import { FIELD_BOSSES, type FieldBoss, type FieldBossId } from "./fieldBosses"
 import {
     DailyReset,
@@ -10,7 +12,8 @@ import {
 } from "@assets/timers"
 
 // EU (Elyos) schedules. NCSOFT publishes none of these, so the times are the
-// ones the community reports; all of them are in UTC.
+// ones the community reports. Resets are in UTC; the rift keeps EU server
+// time, so it moves in UTC when the clocks change.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
@@ -87,9 +90,11 @@ export type TimerDefinition = {
     color: TimerColor
     // How many minutes before it starts the timer counts as "soon".
     soonMinutes: number
-    // Missing for field bosses, whose spawns come from the user.
-    schedule?: FixedSchedule
+    // Missing for field bosses, whose spawns come from the user or their own
+    // schedule.
+    schedule?: FixedSchedule | ServerSchedule
     boss?: FieldBoss
+    loot?: BossLoot
 }
 
 // Wednesday 14 October 2026, 07:00 UTC: a daily and weekly reset.
@@ -111,12 +116,8 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         color: { hue: "purple", tone: "strong" },
         soonMinutes: 15,
         description:
-            "Every 3 hours from 00:00 UTC. The portal stays open for about 10 minutes.",
-        schedule: {
-            anchor: Date.UTC(2026, 9, 14, 0),
-            period: 3 * HOUR,
-            openFor: 10 * MINUTE,
-        },
+            "Every 3 hours from 02:00 EU server time (CET/CEST). The portal stays open for about 10 minutes.",
+        schedule: { times: everyHours(3, 2), openFor: 10 * MINUTE },
     },
     {
         id: "shugo",
@@ -172,9 +173,10 @@ const toBossTimer = (boss: (typeof FIELD_BOSSES)[number]): TimerDefinition => {
         soonMinutes: isLong ? 15 : 5,
         description:
             boss.respawn === null
-                ? "No global respawn yet."
+                ? `Spawns: ${boss.note} (EU server time).`
                 : `Respawns ${formatDuration(boss.respawn)} after it dies.`,
         boss: boss,
+        loot: FIELD_BOSS_LOOT[boss.id],
     }
 }
 

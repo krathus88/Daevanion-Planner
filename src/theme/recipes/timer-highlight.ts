@@ -25,6 +25,11 @@ export const timerHighlightRecipe = defineRecipe({
             strong: {},
             soft: {},
         },
+        // Leaves an idle timer in the plain border, e.g. an unpinned field
+        // boss, so only the ones being watched show their colour.
+        plain: {
+            true: {},
+        },
     },
     compoundVariants: [
         {
@@ -77,6 +82,11 @@ export const timerHighlightRecipe = defineRecipe({
                 borderColor: "colorPalette.200",
                 animation: "timerPulseSoft",
             },
+        },
+        {
+            state: "idle",
+            plain: true,
+            css: { borderColor: "app.border" },
         },
     ],
     defaultVariants: {

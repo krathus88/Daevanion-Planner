@@ -1,16 +1,12 @@
 import { DEFAULT_CLASS_ID, isClassId, type ClassId } from "@config/classPresets"
-import {
-    DEFAULT_LAYOUT,
-    isLayoutType,
-    type LayoutType,
-} from "@planner/config/layouts"
+import { DEFAULT_BOARD_ID, isBoardId, type BoardId } from "@config/boards"
 import { isRecord } from "./isRecord"
 
 // The class and board last open in the planner. Pages without them in the
 // URL (Timers) show this class, and the Planner link returns to this board.
 export type PlannerLocation = {
     classId: ClassId
-    layout: LayoutType
+    layout: BoardId
 }
 
 const KEY = "daevanion:planner-location"
@@ -18,7 +14,7 @@ const CHANGE_EVENT = "daevanion-planner-location-change"
 
 const DEFAULT_LOCATION: PlannerLocation = {
     classId: DEFAULT_CLASS_ID,
-    layout: DEFAULT_LAYOUT,
+    layout: DEFAULT_BOARD_ID,
 }
 
 // useSyncExternalStore needs the same object back until the data changes.
@@ -37,7 +33,7 @@ const parse = (raw: string | null): PlannerLocation => {
             typeof value.classId === "string" &&
             isClassId(value.classId) &&
             typeof value.layout === "string" &&
-            isLayoutType(value.layout)
+            isBoardId(value.layout)
         ) {
             return { classId: value.classId, layout: value.layout }
         }

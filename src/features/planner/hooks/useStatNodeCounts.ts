@@ -5,7 +5,7 @@ import {
     readSharedStatNodeCounts,
     type StatNodeCount,
 } from "@planner/storage/statPriorities"
-import type { StatType } from "@planner/config/stats"
+import type { StatType } from "@config/stats/stats"
 
 const readCounts = (classId: string) => {
     try {
