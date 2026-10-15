@@ -1,6 +1,7 @@
 import type { BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import { isRecord } from "./isRecord"
+import { requestPersistentStorage } from "./persistStorage"
 
 export type BoardProgress = {
     selectedCells: string[]
@@ -362,6 +363,10 @@ export const writeSavedBoards = (
     layout: BoardId,
     saved: SavedBoard[],
 ) => {
+    if (saved.length > 0) {
+        requestPersistentStorage()
+    }
+
     return write(keyFor(classId, "saved-boards", layout), saved)
 }
 
@@ -378,6 +383,10 @@ export const writeSavedPlanners = (
     layout: BoardId,
     saved: SavedPlanner[],
 ) => {
+    if (saved.length > 0) {
+        requestPersistentStorage()
+    }
+
     return write(keyFor(classId, "saved-planners", layout), saved)
 }
 

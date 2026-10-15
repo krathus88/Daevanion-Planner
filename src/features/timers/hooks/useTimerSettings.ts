@@ -1,3 +1,4 @@
+import { requestPersistentStorage } from "@planner/storage/persistStorage"
 import type { TimerColor, TimerId } from "@timers/config/timers"
 import {
     addTimer,
@@ -72,6 +73,7 @@ export const useTimerSettings = () => {
 
         if (report) {
             bossReports[id] = report
+            requestPersistentStorage()
         } else {
             delete bossReports[id]
         }
