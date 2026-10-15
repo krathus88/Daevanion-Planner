@@ -1,5 +1,5 @@
 import { useState } from "react"
-import type { LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
 import {
     writeBoardProgress,
     type ActivePlanner,
@@ -8,7 +8,7 @@ import {
 
 type UseBoardProgressOptions = {
     classId: string
-    layoutName: LayoutType
+    layoutName: BoardId
     initial: BoardProgress | null
     availablePoints: number
     excludeStart: (keys: string[]) => string[]

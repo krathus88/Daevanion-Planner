@@ -6,7 +6,8 @@ import {
     type SetStateAction,
 } from "react"
 import type { Position } from "@planner/config/boardConfig"
-import type { BoardLayout, LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import type { BoardLayout } from "@planner/config/layouts"
 import {
     formatPlannerDuration,
     type PlannerProgress,
@@ -46,7 +47,7 @@ type PlannerWorkerMessage =
 type UsePlannerOptimizationProps = {
     layout: BoardLayout
     classId: string
-    layoutName: LayoutType
+    layoutName: BoardId
     start: Position
     targetCells: Set<string>
     plannedPath: Set<string>

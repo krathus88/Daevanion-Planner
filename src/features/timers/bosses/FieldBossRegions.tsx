@@ -82,9 +82,9 @@ export const FieldBossRegions = ({
 
             {region === "abyss" && (
                 <Text textStyle="hint">
-                    Chaotic Lower Reshanta has no global schedule yet. Mark a
-                    kill to see how long ago it was; the Korean times are only a
-                    reference.
+                    These bosses spawn on a fixed schedule rather than a kill
+                    timer. Times are EU server time, which follows Central
+                    European time. Marking a kill ends its spawn early.
                 </Text>
             )}
 

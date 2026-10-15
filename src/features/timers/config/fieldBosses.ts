@@ -1,7 +1,11 @@
-// Global Season 1 field bosses. NCSOFT publishes no global respawn times, so
-// these are community figures: names, zones and levels from aion2-guides.info,
-// respawns from Game8 (game8.co/games/Aion-2/archives/631054). Respawn is
-// counted from the kill.
+import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
+
+// Global Season 1 field bosses. NCSOFT publishes no global respawn times and
+// the client has none, so these are community figures: names, zones and
+// levels from aion2-guides.info; respawns are half of NCSOFT's Korean notice
+// (December 2025), matching the global kill reports on aion2atlas.app (the
+// same on EU, NA and Asia). Respawn is counted from the kill. The Abyss
+// bosses instead keep a fixed schedule, from the global client.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 
@@ -31,15 +35,23 @@ export type FieldBoss = {
     shortName: string
     zone: string
     level?: number
-    // Null where there's no global respawn yet; those are only tracked by
-    // when they were last killed.
+    // Null for bosses on a fixed schedule rather than a kill timer.
     respawn: number | null
-    // E.g. the Korean schedule, for bosses with no global one.
+    // The fixed schedule, for bosses with no kill timer, and how it reads.
+    schedule?: ServerSchedule
     note?: string
 }
 
 const ABYSS_ZONE = "Chaotic Lower Reshanta"
-const KR_EXECUTORS = "KR/TW: Wed, Sat 22:30"
+// Schedules are in EU server time, which follows Central European time
+// (CET/CEST).
+const EXECUTORS_SCHEDULE: ServerSchedule = {
+    times: [21 * 60 + 30],
+    // Mon, Thu, Sat
+    days: [1, 4, 6],
+    openFor: 30 * MINUTE,
+}
+const EXECUTORS_NOTE = "Mon, Thu, Sat 21:30"
 
 export const FIELD_BOSSES = [
     // Verteron (Elyos)
@@ -149,7 +161,7 @@ export const FIELD_BOSSES = [
         shortName: "Aullamu",
         zone: "Aulau Village",
         level: 45,
-        respawn: 2 * HOUR,
+        respawn: 4 * HOUR,
     },
     {
         id: "layla",
@@ -167,7 +179,7 @@ export const FIELD_BOSSES = [
         shortName: "Lawa",
         zone: "Artamia Gorge",
         level: 45,
-        respawn: 2 * HOUR,
+        respawn: 4 * HOUR,
     },
     {
         id: "demiros",
@@ -176,7 +188,7 @@ export const FIELD_BOSSES = [
         shortName: "Demiros",
         zone: "Artamia Plateau",
         level: 45,
-        respawn: 2 * HOUR,
+        respawn: 4 * HOUR,
     },
     {
         id: "ansas",
@@ -203,7 +215,7 @@ export const FIELD_BOSSES = [
         shortName: "K'nash",
         zone: "Drana Plantation",
         level: 45,
-        respawn: 2 * HOUR,
+        respawn: 4 * HOUR,
     },
     {
         id: "setram",
@@ -479,7 +491,7 @@ export const FIELD_BOSSES = [
         respawn: 12 * HOUR,
     },
 
-    // Chaotic Lower Reshanta (Abyss): no global schedule yet.
+    // Chaotic Lower Reshanta (Abyss): fixed schedules, not kill timers.
     {
         id: "watcher-kaira",
         region: "abyss",
@@ -488,7 +500,9 @@ export const FIELD_BOSSES = [
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        note: "KR/TW: every 4 h from 01:00",
+        // Up for about 30 minutes.
+        schedule: { times: everyHours(3, 1), openFor: 30 * MINUTE },
+        note: "Every 3 h from 01:00",
     },
     {
         id: "argo",
@@ -498,7 +512,8 @@ export const FIELD_BOSSES = [
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        note: KR_EXECUTORS,
+        schedule: EXECUTORS_SCHEDULE,
+        note: EXECUTORS_NOTE,
     },
     {
         id: "executor-kaira",
@@ -508,7 +523,8 @@ export const FIELD_BOSSES = [
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        note: KR_EXECUTORS,
+        schedule: EXECUTORS_SCHEDULE,
+        note: EXECUTORS_NOTE,
     },
     {
         id: "tamasa",
@@ -518,16 +534,25 @@ export const FIELD_BOSSES = [
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        note: KR_EXECUTORS,
+        schedule: EXECUTORS_SCHEDULE,
+        note: EXECUTORS_NOTE,
     },
     {
+        // "siege-boss" from before it had a name; saved timers use it.
         id: "siege-boss",
         region: "abyss",
-        name: "Abyss siege boss",
-        shortName: "Siege",
+        name: "Guardian Lord Nahma",
+        shortName: "Nahma",
         zone: ABYSS_ZONE,
+        level: 65,
         respawn: null,
-        note: "KR/TW: Fri, Sun 22:00",
+        schedule: {
+            times: [21 * 60],
+            // Sun, Fri
+            days: [0, 5],
+            openFor: 30 * MINUTE,
+        },
+        note: "Fri, Sun 21:00",
     },
 ] as const satisfies readonly FieldBoss[]
 

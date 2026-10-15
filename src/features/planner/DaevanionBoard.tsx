@@ -1,12 +1,13 @@
 import { BoardInstance } from "./BoardInstance"
-import { layouts, type LayoutType } from "./config/layouts"
+import type { BoardId } from "@config/boards"
+import { layouts } from "./config/layouts"
 import type { UseBoardStateOptions } from "./hooks/useBoardState"
 
 type DaevanionBoardProps = Omit<
     UseBoardStateOptions,
     "layout" | "layoutName"
 > & {
-    layout: LayoutType
+    layout: BoardId
 }
 
 // Keyed by board and class so each one starts from its own saved state.

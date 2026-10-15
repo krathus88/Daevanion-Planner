@@ -1,6 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { Flex, Switch, Text } from "@chakra-ui/react"
-import { STAT_TYPES } from "@planner/config/stats"
+import { STAT_TYPES } from "@config/stats/stats"
 import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
 import type { StatFocus } from "@planner/storage/statPriorities"

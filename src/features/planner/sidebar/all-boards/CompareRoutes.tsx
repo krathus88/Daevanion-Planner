@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { LAYOUT_NAMES } from "@planner/config/layouts"
+import { BOARD_IDS } from "@config/boards"
 import type { SharedAllocationState } from "@planner/hooks/useSharedAllocation"
 import { ProgressBar } from "@common/ProgressBar"
 import { Section } from "@common/Section"
@@ -49,7 +49,7 @@ export const CompareRoutes = ({
                 </Text>
             </Flex>
 
-            {LAYOUT_NAMES.map((layout) => (
+            {BOARD_IDS.map((layout) => (
                 <RouteSelectRow
                     key={layout}
                     layout={layout}

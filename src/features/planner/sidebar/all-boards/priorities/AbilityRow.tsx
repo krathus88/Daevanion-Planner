@@ -2,6 +2,8 @@ import type { ClassAbility } from "@config/classPresets"
 import { Flex, Image, Text } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
 import type { useAbilityLimits } from "@planner/hooks/useAbilityLimits"
+import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
+import { Tooltip } from "@ui/tooltip"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { LimitInput } from "./LimitInput"
 
@@ -9,6 +11,11 @@ type AbilityRowProps = {
     ability: ClassAbility
     limits: ReturnType<typeof useAbilityLimits>
 }
+
+const KIND_LABELS = {
+    skill: "Skill",
+    passive: "Passive",
+} as const
 
 const clamp = (value: number, min: number, max: number) => {
     return Math.min(max, Math.max(min, value))
@@ -48,14 +55,25 @@ export const AbilityRow = ({ ability, limits }: AbilityRowProps) => {
     return (
         <Flex minW="0" alignItems="center" gap="2">
             {ability.icon && (
-                <Image
-                    src={ability.icon}
-                    boxSize="8"
-                    flexShrink="0"
-                    objectFit="contain"
-                    alt=""
-                    aria-hidden="true"
-                />
+                <Tooltip
+                    content={
+                        <AbilityTooltip
+                            ability={ability}
+                            kind={KIND_LABELS[ability.type]}
+                        />
+                    }
+                    openDelay={100}
+                    showArrow
+                >
+                    <Image
+                        src={ability.icon}
+                        boxSize="8"
+                        flexShrink="0"
+                        objectFit="contain"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                </Tooltip>
             )}
 
             <Text minW="0" flex="1" fontSize="sm" truncate title={ability.name}>

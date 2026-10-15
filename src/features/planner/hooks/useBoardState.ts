@@ -1,7 +1,8 @@
 import type { ClassPreset } from "@config/classPresets"
 import { useState } from "react"
 import { getStart, keyOf, type Position } from "@planner/config/boardConfig"
-import type { BoardLayout, LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import type { BoardLayout } from "@planner/config/layouts"
 import {
     resolveAbilitiesByPosition,
     validateLayoutBonuses,
@@ -22,7 +23,7 @@ import { useSharedBudget } from "./useSharedBudget"
 
 export type UseBoardStateOptions = {
     layout: BoardLayout
-    layoutName: LayoutType
+    layoutName: BoardId
     classPreset: ClassPreset
     view: BoardView
     sidebarTab: SidebarTab
@@ -30,7 +31,7 @@ export type UseBoardStateOptions = {
     onSidebarTabChange: (tab: SidebarTab) => void
 }
 
-const readStoredBoard = (classId: string, layoutName: LayoutType) => {
+const readStoredBoard = (classId: string, layoutName: BoardId) => {
     return {
         progress: readBoardProgress(classId, layoutName),
         boardUndo: readBoardUndo(classId, layoutName),

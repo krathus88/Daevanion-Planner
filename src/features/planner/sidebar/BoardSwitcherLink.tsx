@@ -1,11 +1,11 @@
 import { Link } from "@chakra-ui/react"
 import type { ClassId } from "@config/classPresets"
-import type { LayoutType } from "@planner/config/layouts"
+import { BOARD_NAMES, type BoardId } from "@config/boards"
 import { Link as RouterLink } from "@tanstack/react-router"
 
 type BoardSwitcherLinkProps = {
     classId: ClassId
-    layout: LayoutType
+    layout: BoardId
     isActive: boolean
 }
 
@@ -28,7 +28,6 @@ export const BoardSwitcherLink = ({
             fontSize="sm"
             fontWeight={isActive ? "semibold" : "medium"}
             textDecoration="none"
-            textTransform="capitalize"
             _hover={{ color: "app.fg", textDecoration: "none" }}
         >
             <RouterLink
@@ -37,7 +36,7 @@ export const BoardSwitcherLink = ({
                 resetScroll={false}
                 aria-current={isActive ? "page" : undefined}
             >
-                {layout}
+                {BOARD_NAMES[layout]}
             </RouterLink>
         </Link>
     )

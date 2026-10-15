@@ -1,5 +1,4 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { BOSS_ALIVE_FOR } from "@timers/config/timers"
 import { formatCountdown, formatLocalTime } from "@timers/logic/formatTime"
 import type { TimerState } from "@timers/logic/timerState"
 
@@ -20,7 +19,7 @@ const getStatusText = (state: TimerState, now: number) => {
         case "open":
             return {
                 main: "Up now",
-                sub: `Spawned ${formatLocalTime(state.at - BOSS_ALIVE_FOR)}`,
+                sub: `Spawned ${formatLocalTime(state.startedAt)}`,
             }
         case "upcoming":
             return {

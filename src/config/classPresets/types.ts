@@ -1,4 +1,4 @@
-import type { LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
 
 type ClassAbilityType = "skill" | "passive"
 
@@ -32,7 +32,7 @@ export type ClassPreset<
     abilities: Abilities
     assignments: Readonly<
         Record<
-            LayoutType,
+            BoardId,
             Readonly<Record<string, Abilities[number]["id"]>> | undefined
         >
     >

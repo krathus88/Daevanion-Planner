@@ -8,7 +8,7 @@ import {
 import { classPresets, isClassId, type ClassId } from "@config/classPresets"
 import { useNavigate } from "@tanstack/react-router"
 import { IconImage } from "@common/IconImage"
-import type { LayoutType } from "./config/layouts"
+import type { BoardId } from "@config/boards"
 import {
     readPlannerLocation,
     writePlannerLocation,
@@ -26,7 +26,7 @@ type ClassSelectProps = {
     classId: ClassId
     // The board on screen, kept when switching class. Pages without a board
     // only remember the class for the planner.
-    layout?: LayoutType
+    layout?: BoardId
 }
 
 export const ClassSelect = ({ classId, layout }: ClassSelectProps) => {

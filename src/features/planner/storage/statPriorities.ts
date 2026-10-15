@@ -1,12 +1,12 @@
-import { LAYOUT_NAMES, layouts } from "@planner/config/layouts"
+import { STAT_TYPES, type StatType } from "@config/stats/stats"
+import { BOARD_IDS } from "@config/boards"
+import { layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
     FOCUS_TIERS,
     STAT_TIERS,
-    STAT_TYPES,
     type FocusTier,
     type StatTier,
-    type StatType,
 } from "@planner/config/stats"
 import { readBoardProgress } from "./boardStorage"
 import { readClassSettings, writeClassSettings } from "./classSettings"
@@ -188,7 +188,7 @@ export const readSharedStatNodeCounts = (classId: string) => {
         counts[stat] = { taken: 0, total: 0 }
     }
 
-    for (const layout of LAYOUT_NAMES) {
+    for (const layout of BOARD_IDS) {
         const progress = readBoardProgress(classId, layout)
         if (progress.error) {
             throw new Error(progress.error)

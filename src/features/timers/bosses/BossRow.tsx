@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react"
 import { LuChevronDown } from "react-icons/lu"
 import { PinButton } from "@timers/card/PinButton"
 import { TimerCustomise } from "@timers/card/TimerCustomise"
+import { BossLoot } from "./BossLoot"
 import { BossNotes } from "./BossNotes"
 import { BossReportForm } from "./BossReportForm"
 import { BossStatus } from "./BossStatus"
@@ -36,7 +37,7 @@ type BossRowProps = {
 }
 
 // One field boss: its countdown and a one-click "Killed" up front, with the
-// in-game timer form and its colours tucked away until opened.
+// in-game timer form, its loot and its colours tucked away until opened.
 export const BossRow = ({
     entry,
     boss,
@@ -85,6 +86,7 @@ export const BossRow = ({
     const highlightStyles: SystemStyleObject = highlight({
         state: entry.alert,
         tone: entry.color.tone,
+        plain: !entry.pinned,
     })
 
     const handleKilled = () => {
@@ -177,7 +179,7 @@ export const BossRow = ({
                         aria-label={
                             open
                                 ? `Close ${boss.name}'s options`
-                                : `Set ${boss.name}'s timer or colours`
+                                : `Show ${boss.name}'s loot, timer and colours`
                         }
                         aria-expanded={open}
                         onClick={handleToggle}
@@ -220,10 +222,12 @@ export const BossRow = ({
                             <BossReportForm
                                 focusRequest={focusForm}
                                 onChange={handleReport}
+                                onClear={entry.report ? handleClear : undefined}
                             />
                         )}
 
-                        {entry.report && (
+                        {/* Bosses without the form clear their kill here. */}
+                        {boss.respawn === null && entry.report && (
                             <Button
                                 variant="dangerGhost"
                                 size="xs"
@@ -232,6 +236,10 @@ export const BossRow = ({
                             >
                                 Clear timer
                             </Button>
+                        )}
+
+                        {entry.timer.loot && (
+                            <BossLoot loot={entry.timer.loot} />
                         )}
 
                         <TimerCustomise

@@ -1,6 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useRef, useState } from "react"
-import { LAYOUT_NAMES, type LayoutType } from "@planner/config/layouts"
+import { BOARD_IDS, BOARD_NAMES, type BoardId } from "@config/boards"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
 import type { PriorityPlannerProgress } from "@planner/logic/priorityPlanner"
@@ -35,7 +35,7 @@ type PriorityWorkerMessage =
       }
     | { type: "error"; message: string }
 
-type RecordedPlans = Partial<Record<LayoutType, SavedPlanner>>
+type RecordedPlans = Partial<Record<BoardId, SavedPlanner>>
 
 type UseOptimizeAllBoardsOptions = {
     classPreset: ClassPreset
@@ -82,10 +82,10 @@ export const useOptimizeAllBoards = ({
         const entries: RecordedPlans = {}
         const errors: string[] = []
 
-        for (const layoutName of LAYOUT_NAMES) {
+        for (const layoutName of BOARD_IDS) {
             const stored = readPlannerHistory(classPreset.id, layoutName)
             if (stored.error) {
-                errors.push(`${layoutName}: ${stored.error}`)
+                errors.push(`${BOARD_NAMES[layoutName]}: ${stored.error}`)
                 continue
             }
 
@@ -104,7 +104,7 @@ export const useOptimizeAllBoards = ({
                 ...(stored.value ?? []),
             ])
             if (saveError) {
-                errors.push(`${layoutName}: ${saveError}`)
+                errors.push(`${BOARD_NAMES[layoutName]}: ${saveError}`)
                 continue
             }
 
@@ -133,7 +133,7 @@ export const useOptimizeAllBoards = ({
     // replace the board while you're working elsewhere.
     const applyPlans = (entries: RecordedPlans) => {
         const errors: string[] = []
-        for (const layoutName of Object.keys(entries) as LayoutType[]) {
+        for (const layoutName of Object.keys(entries) as BoardId[]) {
             const entry = entries[layoutName]
             if (!entry) {
                 continue
@@ -141,7 +141,7 @@ export const useOptimizeAllBoards = ({
 
             const previous = readBoardProgress(classPreset.id, layoutName)
             if (previous.error) {
-                errors.push(`${layoutName}: ${previous.error}`)
+                errors.push(`${BOARD_NAMES[layoutName]}: ${previous.error}`)
                 continue
             }
 
@@ -163,7 +163,7 @@ export const useOptimizeAllBoards = ({
                 },
             )
             if (progressError) {
-                errors.push(`${layoutName}: ${progressError}`)
+                errors.push(`${BOARD_NAMES[layoutName]}: ${progressError}`)
             }
         }
 

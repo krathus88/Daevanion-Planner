@@ -1,6 +1,7 @@
 import type { Tokens } from "@chakra-ui/react"
+import type { BoardId } from "@config/boards"
+import type { StatType } from "@config/stats/stats"
 import type { SpecialBonusType } from "./specialNodes"
-import type { StatType } from "./stats"
 
 export type BoardLayout = {
     grid: readonly string[]
@@ -33,9 +34,7 @@ export type BoardNodeAppearance = {
     imageBackground?: string
 }
 
-export type LayoutType = "nezekan" | "zikel" | "vaizel" | "triniel"
-
-export const layouts: Record<LayoutType, BoardLayout> = {
+export const layouts: Record<BoardId, BoardLayout> = {
     nezekan: {
         grid: [
             "C##.B#A.B#C",
@@ -535,11 +534,3 @@ export const layouts: Record<LayoutType, BoardLayout> = {
         },
     },
 } as const
-
-export const isLayoutType = (layout: string): layout is LayoutType => {
-    return Object.hasOwn(layouts, layout)
-}
-
-export const LAYOUT_NAMES = Object.keys(layouts) as LayoutType[]
-
-export const DEFAULT_LAYOUT: LayoutType = "nezekan"

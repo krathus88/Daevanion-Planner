@@ -1,10 +1,7 @@
+import type { StatType } from "@config/stats/stats"
 import type { Position } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
-import {
-    statWeights,
-    type StatTier,
-    type StatType,
-} from "@planner/config/stats"
+import { statWeights, type StatTier } from "@planner/config/stats"
 import {
     findPlannerPath,
     type PlannerProgress,

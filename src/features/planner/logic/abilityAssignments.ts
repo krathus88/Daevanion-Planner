@@ -1,11 +1,12 @@
 import type { ClassAbility, ClassPreset } from "@config/classPresets"
-import type { BoardLayout, LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import type { BoardLayout } from "@planner/config/layouts"
 
 // Maps "row,col" to the class ability on that node. Throws when a class
 // assigns an ability to a node that can't hold it.
 export const resolveAbilitiesByPosition = (
     layout: BoardLayout,
-    layoutName: LayoutType,
+    layoutName: BoardId,
     classPreset: ClassPreset,
 ) => {
     const abilitiesById = new Map(
@@ -56,7 +57,7 @@ const describeNode = (kind: string | undefined, expected: string) => {
 // Throws when layouts.ts gives a stat or special bonus to the wrong node.
 export const validateLayoutBonuses = (
     layout: BoardLayout,
-    layoutName: LayoutType,
+    layoutName: BoardId,
 ) => {
     for (const key of Object.keys(layout.nodeStats)) {
         const [row, column] = key.split(",").map(Number)

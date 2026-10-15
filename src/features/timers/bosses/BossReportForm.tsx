@@ -1,6 +1,8 @@
-import { Button, Flex, Text } from "@chakra-ui/react"
+import { Button, Flex, Icon, IconButton, Text } from "@chakra-ui/react"
 import type { BossReport } from "@timers/storage/timerSettings"
+import { Tooltip } from "@ui/tooltip"
 import { useEffect, useRef, useState } from "react"
+import { LuTimerOff } from "react-icons/lu"
 import { DurationInput } from "@timers/card/DurationInput"
 
 // The longest respawn; the in-game timer never shows more.
@@ -10,6 +12,8 @@ type BossReportFormProps = {
     // Put the cursor in it, e.g. from a "set timer" chip.
     focusRequest: boolean
     onChange: (report: BossReport) => void
+    // Shown beside Update while a timer is set.
+    onClear?: () => void
 }
 
 // Takes the countdown from the in-game Field Boss list. Only the Update
@@ -17,6 +21,7 @@ type BossReportFormProps = {
 export const BossReportForm = ({
     focusRequest,
     onChange,
+    onClear,
 }: BossReportFormProps) => {
     const [hours, setHours] = useState(0)
     const [minutes, setMinutes] = useState(0)
@@ -54,11 +59,12 @@ export const BossReportForm = ({
         <Flex flexDir="column" gap="2">
             <Text textStyle="label">Spawns in (in-game timer)</Text>
 
-            <Flex ref={fieldsRef} flexWrap="wrap" alignItems="center" gap="2">
+            <Flex ref={fieldsRef} flexWrap="wrap" alignItems="center" gap="1.5">
                 <DurationInput
                     value={hours}
                     max={MAX_HOURS}
                     unit="h"
+                    compact
                     label="Hours"
                     onChange={setHours}
                 />
@@ -67,6 +73,7 @@ export const BossReportForm = ({
                     value={minutes}
                     max={59}
                     unit="m"
+                    compact
                     label="Minutes"
                     onChange={setMinutes}
                 />
@@ -75,13 +82,36 @@ export const BossReportForm = ({
                     value={seconds}
                     max={59}
                     unit="s"
+                    compact
                     label="Seconds"
                     onChange={setSeconds}
                 />
 
-                <Button variant="primary" size="sm" onClick={handleUpdate}>
-                    Update
-                </Button>
+                {/* Wraps as one, so Clear never drops below Update. */}
+                <Flex alignItems="center" gap="1">
+                    <Button variant="primary" size="sm" onClick={handleUpdate}>
+                        Update
+                    </Button>
+
+                    {onClear && (
+                        <Tooltip
+                            content="Clear timer"
+                            openDelay={100}
+                            showArrow
+                        >
+                            <IconButton
+                                variant="dangerGhost"
+                                size="sm"
+                                aria-label="Clear timer"
+                                onClick={onClear}
+                            >
+                                <Icon boxSize="4">
+                                    <LuTimerOff />
+                                </Icon>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Flex>
             </Flex>
 
             <Text textStyle="hint">

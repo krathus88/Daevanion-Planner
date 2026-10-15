@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { STAT_NAMES, type StatTier, type StatType } from "@planner/config/stats"
+import { STAT_NAMES, type StatType } from "@config/stats/stats"
+import type { StatTier } from "@planner/config/stats"
 import type {
     StatNodeCount,
     StatSettings,

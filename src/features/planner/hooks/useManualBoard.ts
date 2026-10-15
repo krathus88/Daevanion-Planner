@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { Position } from "@planner/config/boardConfig"
-import type { BoardLayout, LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
+import type { BoardLayout } from "@planner/config/layouts"
 import {
     createInitialSelection,
     selectedNodeCost,
@@ -17,7 +18,7 @@ import type { BoardProgressState } from "./useBoardProgress"
 
 type UseManualBoardOptions = {
     classId: string
-    layoutName: LayoutType
+    layoutName: BoardId
     layout: BoardLayout
     start: Position
     progress: BoardProgressState

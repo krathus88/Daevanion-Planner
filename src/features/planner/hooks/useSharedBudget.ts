@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import type { LayoutType } from "@planner/config/layouts"
+import type { BoardId } from "@config/boards"
 import {
     readRouteCostOfOtherBoards,
     readSharedTotalPoints,
@@ -15,7 +15,7 @@ type SharedBudget = {
     availablePoints: number
 }
 
-const readBudget = (classId: string, layout: LayoutType): SharedBudget => {
+const readBudget = (classId: string, layout: BoardId): SharedBudget => {
     const totalPoints = readSharedTotalPoints(classId)
     const usedByOtherBoards = readRouteCostOfOtherBoards(classId, layout)
     return {
@@ -26,7 +26,7 @@ const readBudget = (classId: string, layout: LayoutType): SharedBudget => {
 }
 
 // One point budget shared by every board and by the All boards tab.
-export const useSharedBudget = (classId: string, layout: LayoutType) => {
+export const useSharedBudget = (classId: string, layout: BoardId) => {
     const [budget, setBudget] = useState(() => readBudget(classId, layout))
 
     useEffect(

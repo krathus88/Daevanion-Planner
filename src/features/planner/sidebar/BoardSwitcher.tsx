@@ -1,5 +1,5 @@
 import { Flex, type FlexProps } from "@chakra-ui/react"
-import { LAYOUT_NAMES } from "@planner/config/layouts"
+import { BOARD_IDS } from "@config/boards"
 import { getRouteApi } from "@tanstack/react-router"
 import { BoardSwitcherLink } from "./BoardSwitcherLink"
 
@@ -20,7 +20,7 @@ export const BoardSwitcher = ({ ...props }: FlexProps) => {
             aria-label="Select board"
             {...props}
         >
-            {LAYOUT_NAMES.map((layoutName) => (
+            {BOARD_IDS.map((layoutName) => (
                 <BoardSwitcherLink
                     key={layoutName}
                     classId={classId}

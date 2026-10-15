@@ -6,22 +6,26 @@ import {
     type TimerDefinition,
 } from "@timers/config/timers"
 import type { BossReport } from "@timers/storage/timerSettings"
+import { getServerStarts, type ServerSchedule } from "./serverSchedule"
 
 export type TimerState =
     // A field boss nobody has entered a timer or kill for.
     | { status: "unset" }
     // A boss with no known respawn, counted up from its last kill.
     | { status: "killed"; at: number }
-    | {
-          // "open" counts down to the event closing, "upcoming" to it starting.
-          status: "open" | "upcoming"
-          at: number
-          // Worked out from an earlier spawn, assuming the boss died about a
-          // minute after spawning.
-          estimated: boolean
-          // A weekly maintenance happened between the report and this spawn.
-          afterMaintenance: boolean
-      }
+    // Counts down to the event closing, from when it started.
+    | ({ status: "open"; startedAt: number } & Countdown)
+    // Counts down to the event starting.
+    | ({ status: "upcoming" } & Countdown)
+
+type Countdown = {
+    at: number
+    // Worked out from an earlier spawn, assuming the boss died about a
+    // minute after spawning.
+    estimated: boolean
+    // A weekly maintenance happened between the report and this spawn.
+    afterMaintenance: boolean
+}
 
 // The latest start at or before `time`.
 const lastStart = (schedule: FixedSchedule, time: number) => {
@@ -37,6 +41,7 @@ const getFixedState = (schedule: FixedSchedule, now: number): TimerState => {
         return {
             status: "open",
             at: start + schedule.openFor,
+            startedAt: start,
             estimated: false,
             afterMaintenance: false,
         }
@@ -50,11 +55,49 @@ const getFixedState = (schedule: FixedSchedule, now: number): TimerState => {
     }
 }
 
+// A schedule in EU server time. A kill during a spawn ends it early.
+const getServerState = (
+    schedule: ServerSchedule,
+    killedAt: number | null,
+    now: number,
+): TimerState => {
+    const { last, next } = getServerStarts(schedule, now)
+
+    if (
+        last !== null &&
+        now - last < schedule.openFor &&
+        (killedAt === null || killedAt < last)
+    ) {
+        return {
+            status: "open",
+            at: last + schedule.openFor,
+            startedAt: last,
+            estimated: false,
+            afterMaintenance: false,
+        }
+    }
+
+    return {
+        status: "upcoming",
+        at: next,
+        estimated: false,
+        afterMaintenance: false,
+    }
+}
+
 const getBossState = (
     boss: FieldBoss,
     report: BossReport | null,
     now: number,
 ): TimerState => {
+    if (boss.schedule) {
+        return getServerState(
+            boss.schedule,
+            report && "killedAt" in report ? report.killedAt : null,
+            now,
+        )
+    }
+
     if (!report) {
         return { status: "unset" }
     }
@@ -82,12 +125,21 @@ const getBossState = (
     const nextWeeklyReset =
         lastStart(WEEKLY_RESET, report.reportedAt) + WEEKLY_RESET.period
 
-    return {
-        status: isAlive ? "open" : "upcoming",
-        at: isAlive ? spawnAt + BOSS_ALIVE_FOR : shownSpawnAt,
+    const countdown = {
         estimated: shownCycle > 0,
         afterMaintenance: nextWeeklyReset <= shownSpawnAt,
     }
+
+    if (isAlive) {
+        return {
+            status: "open",
+            at: spawnAt + BOSS_ALIVE_FOR,
+            startedAt: spawnAt,
+            ...countdown,
+        }
+    }
+
+    return { status: "upcoming", at: shownSpawnAt, ...countdown }
 }
 
 // How urgently a timer should draw the eye.
@@ -119,7 +171,9 @@ export const getTimerState = (
     }
 
     if (timer.schedule) {
-        return getFixedState(timer.schedule, now)
+        return "anchor" in timer.schedule
+            ? getFixedState(timer.schedule, now)
+            : getServerState(timer.schedule, null, now)
     }
 
     return { status: "unset" }

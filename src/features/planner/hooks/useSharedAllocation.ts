@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { LAYOUT_NAMES, type LayoutType } from "@planner/config/layouts"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { readAllocationSnapshot } from "@planner/storage/allocationSnapshot"
 import {
     applyPlannerToBoard,
@@ -32,7 +32,7 @@ export const useSharedAllocation = (classId: string) => {
     }
 
     // Picking a route loads it onto that board; "" (None) clears the board.
-    const selectRoute = (layout: LayoutType, plannerId: string) => {
+    const selectRoute = (layout: BoardId, plannerId: string) => {
         const error = applyPlannerToBoard(classId, layout, plannerId)
         if (error) {
             setSnapshot((current) => ({ ...current, error: error }))
@@ -43,7 +43,7 @@ export const useSharedAllocation = (classId: string) => {
     }
 
     const totalPoints = snapshot.allocation.totalPoints
-    const allocatedPoints = LAYOUT_NAMES.reduce(
+    const allocatedPoints = BOARD_IDS.reduce(
         (total, layout) => total + snapshot.routeCosts[layout],
         0,
     )

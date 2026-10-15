@@ -1,6 +1,6 @@
 import { DEFAULT_CLASS_ID, isClassId } from "@config/classPresets"
 import { BoardRoute } from "@planner/BoardRoute"
-import { DEFAULT_LAYOUT, isLayoutType } from "@planner/config/layouts"
+import { DEFAULT_BOARD_ID, isBoardId } from "@config/boards"
 import { createFileRoute, Navigate, notFound } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/planner/$classId/$layout")({
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
     codeSplitGroupings: [],
     params: {
         parse: ({ classId, layout }) => {
-            if (!isClassId(classId) || !isLayoutType(layout)) {
+            if (!isClassId(classId) || !isBoardId(layout)) {
                 throw notFound()
             }
 
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
     },
     notFoundComponent: () => (
         <Navigate
-            params={{ classId: DEFAULT_CLASS_ID, layout: DEFAULT_LAYOUT }}
+            params={{ classId: DEFAULT_CLASS_ID, layout: DEFAULT_BOARD_ID }}
             replace
             to="/planner/$classId/$layout"
         />
