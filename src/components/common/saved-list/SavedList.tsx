@@ -7,6 +7,9 @@ type SavedListProps = {
     loadLabel?: string
     onLoad: (id: string) => void
     onDelete: (id: string) => void
+    // Shows a button on each row that asks for a new name.
+    onRename?: (id: string, name: string) => void
+    renameLabel?: string
 }
 
 export const SavedList = ({
@@ -15,6 +18,8 @@ export const SavedList = ({
     loadLabel = "Load",
     onLoad,
     onDelete,
+    onRename,
+    renameLabel = "Rename",
 }: SavedListProps) => {
     return items.length === 0 ? (
         <Text textStyle="hint">{empty}</Text>
@@ -27,6 +32,8 @@ export const SavedList = ({
                     loadLabel={loadLabel}
                     onDelete={onDelete}
                     onLoad={onLoad}
+                    renameLabel={renameLabel}
+                    onRename={onRename}
                 />
             ))}
         </Flex>

@@ -24,6 +24,8 @@ export type NodeCellProps = {
     selected: boolean
     targeted: boolean
     canSelect: boolean
+    // Shown as is, not dimmed, and can't be picked (a shared plan).
+    readOnly?: boolean
     adjacentAvailable: boolean
     ability?: ClassAbility
     stat?: StatType
@@ -37,6 +39,7 @@ export const NodeCell = ({
     selected,
     targeted,
     canSelect,
+    readOnly = false,
     adjacentAvailable,
     ability,
     stat,
@@ -110,10 +113,16 @@ export const NodeCell = ({
                         borderRadius={styles.borderRadius}
                         color="board.ink"
                         clipPath={styles.clipPath}
-                        cursor={canSelect ? "button" : "disabled"}
+                        cursor={
+                            canSelect
+                                ? "button"
+                                : readOnly
+                                  ? "static"
+                                  : "disabled"
+                        }
                         touchAction="manipulation"
                         css={styles.hoverCss}
-                        aria-disabled={!canSelect}
+                        aria-disabled={!canSelect && !readOnly}
                         aria-label={[
                             `Row ${position.row + 1}, column ${position.column + 1}`,
                             appearance.name,

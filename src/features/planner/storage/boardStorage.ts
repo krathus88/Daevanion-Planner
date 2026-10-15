@@ -181,7 +181,7 @@ const isPlannerUndo = (value: unknown): value is PlannerUndo => {
     )
 }
 
-const isSavedBoard = (value: unknown): value is SavedBoard => {
+export const isSavedBoard = (value: unknown): value is SavedBoard => {
     return (
         isRecord(value) &&
         typeof value.id === "string" &&
@@ -192,7 +192,7 @@ const isSavedBoard = (value: unknown): value is SavedBoard => {
     )
 }
 
-const isSavedPlanner = (value: unknown): value is SavedPlanner => {
+export const isSavedPlanner = (value: unknown): value is SavedPlanner => {
     return (
         isRecord(value) &&
         typeof value.id === "string" &&
@@ -398,6 +398,82 @@ export const writePlannerHistory = (
         keyFor(classId, "planner-history", layout),
         history.slice(0, MAX_PLANNER_HISTORY),
     )
+}
+
+// Moves a history entry to the board's saved routes under `name`, so it
+// can't drop off the end of the history. An "Optimize all boards" run
+// records one entry per board with the same name and time; those move too.
+// A board whose current route is a moved entry keeps it, now as the saved
+// one. Returns the boards it saved on, or an error message.
+export const keepHistoryRun = (
+    classId: string,
+    layout: BoardId,
+    id: string,
+    name: string,
+): { boards: BoardId[] } | { error: string } => {
+    const history = readPlannerHistory(classId, layout)
+    const entry = history.value?.find((candidate) => candidate.id === id)
+    if (history.error || !entry) {
+        return {
+            error: history.error ?? "That history entry no longer exists.",
+        }
+    }
+
+    const boards: BoardId[] = []
+    for (const board of Object.keys(layouts) as BoardId[]) {
+        const boardHistory =
+            board === layout ? history : readPlannerHistory(classId, board)
+        const match = boardHistory.value?.find((candidate) =>
+            board === layout
+                ? candidate.id === id
+                : candidate.createdAt === entry.createdAt &&
+                  candidate.name === entry.name,
+        )
+        if (!match) {
+            continue
+        }
+
+        const saved = readSavedPlanners(classId, board)
+        const progress = readBoardProgress(classId, board)
+        const readError = saved.error ?? progress.error
+        if (readError) {
+            return { error: readError }
+        }
+
+        const kept: SavedPlanner = { ...match, name: name }
+        const active = progress.value?.activePlanner
+        const writeError =
+            writeSavedPlanners(classId, board, [
+                kept,
+                ...(saved.value ?? []),
+            ]) ??
+            writePlannerHistory(
+                classId,
+                board,
+                (boardHistory.value ?? []).filter(
+                    (candidate) => candidate.id !== match.id,
+                ),
+            ) ??
+            (progress.value &&
+            active?.source === "history" &&
+            active.id === match.id
+                ? writeBoardProgress(classId, board, {
+                      ...progress.value,
+                      activePlanner: {
+                          id: kept.id,
+                          name: name,
+                          source: "saved",
+                      },
+                  })
+                : null)
+        if (writeError) {
+            return { error: writeError }
+        }
+
+        boards.push(board)
+    }
+
+    return { boards: boards }
 }
 
 // Makes a saved or history planner the board's current route, or clears the

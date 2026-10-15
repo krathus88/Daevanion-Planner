@@ -1,3 +1,4 @@
+import { Text } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
 import type { SavedPlanner } from "@planner/storage/boardStorage"
 import { SaveForm } from "@common/SaveForm"
@@ -80,6 +81,7 @@ export const PlannerRoutesSection = ({
                     }))}
                     onDelete={planner.deletePlanner}
                     onLoad={handleLoadSaved}
+                    onRename={planner.renamePlanner}
                 />
             </Section>
 
@@ -89,6 +91,14 @@ export const PlannerRoutesSection = ({
                 defaultOpen={isHistoryActive}
                 title="Optimizer history"
             >
+                {planner.plannerHistory.length > 0 && (
+                    <Text textStyle="hint">
+                        Only the last 25 runs are kept. Save as moves a run to
+                        Saved under a name; a run from Optimize all boards is
+                        saved on every board.
+                    </Text>
+                )}
+
                 <SavedList
                     empty="Each optimizer run is recorded here."
                     items={planner.plannerHistory.map((entry) => ({
@@ -98,8 +108,10 @@ export const PlannerRoutesSection = ({
                         active: isActive("history", entry.id),
                     }))}
                     loadLabel="Restore"
+                    renameLabel="Save as"
                     onDelete={planner.deletePlannerHistoryEntry}
                     onLoad={handleLoadHistory}
+                    onRename={planner.keepHistoryEntry}
                 />
             </Section>
         </Section>

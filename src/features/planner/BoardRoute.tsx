@@ -1,6 +1,7 @@
 import { getRouteApi } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { PlannerPage } from "./PlannerPage"
+import { SharedPlanPage } from "./share/SharedPlanPage"
 import { writePlannerLocation } from "./storage/plannerLocation"
 import type { BoardView } from "./types"
 
@@ -8,6 +9,7 @@ const route = getRouteApi("/planner/$classId/$layout")
 
 export const BoardRoute = () => {
     const { classId, layout } = route.useParams()
+    const { share } = route.useSearch()
 
     // Planner/Manual is the user's choice and survives class switches, so it
     // lives above the class-keyed page.
@@ -20,7 +22,7 @@ export const BoardRoute = () => {
 
     // Keyed by class: switching class starts the sidebar on the This board
     // tab, while switching board keeps it.
-    return (
+    const plannerPage = (
         <PlannerPage
             key={classId}
             boardView={boardView}
@@ -29,4 +31,17 @@ export const BoardRoute = () => {
             onBoardViewChange={setBoardView}
         />
     )
+
+    if (share) {
+        return (
+            <SharedPlanPage
+                classId={classId}
+                code={share}
+                layout={layout}
+                ownPlanner={plannerPage}
+            />
+        )
+    }
+
+    return plannerPage
 }

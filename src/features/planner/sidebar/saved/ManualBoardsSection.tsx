@@ -49,6 +49,7 @@ export const ManualBoardsSection = ({
                 }))}
                 onDelete={manual.deleteBoard}
                 onLoad={openBoard}
+                onRename={manual.renameBoard}
             />
         </Section>
     )

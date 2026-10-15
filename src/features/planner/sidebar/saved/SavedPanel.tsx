@@ -1,5 +1,6 @@
 import { Flex } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
+import { BackupShareSection } from "./BackupShareSection"
 import { ManualBoardsSection } from "./ManualBoardsSection"
 import { PlannerRoutesSection } from "./PlannerRoutesSection"
 
@@ -22,6 +23,8 @@ export const SavedPanel = () => {
             />
 
             <ManualBoardsSection defaultOpen={view !== "planner"} />
+
+            <BackupShareSection />
         </Flex>
     )
 }

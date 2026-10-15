@@ -37,9 +37,12 @@ const isOrder = (value: unknown): value is SameRankOrder => {
     )
 }
 
-export const readRankOrder = (classId: string): RankOrder => {
+export const readRankOrder = (
+    classId: string,
+    source?: Record<string, unknown>,
+): RankOrder => {
     try {
-        const value = readClassSettings(classId, "rankOrder")
+        const value = readClassSettings(classId, "rankOrder", source)
         if (value === undefined) {
             return DEFAULT_RANK_ORDER
         }

@@ -5,8 +5,7 @@ import { BoardSwitcherLink } from "./BoardSwitcherLink"
 
 const route = getRouteApi("/planner/$classId/$layout")
 
-// Switches board from the sidebar on tablets and up; phones have board tabs
-// in the header instead.
+// Switches board from the sidebar, on every screen size.
 export const BoardSwitcher = ({ ...props }: FlexProps) => {
     const { classId, layout } = route.useParams()
 
