@@ -30,6 +30,10 @@ export const tokens = defineTokens({
             value: "timerPulseStrong 2s ease-in-out infinite",
         },
         timerPulseSoft: { value: "timerPulseSoft 2s ease-in-out infinite" },
+        timerFlashStrong: {
+            value: "timerFlashStrong 2s ease-in-out infinite",
+        },
+        timerFlashSoft: { value: "timerFlashSoft 2s ease-in-out infinite" },
         none: { value: "none" },
     },
     lineHeights: {
