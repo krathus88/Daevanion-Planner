@@ -16,9 +16,11 @@ export const timerHighlightRecipe = defineRecipe({
     variants: {
         state: {
             idle: {},
-            // About to start: full-colour border, a tint and a steady glow.
+            // About to start: a gently flashing border, a tint and a steady
+            // glow.
             soon: {},
-            // Open now: brighter fill and a slow pulsing glow.
+            // Open now: brighter fill, a slow pulsing glow and a flashing
+            // border.
             active: {},
         },
         tone: {
@@ -47,6 +49,7 @@ export const timerHighlightRecipe = defineRecipe({
                 "--timer-soon-glow":
                     "0 0 8px 0 var(--chakra-colors-color-palette-500)",
                 boxShadow: "var(--timer-soon-glow)",
+                animation: "timerFlashStrong",
             },
         },
         {
@@ -72,6 +75,7 @@ export const timerHighlightRecipe = defineRecipe({
                 "--timer-soon-glow":
                     "0 0 8px 0 var(--chakra-colors-color-palette-300)",
                 boxShadow: "var(--timer-soon-glow)",
+                animation: "timerFlashSoft",
             },
         },
         {
