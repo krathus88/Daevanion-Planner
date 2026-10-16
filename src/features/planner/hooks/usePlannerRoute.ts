@@ -1,3 +1,4 @@
+import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useEffectEvent, useState } from "react"
 import { keyOf, type Position } from "@planner/config/boardConfig"
 import { BOARD_NAMES, type BoardId } from "@config/boards"
@@ -22,11 +23,14 @@ import type { BoardProgressState } from "./useBoardProgress"
 import { usePlannerOptimization } from "./usePlannerOptimization"
 
 type UsePlannerRouteOptions = {
-    classId: string
+    classPreset: ClassPreset
     layoutName: BoardId
     layout: BoardLayout
     start: Position
     progress: BoardProgressState
+    // Route preferences: nodes marked Need, and ids marked Prefer.
+    needCells: ReadonlySet<string>
+    preferred: ReadonlySet<string>
     availablePoints: number
     initialUndo: PlannerUndo | null
     initialSaved: SavedPlanner[]
@@ -39,11 +43,13 @@ type UsePlannerRouteOptions = {
 // Planner mode: required nodes, the optimized route through them, undo,
 // saved routes and the optimizer history.
 export const usePlannerRoute = ({
-    classId,
+    classPreset,
     layoutName,
     layout,
     start,
     progress,
+    needCells,
+    preferred,
     availablePoints,
     initialUndo,
     initialSaved,
@@ -52,6 +58,7 @@ export const usePlannerRoute = ({
     setMessage,
     setView,
 }: UsePlannerRouteOptions) => {
+    const classId = classPreset.id
     const [plannerUndo, setPlannerUndo] = useState(initialUndo)
     const [savedPlanners, setSavedPlanners] = useState(initialSaved)
     const [plannerHistory, setPlannerHistory] = useState(initialHistory)
@@ -59,10 +66,12 @@ export const usePlannerRoute = ({
 
     const optimization = usePlannerOptimization({
         layout: layout,
-        classId: classId,
+        classPreset: classPreset,
         layoutName: layoutName,
         start: start,
         targetCells: progress.targetCells,
+        needCells: needCells,
+        preferred: preferred,
         plannedPath: progress.plannedPath,
         plannedCost: progress.plannedCost,
         availablePoints: availablePoints,

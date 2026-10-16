@@ -6,7 +6,11 @@ import { OptimizeControls } from "./OptimizeControls"
 
 // The route's required nodes and cost, with the controls that find it.
 export const RouteCard = () => {
-    const { budget, planner } = useBoard()
+    const { budget, planner, wants } = useBoard()
+
+    // The nodes you clicked plus the ones Route preferences need.
+    const requiredCount = new Set([...planner.targetCells, ...wants.needCells])
+        .size
 
     const isOverBudget =
         planner.plannedCost !== null &&
@@ -15,10 +19,7 @@ export const RouteCard = () => {
     return (
         <Card>
             <Flex gap="3">
-                <StatTile
-                    label="Required nodes"
-                    value={planner.targetCells.size}
-                />
+                <StatTile label="Required nodes" value={requiredCount} />
 
                 <StatTile
                     label="Route cost"

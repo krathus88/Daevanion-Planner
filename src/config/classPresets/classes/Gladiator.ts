@@ -267,7 +267,7 @@ export default defineClassPreset({
             id: "def",
             name: "Defiance",
             type: "skill",
-            priority: 3,
+            priority: 4,
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",

@@ -16,6 +16,8 @@ import { CellLabel } from "./CellLabel"
 import { CELL_BOX, getNodeStyles } from "./nodeStyles"
 import { NodeTooltip } from "./NodeTooltip"
 import { SpecialGem } from "./SpecialGem"
+import { NeedMarker } from "./NeedMarker"
+import { PreferMarker } from "./PreferMarker"
 import { TargetMarker } from "./TargetMarker"
 
 export type NodeCellProps = {
@@ -23,6 +25,10 @@ export type NodeCellProps = {
     appearance: BoardNodeAppearance
     selected: boolean
     targeted: boolean
+    // Route preferences need it; your own target marker wins when both.
+    needed?: boolean
+    // Route preferences prefer it; shown when nothing requires it.
+    preferred?: boolean
     canSelect: boolean
     // Shown as is, not dimmed, and can't be picked (a shared plan).
     readOnly?: boolean
@@ -38,6 +44,8 @@ export const NodeCell = ({
     appearance,
     selected,
     targeted,
+    needed = false,
+    preferred = false,
     canSelect,
     readOnly = false,
     adjacentAvailable,
@@ -129,6 +137,12 @@ export const NodeCell = ({
                             nodeName,
                             `${pointCost} point${pointCost === 1 ? "" : "s"}`,
                             targeted ? "required target" : "",
+                            needed && !targeted
+                                ? "needed by route preferences"
+                                : "",
+                            preferred && !needed && !targeted
+                                ? "preferred if no more costly"
+                                : "",
                             selected ? "selected" : "not selected",
                         ]
                             .filter(Boolean)
@@ -201,7 +215,13 @@ export const NodeCell = ({
                 </AbsoluteCenter>
             </Tooltip>
 
-            {targeted && <TargetMarker />}
+            {targeted ? (
+                <TargetMarker />
+            ) : needed ? (
+                <NeedMarker />
+            ) : (
+                preferred && <PreferMarker />
+            )}
 
             <CellLabel hasImage={hasImage} label={label} selected={selected} />
         </Box>

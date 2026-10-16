@@ -19,6 +19,7 @@ export const shadows = defineTokens.shadows({
             value: "0 0 0 1px rgba(255, 226, 160, 0.55), 0 0 18px 4px rgba(217, 179, 108, 0.45)",
         },
         target: { value: "0 0 6px rgba(250, 204, 21, 0.8)" },
+        need: { value: "0 0 6px rgba(134, 174, 252, 0.8)" },
         gem: { value: "0 0 6px rgba(255, 244, 209, 0.9)" },
         node: {
             selected: { value: NODE_SELECTED },

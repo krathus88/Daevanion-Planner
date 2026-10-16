@@ -5,8 +5,10 @@ import { LuChevronRight } from "react-icons/lu"
 type SectionProps = {
     children: ReactNode
     title: string
-    // "card" is a bordered section; "sub" is a lighter heading inside one.
-    variant?: "card" | "sub"
+    // "card" is a bordered section; "featured" adds an accent edge; "sub" is a
+    // lighter heading inside one; "nested" is a slightly darker box inside a
+    // "sub".
+    variant?: "card" | "featured" | "sub" | "nested"
     open?: boolean
     // Read on mount; remount (via key) to apply a new default.
     defaultOpen?: boolean
@@ -40,7 +42,11 @@ export const Section = ({
         >
             <Collapsible.Trigger>
                 <Collapsible.Indicator>
-                    <LuChevronRight size={variant === "card" ? 16 : 14} />
+                    <LuChevronRight
+                        size={
+                            variant === "sub" || variant === "nested" ? 14 : 16
+                        }
+                    />
                 </Collapsible.Indicator>
 
                 <Text flex="1">

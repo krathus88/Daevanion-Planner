@@ -17,6 +17,7 @@ import {
 } from "@planner/storage/boardStorage"
 import type { BoardView, SidebarTab } from "../types"
 import { useBoardProgress } from "./useBoardProgress"
+import { useBoardWants } from "./useBoardWants"
 import { useManualBoard } from "./useManualBoard"
 import { usePlannerRoute } from "./usePlannerRoute"
 import { useSharedBudget } from "./useSharedBudget"
@@ -77,12 +78,15 @@ export const useBoardState = ({
         excludeStart: excludeStart,
         setMessage: setMessage,
     })
+    const wants = useBoardWants(classPreset, layoutName)
     const planner = usePlannerRoute({
-        classId: classId,
+        classPreset: classPreset,
         layoutName: layoutName,
         layout: layout,
         start: start,
         progress: progress,
+        needCells: wants.needCells,
+        preferred: wants.preferred,
         availablePoints: budget.availablePoints,
         initialUndo: stored.plannerUndo.value,
         initialSaved: stored.savedPlanners.value ?? [],
@@ -156,6 +160,7 @@ export const useBoardState = ({
         },
         manual: manual,
         planner: planner,
+        wants: wants,
     }
 }
 

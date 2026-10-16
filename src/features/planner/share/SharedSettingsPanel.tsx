@@ -7,7 +7,7 @@ import { StatusText } from "@common/StatusText"
 import { useState } from "react"
 import { STAT_TIER_NAMES } from "@planner/config/stats"
 import { SPECIAL_BONUSES } from "@planner/config/specialNodes"
-import { STAT_TIER_COLORS } from "@planner/sidebar/all-boards/priorities/tierColors"
+import { STAT_TIER_COLORS } from "@planner/sidebar/priorities/tierColors"
 import {
     readAbilityMaximums,
     readAbilityMinimums,

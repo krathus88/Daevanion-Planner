@@ -5,25 +5,26 @@ import {
     DEFAULT_ALL_BOARDS_SEARCH_SECONDS,
     formatSearchTime,
 } from "@planner/config/searchTime"
-import { useOptimizeAllBoards } from "@planner/hooks/useOptimizeAllBoards"
+import { usePriorityOptimizer } from "@planner/hooks/usePriorityOptimizer"
 import { ProgressBar } from "@common/ProgressBar"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
 import { ShortfallWarning } from "./ShortfallWarning"
 
-type OptimizeAllBoardsProps = {
+type PriorityOptimizerProps = {
     classPreset: ClassPreset
     totalPoints: number
     onComplete: (applyResults: () => void) => void
 }
 
-export const OptimizeAllBoards = ({
+// Builds routes on all four boards from the priority settings.
+export const PriorityOptimizer = ({
     classPreset,
     totalPoints,
     onComplete,
-}: OptimizeAllBoardsProps) => {
-    const { isOptimizing, progress, message, shortfall, optimizeAll, cancel } =
-        useOptimizeAllBoards({
+}: PriorityOptimizerProps) => {
+    const { isOptimizing, progress, message, shortfall, optimize, cancel } =
+        usePriorityOptimizer({
             classPreset: classPreset,
             totalPoints: totalPoints,
             onComplete: onComplete,
@@ -34,7 +35,7 @@ export const OptimizeAllBoards = ({
     )
 
     const handleOptimize = () => {
-        optimizeAll(searchSeconds)
+        optimize(searchSeconds)
     }
 
     return (

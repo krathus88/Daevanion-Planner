@@ -49,6 +49,10 @@ export const colors = defineSemanticTokens.colors({
         selected: { value: "{colors.yellow.400}" },
         target: { value: "{colors.yellow.500}" },
         targetDot: { value: "{colors.yellow.400}" },
+        // Nodes Route preferences need, apart from the ones you click.
+        needDot: { value: "{colors.periwinkle.400}" },
+        // Nodes Route preferences prefer: taken only when it costs nothing.
+        preferRing: { value: "{colors.mint.400}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
     },
     // Item grades, coloured as the game colours item names.

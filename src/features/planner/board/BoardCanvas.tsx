@@ -12,6 +12,7 @@ export const BoardCanvas = () => {
         selectedForView,
         manual,
         planner,
+        wants,
     } = useBoard()
 
     const isManual = view === "board"
@@ -25,6 +26,8 @@ export const BoardCanvas = () => {
                 mode={isManual ? "interactive" : "planner"}
                 selectedCells={selectedForView}
                 targetCells={isManual ? new Set() : planner.targetCells}
+                neededCells={isManual ? undefined : wants.needCells}
+                preferredCells={isManual ? undefined : wants.preferredCells}
                 onSelect={selectCell}
             />
 

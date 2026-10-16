@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { errorMessage } from "@planner/logic/errorMessage"
+import { subscribeToClassSettings } from "@planner/storage/classSettings"
 import {
     DEFAULT_RANK_ORDER,
     readRankOrder,
@@ -7,7 +8,7 @@ import {
     type RankOrder,
 } from "@planner/storage/rankOrder"
 
-const readInitialOrder = (classId: string) => {
+const readOrder = (classId: string) => {
     try {
         return { order: readRankOrder(classId), error: null }
     } catch (error) {
@@ -20,9 +21,20 @@ const readInitialOrder = (classId: string) => {
 
 // Which of skills, passives and special nodes go first within one rank.
 export const useRankOrder = (classId: string) => {
-    const [initial] = useState(() => readInitialOrder(classId))
+    const [initial] = useState(() => readOrder(classId))
     const [order, setOrder] = useState(initial.order)
     const [error, setError] = useState<string | null>(initial.error)
+
+    // The other tab's editor may change the same order.
+    useEffect(
+        () =>
+            subscribeToClassSettings(classId, () => {
+                const next = readOrder(classId)
+                setOrder(next.order)
+                setError(next.error)
+            }),
+        [classId],
+    )
 
     const update = (next: RankOrder) => {
         const writeError = writeRankOrder(classId, next)

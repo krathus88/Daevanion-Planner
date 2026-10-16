@@ -37,7 +37,7 @@ type PriorityWorkerMessage =
 
 type RecordedPlans = Partial<Record<BoardId, SavedPlanner>>
 
-type UseOptimizeAllBoardsOptions = {
+type UsePriorityOptimizerOptions = {
     classPreset: ClassPreset
     totalPoints: number
     // Receives a callback that applies the results to the boards.
@@ -50,12 +50,12 @@ export type OptimizeShortfall = {
     specialNodes: { taken: number; total: number }
 }
 
-// Runs the all-board priority optimizer in a worker.
-export const useOptimizeAllBoards = ({
+// Runs the priority optimizer for all four boards in a worker.
+export const usePriorityOptimizer = ({
     classPreset,
     totalPoints,
     onComplete,
-}: UseOptimizeAllBoardsOptions) => {
+}: UsePriorityOptimizerOptions) => {
     const [progress, setProgress] = useState<PriorityPlannerProgress | null>(
         null,
     )
@@ -116,8 +116,8 @@ export const useOptimizeAllBoards = ({
                 `Some board plans could not be fully saved: ${errors.join(" ")}`,
             )
         } else {
-            const spent = Object.values(plans).reduce(
-                (sum, plan) => sum + plan.plannedCost,
+            const spent = BOARD_IDS.reduce(
+                (sum, layoutName) => sum + plans[layoutName].plannedCost,
                 0,
             )
             setMessage(
@@ -209,7 +209,7 @@ export const useOptimizeAllBoards = ({
         }
     }
 
-    const optimizeAll = (searchSeconds: number) => {
+    const optimize = (searchSeconds: number) => {
         setMessage("")
         setShortfall(null)
         setProgress(null)
@@ -291,7 +291,7 @@ export const useOptimizeAllBoards = ({
         progress: progress,
         message: message,
         shortfall: shortfall,
-        optimizeAll: optimizeAll,
+        optimize: optimize,
         cancel: cancel,
     }
 }

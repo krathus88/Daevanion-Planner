@@ -1,15 +1,19 @@
 import type { ClassAbility } from "@config/classPresets"
 import { Flex, Image, Text } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
+import { BOARD_NAMES, type BoardId } from "@config/boards"
 import type { useAbilityLimits } from "@planner/hooks/useAbilityLimits"
 import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 import { Tooltip } from "@ui/tooltip"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { LimitInput } from "./LimitInput"
+import { scopeLabel } from "./scopeLabel"
 
 type AbilityRowProps = {
     ability: ClassAbility
     limits: ReturnType<typeof useAbilityLimits>
+    // Upgrades are counted on this board only.
+    layout?: BoardId
 }
 
 const KIND_LABELS = {
@@ -21,7 +25,7 @@ const clamp = (value: number, min: number, max: number) => {
     return Math.min(max, Math.max(min, value))
 }
 
-export const AbilityRow = ({ ability, limits }: AbilityRowProps) => {
+export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
     const toUpgrades = (text: string) => {
         const next = Math.floor(Number(text))
 
@@ -50,7 +54,10 @@ export const AbilityRow = ({ ability, limits }: AbilityRowProps) => {
     const minimum = limits.minimums[ability.id] ?? 0
     const maximum = limits.maximums[ability.id]
     const nodeCount = limits.nodeCounts.get(ability.id) ?? 0
-    const isBelowMinimum = upgrades < minimum
+    const scopedNodeCount = limits.scopedNodeCounts.get(ability.id) ?? 0
+    // On one board, Min can only ask for the nodes that board has.
+    const scopedMinimum = Math.min(minimum, scopedNodeCount)
+    const isBelowMinimum = upgrades < scopedMinimum
 
     return (
         <Flex minW="0" alignItems="center" gap="2">
@@ -92,7 +99,11 @@ export const AbilityRow = ({ ability, limits }: AbilityRowProps) => {
                 max={nodeCount}
                 min={0}
                 value={minimum}
-                title={`Up to ${nodeCount} across all boards`}
+                title={
+                    layout
+                        ? `Up to ${nodeCount} across all boards, ${scopedNodeCount} on ${BOARD_NAMES[layout]}`
+                        : `Up to ${nodeCount} across all boards`
+                }
                 aria-label={`${ability.name} minimum upgrades`}
                 onChange={handleMinimumChange}
             />
@@ -120,7 +131,7 @@ export const AbilityRow = ({ ability, limits }: AbilityRowProps) => {
                 fontSize="xs"
                 textAlign="right"
                 whiteSpace="nowrap"
-                title={`${upgrades} ${upgrades === 1 ? "upgrade" : "upgrades"} across all boards${isBelowMinimum ? ` (minimum +${minimum})` : ""}`}
+                title={`${upgrades} ${upgrades === 1 ? "upgrade" : "upgrades"} ${scopeLabel(layout)}${isBelowMinimum ? ` (minimum +${scopedMinimum})` : ""}`}
             >
                 +{upgrades}
             </Text>

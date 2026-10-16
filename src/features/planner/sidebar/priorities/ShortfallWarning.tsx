@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import type { OptimizeShortfall } from "@planner/hooks/useOptimizeAllBoards"
+import type { OptimizeShortfall } from "@planner/hooks/usePriorityOptimizer"
 import { ShortfallRow } from "./ShortfallRow"
 
 type ShortfallWarningProps = {

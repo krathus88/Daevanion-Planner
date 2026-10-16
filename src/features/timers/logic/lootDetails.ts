@@ -29,6 +29,23 @@ export const getLootChanceLabel = (drop: LootDrop) => {
         : `${drop.chance}% per kill, top-damage party only`
 }
 
+// Bound drops carry "(Bound)" in their game name: the loot chest, along
+// with everything it holds, and souls. The rest is unbound.
+export const isBoundLoot = (drop: LootDrop) => {
+    return drop.name.endsWith("(Bound)")
+}
+
+// E.g. "Bound, as is everything inside" for a chest.
+export const getBindingLabel = (drop: LootDrop) => {
+    if (!isBoundLoot(drop)) {
+        return "Unbound, tradeable"
+    }
+
+    return drop.contents
+        ? "Bound, as is everything inside"
+        : "Bound, can't be traded"
+}
+
 const formatPercent = (value: number) => {
     return `${value > 0 ? "+" : ""}${Number(value.toFixed(2))}%`
 }

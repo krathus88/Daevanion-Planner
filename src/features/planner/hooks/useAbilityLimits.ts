@@ -1,3 +1,4 @@
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useState } from "react"
 import { errorMessage } from "@planner/logic/errorMessage"
@@ -16,6 +17,7 @@ import {
     type AbilityMinimums,
 } from "@planner/storage/abilityPriorities"
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
+import { subscribeToClassSettings } from "@planner/storage/classSettings"
 
 // Reads one setting, falling back (and collecting the error) if storage
 // holds something unreadable.
@@ -33,9 +35,8 @@ const readOr = <T>(
     }
 }
 
-const readInitialLimits = (classPreset: ClassPreset) => {
-    const errors: string[] = []
-
+// The class's shared rank and Min/Max settings.
+const readLimits = (classPreset: ClassPreset, errors: string[]) => {
     return {
         priorities: readOr(
             () => readAbilityPriorities(classPreset),
@@ -55,8 +56,19 @@ const readInitialLimits = (classPreset: ClassPreset) => {
             "Could not read ability maximums.",
             errors,
         ),
+    }
+}
+
+const readInitialLimits = (
+    classPreset: ClassPreset,
+    boards: readonly BoardId[],
+) => {
+    const errors: string[] = []
+
+    return {
+        ...readLimits(classPreset, errors),
         upgradeCounts: readOr(
-            () => readSharedAbilityUpgradeCounts(classPreset),
+            () => readSharedAbilityUpgradeCounts(classPreset, boards),
             new Map<string, number>(),
             "Could not read shared ability upgrades.",
             errors,
@@ -66,9 +78,15 @@ const readInitialLimits = (classPreset: ClassPreset) => {
 }
 
 // Each ability's priority rank and Min/Max upgrade limits, plus how many
-// upgrades the boards' current routes already give it.
-export const useAbilityLimits = (classPreset: ClassPreset) => {
-    const [initial] = useState(() => readInitialLimits(classPreset))
+// upgrades the boards' current routes already give it. With a layout, the
+// upgrades and scoped node counts are for that board only; the limits are
+// always the class's shared ones.
+export const useAbilityLimits = (
+    classPreset: ClassPreset,
+    layout?: BoardId,
+) => {
+    const boards: readonly BoardId[] = layout ? [layout] : BOARD_IDS
+    const [initial] = useState(() => readInitialLimits(classPreset, boards))
     const [priorities, setPriorities] = useState(initial.priorities)
     const [minimums, setMinimums] = useState(initial.minimums)
     const [maximums, setMaximums] = useState(initial.maximums)
@@ -80,7 +98,10 @@ export const useAbilityLimits = (classPreset: ClassPreset) => {
             subscribeToBoardStorage(() => {
                 try {
                     setUpgradeCounts(
-                        readSharedAbilityUpgradeCounts(classPreset),
+                        readSharedAbilityUpgradeCounts(
+                            classPreset,
+                            layout ? [layout] : BOARD_IDS,
+                        ),
                     )
                 } catch (readError) {
                     setError(
@@ -90,6 +111,20 @@ export const useAbilityLimits = (classPreset: ClassPreset) => {
                         ),
                     )
                 }
+            }),
+        [classPreset, layout],
+    )
+
+    // The other tab's editor may change the shared limits.
+    useEffect(
+        () =>
+            subscribeToClassSettings(classPreset.id, () => {
+                const errors: string[] = []
+                const next = readLimits(classPreset, errors)
+                setPriorities(next.priorities)
+                setMinimums(next.minimums)
+                setMaximums(next.maximums)
+                setError(errors.join(" ") || null)
             }),
         [classPreset],
     )
@@ -156,6 +191,8 @@ export const useAbilityLimits = (classPreset: ClassPreset) => {
 
     // An ability can't need more upgrades than it has nodes across all boards.
     const nodeCounts = abilityNodeCounts(classPreset)
+    // Nodes on the boards counted here; planning caps Min at this.
+    const scopedNodeCounts = abilityNodeCounts(classPreset, boards)
     const resolvedMinimums = resolveAbilityMinimums(
         classPreset,
         priorities,
@@ -168,6 +205,7 @@ export const useAbilityLimits = (classPreset: ClassPreset) => {
         maximums: maximums,
         upgradeCounts: upgradeCounts,
         nodeCounts: nodeCounts,
+        scopedNodeCounts: scopedNodeCounts,
         error: error,
         updatePriority: updatePriority,
         updateMinimum: updateMinimum,

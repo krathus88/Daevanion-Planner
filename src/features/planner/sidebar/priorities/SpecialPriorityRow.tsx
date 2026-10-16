@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
+import type { BoardId } from "@config/boards"
 import { LegendSwatch } from "@planner/board/LegendSwatch"
 import {
     SPECIAL_BONUSES,
@@ -8,11 +9,13 @@ import {
 import type { SpecialNodeCount } from "@planner/storage/specialPriorities"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { LimitInput } from "./LimitInput"
+import { scopeLabel } from "./scopeLabel"
 
 type SpecialPriorityRowProps = {
     bonus: SpecialBonusType
     priority: number
     count?: SpecialNodeCount
+    layout?: BoardId
     onPriorityChange: (bonus: SpecialBonusType, priority: number) => void
 }
 
@@ -20,6 +23,7 @@ export const SpecialPriorityRow = ({
     bonus,
     priority,
     count,
+    layout,
     onPriorityChange,
 }: SpecialPriorityRowProps) => {
     const name = SPECIAL_BONUSES[bonus].name
@@ -55,7 +59,7 @@ export const SpecialPriorityRow = ({
                     fontSize="xs"
                     textAlign="right"
                     whiteSpace="nowrap"
-                    title={`${count.taken} of ${count.total} ${name} nodes taken across all boards`}
+                    title={`${count.taken} of ${count.total} ${name} nodes taken ${scopeLabel(layout)}`}
                 >
                     {count.taken} / {count.total}
                 </Text>
