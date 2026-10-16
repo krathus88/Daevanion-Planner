@@ -1,7 +1,7 @@
 import { Flex, Icon, Text } from "@chakra-ui/react"
 import { Section } from "@common/Section"
 import type { BossLoot as BossLootTable } from "@timers/config/fieldBossLoot"
-import { LuTrophy } from "react-icons/lu"
+import { LuLock, LuTrophy } from "react-icons/lu"
 import { LootTile } from "./LootTile"
 
 type BossLootProps = {
@@ -30,7 +30,24 @@ export const BossLoot = ({ loot }: BossLootProps) => {
                 </Text>
 
                 <Text as="span" color="app.muted">
-                    {" · % = chance per kill"}
+                    {" · "}
+                </Text>
+
+                <Icon
+                    boxSize="3.5"
+                    mr="1"
+                    color="app.danger"
+                    verticalAlign="text-bottom"
+                >
+                    <LuLock />
+                </Icon>
+
+                <Text as="span" color="app.danger" fontWeight="semibold">
+                    Bound
+                </Text>
+
+                <Text as="span" color="app.muted">
+                    {", the rest is unbound · % = chance per kill"}
                 </Text>
             </Text>
 

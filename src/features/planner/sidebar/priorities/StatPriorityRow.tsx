@@ -1,16 +1,19 @@
 import { Flex, Text } from "@chakra-ui/react"
+import type { BoardId } from "@config/boards"
 import { STAT_NAMES, type StatType } from "@config/stats/stats"
 import type { StatTier } from "@planner/config/stats"
 import type {
     StatNodeCount,
     StatSettings,
 } from "@planner/storage/statPriorities"
+import { scopeLabel } from "./scopeLabel"
 import { StatTierPicker } from "./StatTierPicker"
 
 type StatPriorityRowProps = {
     stat: StatType
     settings: StatSettings
     count?: StatNodeCount
+    layout?: BoardId
     onSettingsChange: (settings: StatSettings) => void
 }
 
@@ -18,6 +21,7 @@ export const StatPriorityRow = ({
     stat,
     settings,
     count,
+    layout,
     onSettingsChange,
 }: StatPriorityRowProps) => {
     const handleTierChange = (tier: StatTier) => {
@@ -39,7 +43,7 @@ export const StatPriorityRow = ({
                     color={count.taken > 0 ? "app.success" : "app.subtle"}
                     fontSize="xs"
                     whiteSpace="nowrap"
-                    title={`${count.taken} of ${count.total} ${STAT_NAMES[stat]} nodes taken across all boards`}
+                    title={`${count.taken} of ${count.total} ${STAT_NAMES[stat]} nodes taken ${scopeLabel(layout)}`}
                 >
                     {count.taken} / {count.total}
                 </Text>

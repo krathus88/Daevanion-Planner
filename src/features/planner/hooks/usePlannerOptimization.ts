@@ -1,3 +1,4 @@
+import type { ClassPreset } from "@config/classPresets"
 import {
     useEffect,
     useRef,
@@ -13,7 +14,8 @@ import {
     type PlannerProgress,
 } from "@planner/logic/plannerLogic"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
-import { routeStatScore, statWeights } from "@planner/config/stats"
+import { routeStatScore } from "@planner/config/stats"
+import { pathPriorities } from "@planner/logic/pathPriorities"
 import {
     DEFAULT_STAT_SETTINGS,
     readStatSettings,
@@ -46,10 +48,13 @@ type PlannerWorkerMessage =
 
 type UsePlannerOptimizationProps = {
     layout: BoardLayout
-    classId: string
+    classPreset: ClassPreset
     layoutName: BoardId
     start: Position
     targetCells: Set<string>
+    // Route preferences: nodes marked Need, and ids marked Prefer.
+    needCells: ReadonlySet<string>
+    preferred: ReadonlySet<string>
     plannedPath: Set<string>
     plannedCost: number | null
     availablePoints: number
@@ -64,10 +69,12 @@ type UsePlannerOptimizationProps = {
 
 export const usePlannerOptimization = ({
     layout,
-    classId,
+    classPreset,
     layoutName,
     start,
     targetCells,
+    needCells,
+    preferred,
     plannedPath,
     plannedCost,
     availablePoints,
@@ -79,6 +86,7 @@ export const usePlannerOptimization = ({
     persistProgress,
     setMessage,
 }: UsePlannerOptimizationProps) => {
+    const classId = classPreset.id
     const [isOptimizing, setIsOptimizing] = useState(false)
     const [optimizationProgress, setOptimizationProgress] =
         useState<PlannerProgress | null>(null)
@@ -97,9 +105,19 @@ export const usePlannerOptimization = ({
         } catch {
             // Fall back to the default stat priorities.
         }
-        const weights = statWeights(layout.nodeStats, statSettings.tiers)
+        const priorities = pathPriorities({
+            classPreset: classPreset,
+            layoutName: layoutName,
+            preferred: preferred,
+            statSettings: statSettings,
+        })
+        const weights = new Map(priorities.weights)
+        // The nodes you clicked plus the ones Route preferences need.
+        const requiredCells = new Set([...targetCells, ...needCells])
+        // A route that misses a newly needed node can't be kept.
         const previousBest =
-            plannedCost === null
+            plannedCost === null ||
+            [...requiredCells].some((key) => !plannedPath.has(key))
                 ? null
                 : {
                       ok: true as const,
@@ -186,7 +204,12 @@ export const usePlannerOptimization = ({
                     )
                     return
                 }
-                if (previousBest && bestResult.cost >= previousBest.cost) {
+                // A route grown with stat nodes costs more on purpose.
+                if (
+                    previousBest &&
+                    !bestResult.extended &&
+                    bestResult.cost >= previousBest.cost
+                ) {
                     setMessage(
                         `No better route found after ${formatPlannerDuration(timeBudgetMs)}; kept the previous ${previousBest.cost}-point route.`,
                     )
@@ -262,11 +285,12 @@ export const usePlannerOptimization = ({
             worker.postMessage({
                 layout: layout,
                 start: start,
-                targets: [...targetCells],
+                targets: [...requiredCells],
                 timeBudgetMs: timeBudgetMs,
                 statTiers: statSettings.tiers,
                 spendLeftover: statSettings.spendLeftover,
                 availablePoints: availablePoints,
+                priorities: priorities,
             })
         } catch (error) {
             plannerWorker.current?.terminate()

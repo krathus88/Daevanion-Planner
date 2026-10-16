@@ -1,12 +1,15 @@
-import { Flex, Text } from "@chakra-ui/react"
+import { Flex, Icon, Text } from "@chakra-ui/react"
 import { GRADE_LABELS } from "@config/items/grades"
 import type { LootDrop } from "@timers/config/fieldBossLoot"
+import { LuLock, LuLockOpen } from "react-icons/lu"
 import {
+    getBindingLabel,
     getChestRows,
     getLootChanceLabel,
     getPieceRows,
     getSetTitle,
     getStatRows,
+    isBoundLoot,
 } from "@timers/logic/lootDetails"
 import { LootDetails } from "./LootDetails"
 
@@ -42,6 +45,20 @@ export const LootTooltip = ({ drop }: LootTooltipProps) => {
                 </Text>
             </Text>
 
+            <Flex
+                alignItems="center"
+                gap="1"
+                color={isBoundLoot(drop) ? "app.danger" : "app.success"}
+                fontWeight="semibold"
+                lineHeight="short"
+            >
+                <Icon boxSize="3">
+                    {isBoundLoot(drop) ? <LuLock /> : <LuLockOpen />}
+                </Icon>
+
+                <Text>{getBindingLabel(drop)}</Text>
+            </Flex>
+
             {drop.pieces && (
                 <LootDetails
                     title={getSetTitle(drop.pieces)}
@@ -51,7 +68,7 @@ export const LootTooltip = ({ drop }: LootTooltipProps) => {
 
             {drop.contents && (
                 <LootDetails
-                    title="Contents, chance per opening:"
+                    title="Contents (all bound), chance per opening:"
                     rows={getChestRows(drop.contents)}
                 />
             )}

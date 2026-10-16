@@ -1,3 +1,4 @@
+import type { BoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
 import {
     optimizePriorityPlans,
@@ -22,6 +23,7 @@ type OptimizeMessage = {
     pointBudget: number
     timeBudgetMs: number
     statSettings: StatSettings
+    boards?: BoardId[]
 }
 
 globalThis.addEventListener(
@@ -37,6 +39,7 @@ globalThis.addEventListener(
             pointBudget,
             timeBudgetMs,
             statSettings,
+            boards,
         } = event.data
         void optimizePriorityPlans(
             classPreset,
@@ -51,6 +54,7 @@ globalThis.addEventListener(
             (progress: PriorityPlannerProgress) => {
                 globalThis.postMessage({ type: "progress", progress: progress })
             },
+            boards,
         )
             .then(({ plans, shortfalls, specialNodes }) =>
                 globalThis.postMessage({

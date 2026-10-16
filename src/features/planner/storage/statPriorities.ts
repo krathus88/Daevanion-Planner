@@ -1,5 +1,5 @@
 import { STAT_TYPES, type StatType } from "@config/stats/stats"
-import { BOARD_IDS } from "@config/boards"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
@@ -12,23 +12,23 @@ import { readBoardProgress } from "./boardStorage"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
-export type StatFocusTier = {
-    // Passives ranked after this wait behind the tier's stat nodes. Null
-    // never makes passives wait.
+// Stat focus for one stat.
+export type StatFocusStat = {
+    // All boards: passives ranked after this wait behind the stat's nodes.
+    // Null never makes passives wait.
     passiveAfter: number | null
     // The same for skills.
     skillAfter: number | null
-    // Most of the tier's stat nodes across all boards; null takes all the
-    // budget allows.
-    cap: number | null
+    // Most points one of its nodes may cost to reach, the node included:
+    // 1 takes nodes touching the route. 0 never adds the stat.
+    detour: number
 }
 
-// "Stat focus": stat nodes take points ahead of low-ranked abilities.
+// "Stat focus": stat nodes are added to the route, and on All boards take
+// points ahead of low-ranked abilities.
 export type StatFocus = {
     enabled: boolean
-    // Most points spent on other nodes to reach one stat node.
-    detour: number
-    tiers: Record<FocusTier, StatFocusTier>
+    stats: Record<StatType, StatFocusStat>
 }
 
 export type StatSettings = {
@@ -36,22 +36,6 @@ export type StatSettings = {
     // Spend points left after Min and ranks on stat nodes.
     spendLeftover: boolean
     focus: StatFocus
-}
-
-export const DEFAULT_STAT_FOCUS: StatFocus = {
-    enabled: false,
-    detour: 1,
-    tiers: {
-        best: { passiveAfter: 3, skillAfter: null, cap: null },
-        good: { passiveAfter: 4, skillAfter: null, cap: null },
-        okay: { passiveAfter: null, skillAfter: null, cap: null },
-    },
-}
-
-export const DEFAULT_STAT_SETTINGS: StatSettings = {
-    tiers: DEFAULT_STAT_TIERS,
-    spendLeftover: false,
-    focus: DEFAULT_STAT_FOCUS,
 }
 
 const isTier = (value: unknown): value is StatTier => {
@@ -78,54 +62,156 @@ const readOptionalCount = (
     return isCount(value, min) ? value : fallback
 }
 
-const readStatFocus = (value: unknown): StatFocus => {
-    if (!isRecord(value)) {
-        return DEFAULT_STAT_FOCUS
-    }
+// Older saves set Stat focus per tier (Best, Good, Okay), with one detour
+// for all of them that didn't count the stat node itself.
+type LegacyFocusTier = {
+    passiveAfter: number | null
+    skillAfter: number | null
+}
 
+const LEGACY_FOCUS_DEFAULTS: Record<FocusTier, LegacyFocusTier> = {
+    best: { passiveAfter: 3, skillAfter: null },
+    good: { passiveAfter: 4, skillAfter: null },
+    okay: { passiveAfter: null, skillAfter: null },
+}
+
+const LEGACY_DETOUR = 1
+
+const readLegacyTiers = (value: Record<string, unknown>) => {
     const tiers = isRecord(value.tiers) ? value.tiers : {}
 
+    return Object.fromEntries(
+        FOCUS_TIERS.map((tier) => {
+            const saved = isRecord(tiers[tier]) ? tiers[tier] : {}
+            const fallback = LEGACY_FOCUS_DEFAULTS[tier]
+            // The oldest saves had one `afterRank` plus a scope of
+            // "passives" or "all" (passives and skills).
+            const legacyRank = readOptionalCount(
+                saved.afterRank,
+                1,
+                fallback.passiveAfter,
+            )
+            const isLegacy = "afterRank" in saved
+            return [
+                tier,
+                {
+                    passiveAfter: isLegacy
+                        ? legacyRank
+                        : readOptionalCount(
+                              saved.passiveAfter,
+                              1,
+                              fallback.passiveAfter,
+                          ),
+                    skillAfter: isLegacy
+                        ? value.scope === "all"
+                            ? legacyRank
+                            : null
+                        : readOptionalCount(
+                              saved.skillAfter,
+                              1,
+                              fallback.skillAfter,
+                          ),
+                },
+            ]
+        }),
+    ) as Record<FocusTier, LegacyFocusTier>
+}
+
+// Each stat takes its tier's ranks. A tier that never made anything wait
+// wasn't focused, so its stats start at detour 0.
+const fromLegacyTiers = (
+    tiers: Record<FocusTier, LegacyFocusTier>,
+    detour: number,
+    statTiers: Readonly<Record<StatType, StatTier>>,
+) => {
+    return Object.fromEntries(
+        STAT_TYPES.map((stat) => {
+            const tier = statTiers[stat]
+            const saved = tier === "ignore" ? null : tiers[tier]
+            const isFocused =
+                saved !== null &&
+                (saved.passiveAfter !== null || saved.skillAfter !== null)
+            return [
+                stat,
+                {
+                    passiveAfter: saved?.passiveAfter ?? null,
+                    skillAfter: saved?.skillAfter ?? null,
+                    detour: isFocused ? detour + 1 : 0,
+                },
+            ]
+        }),
+    ) as Record<StatType, StatFocusStat>
+}
+
+// Best stats take nodes touching the route; the rest aren't added.
+const defaultStatFocus = (
+    statTiers: Readonly<Record<StatType, StatTier>>,
+): StatFocus => {
+    const ranks = fromLegacyTiers(LEGACY_FOCUS_DEFAULTS, 0, statTiers)
+    return {
+        enabled: false,
+        stats: Object.fromEntries(
+            STAT_TYPES.map((stat) => [
+                stat,
+                { ...ranks[stat], detour: statTiers[stat] === "best" ? 1 : 0 },
+            ]),
+        ) as Record<StatType, StatFocusStat>,
+    }
+}
+
+export const DEFAULT_STAT_SETTINGS: StatSettings = {
+    tiers: DEFAULT_STAT_TIERS,
+    spendLeftover: false,
+    focus: defaultStatFocus(DEFAULT_STAT_TIERS),
+}
+
+const readStatFocus = (
+    value: unknown,
+    statTiers: Readonly<Record<StatType, StatTier>>,
+): StatFocus => {
+    if (!isRecord(value)) {
+        return defaultStatFocus(statTiers)
+    }
+
+    if (!isRecord(value.stats)) {
+        return {
+            enabled: value.enabled === true,
+            stats: fromLegacyTiers(
+                readLegacyTiers(value),
+                isCount(value.detour, 0) ? value.detour : LEGACY_DETOUR,
+                statTiers,
+            ),
+        }
+    }
+
+    const defaults = defaultStatFocus(statTiers).stats
+    const stats = value.stats
     return {
         enabled: value.enabled === true,
-        detour: isCount(value.detour, 0)
-            ? value.detour
-            : DEFAULT_STAT_FOCUS.detour,
-        tiers: Object.fromEntries(
-            FOCUS_TIERS.map((tier) => {
-                const saved = isRecord(tiers[tier]) ? tiers[tier] : {}
-                const fallback = DEFAULT_STAT_FOCUS.tiers[tier]
-                // Older saves had one `afterRank` plus a scope of "passives"
-                // or "all" (passives and skills).
-                const legacyRank = readOptionalCount(
-                    saved.afterRank,
-                    1,
-                    fallback.passiveAfter,
-                )
-                const isLegacy = "afterRank" in saved
+        stats: Object.fromEntries(
+            STAT_TYPES.map((stat) => {
+                const saved = isRecord(stats[stat]) ? stats[stat] : {}
+                const fallback = defaults[stat]
                 return [
-                    tier,
+                    stat,
                     {
-                        passiveAfter: isLegacy
-                            ? legacyRank
-                            : readOptionalCount(
-                                  saved.passiveAfter,
-                                  1,
-                                  fallback.passiveAfter,
-                              ),
-                        skillAfter: isLegacy
-                            ? value.scope === "all"
-                                ? legacyRank
-                                : null
-                            : readOptionalCount(
-                                  saved.skillAfter,
-                                  1,
-                                  fallback.skillAfter,
-                              ),
-                        cap: readOptionalCount(saved.cap, 0, fallback.cap),
+                        passiveAfter: readOptionalCount(
+                            saved.passiveAfter,
+                            1,
+                            fallback.passiveAfter,
+                        ),
+                        skillAfter: readOptionalCount(
+                            saved.skillAfter,
+                            1,
+                            fallback.skillAfter,
+                        ),
+                        detour: isCount(saved.detour, 0)
+                            ? saved.detour
+                            : fallback.detour,
                     },
                 ]
             }),
-        ) as Record<FocusTier, StatFocusTier>,
+        ) as Record<StatType, StatFocusStat>,
     }
 }
 
@@ -142,19 +228,20 @@ export const readStatSettings = (
         if (!isRecord(value)) {
             throw new Error("Saved stat priorities are invalid.")
         }
-        const tiers = isRecord(value.tiers) ? value.tiers : {}
+        const savedTiers = isRecord(value.tiers) ? value.tiers : {}
+        const tiers = Object.fromEntries(
+            STAT_TYPES.map((stat) => [
+                stat,
+                isTier(savedTiers[stat])
+                    ? savedTiers[stat]
+                    : DEFAULT_STAT_TIERS[stat],
+            ]),
+        ) as Record<StatType, StatTier>
 
         return {
-            tiers: Object.fromEntries(
-                STAT_TYPES.map((stat) => [
-                    stat,
-                    isTier(tiers[stat])
-                        ? tiers[stat]
-                        : DEFAULT_STAT_TIERS[stat],
-                ]),
-            ) as Record<StatType, StatTier>,
+            tiers: tiers,
             spendLeftover: value.spendLeftover === true,
-            focus: readStatFocus(value.focus),
+            focus: readStatFocus(value.focus, tiers),
         }
     } catch (error) {
         throw new Error(
@@ -180,18 +267,22 @@ export const writeStatSettings = (classId: string, settings: StatSettings) => {
 export type StatNodeCount = {
     // Stat nodes on the boards' current routes.
     taken: number
-    // Stat nodes on all four boards.
+    // Stat nodes on the counted boards.
     total: number
 }
 
-// Stat nodes taken versus available, per stat, across every board.
-export const readSharedStatNodeCounts = (classId: string) => {
+// Stat nodes taken versus available, per stat, across the given boards
+// (all by default).
+export const readSharedStatNodeCounts = (
+    classId: string,
+    boards: readonly BoardId[] = BOARD_IDS,
+) => {
     const counts = {} as Record<StatType, StatNodeCount>
     for (const stat of STAT_TYPES) {
         counts[stat] = { taken: 0, total: 0 }
     }
 
-    for (const layout of BOARD_IDS) {
+    for (const layout of boards) {
         const progress = readBoardProgress(classId, layout)
         if (progress.error) {
             throw new Error(progress.error)

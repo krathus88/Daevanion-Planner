@@ -1,4 +1,4 @@
-import { BOARD_IDS } from "@config/boards"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import {
     SPECIAL_BONUSES,
@@ -79,18 +79,22 @@ export const writeSpecialPriorities = (
 export type SpecialNodeCount = {
     // Nodes with this bonus on the boards' current routes.
     taken: number
-    // Nodes with this bonus on all four boards.
+    // Nodes with this bonus on the counted boards.
     total: number
 }
 
-// Special nodes taken versus available, per bonus, across every board.
-export const readSharedSpecialNodeCounts = (classId: string) => {
+// Special nodes taken versus available, per bonus, across the given boards
+// (all by default).
+export const readSharedSpecialNodeCounts = (
+    classId: string,
+    boards: readonly BoardId[] = BOARD_IDS,
+) => {
     const counts = {} as Record<SpecialBonusType, SpecialNodeCount>
     for (const bonus of SPECIAL_BONUS_TYPES) {
         counts[bonus] = { taken: 0, total: 0 }
     }
 
-    for (const layout of BOARD_IDS) {
+    for (const layout of boards) {
         const progress = readBoardProgress(classId, layout)
         if (progress.error) {
             throw new Error(progress.error)

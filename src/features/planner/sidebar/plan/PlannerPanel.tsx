@@ -2,6 +2,7 @@ import { Button, Flex, Text } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
 import { SharedBudgetField } from "@planner/shared/SharedBudgetField"
 import { ActiveRoute } from "./ActiveRoute"
+import { BoardPriorities } from "./BoardPriorities"
 import { RouteCard } from "./RouteCard"
 
 export const PlannerPanel = () => {
@@ -12,6 +13,8 @@ export const PlannerPanel = () => {
             <ActiveRoute />
 
             <SharedBudgetField disabled={planner.isOptimizing} />
+
+            <BoardPriorities />
 
             <RouteCard />
 

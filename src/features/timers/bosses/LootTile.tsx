@@ -2,8 +2,12 @@ import { Flex, Icon, Image } from "@chakra-ui/react"
 import { getLootIcon } from "@assets/timers/loot"
 import type { LootDrop } from "@timers/config/fieldBossLoot"
 import { Tooltip } from "@ui/tooltip"
-import { getLootChanceLabel } from "@timers/logic/lootDetails"
-import { LuSparkles } from "react-icons/lu"
+import {
+    getBindingLabel,
+    getLootChanceLabel,
+    isBoundLoot,
+} from "@timers/logic/lootDetails"
+import { LuLock, LuSparkles } from "react-icons/lu"
 import { LootChance } from "./LootChance"
 import { LootTooltip } from "./LootTooltip"
 
@@ -12,7 +16,7 @@ type LootTileProps = {
 }
 
 // One drop as its icon, framed in its grade's colour, over who gets it and
-// its chance.
+// its chance. A lock in the corner marks a bound drop.
 export const LootTile = ({ drop }: LootTileProps) => {
     const icon = drop.icon && getLootIcon(drop.icon)
 
@@ -37,9 +41,10 @@ export const LootTile = ({ drop }: LootTileProps) => {
                 >
                     <button
                         type="button"
-                        aria-label={`${drop.name}, ${getLootChanceLabel(drop)}`}
+                        aria-label={`${drop.name}, ${getLootChanceLabel(drop)}, ${getBindingLabel(drop)}`}
                     >
                         <Flex
+                            position="relative"
                             boxSize="10"
                             alignItems="center"
                             justifyContent="center"
@@ -60,6 +65,26 @@ export const LootTile = ({ drop }: LootTileProps) => {
                                 <Icon boxSize="4">
                                     <LuSparkles />
                                 </Icon>
+                            )}
+
+                            {isBoundLoot(drop) && (
+                                <Flex
+                                    position="absolute"
+                                    top="-1.5"
+                                    right="-1.5"
+                                    boxSize="4"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    bg="app.panel"
+                                    borderColor="app.danger"
+                                    borderWidth="1px"
+                                    borderRadius="full"
+                                    color="app.danger"
+                                >
+                                    <Icon boxSize="2.5">
+                                        <LuLock />
+                                    </Icon>
+                                </Flex>
                             )}
                         </Flex>
 

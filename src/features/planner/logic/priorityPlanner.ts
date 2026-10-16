@@ -1,4 +1,5 @@
 import type { ClassPreset } from "@config/classPresets"
+import { STAT_TYPES, type StatType } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts, POINTS_PER_NODE_TYPE } from "@planner/config/layouts"
@@ -9,13 +10,7 @@ import type {
     MinimumShortfall,
     PriorityPlans,
 } from "@planner/storage/abilityPriorities"
-import {
-    FOCUS_TIERS,
-    routeStatScore,
-    statWeights,
-    STAT_TIERS,
-    type FocusTier,
-} from "@planner/config/stats"
+import { routeStatScore, statWeights, STAT_TIERS } from "@planner/config/stats"
 import {
     DEFAULT_SPECIAL_PRIORITY,
     type SpecialPriorities,
@@ -54,10 +49,10 @@ type PriorityTarget = {
     isStat?: boolean
 }
 
-// Stat focus: a tier's stat nodes, taken before `waiting`, the abilities
-// ranked after it.
+// Stat focus: a stat's nodes, taken before `waiting`, the abilities ranked
+// after it.
 type StatBlock = {
-    tier: FocusTier
+    stat: StatType
     waiting: PriorityTarget[]
 }
 
@@ -87,6 +82,8 @@ export const optimizePriorityPlans = async (
     timeBudgetMs: number,
     statSettings: StatSettings,
     onProgress: (progress: PriorityPlannerProgress) => void,
+    // Boards to plan; the others are left empty.
+    boards: readonly BoardId[] = BOARD_IDS,
 ): Promise<PriorityPlannerResult> => {
     const startedAt = performance.now()
     const deadline = startedAt + timeBudgetMs
@@ -112,7 +109,7 @@ export const optimizePriorityPlans = async (
         return SAME_RANK_ORDERS.indexOf(rankOrder[group])
     }
 
-    for (const layoutName of Object.keys(layouts) as BoardId[]) {
+    for (const layoutName of boards) {
         const layout = layouts[layoutName]
         const assignments = classPreset.assignments[layoutName] ?? {}
         for (let row = 0; row < layout.grid.length; row += 1) {
@@ -184,12 +181,13 @@ export const optimizePriorityPlans = async (
             left.key.localeCompare(right.key, undefined, { numeric: true }),
     )
 
-    // Stat focus puts each tier's stat nodes just before the first passive
-    // ranked after the tier's passive rank, or the first skill ranked after
+    // Stat focus puts each stat's nodes just before the first passive
+    // ranked after the stat's passive rank, or the first skill ranked after
     // its skill rank, whichever comes first. Abilities of a type with no
-    // rank set keep their place in rank order.
+    // rank set keep their place in rank order. A stat with detour 0 isn't
+    // focused; at the same place, better tiers go first.
     const focus = statSettings.focus
-    const waitsBehind = (target: PriorityTarget, tier: FocusTier) => {
+    const waitsBehind = (target: PriorityTarget, stat: StatType) => {
         if (target.abilityId === undefined) {
             return false
         }
@@ -197,35 +195,35 @@ export const optimizePriorityPlans = async (
         const type = abilitiesById.get(target.abilityId)?.ability.type
         const afterRank =
             type === "passive"
-                ? focus.tiers[tier].passiveAfter
-                : focus.tiers[tier].skillAfter
+                ? focus.stats[stat].passiveAfter
+                : focus.stats[stat].skillAfter
 
         return afterRank !== null && target.priority > afterRank
     }
-    const blockIndexes = new Map<FocusTier, number>()
-    if (focus.enabled) {
-        for (const tier of FOCUS_TIERS) {
-            const settings = focus.tiers[tier]
-            if (
-                settings.passiveAfter === null &&
-                settings.skillAfter === null
-            ) {
-                continue
-            }
-
-            const index = targets.findIndex((target) =>
-                waitsBehind(target, tier),
-            )
-            blockIndexes.set(tier, index < 0 ? targets.length : index)
-        }
+    const focusStats = !focus.enabled
+        ? []
+        : STAT_TYPES.filter(
+              (stat) =>
+                  focus.stats[stat].detour > 0 &&
+                  (focus.stats[stat].passiveAfter !== null ||
+                      focus.stats[stat].skillAfter !== null),
+          ).sort(
+              (left, right) =>
+                  STAT_TIERS.indexOf(statSettings.tiers[left]) -
+                  STAT_TIERS.indexOf(statSettings.tiers[right]),
+          )
+    const blockIndexes = new Map<StatType, number>()
+    for (const stat of focusStats) {
+        const index = targets.findIndex((target) => waitsBehind(target, stat))
+        blockIndexes.set(stat, index < 0 ? targets.length : index)
     }
     const rankSteps: RankStep[] = []
     for (let index = 0; index <= targets.length; index += 1) {
-        for (const tier of FOCUS_TIERS) {
-            if (blockIndexes.get(tier) === index) {
+        for (const stat of focusStats) {
+            if (blockIndexes.get(stat) === index) {
                 rankSteps.push({
                     block: {
-                        tier: tier,
+                        stat: stat,
                         waiting: targets
                             .slice(index)
                             .filter((target) => target.abilityId),
@@ -409,8 +407,23 @@ export const optimizePriorityPlans = async (
         )
     }
 
+    // Min can't ask for more upgrades than the planned boards have nodes.
+    const requiredUpgrades = new Map(
+        classPreset.abilities.map((ability) => [
+            ability.id,
+            Math.min(
+                minimums[ability.id] ?? 0,
+                targets.filter((target) => target.abilityId === ability.id)
+                    .length,
+            ),
+        ]),
+    )
+    const requiredOf = (abilityId: string) => {
+        return requiredUpgrades.get(abilityId) ?? 0
+    }
+
     const minimumAbilities = classPreset.abilities
-        .filter((ability) => (minimums[ability.id] ?? 0) > 0)
+        .filter((ability) => requiredOf(ability.id) > 0)
         .sort((left, right) => priorityOf(left.id) - priorityOf(right.id))
 
     const specialTargets = targets.filter((target) => target.isSpecial)
@@ -422,7 +435,7 @@ export const optimizePriorityPlans = async (
             if (performance.now() >= until) {
                 return
             }
-            const required = minimums[ability.id] ?? 0
+            const required = requiredOf(ability.id)
             while (upgradesFor(ability.id) < required) {
                 let best: Candidate | null = null
                 for (const target of targets) {
@@ -442,22 +455,8 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    const tierAt = (layoutName: BoardId, key: string) => {
-        const stat = layouts[layoutName].nodeStats[key]
-
-        return stat ? statSettings.tiers[stat] : undefined
-    }
-    const tierNodesOnRoutes = (tier: FocusTier) => {
-        let count = 0
-        for (const layoutName of BOARD_IDS) {
-            for (const key of plans[layoutName].plannedPath) {
-                if (tierAt(layoutName, key) === tier) {
-                    count += 1
-                }
-            }
-        }
-
-        return count
+    const statAt = (layoutName: BoardId, key: string) => {
+        return layouts[layoutName].nodeStats[key] as StatType | undefined
     }
 
     // Makes stat nodes targets, so later routes for lower-ranked abilities
@@ -497,30 +496,23 @@ export const optimizePriorityPlans = async (
         pinStatNodes(layoutName, step.connector.filter(isFree))
     }
 
-    // Stat focus: takes the tier's stat nodes, least detour first, until its
-    // cap or the shared budget runs out. Among equal detours, nodes closer
-    // to an ability still waiting win, so the branch is more likely to
-    // become part of that ability's route later.
+    // Stat focus: takes the stat's nodes, least detour first, while each is
+    // within its detour and the shared budget lasts. Among equal detours,
+    // nodes closer to an ability still waiting win, so the branch is more
+    // likely to become part of that ability's route later.
     const fillStatBlock = (block: StatBlock) => {
-        const tierRank = STAT_TIERS.indexOf(block.tier)
-        const cap = focus.tiers[block.tier].cap ?? Number.POSITIVE_INFINITY
         const stepsByBoard = new Map<BoardId, StatStep[]>()
-        let taken = tierNodesOnRoutes(block.tier)
 
-        // The tier's own stat nodes and better ones aren't a detour.
+        // Nodes of every focused stat aren't a detour.
         const isFreeOn = (layoutName: BoardId) => {
             return (key: string) => {
-                const tier = tierAt(layoutName, key)
-                return (
-                    tier !== undefined &&
-                    tier !== "ignore" &&
-                    STAT_TIERS.indexOf(tier) <= tierRank
-                )
+                const stat = statAt(layoutName, key)
+                return stat !== undefined && focus.stats[stat].detour > 0
             }
         }
 
         // Keep the wanted stat nodes routes already pass through.
-        for (const layoutName of BOARD_IDS) {
+        for (const layoutName of boards) {
             pinStatNodes(
                 layoutName,
                 plans[layoutName].plannedPath.filter(isFreeOn(layoutName)),
@@ -541,7 +533,7 @@ export const optimizePriorityPlans = async (
             const wanted = new Set(
                 Object.keys(layout.nodeStats).filter(
                     (key) =>
-                        tierAt(layoutName, key) === block.tier &&
+                        statAt(layoutName, key) === block.stat &&
                         !route.has(key),
                 ),
             )
@@ -558,18 +550,13 @@ export const optimizePriorityPlans = async (
                 route: route,
                 wanted: wanted,
                 waiting: waiting,
-                maxDetour: focus.detour,
+                // The detour counts the stat node's own point.
+                maxDetour: focus.stats[block.stat].detour - 1,
                 isFree: isFreeOn(layoutName),
             })
             stepsByBoard.set(layoutName, steps)
 
             return steps
-        }
-
-        const countTier = (layoutName: BoardId, step: StatStep) => {
-            return step.connector.filter(
-                (key) => tierAt(layoutName, key) === block.tier,
-            ).length
         }
 
         const isBetterStep = (step: StatStep, best: StatStep | null) => {
@@ -583,15 +570,13 @@ export const optimizePriorityPlans = async (
             )
         }
 
-        while (taken < cap && totalCost < pointBudget) {
+        while (totalCost < pointBudget) {
             let best: { layoutName: BoardId; step: StatStep } | null = null
-            for (const layoutName of BOARD_IDS) {
+            for (const layoutName of boards) {
                 // Sorted best first, so the first one that fits is the
                 // board's best.
                 const step = stepsFor(layoutName).find(
-                    (candidate) =>
-                        totalCost + candidate.cost <= pointBudget &&
-                        taken + countTier(layoutName, candidate) <= cap,
+                    (candidate) => totalCost + candidate.cost <= pointBudget,
                 )
                 if (step && isBetterStep(step, best?.step ?? null)) {
                     best = { layoutName: layoutName, step: step }
@@ -601,7 +586,6 @@ export const optimizePriorityPlans = async (
                 return
             }
 
-            taken += countTier(best.layoutName, best.step)
             commitStatStep(
                 best.layoutName,
                 best.step,
@@ -653,7 +637,7 @@ export const optimizePriorityPlans = async (
 
     // "Spend leftover points": add stat nodes, best weight first, while the
     // shared budget allows. Existing targets stay, so nothing major is lost.
-    const statCandidates = (Object.keys(layouts) as BoardId[])
+    const statCandidates = boards
         .flatMap((layoutName) =>
             [...weightsByBoard[layoutName].entries()].map(([key, weight]) => ({
                 target: {
@@ -724,7 +708,7 @@ export const optimizePriorityPlans = async (
     const minimumCalls = minimumAbilities.reduce(
         (calls, ability) =>
             calls +
-            (minimums[ability.id] ?? 0) *
+            requiredOf(ability.id) *
                 targets.filter((target) => target.abilityId === ability.id)
                     .length,
         0,
@@ -774,7 +758,7 @@ export const optimizePriorityPlans = async (
     reportProgress(true)
 
     const shortfalls = minimumAbilities.flatMap((ability) => {
-        const required = minimums[ability.id] ?? 0
+        const required = requiredOf(ability.id)
         const achieved = upgradesFor(ability.id)
         return achieved < required
             ? [

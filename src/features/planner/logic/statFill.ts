@@ -8,14 +8,16 @@ const STEP_MS = 30
 const noProgress = { onBest: () => {}, onProgress: () => {} }
 
 // "Spend leftover points": grows a finished route with stat nodes, best
-// weight first, while the route stays within `budget`. The required targets
-// are always kept, so this never gives up a node the route already needed.
+// weight in `stats` first, while the route stays within `budget`. The
+// required targets are always kept, so this never gives up a node the route
+// already needed. `weights` break ties between routes of equal cost.
 export const addStatNodes = async ({
     layout,
     start,
     targets,
     route,
     budget,
+    stats,
     weights,
     until,
     onImproved,
@@ -25,13 +27,14 @@ export const addStatNodes = async ({
     targets: ReadonlySet<string>
     route: FoundRoute
     budget: number
+    stats: ReadonlyMap<string, number>
     weights: ReadonlyMap<string, number>
     until: number
     onImproved: (route: FoundRoute) => void
 }) => {
     let current = route
     const extras = new Set<string>()
-    const candidates = [...weights.entries()]
+    const candidates = [...stats.entries()]
         .sort((left, right) => right[1] - left[1])
         .map(([key]) => key)
 

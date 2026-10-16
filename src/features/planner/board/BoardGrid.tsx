@@ -70,6 +70,10 @@ type BoardGridProps = {
     mode: "interactive" | "planner" | "readonly"
     selectedCells: Set<string>
     targetCells: Set<string>
+    // Nodes Route preferences need; marked apart from your targets.
+    neededCells?: ReadonlySet<string>
+    // Nodes Route preferences prefer, taken only if it costs nothing.
+    preferredCells?: ReadonlySet<string>
     availablePoints: number
     onSelect: (position: Position) => void
 }
@@ -80,6 +84,8 @@ export const BoardGrid = ({
     mode,
     selectedCells,
     targetCells,
+    neededCells,
+    preferredCells,
     availablePoints,
     onSelect,
 }: BoardGridProps) => {
@@ -168,6 +174,10 @@ export const BoardGrid = ({
                                     }
                                     stat={layout.nodeStats[key]}
                                     targeted={targetCells.has(key)}
+                                    needed={neededCells?.has(key) ?? false}
+                                    preferred={
+                                        preferredCells?.has(key) ?? false
+                                    }
                                     position={position}
                                     readOnly={mode === "readonly"}
                                     onSelect={onSelect}

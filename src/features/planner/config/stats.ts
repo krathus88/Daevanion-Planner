@@ -19,11 +19,11 @@ export const DEFAULT_STAT_TIERS: Record<StatType, StatTier> = {
     "max-hp": "good",
     defense: "good",
     "critical-hit-resist": "okay",
-    "max-mp": "okay",
+    "max-mp": "ignore",
 }
 
-// Tiers that Stat focus can put ahead of low-ranked abilities, highest
-// first.
+// Tiers that older saves set Stat focus for, highest first; Stat focus is
+// now set per stat.
 export const FOCUS_TIERS = ["best", "good", "okay"] as const
 
 export type FocusTier = (typeof FOCUS_TIERS)[number]

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import type { SpecialBonusType } from "@planner/config/specialNodes"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
+import { subscribeToClassSettings } from "@planner/storage/classSettings"
 import {
     DEFAULT_SPECIAL_PRIORITIES,
     readSharedSpecialNodeCounts,
@@ -10,7 +12,7 @@ import {
     type SpecialNodeCount,
 } from "@planner/storage/specialPriorities"
 
-const readInitialPriorities = (classId: string) => {
+const readPriorities = (classId: string) => {
     try {
         return { priorities: readSpecialPriorities(classId), error: null }
     } catch (error) {
@@ -24,9 +26,15 @@ const readInitialPriorities = (classId: string) => {
     }
 }
 
-const readCounts = (classId: string) => {
+const readCounts = (classId: string, layout?: BoardId) => {
     try {
-        return { counts: readSharedSpecialNodeCounts(classId), error: null }
+        return {
+            counts: readSharedSpecialNodeCounts(
+                classId,
+                layout ? [layout] : BOARD_IDS,
+            ),
+            error: null,
+        }
     } catch (error) {
         return {
             counts: null,
@@ -36,20 +44,32 @@ const readCounts = (classId: string) => {
 }
 
 // Each special node bonus's rank, plus how many of its nodes the boards'
-// current routes take. Counts update when any board changes.
-export const useSpecialPriorities = (classId: string) => {
-    const [initial] = useState(() => readInitialPriorities(classId))
+// current routes take (on `layout` only, if given). Counts update when any
+// board changes.
+export const useSpecialPriorities = (classId: string, layout?: BoardId) => {
+    const [initial] = useState(() => readPriorities(classId))
     const [priorities, setPriorities] = useState(initial.priorities)
     const [error, setError] = useState<string | null>(initial.error)
     const [nodeCounts, setNodeCounts] = useState<{
         counts: Record<SpecialBonusType, SpecialNodeCount> | null
         error: string | null
-    }>(() => readCounts(classId))
+    }>(() => readCounts(classId, layout))
 
     useEffect(
         () =>
             subscribeToBoardStorage(() => {
-                setNodeCounts(readCounts(classId))
+                setNodeCounts(readCounts(classId, layout))
+            }),
+        [classId, layout],
+    )
+
+    // The other tab's editor may change the shared ranks.
+    useEffect(
+        () =>
+            subscribeToClassSettings(classId, () => {
+                const next = readPriorities(classId)
+                setPriorities(next.priorities)
+                setError(next.error)
             }),
         [classId],
     )

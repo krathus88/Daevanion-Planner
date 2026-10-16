@@ -69,7 +69,8 @@ const keyFor = (
         | "planner-undo"
         | "saved-boards"
         | "saved-planners"
-        | "planner-history",
+        | "planner-history"
+        | "wants",
     layout: BoardId,
 ) => {
     return `daevanion:${STORAGE_VERSION}:${classId}:${layout}:${kind}`
@@ -344,6 +345,31 @@ export const writePlannerUndo = (
     undo: PlannerUndo,
 ) => {
     return write(keyFor(classId, "planner-undo", layout), undo)
+}
+
+// Route preferences changed from their rank's default on this board, by
+// ability id or "special:<bonus>" for special nodes.
+export type BoardWantChoices = Record<string, "need" | "prefer" | "skip">
+
+const isWantChoices = (value: unknown): value is BoardWantChoices => {
+    return (
+        isRecord(value) &&
+        Object.values(value).every(
+            (want) => want === "need" || want === "prefer" || want === "skip",
+        )
+    )
+}
+
+export const readWantChoices = (classId: string, layout: BoardId) => {
+    return read(keyFor(classId, "wants", layout), isWantChoices)
+}
+
+export const writeWantChoices = (
+    classId: string,
+    layout: BoardId,
+    choices: BoardWantChoices,
+) => {
+    return write(keyFor(classId, "wants", layout), choices)
 }
 
 export const clearPlannerUndo = (classId: string, layout: BoardId) => {

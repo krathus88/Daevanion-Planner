@@ -8,7 +8,7 @@ import { StatusText } from "@common/StatusText"
 
 // Starts the route search, or shows its progress while it runs.
 export const OptimizeControls = () => {
-    const { planner } = useBoard()
+    const { planner, wants } = useBoard()
 
     const [searchSeconds, setSearchSeconds] = useState(DEFAULT_SEARCH_SECONDS)
 
@@ -42,7 +42,9 @@ export const OptimizeControls = () => {
                 variant="primary"
                 size="sm"
                 flex="1"
-                disabled={planner.targetCells.size === 0}
+                disabled={
+                    planner.targetCells.size === 0 && wants.needCells.size === 0
+                }
                 onClick={optimize}
             >
                 Find a good path

@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { errorMessage } from "@planner/logic/errorMessage"
+import { subscribeToClassSettings } from "@planner/storage/classSettings"
 import {
     DEFAULT_STAT_SETTINGS,
     readStatSettings,
@@ -7,7 +8,7 @@ import {
     type StatSettings,
 } from "@planner/storage/statPriorities"
 
-const readInitialSettings = (classId: string) => {
+const readSettings = (classId: string) => {
     try {
         return { settings: readStatSettings(classId), error: null }
     } catch (error) {
@@ -20,9 +21,20 @@ const readInitialSettings = (classId: string) => {
 
 // The class's stat tiers and whether leftover points go to stats.
 export const useStatSettings = (classId: string) => {
-    const [initial] = useState(() => readInitialSettings(classId))
+    const [initial] = useState(() => readSettings(classId))
     const [settings, setSettings] = useState(initial.settings)
     const [error, setError] = useState<string | null>(initial.error)
+
+    // The other tab's editor may change the same settings.
+    useEffect(
+        () =>
+            subscribeToClassSettings(classId, () => {
+                const next = readSettings(classId)
+                setSettings(next.settings)
+                setError(next.error)
+            }),
+        [classId],
+    )
 
     const update = (next: StatSettings) => {
         const writeError = writeStatSettings(classId, next)

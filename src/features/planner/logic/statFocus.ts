@@ -1,6 +1,7 @@
 import { isNode, keyOf } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
+import type { PathFocusGroup } from "./pathPriorities"
 
 // One way to add a wanted stat node to a board's route.
 export type StatStep = {
@@ -146,4 +147,56 @@ export const findStatSteps = ({
             left.toWaiting - right.toWaiting ||
             left.cost - right.cost,
     )
+}
+
+// Stat focus for one board's route (Find a good path): adds each group's
+// stat nodes in order, least detour first, while each is within the
+// group's detour and `budget` lasts. Added nodes join the route, so the
+// next can be reached from them. `route` holds the start. Returns the
+// grown route and its cost.
+export const growWithFocus = ({
+    layout,
+    route,
+    cost,
+    budget,
+    groups,
+}: {
+    layout: BoardLayout
+    route: ReadonlySet<string>
+    cost: number
+    budget: number
+    groups: readonly PathFocusGroup[]
+}) => {
+    const path = new Set(route)
+    let total = cost
+
+    for (const group of groups) {
+        const wanted = new Set(group.wanted)
+        const free = new Set(group.free)
+
+        while (total < budget) {
+            const steps = findStatSteps({
+                layout: layout,
+                route: path,
+                wanted: wanted,
+                waiting: group.waiting.filter((key) => !path.has(key)),
+                maxDetour: group.detour,
+                isFree: (key) => free.has(key),
+            })
+            // Sorted best first, so the first one that fits is the best.
+            const step = steps.find(
+                (candidate) => total + candidate.cost <= budget,
+            )
+            if (!step) {
+                break
+            }
+
+            for (const key of step.connector) {
+                path.add(key)
+            }
+            total += step.cost
+        }
+    }
+
+    return { path: path, cost: total }
 }

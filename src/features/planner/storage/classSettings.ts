@@ -5,8 +5,41 @@ import { isRecord } from "./isRecord"
 export type ClassSettingsSection =
     "abilities" | "specialPriorities" | "rankOrder" | "stats"
 
+const SETTINGS_CHANGE_EVENT = "daevanion-settings-change"
+
 const keyFor = (classId: string) => {
     return `daevanion:v1:${classId}:settings`
+}
+
+const notifyChange = (classId: string) => {
+    window.dispatchEvent(
+        new CustomEvent<string>(SETTINGS_CHANGE_EVENT, { detail: classId }),
+    )
+}
+
+// Fires when a class's settings change, here or in another tab, so every
+// editor showing them (This board and All boards) stays in sync.
+export const subscribeToClassSettings = (
+    classId: string,
+    onChange: () => void,
+) => {
+    const handleLocalChange = (event: Event) => {
+        if ((event as CustomEvent<string>).detail === classId) {
+            onChange()
+        }
+    }
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === null || event.key === keyFor(classId)) {
+            onChange()
+        }
+    }
+
+    window.addEventListener(SETTINGS_CHANGE_EVENT, handleLocalChange)
+    window.addEventListener("storage", handleStorageChange)
+    return () => {
+        window.removeEventListener(SETTINGS_CHANGE_EVENT, handleLocalChange)
+        window.removeEventListener("storage", handleStorageChange)
+    }
 }
 
 const readAll = (classId: string): Record<string, unknown> => {
@@ -36,6 +69,7 @@ export const replaceClassSettings = (
     settings: Record<string, unknown>,
 ) => {
     window.localStorage.setItem(keyFor(classId), JSON.stringify(settings))
+    notifyChange(classId)
 }
 
 // Undefined when the section was never saved. Throws if storage can't be
@@ -67,4 +101,5 @@ export const writeClassSettings = (
         keyFor(classId),
         JSON.stringify({ ...settings, [section]: value }),
     )
+    notifyChange(classId)
 }

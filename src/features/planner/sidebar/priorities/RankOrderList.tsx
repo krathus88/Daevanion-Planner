@@ -9,6 +9,7 @@ import {
     type SameRankOrder,
 } from "@planner/storage/rankOrder"
 import { StatusText } from "@common/StatusText"
+import { SAME_RANK_ORDER_COLORS } from "./tierColors"
 
 type RankOrderListProps = {
     classId: string
@@ -51,7 +52,17 @@ export const RankOrderList = ({ classId }: RankOrderListProps) => {
                         <SegmentGroup.Indicator />
 
                         {SAME_RANK_ORDERS.map((value) => (
-                            <SegmentGroup.Item key={value} value={value}>
+                            <SegmentGroup.Item
+                                key={value}
+                                value={value}
+                                color="app.subtle"
+                                _checked={{
+                                    color: SAME_RANK_ORDER_COLORS[value],
+                                }}
+                                _hover={{
+                                    color: SAME_RANK_ORDER_COLORS[value],
+                                }}
+                            >
                                 <SegmentGroup.ItemText>
                                     {SAME_RANK_ORDER_NAMES[value]}
                                 </SegmentGroup.ItemText>

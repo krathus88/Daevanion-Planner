@@ -1,7 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { readBoardProgress } from "./boardStorage"
-import type { BoardId } from "@config/boards"
-import { layouts } from "@planner/config/layouts"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
@@ -212,11 +211,15 @@ export const writeAbilityMaximums = (
 const DEFAULT_MINIMUM = 2
 const DEFAULT_MINIMUM_BELOW_RANK = 5
 
-// Number of nodes each ability has across all boards: the most upgrades it
-// can ever get.
-export const abilityNodeCounts = (classPreset: ClassPreset) => {
+// Number of nodes each ability has across the given boards (all by
+// default): the most upgrades it can ever get there.
+export const abilityNodeCounts = (
+    classPreset: ClassPreset,
+    boards: readonly BoardId[] = BOARD_IDS,
+) => {
     const counts = new Map<string, number>()
-    for (const assignments of Object.values(classPreset.assignments)) {
+    for (const layoutName of boards) {
+        const assignments = classPreset.assignments[layoutName]
         for (const abilityId of Object.values(assignments ?? {})) {
             counts.set(abilityId, (counts.get(abilityId) ?? 0) + 1)
         }
@@ -270,10 +273,14 @@ export const writeAbilityMinimums = (
     }
 }
 
-// Upgrades per ability across every board's current route.
-export const readSharedAbilityUpgradeCounts = (classPreset: ClassPreset) => {
+// Upgrades per ability across the given boards' current routes (all by
+// default).
+export const readSharedAbilityUpgradeCounts = (
+    classPreset: ClassPreset,
+    boards: readonly BoardId[] = BOARD_IDS,
+) => {
     const counts = new Map<string, number>()
-    for (const layoutName of Object.keys(layouts) as BoardId[]) {
+    for (const layoutName of boards) {
         const progress = readBoardProgress(classPreset.id, layoutName)
         if (progress.error) {
             throw new Error(progress.error)
