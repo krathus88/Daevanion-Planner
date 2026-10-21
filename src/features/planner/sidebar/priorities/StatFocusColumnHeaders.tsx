@@ -15,9 +15,9 @@ export const StatFocusColumnHeaders = ({
                 <Text
                     w={LIMIT_COLUMN_WIDTH}
                     textAlign="center"
-                    title="Passives ranked after this wait behind the stat"
+                    title="Skills ranked after this wait behind the stat"
                 >
-                    Passive
+                    Skill
                 </Text>
             )}
 
@@ -25,9 +25,9 @@ export const StatFocusColumnHeaders = ({
                 <Text
                     w={LIMIT_COLUMN_WIDTH}
                     textAlign="center"
-                    title="Skills ranked after this wait behind the stat"
+                    title="Passives ranked after this wait behind the stat"
                 >
-                    Skill
+                    Passive
                 </Text>
             )}
 

@@ -76,10 +76,10 @@ export const StatFocusStatRow = ({
                     max={99}
                     min={1}
                     placeholder="–"
-                    value={value.passiveAfter ?? ""}
-                    title="Leave empty so passives never wait for this stat"
-                    aria-label={`${name} comes before passives ranked after`}
-                    onChange={handlePassiveAfterChange}
+                    value={value.skillAfter ?? ""}
+                    title="Leave empty so skills never wait for this stat"
+                    aria-label={`${name} comes before skills ranked after`}
+                    onChange={handleSkillAfterChange}
                 />
             )}
 
@@ -88,10 +88,10 @@ export const StatFocusStatRow = ({
                     max={99}
                     min={1}
                     placeholder="–"
-                    value={value.skillAfter ?? ""}
-                    title="Leave empty so skills never wait for this stat"
-                    aria-label={`${name} comes before skills ranked after`}
-                    onChange={handleSkillAfterChange}
+                    value={value.passiveAfter ?? ""}
+                    title="Leave empty so passives never wait for this stat"
+                    aria-label={`${name} comes before passives ranked after`}
+                    onChange={handlePassiveAfterChange}
                 />
             )}
 
