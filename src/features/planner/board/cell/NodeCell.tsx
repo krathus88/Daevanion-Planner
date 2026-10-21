@@ -1,11 +1,11 @@
 import type { ClassAbility } from "@config/classPresets"
-import { STAT_NAMES, type StatType } from "@config/stats/stats"
+import { BOARD_STAT_NAMES, type BoardStat } from "@config/stats/stats"
 import { AbsoluteCenter, Box, Button, Image } from "@chakra-ui/react"
 import { Tooltip } from "@ui/tooltip"
 import { useState } from "react"
 import type { Position } from "@planner/config/boardConfig"
 import {
-    POINTS_PER_NODE_TYPE,
+    appearanceCost,
     type BoardNodeAppearance,
 } from "@planner/config/layouts"
 import {
@@ -34,7 +34,7 @@ export type NodeCellProps = {
     readOnly?: boolean
     adjacentAvailable: boolean
     ability?: ClassAbility
-    stat?: StatType
+    stat?: BoardStat
     specialBonus?: SpecialBonusType
     onSelect: (position: Position) => void
 }
@@ -68,7 +68,7 @@ export const NodeCell = ({
 
     const imageSource = ability?.icon ?? appearance.imageBackground
     const hasImage = Boolean(imageSource) && imageSource !== failedImageSource
-    const pointCost = POINTS_PER_NODE_TYPE[appearance.type]
+    const pointCost = appearanceCost(appearance)
     const styles = getNodeStyles({
         appearance: appearance,
         ability: ability,
@@ -79,7 +79,7 @@ export const NodeCell = ({
     })
     const nodeName =
         ability?.name ??
-        (stat && STAT_NAMES[stat]) ??
+        (stat && BOARD_STAT_NAMES[stat]) ??
         (specialBonus && SPECIAL_BONUSES[specialBonus].name)
     // Special nodes are recognisable by shape (name in the tooltip), and a
     // selected stat node is already shown by its fill, so neither gets text.
@@ -178,7 +178,7 @@ export const NodeCell = ({
                             bgImage={
                                 styles.isSpecial && !hasImage
                                     ? "board.special"
-                                    : undefined
+                                    : styles.orb
                             }
                             borderWidth={styles.borderWidth}
                             borderColor={styles.borderColor}

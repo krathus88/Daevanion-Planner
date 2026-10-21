@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { STAT_NAMES, type StatType } from "@config/stats/stats"
 import type { StatTier } from "@planner/config/stats"
 import type {
@@ -13,7 +13,7 @@ type StatPriorityRowProps = {
     stat: StatType
     settings: StatSettings
     count?: StatNodeCount
-    layout?: BoardId
+    layout?: MainBoardId
     onSettingsChange: (settings: StatSettings) => void
 }
 

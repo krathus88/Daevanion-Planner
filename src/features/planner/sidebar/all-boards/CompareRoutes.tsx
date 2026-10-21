@@ -1,31 +1,51 @@
-import { Flex, Text } from "@chakra-ui/react"
-import { BOARD_IDS } from "@config/boards"
+import { Text } from "@chakra-ui/react"
+import { ARIEL_BOARD_ID, MAIN_BOARD_IDS } from "@config/boards"
+import { useArielSettings } from "@planner/hooks/useArielSettings"
 import type { SharedAllocationState } from "@planner/hooks/useSharedAllocation"
-import { ProgressBar } from "@common/ProgressBar"
 import { Section } from "@common/Section"
+import { BudgetGroup } from "./BudgetGroup"
 import { RouteSelectRow } from "./RouteSelectRow"
 
 type CompareRoutesProps = {
+    classId: string
     allocation: SharedAllocationState
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-// Each board's current route, and how they fit the shared budget together.
+// Each board's current route, grouped by the budget it spends: the shared
+// points of the four main boards, and Ariel's own.
 export const CompareRoutes = ({
+    classId,
     allocation,
     open,
     onOpenChange,
 }: CompareRoutesProps) => {
-    const isOverBudget = allocation.remainingPoints < 0
-    const budgetColor = isOverBudget ? "app.danger" : "app.muted"
+    const { settings } = useArielSettings(classId)
+
+    const arielAllocated = allocation.snapshot.routeCosts.ariel
+    const isSharedOver = allocation.remainingPoints < 0
+    const isArielOver = arielAllocated > settings.points
 
     return (
         <Section
             aside={
-                <Text color={budgetColor} fontSize="xs" fontWeight="normal">
-                    {allocation.allocatedPoints} / {allocation.totalPoints}{" "}
-                    allocated
+                <Text color="app.muted" fontSize="xs" fontWeight="normal">
+                    <Text
+                        as="span"
+                        color={isSharedOver ? "app.danger" : undefined}
+                    >
+                        {allocation.allocatedPoints} / {allocation.totalPoints}
+                    </Text>
+                    {" · "}
+                    {/* Ariel's colour names it, as in the board switcher. */}
+                    <Text
+                        as="span"
+                        color={isArielOver ? "app.danger" : "board.arielActive"}
+                        title="Ariel points allocated"
+                    >
+                        {arielAllocated} / {settings.points}
+                    </Text>
                 </Text>
             }
             open={open}
@@ -33,57 +53,41 @@ export const CompareRoutes = ({
             onOpenChange={onOpenChange}
         >
             <Text textStyle="hint">
-                Each board&apos;s current route, and how they fit the shared
-                budget together. Picking a route loads it onto that board; None
-                clears the board. Optimize all boards doesn&apos;t read these.
-                It replaces every board&apos;s route.
+                Each board&apos;s current route, and how they fit their points:
+                the four main boards share one budget, Ariel has its own.
+                Picking a route loads it onto that board; None clears the board.
+                Optimize all boards doesn&apos;t read these. It replaces every
+                board&apos;s route.
             </Text>
 
-            <Flex alignItems="baseline" justifyContent="space-between">
-                <Text textStyle="label">Route per board</Text>
+            <BudgetGroup
+                title="Shared points"
+                allocated={allocation.allocatedPoints}
+                total={allocation.totalPoints}
+            >
+                {MAIN_BOARD_IDS.map((layout) => (
+                    <RouteSelectRow
+                        key={layout}
+                        layout={layout}
+                        options={allocation.snapshot.planners[layout]}
+                        value={allocation.snapshot.selected[layout]}
+                        onChange={allocation.selectRoute}
+                    />
+                ))}
+            </BudgetGroup>
 
-                <Text color={budgetColor} fontSize="xs">
-                    {isOverBudget
-                        ? `${Math.abs(allocation.remainingPoints)} over budget`
-                        : `${allocation.remainingPoints} left`}
-                </Text>
-            </Flex>
-
-            {BOARD_IDS.map((layout) => (
+            <BudgetGroup
+                title="Ariel points"
+                allocated={arielAllocated}
+                total={settings.points}
+            >
                 <RouteSelectRow
-                    key={layout}
-                    layout={layout}
-                    options={allocation.snapshot.planners[layout]}
-                    value={allocation.snapshot.selected[layout]}
+                    layout={ARIEL_BOARD_ID}
+                    options={allocation.snapshot.planners.ariel}
+                    value={allocation.snapshot.selected.ariel}
                     onChange={allocation.selectRoute}
                 />
-            ))}
-
-            <Flex pt="1" flexDir="column" gap="1.5">
-                <Flex
-                    justifyContent="space-between"
-                    fontSize="sm"
-                    fontWeight="semibold"
-                >
-                    <Text>Allocated</Text>
-
-                    <Text>
-                        {allocation.allocatedPoints} / {allocation.totalPoints}
-                    </Text>
-                </Flex>
-
-                <ProgressBar
-                    label="Points allocated"
-                    tone={isOverBudget ? "danger" : "accent"}
-                    value={
-                        allocation.totalPoints > 0
-                            ? (allocation.allocatedPoints /
-                                  allocation.totalPoints) *
-                              100
-                            : 0
-                    }
-                />
-            </Flex>
+            </BudgetGroup>
         </Section>
     )
 }

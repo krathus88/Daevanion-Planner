@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { useSpecialPriorities } from "@planner/hooks/useSpecialPriorities"
 import { SPECIAL_BONUS_TYPES } from "@planner/storage/specialPriorities"
 import { StatusText } from "@common/StatusText"
@@ -10,7 +10,7 @@ import { SpecialPriorityRow } from "./SpecialPriorityRow"
 type SpecialPriorityListProps = {
     classId: string
     // Counts nodes on this board only and hides bonuses it lacks.
-    layout?: BoardId
+    layout?: MainBoardId
 }
 
 export const SpecialPriorityList = ({

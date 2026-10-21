@@ -1,9 +1,15 @@
 import { Box } from "@chakra-ui/react"
-import type { BoardNodeType } from "@planner/config/layouts"
+import type { BoardNodeType, StatNodeTone } from "@planner/config/layouts"
 import { DIAMOND } from "./cell/nodeStyles"
 
+type LegendSwatchProps = {
+    type: BoardNodeType
+    // A stat node coloured like a skill or passive.
+    tone?: StatNodeTone
+}
+
 // A small sample of a node type's shape and colour.
-export const LegendSwatch = ({ type }: { type: BoardNodeType }) => {
+export const LegendSwatch = ({ type, tone }: LegendSwatchProps) => {
     if (type === "special") {
         return (
             <Box
@@ -36,9 +42,21 @@ export const LegendSwatch = ({ type }: { type: BoardNodeType }) => {
         <Box
             boxSize="2.5"
             flexShrink="0"
-            bg="board.stat"
+            bg={
+                tone === "skill"
+                    ? "board.skillTint"
+                    : tone === "passive"
+                      ? "board.passiveTint"
+                      : "board.stat"
+            }
             borderWidth="1px"
-            borderColor="board.statBorder"
+            borderColor={
+                tone === "skill"
+                    ? "board.skill"
+                    : tone === "passive"
+                      ? "board.passive"
+                      : "board.statBorder"
+            }
             borderRadius="full"
             aria-hidden="true"
         />

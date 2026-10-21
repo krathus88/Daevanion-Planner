@@ -1,6 +1,12 @@
 import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useRef, useState } from "react"
-import { BOARD_IDS, BOARD_NAMES, type BoardId } from "@config/boards"
+import {
+    BOARD_IDS,
+    BOARD_NAMES,
+    MAIN_BOARD_IDS,
+    type BoardId,
+} from "@config/boards"
+import { planArielRoute } from "@planner/logic/arielRoute"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
 import type { PriorityPlannerProgress } from "@planner/logic/priorityPlanner"
@@ -21,6 +27,10 @@ import {
     type ActivePlanner,
     type SavedPlanner,
 } from "@planner/storage/boardStorage"
+import {
+    readArielSettings,
+    type ArielSettings,
+} from "@planner/storage/arielSettings"
 import { readRankOrder } from "@planner/storage/rankOrder"
 import { readSpecialPriorities } from "@planner/storage/specialPriorities"
 import { readStatSettings } from "@planner/storage/statPriorities"
@@ -50,7 +60,8 @@ export type OptimizeShortfall = {
     specialNodes: { taken: number; total: number }
 }
 
-// Runs the priority optimizer for all four boards in a worker.
+// Runs the priority optimizer for the four main boards in a worker, then
+// plans Ariel from its own points.
 export const usePriorityOptimizer = ({
     classPreset,
     totalPoints,
@@ -76,13 +87,20 @@ export const usePriorityOptimizer = ({
     }
 
     // Records each board's result in its optimizer history right away.
-    const recordPlans = (plans: PriorityPlans) => {
+    const recordPlans = (
+        mainPlans: PriorityPlans,
+        arielSettings: ArielSettings,
+    ) => {
+        const plans = { ...mainPlans, ariel: planArielRoute(arielSettings) }
+        // Ariel's route is left as is until it has points to spend.
+        const hasArielPoints = arielSettings.points > 0
+        const boards = hasArielPoints ? BOARD_IDS : MAIN_BOARD_IDS
         const now = Date.now()
         const planName = `Priority plan · ${formatPlanTime(now)}`
         const entries: RecordedPlans = {}
         const errors: string[] = []
 
-        for (const layoutName of BOARD_IDS) {
+        for (const layoutName of boards) {
             const stored = readPlannerHistory(classPreset.id, layoutName)
             if (stored.error) {
                 errors.push(`${BOARD_NAMES[layoutName]}: ${stored.error}`)
@@ -116,12 +134,14 @@ export const usePriorityOptimizer = ({
                 `Some board plans could not be fully saved: ${errors.join(" ")}`,
             )
         } else {
-            const spent = BOARD_IDS.reduce(
+            const spent = MAIN_BOARD_IDS.reduce(
                 (sum, layoutName) => sum + plans[layoutName].plannedCost,
                 0,
             )
             setMessage(
-                `Optimized all four boards using ${spent} of ${totalPoints} shared points.`,
+                hasArielPoints
+                    ? `Optimized all four boards using ${spent} of ${totalPoints} shared points, and Ariel using ${plans.ariel.plannedCost} of ${arielSettings.points} Ariel points.`
+                    : `Optimized all four boards using ${spent} of ${totalPoints} shared points. Ariel has no points, so its route was left as is.`,
             )
         }
 
@@ -174,7 +194,11 @@ export const usePriorityOptimizer = ({
         notifyPlansReplaced()
     }
 
-    const handleMessage = (worker: Worker, data: PriorityWorkerMessage) => {
+    const handleMessage = (
+        worker: Worker,
+        data: PriorityWorkerMessage,
+        arielSettings: ArielSettings,
+    ) => {
         if (data.type === "progress") {
             setProgress(data.progress)
             return
@@ -187,7 +211,7 @@ export const usePriorityOptimizer = ({
         }
 
         try {
-            const entries = recordPlans(data.plans)
+            const entries = recordPlans(data.plans, arielSettings)
             onComplete(() => applyPlans(entries))
             const isShort =
                 data.shortfalls.length > 0 ||
@@ -228,6 +252,7 @@ export const usePriorityOptimizer = ({
                 specialPriorities: readSpecialPriorities(classPreset.id),
                 rankOrder: readRankOrder(classPreset.id),
                 statSettings: readStatSettings(classPreset.id),
+                arielSettings: readArielSettings(classPreset.id),
             }
         } catch (error) {
             setMessage(
@@ -247,7 +272,7 @@ export const usePriorityOptimizer = ({
             workerRef.current = worker
             setIsOptimizing(true)
             worker.onmessage = (event: MessageEvent<PriorityWorkerMessage>) =>
-                handleMessage(worker, event.data)
+                handleMessage(worker, event.data, settings.arielSettings)
             worker.onerror = (event) => {
                 finish(worker)
                 setMessage(

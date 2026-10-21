@@ -1,5 +1,5 @@
 import { isNode, keyOf, type Position } from "@planner/config/boardConfig"
-import { POINTS_PER_NODE_TYPE, type BoardLayout } from "@planner/config/layouts"
+import { appearanceCost, type BoardLayout } from "@planner/config/layouts"
 
 const positionOf = (index: number, width: number): Position => {
     return {
@@ -15,9 +15,7 @@ const nodeCost = (layout: BoardLayout, index: number, width: number) => {
         return 0
     }
 
-    return POINTS_PER_NODE_TYPE[
-        (layout.specialNodes[kind] ?? layout.mainNode).type
-    ]
+    return appearanceCost(layout.specialNodes[kind] ?? layout.mainNode)
 }
 
 export type PlannerResult =

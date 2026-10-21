@@ -1,8 +1,8 @@
 import type { ClassAbility } from "@config/classPresets"
-import { STAT_TOOLTIPS, type StatType } from "@config/stats/stats"
+import { BOARD_STAT_TOOLTIPS, type BoardStat } from "@config/stats/stats"
 import { Flex, Text } from "@chakra-ui/react"
 import {
-    POINTS_PER_NODE_TYPE,
+    appearanceCost,
     type BoardNodeAppearance,
 } from "@planner/config/layouts"
 import {
@@ -23,7 +23,7 @@ const typeColors = {
 type NodeTooltipProps = {
     appearance: BoardNodeAppearance
     ability?: ClassAbility
-    stat?: StatType
+    stat?: BoardStat
     specialBonus?: SpecialBonusType
     name?: string
 }
@@ -35,14 +35,14 @@ export const NodeTooltip = ({
     specialBonus,
     name,
 }: NodeTooltipProps) => {
-    const kind = `${appearance.name} · ${POINTS_PER_NODE_TYPE[appearance.type]} pts`
+    const kind = `${appearance.name} · ${appearanceCost(appearance)} pts`
 
     if (ability) {
         return <AbilityTooltip ability={ability} kind={kind} />
     }
 
     const description =
-        (stat && STAT_TOOLTIPS[stat]) ??
+        (stat && BOARD_STAT_TOOLTIPS[stat]) ??
         (specialBonus && SPECIAL_BONUSES[specialBonus].tooltip)
 
     return (

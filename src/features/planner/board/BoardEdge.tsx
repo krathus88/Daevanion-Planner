@@ -17,23 +17,26 @@ export const BoardEdge = ({
 }: BoardEdgeProps) => {
     const x = CELL_SIZE / 2 + column * CELL_PITCH
     const y = CELL_SIZE / 2 + row * CELL_PITCH
+    const thickness = isActive ? "1" : "1px"
 
+    // Vertical lines are drawn upright, not rotated: a rotated hairline can
+    // vanish when a large board like Ariel is scaled down to fit.
     return (
         <Box
             pos="absolute"
             zIndex="board.edge"
-            h={isActive ? "1" : "1px"}
+            w={horizontal ? undefined : thickness}
+            h={horizontal ? thickness : undefined}
             // Placed from the computed cell grid, so these go in style.
             style={{
                 left: horizontal ? x : x - 1,
                 top: horizontal ? y - 1 : y,
-                width: CELL_PITCH,
+                width: horizontal ? CELL_PITCH : undefined,
+                height: horizontal ? undefined : CELL_PITCH,
             }}
             bg={isActive ? "board.edgeActive" : "board.edge"}
             borderRadius="full"
             boxShadow={isActive ? "board.edge" : "none"}
-            transform={horizontal ? undefined : "rotate(90deg)"}
-            transformOrigin="left center"
             aria-hidden="true"
         />
     )

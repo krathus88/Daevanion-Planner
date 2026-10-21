@@ -3,7 +3,7 @@ import { isRecord } from "./isRecord"
 // Every optimizer setting for one class is stored under one key, one
 // section per setting.
 export type ClassSettingsSection =
-    "abilities" | "specialPriorities" | "rankOrder" | "stats"
+    "abilities" | "specialPriorities" | "rankOrder" | "stats" | "ariel"
 
 const SETTINGS_CHANGE_EVENT = "daevanion-settings-change"
 

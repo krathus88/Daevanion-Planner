@@ -7,15 +7,22 @@ import {
     type SetStateAction,
 } from "react"
 import type { Position } from "@planner/config/boardConfig"
-import type { BoardId } from "@config/boards"
+import { isMainBoard, type BoardId } from "@config/boards"
 import type { BoardLayout } from "@planner/config/layouts"
 import {
     formatPlannerDuration,
     type PlannerProgress,
 } from "@planner/logic/plannerLogic"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
-import { routeStatScore } from "@planner/config/stats"
-import { pathPriorities } from "@planner/logic/pathPriorities"
+import { routeStatScore, statWeights } from "@planner/config/stats"
+import {
+    pathPriorities,
+    type PathPriorities,
+} from "@planner/logic/pathPriorities"
+import {
+    DEFAULT_ARIEL_SETTINGS,
+    readArielSettings,
+} from "@planner/storage/arielSettings"
 import {
     DEFAULT_STAT_SETTINGS,
     readStatSettings,
@@ -98,19 +105,56 @@ export const usePlannerOptimization = ({
 
     useEffect(() => () => plannerWorker.current?.terminate(), [])
 
-    const optimizePlanner = (timeBudgetMs = 1500) => {
+    // Ariel ranks its own stats and spends all of its points on them.
+    const readPriorities = (): {
+        statTiers: Parameters<typeof statWeights>[1]
+        spendLeftover: boolean
+        priorities: PathPriorities
+    } => {
+        if (!isMainBoard(layoutName)) {
+            let arielSettings = DEFAULT_ARIEL_SETTINGS
+            try {
+                arielSettings = readArielSettings(classId)
+            } catch {
+                // Fall back to the default Ariel priorities.
+            }
+
+            return {
+                statTiers: arielSettings.tiers,
+                spendLeftover: false,
+                priorities: {
+                    weights: [
+                        ...statWeights(
+                            layout.nodeStats,
+                            arielSettings.tiers,
+                        ).entries(),
+                    ],
+                    focusGroups: [],
+                },
+            }
+        }
+
         let statSettings = DEFAULT_STAT_SETTINGS
         try {
             statSettings = readStatSettings(classId)
         } catch {
             // Fall back to the default stat priorities.
         }
-        const priorities = pathPriorities({
-            classPreset: classPreset,
-            layoutName: layoutName,
-            preferred: preferred,
-            statSettings: statSettings,
-        })
+
+        return {
+            statTiers: statSettings.tiers,
+            spendLeftover: statSettings.spendLeftover,
+            priorities: pathPriorities({
+                classPreset: classPreset,
+                layoutName: layoutName,
+                preferred: preferred,
+                statSettings: statSettings,
+            }),
+        }
+    }
+
+    const optimizePlanner = (timeBudgetMs = 1500) => {
+        const { statTiers, spendLeftover, priorities } = readPriorities()
         const weights = new Map(priorities.weights)
         // The nodes you clicked plus the ones Route preferences need.
         const requiredCells = new Set([...targetCells, ...needCells])
@@ -254,6 +298,11 @@ export const usePlannerOptimization = ({
                     setMessage(
                         `Route found, but it could not be saved to browser history: ${saveError}`,
                     )
+                } else if (!isMainBoard(layoutName)) {
+                    // Ariel's route is built in one go, not searched for.
+                    setMessage(
+                        "Ariel route built and saved to optimization history.",
+                    )
                 } else {
                     setMessage(
                         `Best route found after ${formatPlannerDuration(timeBudgetMs)} and saved to optimization history.`,
@@ -287,10 +336,11 @@ export const usePlannerOptimization = ({
                 start: start,
                 targets: [...requiredCells],
                 timeBudgetMs: timeBudgetMs,
-                statTiers: statSettings.tiers,
-                spendLeftover: statSettings.spendLeftover,
+                statTiers: statTiers,
+                spendLeftover: spendLeftover,
                 availablePoints: availablePoints,
                 priorities: priorities,
+                growStats: !isMainBoard(layoutName),
             })
         } catch (error) {
             plannerWorker.current?.terminate()

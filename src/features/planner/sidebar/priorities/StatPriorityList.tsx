@@ -1,6 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { Flex, Switch, Text } from "@chakra-ui/react"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { STAT_TYPES } from "@config/stats/stats"
 import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
@@ -13,7 +13,7 @@ import { StatPriorityRow } from "./StatPriorityRow"
 type StatPriorityListProps = {
     classPreset: ClassPreset
     // Counts nodes on this board only and hides stats it lacks.
-    layout?: BoardId
+    layout?: MainBoardId
 }
 
 export const StatPriorityList = ({

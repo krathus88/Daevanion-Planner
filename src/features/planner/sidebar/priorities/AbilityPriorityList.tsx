@@ -1,6 +1,6 @@
 import type { ClassAbility, ClassPreset } from "@config/classPresets"
 import { Flex, Text } from "@chakra-ui/react"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { useAbilityLimits } from "@planner/hooks/useAbilityLimits"
 import { StatusText } from "@common/StatusText"
 import { AbilityColumnHeaders } from "./AbilityColumnHeaders"
@@ -9,7 +9,7 @@ import { AbilityRow } from "./AbilityRow"
 type AbilityPriorityListProps = {
     classPreset: ClassPreset
     // Counts upgrades on this board only and hides abilities it lacks.
-    layout?: BoardId
+    layout?: MainBoardId
 }
 
 export const AbilityPriorityList = ({

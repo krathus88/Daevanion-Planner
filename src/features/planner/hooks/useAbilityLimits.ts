@@ -1,4 +1,4 @@
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useState } from "react"
 import { errorMessage } from "@planner/logic/errorMessage"
@@ -61,7 +61,7 @@ const readLimits = (classPreset: ClassPreset, errors: string[]) => {
 
 const readInitialLimits = (
     classPreset: ClassPreset,
-    boards: readonly BoardId[],
+    boards: readonly MainBoardId[],
 ) => {
     const errors: string[] = []
 
@@ -83,9 +83,9 @@ const readInitialLimits = (
 // always the class's shared ones.
 export const useAbilityLimits = (
     classPreset: ClassPreset,
-    layout?: BoardId,
+    layout?: MainBoardId,
 ) => {
-    const boards: readonly BoardId[] = layout ? [layout] : BOARD_IDS
+    const boards: readonly MainBoardId[] = layout ? [layout] : MAIN_BOARD_IDS
     const [initial] = useState(() => readInitialLimits(classPreset, boards))
     const [priorities, setPriorities] = useState(initial.priorities)
     const [minimums, setMinimums] = useState(initial.minimums)
@@ -100,7 +100,7 @@ export const useAbilityLimits = (
                     setUpgradeCounts(
                         readSharedAbilityUpgradeCounts(
                             classPreset,
-                            layout ? [layout] : BOARD_IDS,
+                            layout ? [layout] : MAIN_BOARD_IDS,
                         ),
                     )
                 } catch (readError) {

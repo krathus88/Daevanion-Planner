@@ -1,5 +1,5 @@
 import type { ClassAbility, ClassPreset } from "@config/classPresets"
-import type { BoardId } from "@config/boards"
+import { isMainBoard, type BoardId } from "@config/boards"
 import type { BoardLayout } from "@planner/config/layouts"
 
 // Maps "row,col" to the class ability on that node. Throws when a class
@@ -14,9 +14,12 @@ export const resolveAbilitiesByPosition = (
     )
     const abilitiesByPosition: Record<string, ClassAbility> = {}
 
-    for (const [key, abilityId] of Object.entries(
-        classPreset.assignments[layoutName] ?? {},
-    )) {
+    // Ariel holds no abilities.
+    const assignments = isMainBoard(layoutName)
+        ? classPreset.assignments[layoutName]
+        : undefined
+
+    for (const [key, abilityId] of Object.entries(assignments ?? {})) {
         const [row, column] = key.split(",").map(Number)
         const kind =
             Number.isInteger(row) && Number.isInteger(column)
@@ -55,6 +58,8 @@ const describeNode = (kind: string | undefined, expected: string) => {
 }
 
 // Throws when layouts.ts gives a stat or special bonus to the wrong node.
+// Stats go on stat nodes ("#" or a costlier stat node's marker), or on
+// Ariel's special nodes, which give a stat instead of a bonus.
 export const validateLayoutBonuses = (
     layout: BoardLayout,
     layoutName: BoardId,
@@ -62,9 +67,11 @@ export const validateLayoutBonuses = (
     for (const key of Object.keys(layout.nodeStats)) {
         const [row, column] = key.split(",").map(Number)
         const kind = layout.grid[row]?.[column]
-        if (kind !== "#") {
+        const appearance =
+            kind === "#" ? layout.mainNode : layout.specialNodes[kind ?? ""]
+        if (appearance?.type !== "basic" && appearance?.type !== "special") {
             throw new Error(
-                `Invalid stat at ${layoutName} ${key} in layouts.ts: that position is ${describeNode(kind, "stat node")}. Only stat nodes ("#") can have a stat.`,
+                `Invalid stat at ${layoutName} ${key} in layouts.ts: that position is ${describeNode(kind, "stat node")}. Only stat nodes can have a stat.`,
             )
         }
     }

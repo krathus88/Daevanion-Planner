@@ -1,5 +1,5 @@
 import { STAT_TYPES, type StatType } from "@config/stats/stats"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_TIERS,
@@ -275,7 +275,7 @@ export type StatNodeCount = {
 // (all by default).
 export const readSharedStatNodeCounts = (
     classId: string,
-    boards: readonly BoardId[] = BOARD_IDS,
+    boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ) => {
     const counts = {} as Record<StatType, StatNodeCount>
     for (const stat of STAT_TYPES) {

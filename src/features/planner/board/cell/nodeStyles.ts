@@ -1,9 +1,10 @@
 import type { ClassAbility } from "@config/classPresets"
 import type { SystemStyleObject, Tokens } from "@chakra-ui/react"
-import type { BoardNodeAppearance } from "@planner/config/layouts"
+import type { BoardNodeAppearance, StatNodeTone } from "@planner/config/layouts"
 
 type ColorToken = Tokens["colors"]
 type ShadowToken = Tokens["shadows"]
+type GradientToken = Tokens["gradients"]
 type SizeToken = Tokens["sizes"]
 
 export const DIAMOND = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
@@ -13,6 +14,34 @@ export const CELL_BOX = "14"
 const BASIC_SIZE = "node.stat"
 const SPECIAL_SIZE = "node.special"
 export const START_SIZE = "node.start"
+
+// Toned stat nodes are faceted gems in the skill or passive colour, lit up
+// when selected and drawn larger the more they cost.
+const TONE_STYLES: Record<
+    StatNodeTone,
+    {
+        size: SizeToken
+        solid: ColorToken
+        tint: ColorToken
+        orb: GradientToken
+        orbLit: GradientToken
+    }
+> = {
+    skill: {
+        size: "node.statSkill",
+        solid: "board.skill",
+        tint: "board.skillTint",
+        orb: "board.orb.skill",
+        orbLit: "board.orb.skillLit",
+    },
+    passive: {
+        size: "node.statPassive",
+        solid: "board.passive",
+        tint: "board.passiveTint",
+        orb: "board.orb.passive",
+        orbLit: "board.orb.passiveLit",
+    },
+}
 
 type NodeStyleInput = {
     appearance: BoardNodeAppearance
@@ -34,15 +63,17 @@ export const getNodeStyles = ({
 }: NodeStyleInput) => {
     const isBasic = appearance.type === "basic"
     const isSpecial = appearance.type === "special"
+    const tone =
+        isBasic && appearance.tone ? TONE_STYLES[appearance.tone] : null
     const size: SizeToken = isBasic
-        ? BASIC_SIZE
+        ? (tone?.size ?? BASIC_SIZE)
         : isSpecial
           ? SPECIAL_SIZE
           : CELL_BOX
     const fill: ColorToken = isBasic
         ? selected
-            ? "board.statSelected"
-            : "board.stat"
+            ? (tone?.solid ?? "board.statSelected")
+            : (tone?.tint ?? "board.stat")
         : isSpecial
           ? "transparent"
           : appearance.backgroundColor
@@ -57,7 +88,7 @@ export const getNodeStyles = ({
             : adjacentAvailable
               ? "board.adjacent"
               : isBasic
-                ? "board.statBorder"
+                ? (tone?.solid ?? "board.statBorder")
                 : isSpecial
                   ? "board.special"
                   : "board.idleBorder"
@@ -79,19 +110,24 @@ export const getNodeStyles = ({
                       transform: "scale(1.15)",
                       filter: "brightness(1.12)",
                   },
-                  ...(isBasic && {
-                      "& [data-shape]": {
-                          bg: selected
-                              ? "board.statSelected"
-                              : "board.statHover",
-                          boxShadow:
-                              shadow === "board.node.selected"
-                                  ? "board.node.selectedHover"
-                                  : shadow === "board.node.adjacent"
-                                    ? "board.node.adjacentHover"
-                                    : "board.node.hover",
-                      },
+                  // Gems keep their facets and brighten instead.
+                  ...(tone && {
+                      "& [data-shape]": { filter: "brightness(1.25)" },
                   }),
+                  ...(isBasic &&
+                      !tone && {
+                          "& [data-shape]": {
+                              bg: selected
+                                  ? "board.statSelected"
+                                  : "board.statHover",
+                              boxShadow:
+                                  shadow === "board.node.selected"
+                                      ? "board.node.selectedHover"
+                                      : shadow === "board.node.adjacent"
+                                        ? "board.node.adjacentHover"
+                                        : "board.node.hover",
+                          },
+                      }),
               },
               _motionReduce: {
                   "& [data-zoom]": { transitionProperty: "none" },
@@ -104,6 +140,7 @@ export const getNodeStyles = ({
         isSpecial: isSpecial,
         size: size,
         fill: fill,
+        orb: tone ? (selected ? tone.orbLit : tone.orb) : undefined,
         borderColor: borderColor,
         borderWidth: isSpecial
             ? "0"

@@ -1,7 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { STAT_TYPES, type StatType } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import { layouts, POINTS_PER_NODE_TYPE } from "@planner/config/layouts"
 import type {
     AbilityMaximums,
@@ -37,7 +37,7 @@ export type PriorityPlannerResult = {
 }
 
 type PriorityTarget = {
-    layout: BoardId
+    layout: MainBoardId
     key: string
     priority: number
     // Place within its rank, from the same-rank order setting.
@@ -83,7 +83,7 @@ export const optimizePriorityPlans = async (
     statSettings: StatSettings,
     onProgress: (progress: PriorityPlannerProgress) => void,
     // Boards to plan; the others are left empty.
-    boards: readonly BoardId[] = BOARD_IDS,
+    boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ): Promise<PriorityPlannerResult> => {
     const startedAt = performance.now()
     const deadline = startedAt + timeBudgetMs
@@ -263,19 +263,19 @@ export const optimizePriorityPlans = async (
     let totalCost = 0
     // Stats only break ties: equal total cost -> higher total stat score.
     const weightsByBoard = Object.fromEntries(
-        (Object.keys(layouts) as BoardId[]).map((layoutName) => [
+        MAIN_BOARD_IDS.map((layoutName) => [
             layoutName,
             statWeights(layouts[layoutName].nodeStats, statSettings.tiers),
         ]),
-    ) as Record<BoardId, Map<string, number>>
-    const scores: Record<BoardId, number> = {
+    ) as Record<MainBoardId, Map<string, number>>
+    const scores: Record<MainBoardId, number> = {
         nezekan: 0,
         zikel: 0,
         vaizel: 0,
         triniel: 0,
     }
     let totalScore = 0
-    const statTargetKeys: Record<BoardId, Set<string>> = {
+    const statTargetKeys: Record<MainBoardId, Set<string>> = {
         nezekan: new Set(),
         zikel: new Set(),
         vaizel: new Set(),
@@ -297,7 +297,7 @@ export const optimizePriorityPlans = async (
     }
 
     const searchRoute = (
-        layoutName: BoardId,
+        layoutName: MainBoardId,
         keys: Set<string>,
         ms: number,
     ) => {
@@ -455,13 +455,13 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    const statAt = (layoutName: BoardId, key: string) => {
+    const statAt = (layoutName: MainBoardId, key: string) => {
         return layouts[layoutName].nodeStats[key] as StatType | undefined
     }
 
     // Makes stat nodes targets, so later routes for lower-ranked abilities
     // can't trade them away. They still aren't shown as required targets.
-    const pinStatNodes = (layoutName: BoardId, keys: string[]) => {
+    const pinStatNodes = (layoutName: MainBoardId, keys: string[]) => {
         const plan = plans[layoutName]
         const added = keys.filter((key) => !plan.targetCells.includes(key))
         plans[layoutName] = {
@@ -475,7 +475,7 @@ export const optimizePriorityPlans = async (
 
     // Adds a stat step's nodes to its board and pins its wanted stat nodes.
     const commitStatStep = (
-        layoutName: BoardId,
+        layoutName: MainBoardId,
         step: StatStep,
         isFree: (key: string) => boolean,
     ) => {
@@ -501,10 +501,10 @@ export const optimizePriorityPlans = async (
     // nodes closer to an ability still waiting win, so the branch is more
     // likely to become part of that ability's route later.
     const fillStatBlock = (block: StatBlock) => {
-        const stepsByBoard = new Map<BoardId, StatStep[]>()
+        const stepsByBoard = new Map<MainBoardId, StatStep[]>()
 
         // Nodes of every focused stat aren't a detour.
-        const isFreeOn = (layoutName: BoardId) => {
+        const isFreeOn = (layoutName: MainBoardId) => {
             return (key: string) => {
                 const stat = statAt(layoutName, key)
                 return stat !== undefined && focus.stats[stat].detour > 0
@@ -519,7 +519,7 @@ export const optimizePriorityPlans = async (
             )
         }
 
-        const stepsFor = (layoutName: BoardId) => {
+        const stepsFor = (layoutName: MainBoardId) => {
             const cached = stepsByBoard.get(layoutName)
             if (cached) {
                 return cached
@@ -571,7 +571,7 @@ export const optimizePriorityPlans = async (
         }
 
         while (totalCost < pointBudget) {
-            let best: { layoutName: BoardId; step: StatStep } | null = null
+            let best: { layoutName: MainBoardId; step: StatStep } | null = null
             for (const layoutName of boards) {
                 // Sorted best first, so the first one that fits is the
                 // board's best.
@@ -672,7 +672,7 @@ export const optimizePriorityPlans = async (
     // Search each board's current targets again for a cheaper route, or an
     // equally cheap one through better stats.
     const refineRoutes = async () => {
-        const boards = (Object.keys(plans) as BoardId[]).filter(
+        const boards = (Object.keys(plans) as MainBoardId[]).filter(
             (layoutName) => plans[layoutName].targetCells.length > 0,
         )
         for (const layoutName of boards) {
@@ -774,7 +774,7 @@ export const optimizePriorityPlans = async (
 
     // Stat nodes from leftover points stay on the route but aren't shown as
     // required targets.
-    for (const layoutName of Object.keys(plans) as BoardId[]) {
+    for (const layoutName of Object.keys(plans) as MainBoardId[]) {
         plans[layoutName].targetCells = plans[layoutName].targetCells.filter(
             (key) => !statTargetKeys[layoutName].has(key),
         )
