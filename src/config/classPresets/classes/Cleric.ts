@@ -356,15 +356,6 @@ export default defineClassPreset({
                 "Increases the caster's Defense by 2% and Critical Hit Resist by 100.",
         },
         {
-            id: "phb",
-            name: "Heal Block",
-            type: "passive",
-            priority: 5,
-            icon: HealBlock,
-            tooltip:
-                "Has a 7% chance to reduce the target's Incoming Heal by 32% for 5s on landing an attack.\n\nCooldown: 5s",
-        },
-        {
             id: "psw",
             name: "Survival Willpower",
             type: "passive",
@@ -377,10 +368,19 @@ export default defineClassPreset({
             id: "ppoc",
             name: "Prayer of Concentration",
             type: "passive",
-            priority: 5,
+            priority: 97,
             icon: PrayerOfConcentration,
             tooltip:
                 "Forms a Protective Shield which blocks 424 damage and increases the caster's Heal Boost by 20% for 30s when HP is 50% or less.\n\nCooldown: 60s",
+        },
+        {
+            id: "phb",
+            name: "Heal Block",
+            type: "passive",
+            priority: 98,
+            icon: HealBlock,
+            tooltip:
+                "Has a 7% chance to reduce the target's Incoming Heal by 32% for 5s on landing an attack.\n\nCooldown: 5s",
         },
         {
             id: "pelb",

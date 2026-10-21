@@ -57,9 +57,9 @@ export const StatFocusSettings = ({
             ) : (
                 <Text textStyle="hint">
                     When on, each stat&apos;s nodes take points before the
-                    passives and skills ranked after the numbers you set, e.g.
+                    skills and passives ranked after the numbers you set, e.g.
                     Attack before a rank 5 healing passive. Special nodes and
-                    Min always come first. Leave Passive or Skill empty so that
+                    Min always come first. Leave Skill or Passive empty so that
                     type never waits for the stat.
                 </Text>
             )}
