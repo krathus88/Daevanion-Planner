@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import type { SpecialBonusType } from "@planner/config/specialNodes"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
@@ -26,12 +26,12 @@ const readPriorities = (classId: string) => {
     }
 }
 
-const readCounts = (classId: string, layout?: BoardId) => {
+const readCounts = (classId: string, layout?: MainBoardId) => {
     try {
         return {
             counts: readSharedSpecialNodeCounts(
                 classId,
-                layout ? [layout] : BOARD_IDS,
+                layout ? [layout] : MAIN_BOARD_IDS,
             ),
             error: null,
         }
@@ -46,7 +46,7 @@ const readCounts = (classId: string, layout?: BoardId) => {
 // Each special node bonus's rank, plus how many of its nodes the boards'
 // current routes take (on `layout` only, if given). Counts update when any
 // board changes.
-export const useSpecialPriorities = (classId: string, layout?: BoardId) => {
+export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
     const [initial] = useState(() => readPriorities(classId))
     const [priorities, setPriorities] = useState(initial.priorities)
     const [error, setError] = useState<string | null>(initial.error)

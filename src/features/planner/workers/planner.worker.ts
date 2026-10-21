@@ -1,4 +1,4 @@
-import type { StatType } from "@config/stats/stats"
+import type { BoardStat } from "@config/stats/stats"
 import { keyOf, type Position } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import {
@@ -12,7 +12,7 @@ import {
     type PlannerProgress,
     type PlannerResult,
 } from "@planner/logic/plannerLogic"
-import { addStatNodes } from "@planner/logic/statFill"
+import { addStatNodes, growByStatValue } from "@planner/logic/statFill"
 import { growWithFocus } from "@planner/logic/statFocus"
 
 type OptimizeMessage = {
@@ -20,10 +20,13 @@ type OptimizeMessage = {
     start: Position
     targets: string[]
     timeBudgetMs: number
-    statTiers: Record<StatType, StatTier>
+    statTiers: Partial<Record<BoardStat, StatTier>>
     spendLeftover: boolean
     availablePoints: number
     priorities: PathPriorities
+    // Ariel: the route spends every point it can on the best stats, and
+    // needs no clicked nodes.
+    growStats: boolean
 }
 
 // Share of the run left for spending leftover points on stats.
@@ -57,13 +60,73 @@ globalThis.addEventListener(
             spendLeftover,
             availablePoints,
             priorities,
+            growStats,
         } = event.data
         const startedAt = performance.now()
         const stats = statWeights(layout.nodeStats, statTiers)
         const weights = new Map(priorities.weights)
         const targetSet = new Set(targets)
 
+        const runGrowStats = async () => {
+            const startKey = keyOf(start)
+            const base =
+                targetSet.size > 0
+                    ? await findPlannerPath(
+                          layout,
+                          start,
+                          targetSet,
+                          timeBudgetMs,
+                          {
+                              onProgress: (progress: PlannerProgress) => {
+                                  globalThis.postMessage({
+                                      type: "progress",
+                                      progress: progress,
+                                  })
+                              },
+                              onBest: (best) => postCandidate(best),
+                          },
+                          weights,
+                      )
+                    : {
+                          ok: true as const,
+                          path: new Set<string>(),
+                          cost: 0,
+                          statScore: 0,
+                      }
+            if (!base.ok) {
+                return base
+            }
+
+            const grown = growByStatValue({
+                layout: layout,
+                route: new Set([startKey, ...base.path]),
+                cost: base.cost,
+                budget: availablePoints,
+                weights: stats,
+            })
+            grown.path.delete(startKey)
+            const result: Extract<PlannerResult, { ok: true }> = {
+                ok: true,
+                path: grown.path,
+                cost: grown.cost,
+                statScore: routeStatScore(grown.path, weights),
+            }
+            if (result.cost === 0) {
+                return {
+                    ok: false as const,
+                    reason: "No stat node fits in Ariel's points with these priorities.",
+                }
+            }
+
+            postCandidate(result, true)
+            return result
+        }
+
         const run = async () => {
+            if (growStats) {
+                return runGrowStats()
+            }
+
             const result = await findPlannerPath(
                 layout,
                 start,

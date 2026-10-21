@@ -3,6 +3,7 @@ import { useBoard } from "@planner/context/boardContext"
 import { useSharedAllocation } from "@planner/hooks/useSharedAllocation"
 import { PointsField } from "@common/PointsField"
 import { StatusText } from "@common/StatusText"
+import { ArielSection } from "./ArielSection"
 import { CompareRoutes } from "./CompareRoutes"
 import { PriorityOptimizer } from "../priorities/PriorityOptimizer"
 import { PrioritySection } from "../priorities/PrioritySection"
@@ -24,7 +25,8 @@ export const SharedPointAllocation = ({
     return (
         <Flex w="full" flexDir="column" gap="4">
             <Text textStyle="hint">
-                Split one shared point budget across all four boards.
+                Split one shared point budget across the four main boards. Ariel
+                has its own points below.
             </Text>
 
             <PointsField
@@ -38,6 +40,8 @@ export const SharedPointAllocation = ({
                 hint="Optimize all boards uses these priorities to build a route on each board."
             />
 
+            <ArielSection classId={classPreset.id} />
+
             <PriorityOptimizer
                 classPreset={classPreset}
                 totalPoints={allocation.totalPoints}
@@ -45,6 +49,7 @@ export const SharedPointAllocation = ({
             />
 
             <CompareRoutes
+                classId={classPreset.id}
                 allocation={allocation}
                 open={isCompareOpen}
                 onOpenChange={onCompareOpenChange}

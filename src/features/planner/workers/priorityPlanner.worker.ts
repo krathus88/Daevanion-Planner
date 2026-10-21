@@ -1,4 +1,4 @@
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
 import {
     optimizePriorityPlans,
@@ -23,7 +23,7 @@ type OptimizeMessage = {
     pointBudget: number
     timeBudgetMs: number
     statSettings: StatSettings
-    boards?: BoardId[]
+    boards?: MainBoardId[]
 }
 
 globalThis.addEventListener(

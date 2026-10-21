@@ -1,4 +1,4 @@
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import {
     SPECIAL_BONUSES,
@@ -87,7 +87,7 @@ export type SpecialNodeCount = {
 // (all by default).
 export const readSharedSpecialNodeCounts = (
     classId: string,
-    boards: readonly BoardId[] = BOARD_IDS,
+    boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ) => {
     const counts = {} as Record<SpecialBonusType, SpecialNodeCount>
     for (const bonus of SPECIAL_BONUS_TYPES) {

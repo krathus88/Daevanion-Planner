@@ -1,4 +1,4 @@
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 
 type ClassAbilityType = "skill" | "passive"
 
@@ -32,7 +32,7 @@ export type ClassPreset<
     abilities: Abilities
     assignments: Readonly<
         Record<
-            BoardId,
+            MainBoardId,
             Readonly<Record<string, Abilities[number]["id"]>> | undefined
         >
     >

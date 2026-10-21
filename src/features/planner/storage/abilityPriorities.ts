@@ -1,6 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { readBoardProgress } from "./boardStorage"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
@@ -215,7 +215,7 @@ const DEFAULT_MINIMUM_BELOW_RANK = 5
 // default): the most upgrades it can ever get there.
 export const abilityNodeCounts = (
     classPreset: ClassPreset,
-    boards: readonly BoardId[] = BOARD_IDS,
+    boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ) => {
     const counts = new Map<string, number>()
     for (const layoutName of boards) {
@@ -277,7 +277,7 @@ export const writeAbilityMinimums = (
 // default).
 export const readSharedAbilityUpgradeCounts = (
     classPreset: ClassPreset,
-    boards: readonly BoardId[] = BOARD_IDS,
+    boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ) => {
     const counts = new Map<string, number>()
     for (const layoutName of boards) {
@@ -304,4 +304,4 @@ type PriorityBoardPlan = {
     plannedCost: number
 }
 
-export type PriorityPlans = Record<BoardId, PriorityBoardPlan>
+export type PriorityPlans = Record<MainBoardId, PriorityBoardPlan>

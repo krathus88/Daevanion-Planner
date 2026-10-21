@@ -1,4 +1,4 @@
-import type { StatType } from "@config/stats/stats"
+import type { ArielStatType, BoardStat, StatType } from "@config/stats/stats"
 
 // How much the user values a stat. Stats only ever break ties between routes
 // of equal cost, unless "spend leftover points" is on.
@@ -22,6 +22,27 @@ export const DEFAULT_STAT_TIERS: Record<StatType, StatTier> = {
     "max-mp": "ignore",
 }
 
+// Ariel's defaults favour damage, then accuracy and damage taken.
+export const DEFAULT_ARIEL_STAT_TIERS: Record<ArielStatType, StatTier> = {
+    "pve-damage-boost": "best",
+    "pve-damage-tolerance": "good",
+    "boss-damage-boost": "best",
+    "boss-damage-tolerance": "good",
+    "ariel-critical-hit": "best",
+    "ariel-critical-hit-resist": "okay",
+    "pve-attack": "best",
+    "pve-defense": "okay",
+    "pve-attack-defense": "best",
+    "pve-accuracy": "good",
+    "pve-evasion": "okay",
+    "pve-accuracy-evasion": "good",
+    "boss-attack": "best",
+    "boss-defense": "okay",
+    "boss-attack-defense": "best",
+    "ariel-max-hp": "okay",
+    "ariel-max-mp": "ignore",
+}
+
 // Tiers that older saves set Stat focus for, highest first; Stat focus is
 // now set per stat.
 export const FOCUS_TIERS = ["best", "good", "okay"] as const
@@ -39,13 +60,15 @@ const TIER_WEIGHTS: Record<StatTier, number> = {
 
 // Weight of each stat node on a board ("row,col" -> weight), for the
 // pathfinder's tie-breaking. Nodes whose stat is ignored are left out.
-export const statWeights = (
-    nodeStats: Readonly<Record<string, StatType>>,
-    tiers: Readonly<Record<StatType, StatTier>>,
+// Stats missing from `tiers` count as ignored.
+export const statWeights = <Stat extends BoardStat>(
+    nodeStats: Readonly<Record<string, Stat>>,
+    tiers: Readonly<Partial<Record<Stat, StatTier>>>,
 ) => {
     const weights = new Map<string, number>()
     for (const [key, stat] of Object.entries(nodeStats)) {
-        const weight = TIER_WEIGHTS[tiers[stat]]
+        const tier = tiers[stat]
+        const weight = tier ? TIER_WEIGHTS[tier] : 0
         if (weight > 0) {
             weights.set(key, weight)
         }

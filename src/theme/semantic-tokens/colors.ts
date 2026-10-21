@@ -40,6 +40,10 @@ export const colors = defineSemanticTokens.colors({
         statBorder: { value: "{colors.white}" },
         skill: { value: "{colors.blue.400}" },
         passive: { value: "{colors.green.400}" },
+        // Ariel's stat nodes that cost as much as a skill or passive.
+        // Opaque so they stand out from the board behind them.
+        skillTint: { value: "#1f4f8f" },
+        passiveTint: { value: "#1c6b3d" },
         special: { value: "{colors.gold.400}" },
         specialSwatch: { value: "{colors.gold.600}" },
         startFg: { value: "{colors.gold.950}" },
@@ -54,6 +58,10 @@ export const colors = defineSemanticTokens.colors({
         // Nodes Route preferences prefer: taken only when it costs nothing.
         preferRing: { value: "{colors.mint.400}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
+        // Ariel's name in the board switcher, coloured as in the game.
+        ariel: { value: "{colors.bronze.500}" },
+        // Brighter when selected or hovered, as the other boards turn white.
+        arielActive: { value: "{colors.bronze.400}" },
     },
     // Item grades, coloured as the game colours item names.
     grade: {

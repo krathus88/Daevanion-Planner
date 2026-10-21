@@ -1,4 +1,5 @@
 import { Button, Flex } from "@chakra-ui/react"
+import { isMainBoard } from "@config/boards"
 import { useState } from "react"
 import { DEFAULT_SEARCH_SECONDS } from "@planner/config/searchTime"
 import { useBoard } from "@planner/context/boardContext"
@@ -8,7 +9,7 @@ import { StatusText } from "@common/StatusText"
 
 // Starts the route search, or shows its progress while it runs.
 export const OptimizeControls = () => {
-    const { planner, wants } = useBoard()
+    const { layoutName, planner, wants } = useBoard()
 
     const [searchSeconds, setSearchSeconds] = useState(DEFAULT_SEARCH_SECONDS)
 
@@ -43,7 +44,9 @@ export const OptimizeControls = () => {
                 size="sm"
                 flex="1"
                 disabled={
-                    planner.targetCells.size === 0 && wants.needCells.size === 0
+                    isMainBoard(layoutName) &&
+                    planner.targetCells.size === 0 &&
+                    wants.needCells.size === 0
                 }
                 onClick={optimize}
             >

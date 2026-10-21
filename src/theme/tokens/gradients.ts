@@ -12,6 +12,22 @@ export const gradients = defineTokens.gradients({
         special: {
             value: "linear-gradient(135deg, #f6d68a 0%, #d9a441 45%, #9a6a22 100%)",
         },
+        // Ariel's 2 and 3 point stat nodes: a faceted gem in the passive or
+        // skill colour, like the special nodes' diamonds, brighter once taken.
+        orb: {
+            skill: {
+                value: "conic-gradient(from 45deg, #2d68b5, #12305a, #1f4f8f, #12305a, #2d68b5)",
+            },
+            skillLit: {
+                value: "conic-gradient(from 45deg, #cfe4ff, #4b8fe6, #a9d0ff, #4b8fe6, #cfe4ff)",
+            },
+            passive: {
+                value: "conic-gradient(from 45deg, #26894f, #0f3d22, #1c6b3d, #0f3d22, #26894f)",
+            },
+            passiveLit: {
+                value: "conic-gradient(from 45deg, #b6f7cf, #3fbf72, #86efac, #3fbf72, #b6f7cf)",
+            },
+        },
         gem: {
             sheen: {
                 value: "linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 45%)",

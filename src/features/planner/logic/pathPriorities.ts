@@ -1,5 +1,5 @@
 import type { ClassPreset } from "@config/classPresets"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import { STAT_TYPES, type StatType } from "@config/stats/stats"
 import { STAT_TIERS, statWeights } from "@planner/config/stats"
@@ -33,7 +33,7 @@ export const pathPriorities = ({
     statSettings,
 }: {
     classPreset: ClassPreset
-    layoutName: BoardId
+    layoutName: MainBoardId
     // Ids of the skills, passives and special bonuses marked Prefer.
     preferred: ReadonlySet<string>
     statSettings: StatSettings

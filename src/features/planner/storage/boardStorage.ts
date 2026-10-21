@@ -1,4 +1,4 @@
-import type { BoardId } from "@config/boards"
+import { BOARD_IDS, MAIN_BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import { isRecord } from "./isRecord"
 import { requestPersistentStorage } from "./persistStorage"
@@ -250,19 +250,16 @@ export const writeSharedTotalPoints = (
     })
 }
 
-// Points the other boards' current planner routes already use.
+// Points the other main boards' current planner routes already use.
 export const readRouteCostOfOtherBoards = (
     classId: string,
     layout: BoardId,
 ) => {
-    return (Object.keys(layouts) as BoardId[])
-        .filter((other) => other !== layout)
-        .reduce(
-            (total, other) =>
-                total +
-                (readBoardProgress(classId, other).value?.plannedCost ?? 0),
-            0,
-        )
+    return MAIN_BOARD_IDS.filter((other) => other !== layout).reduce(
+        (total, other) =>
+            total + (readBoardProgress(classId, other).value?.plannedCost ?? 0),
+        0,
+    )
 }
 
 export const subscribeToBoardStorage = (onChange: () => void) => {
@@ -455,7 +452,7 @@ export const keepHistoryRun = (
     }
 
     const boards: BoardId[] = []
-    for (const board of Object.keys(layouts) as BoardId[]) {
+    for (const board of BOARD_IDS) {
         const boardHistory =
             board === layout ? history : readPlannerHistory(classId, board)
         const match = boardHistory.value?.find((candidate) =>

@@ -24,6 +24,11 @@ export const colors = defineTokens.colors({
         950: { value: "#2a1d06" },
         975: { value: "#14110a" },
     },
+    // Ariel's name colour in the game's board tabs.
+    bronze: {
+        400: { value: "#e8913f" },
+        500: { value: "#8f5d2c" },
+    },
     mint: {
         400: { value: "#5fd39a" },
     },

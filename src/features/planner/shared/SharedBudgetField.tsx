@@ -1,11 +1,23 @@
 import { Flex, Text } from "@chakra-ui/react"
+import { isMainBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { PointsField } from "@common/PointsField"
 
 // The shared Total points (same value as the All boards tab) and this
-// board's share of it.
+// board's share of it. Ariel shows its own points instead.
 export const SharedBudgetField = ({ disabled }: { disabled?: boolean }) => {
-    const { budget } = useBoard()
+    const { layoutName, budget } = useBoard()
+
+    if (!isMainBoard(layoutName)) {
+        return (
+            <PointsField
+                label="Ariel points"
+                value={budget.totalPoints}
+                disabled={disabled}
+                onChange={budget.updateTotalPoints}
+            />
+        )
+    }
 
     return (
         <Flex flexDir="column" gap="1.5">

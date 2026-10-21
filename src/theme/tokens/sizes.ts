@@ -14,6 +14,9 @@ export const sizes = defineTokens.sizes({
     // Node shapes inside a 3.5rem board cell.
     node: {
         stat: { value: "1.875rem" },
+        // Ariel's costlier stat nodes grow with their cost.
+        statPassive: { value: "2.25rem" },
+        statSkill: { value: "2.625rem" },
         start: { value: "3.25rem" },
         special: { value: "3.75rem" },
         // Inside the special node's border ring.

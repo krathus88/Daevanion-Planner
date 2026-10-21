@@ -1,6 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
-import type { BoardId } from "@config/boards"
+import type { MainBoardId } from "@config/boards"
 import { LegendSwatch } from "@planner/board/LegendSwatch"
 import {
     SPECIAL_BONUSES,
@@ -15,7 +15,7 @@ type SpecialPriorityRowProps = {
     bonus: SpecialBonusType
     priority: number
     count?: SpecialNodeCount
-    layout?: BoardId
+    layout?: MainBoardId
     onPriorityChange: (bonus: SpecialBonusType, priority: number) => void
 }
 

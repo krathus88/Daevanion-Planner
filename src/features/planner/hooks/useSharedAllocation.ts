@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { MAIN_BOARD_IDS, type BoardId } from "@config/boards"
 import { readAllocationSnapshot } from "@planner/storage/allocationSnapshot"
 import {
     applyPlannerToBoard,
@@ -43,7 +43,8 @@ export const useSharedAllocation = (classId: string) => {
     }
 
     const totalPoints = snapshot.allocation.totalPoints
-    const allocatedPoints = BOARD_IDS.reduce(
+    // Ariel spends its own points, not the shared ones.
+    const allocatedPoints = MAIN_BOARD_IDS.reduce(
         (total, layout) => total + snapshot.routeCosts[layout],
         0,
     )

@@ -1,6 +1,6 @@
 import { Link } from "@chakra-ui/react"
 import type { ClassId } from "@config/classPresets"
-import { BOARD_NAMES, type BoardId } from "@config/boards"
+import { BOARD_NAMES, isMainBoard, type BoardId } from "@config/boards"
 import { Link as RouterLink } from "@tanstack/react-router"
 
 type BoardSwitcherLinkProps = {
@@ -15,6 +15,9 @@ export const BoardSwitcherLink = ({
     layout,
     isActive,
 }: BoardSwitcherLinkProps) => {
+    // Ariel stands out since it spends its own points.
+    const isAriel = !isMainBoard(layout)
+
     return (
         <Link
             asChild
@@ -24,11 +27,22 @@ export const BoardSwitcherLink = ({
             bg={isActive ? "app.raised" : "transparent"}
             borderRadius="md"
             boxShadow={isActive ? "insetRing" : "none"}
-            color={isActive ? "app.fg" : "app.muted"}
+            color={
+                isAriel
+                    ? isActive
+                        ? "board.arielActive"
+                        : "board.ariel"
+                    : isActive
+                      ? "app.fg"
+                      : "app.muted"
+            }
             fontSize="sm"
             fontWeight={isActive ? "semibold" : "medium"}
             textDecoration="none"
-            _hover={{ color: "app.fg", textDecoration: "none" }}
+            _hover={{
+                color: isAriel ? "board.arielActive" : "app.fg",
+                textDecoration: "none",
+            }}
         >
             <RouterLink
                 params={{ classId: classId, layout: layout }}

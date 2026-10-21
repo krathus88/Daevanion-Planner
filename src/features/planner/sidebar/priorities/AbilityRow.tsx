@@ -1,7 +1,7 @@
 import type { ClassAbility } from "@config/classPresets"
 import { Flex, Image, Text } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
-import { BOARD_NAMES, type BoardId } from "@config/boards"
+import { BOARD_NAMES, type MainBoardId } from "@config/boards"
 import type { useAbilityLimits } from "@planner/hooks/useAbilityLimits"
 import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 import { Tooltip } from "@ui/tooltip"
@@ -13,7 +13,7 @@ type AbilityRowProps = {
     ability: ClassAbility
     limits: ReturnType<typeof useAbilityLimits>
     // Upgrades are counted on this board only.
-    layout?: BoardId
+    layout?: MainBoardId
 }
 
 const KIND_LABELS = {

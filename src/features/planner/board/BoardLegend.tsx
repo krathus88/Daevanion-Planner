@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { POINTS_PER_NODE_TYPE, type BoardLayout } from "@planner/config/layouts"
+import { appearanceCost, type BoardLayout } from "@planner/config/layouts"
 import { LegendSwatch } from "./LegendSwatch"
 
 type BoardLegendProps = {
@@ -23,12 +23,12 @@ export const BoardLegend = ({ layout }: BoardLegendProps) => {
             <Flex flexWrap="wrap" rowGap="2" columnGap="4">
                 {nodeTypes.map(([id, node]) => (
                     <Flex key={id} alignItems="center" gap="2">
-                        <LegendSwatch type={node.type} />
+                        <LegendSwatch type={node.type} tone={node.tone} />
 
                         <Text color="app.muted" fontSize="xs">
                             {node.name}{" "}
                             <Text as="span" color="app.subtle">
-                                · {POINTS_PER_NODE_TYPE[node.type]} pts
+                                · {appearanceCost(node)} pts
                             </Text>
                         </Text>
                     </Flex>

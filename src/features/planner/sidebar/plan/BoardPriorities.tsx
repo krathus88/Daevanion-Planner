@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { useState } from "react"
+import { isMainBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import type { BoardWant, Want } from "@planner/logic/boardWants"
 import {
@@ -8,6 +9,7 @@ import {
 } from "@planner/storage/prioritiesOpen"
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
+import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
 import { StatPriorityList } from "../priorities/StatPriorityList"
 import { BoardWantList } from "./BoardWantList"
 
@@ -37,6 +39,20 @@ export const BoardPriorities = () => {
 
     const handleWantChange = (want: BoardWant, value: Want) => {
         wants.setWant(want.id, value)
+    }
+
+    // Ariel has only stats, ranked apart from the other boards'.
+    if (!isMainBoard(layoutName)) {
+        return (
+            <Section
+                title="Stat priorities"
+                variant="featured"
+                open={isOpen}
+                onOpenChange={handleOpenChange}
+            >
+                <ArielStatPriorityList classId={classPreset.id} />
+            </Section>
+        )
     }
 
     return (

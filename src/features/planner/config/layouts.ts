@@ -1,16 +1,16 @@
 import type { Tokens } from "@chakra-ui/react"
-import type { BoardId } from "@config/boards"
-import type { StatType } from "@config/stats/stats"
+import type { MainBoardId } from "@config/boards"
+import type { ArielStatType, BoardStat, StatType } from "@config/stats/stats"
 import type { SpecialBonusType } from "./specialNodes"
 
-export type BoardLayout = {
+export type BoardLayout<Stat extends BoardStat = BoardStat> = {
     grid: readonly string[]
     mainNode: BoardNodeAppearance
     startNode: BoardNodeAppearance
     specialNodes: Readonly<Record<string, BoardNodeAppearance>>
     // Stat given by each stat node: "row,col" -> stat. Same for every class.
     // Nodes left out simply show as "Stat".
-    nodeStats: Readonly<Record<string, StatType>>
+    nodeStats: Readonly<Record<string, Stat>>
     // Bonus given by each special node: "row,col" -> bonus. Same for every
     // class. Nodes left out simply show as "Special".
     specialNodeBonuses: Readonly<Record<string, SpecialBonusType>>
@@ -32,9 +32,21 @@ export type BoardNodeAppearance = {
     backgroundColor: Tokens["colors"]
     type: BoardNodeType
     imageBackground?: string
+    // Points the node costs when it differs from its type's, e.g. Ariel's
+    // 2-4 point stat nodes.
+    cost?: number
+    // Colours a stat node like the skill or passive nodes that cost the same
+    // on the other boards.
+    tone?: StatNodeTone
 }
 
-export const layouts: Record<BoardId, BoardLayout> = {
+export type StatNodeTone = "skill" | "passive"
+
+export const appearanceCost = (appearance: BoardNodeAppearance) => {
+    return appearance.cost ?? POINTS_PER_NODE_TYPE[appearance.type]
+}
+
+const mainLayouts: Record<MainBoardId, BoardLayout<StatType>> = {
     nezekan: {
         grid: [
             "C##.B#A.B#C",
@@ -533,4 +545,221 @@ export const layouts: Record<BoardId, BoardLayout> = {
             "12,12": "multi-hit-chance",
         },
     },
-} as const
+}
+
+// Ariel's nodes all give stats and cost 1 to 4 points; the grid marks each
+// costlier node with its cost. 1-3 point nodes are stat nodes, coloured
+// like the passives (2) and skills (3) that cost the same elsewhere, and
+// 4 point ones look like special nodes.
+const arielStatNode = (
+    cost: number,
+    tone: StatNodeTone,
+): BoardNodeAppearance => {
+    return {
+        name: "Stat",
+        label: "",
+        backgroundColor: "white",
+        type: "basic",
+        cost: cost,
+        tone: tone,
+    }
+}
+
+const arielLayout: BoardLayout<ArielStatType> = {
+    grid: [
+        "4#2...#4#.2###4",
+        "#.###3#.2.#.3.#",
+        "#3.2..########2",
+        ".#.###2..3.2.#.",
+        "2##3..#..#.##3.",
+        "#..#.3##2#.#.#.",
+        "#2#2##.#.#3##2#",
+        "4.#..##S##..#.4",
+        "#2##3#.#.##2#2#",
+        ".#.#.#2##3.#..#",
+        ".3##.#..#..3##2",
+        ".#.2.3..2###.#.",
+        "2########..2.3#",
+        "#.3.#.2.#3###.#",
+        "4###2.#4#...2#4",
+    ],
+    mainNode: {
+        name: "Stat",
+        label: "",
+        backgroundColor: "white",
+        type: "basic",
+    },
+    startNode: {
+        name: "Start node",
+        label: "Start",
+        backgroundColor: "blue.100",
+        type: "start",
+    },
+    specialNodes: {
+        "2": arielStatNode(2, "passive"),
+        "3": arielStatNode(3, "skill"),
+        "4": {
+            name: "Special",
+            label: "",
+            backgroundColor: "orange.100",
+            type: "special",
+        },
+    },
+    nodeStats: {
+        "0,0": "pve-damage-boost",
+        "0,1": "boss-attack",
+        "0,2": "pve-attack-defense",
+        "0,6": "pve-accuracy",
+        "0,7": "pve-damage-boost",
+        "0,8": "ariel-max-hp",
+        "0,10": "pve-accuracy-evasion",
+        "0,11": "boss-defense",
+        "0,12": "pve-evasion",
+        "0,13": "pve-attack",
+        "0,14": "pve-damage-tolerance",
+        "1,0": "pve-accuracy",
+        "1,2": "boss-defense",
+        "1,3": "pve-evasion",
+        "1,4": "pve-defense",
+        "1,5": "ariel-critical-hit-resist",
+        "1,6": "pve-attack",
+        "1,8": "boss-attack-defense",
+        "1,10": "boss-attack",
+        "1,12": "ariel-critical-hit",
+        "1,14": "boss-attack",
+        "2,0": "pve-defense",
+        "2,1": "boss-damage-boost",
+        "2,3": "boss-attack-defense",
+        "2,6": "boss-attack",
+        "2,7": "pve-evasion",
+        "2,8": "pve-accuracy",
+        "2,9": "boss-defense",
+        "2,10": "pve-attack",
+        "2,11": "pve-evasion",
+        "2,12": "pve-defense",
+        "2,13": "pve-accuracy",
+        "2,14": "pve-attack-defense",
+        "3,1": "pve-attack",
+        "3,3": "pve-accuracy",
+        "3,4": "pve-attack",
+        "3,5": "boss-defense",
+        "3,6": "pve-accuracy-evasion",
+        "3,9": "ariel-critical-hit-resist",
+        "3,11": "boss-attack-defense",
+        "3,13": "pve-evasion",
+        "4,0": "pve-accuracy-evasion",
+        "4,1": "boss-defense",
+        "4,2": "boss-attack",
+        "4,3": "boss-damage-tolerance",
+        "4,6": "pve-defense",
+        "4,9": "pve-defense",
+        "4,11": "pve-accuracy",
+        "4,12": "boss-defense",
+        "4,13": "boss-damage-boost",
+        "5,0": "pve-defense",
+        "5,3": "pve-evasion",
+        "5,5": "ariel-critical-hit",
+        "5,6": "pve-evasion",
+        "5,7": "ariel-max-hp",
+        "5,8": "pve-attack-defense",
+        "5,9": "boss-attack",
+        "5,11": "pve-attack",
+        "5,13": "boss-attack",
+        "6,0": "ariel-max-mp",
+        "6,1": "boss-attack-defense",
+        "6,2": "pve-accuracy",
+        "6,3": "pve-attack-defense",
+        "6,4": "boss-defense",
+        "6,5": "boss-attack",
+        "6,7": "pve-attack",
+        "6,9": "boss-defense",
+        "6,10": "boss-damage-tolerance",
+        "6,11": "pve-evasion",
+        "6,12": "pve-defense",
+        "6,13": "pve-accuracy-evasion",
+        "6,14": "pve-attack",
+        "7,0": "pve-damage-tolerance",
+        "7,2": "ariel-max-hp",
+        "7,5": "pve-accuracy",
+        "7,6": "pve-defense",
+        "7,8": "pve-defense",
+        "7,9": "pve-accuracy",
+        "7,12": "ariel-max-mp",
+        "7,14": "pve-damage-tolerance",
+        "8,0": "pve-attack",
+        "8,1": "pve-accuracy-evasion",
+        "8,2": "pve-defense",
+        "8,3": "pve-evasion",
+        "8,4": "boss-damage-tolerance",
+        "8,5": "boss-defense",
+        "8,7": "pve-attack",
+        "8,9": "boss-attack",
+        "8,10": "boss-defense",
+        "8,11": "boss-attack-defense",
+        "8,12": "pve-accuracy",
+        "8,13": "pve-attack-defense",
+        "8,14": "ariel-max-hp",
+        "9,1": "boss-attack",
+        "9,3": "pve-attack",
+        "9,5": "boss-attack",
+        "9,6": "boss-attack-defense",
+        "9,7": "ariel-max-mp",
+        "9,8": "pve-evasion",
+        "9,9": "ariel-critical-hit",
+        "9,11": "pve-evasion",
+        "9,14": "pve-defense",
+        "10,1": "boss-damage-boost",
+        "10,2": "boss-defense",
+        "10,3": "pve-accuracy",
+        "10,5": "pve-defense",
+        "10,8": "pve-defense",
+        "10,11": "boss-damage-tolerance",
+        "10,12": "boss-attack",
+        "10,13": "boss-defense",
+        "10,14": "pve-accuracy-evasion",
+        "11,1": "pve-evasion",
+        "11,3": "pve-attack-defense",
+        "11,5": "ariel-critical-hit-resist",
+        "11,8": "pve-accuracy-evasion",
+        "11,9": "boss-defense",
+        "11,10": "pve-attack",
+        "11,11": "pve-accuracy",
+        "11,13": "pve-attack",
+        "12,0": "boss-attack-defense",
+        "12,1": "pve-accuracy",
+        "12,2": "pve-defense",
+        "12,3": "pve-evasion",
+        "12,4": "pve-attack",
+        "12,5": "boss-defense",
+        "12,6": "pve-accuracy",
+        "12,7": "pve-evasion",
+        "12,8": "boss-attack",
+        "12,11": "pve-attack-defense",
+        "12,13": "boss-damage-boost",
+        "12,14": "pve-defense",
+        "13,0": "boss-attack",
+        "13,2": "ariel-critical-hit",
+        "13,4": "boss-attack",
+        "13,6": "pve-attack-defense",
+        "13,8": "pve-attack",
+        "13,9": "ariel-critical-hit-resist",
+        "13,10": "pve-defense",
+        "13,11": "pve-evasion",
+        "13,12": "boss-defense",
+        "13,14": "pve-accuracy",
+        "14,0": "pve-damage-tolerance",
+        "14,1": "pve-attack",
+        "14,2": "pve-evasion",
+        "14,3": "boss-defense",
+        "14,4": "pve-accuracy-evasion",
+        "14,6": "ariel-max-mp",
+        "14,7": "pve-damage-boost",
+        "14,8": "pve-accuracy",
+        "14,12": "boss-attack-defense",
+        "14,13": "boss-attack",
+        "14,14": "pve-damage-boost",
+    },
+    specialNodeBonuses: {},
+}
+
+export const layouts = { ...mainLayouts, ariel: arielLayout } as const

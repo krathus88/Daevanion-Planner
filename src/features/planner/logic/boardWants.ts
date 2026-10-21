@@ -1,6 +1,6 @@
 import type { ClassAbility, ClassPreset } from "@config/classPresets"
 import { keyOf } from "@planner/config/boardConfig"
-import type { BoardId } from "@config/boards"
+import { isMainBoard, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import type { SpecialBonusType } from "@planner/config/specialNodes"
 import type { AbilityPriorities } from "@planner/storage/abilityPriorities"
@@ -24,7 +24,9 @@ export const specialWantId = (bonus: SpecialBonusType) => `special:${bonus}`
 // then skills and passives in the class's order.
 export const boardWants = (classPreset: ClassPreset, layoutName: BoardId) => {
     const layout = layouts[layoutName]
-    const assignments = classPreset.assignments[layoutName] ?? {}
+    // Ariel holds no abilities.
+    const assignments =
+        (isMainBoard(layoutName) && classPreset.assignments[layoutName]) || {}
     const specials = new Map<SpecialBonusType, string[]>()
     const abilityKeys = new Map<string, string[]>()
 
