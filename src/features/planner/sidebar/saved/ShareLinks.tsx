@@ -1,6 +1,6 @@
 import { Button, Flex, Input, Text } from "@chakra-ui/react"
 import { BOARD_IDS, BOARD_NAMES } from "@config/boards"
-import { classPresets } from "@config/classPresets"
+import { CLASS_NAMES } from "@config/classPresets"
 import { StatusText } from "@common/StatusText"
 import {
     encodeSharedPlan,
@@ -30,7 +30,7 @@ export const ShareLinks = () => {
             try {
                 return (
                     readSharedSettings(classId) ??
-                    `Your ${classPresets[classId].name} optimizer settings are still the defaults, so there's nothing to share.`
+                    `Your ${CLASS_NAMES[classId]} optimizer settings are still the defaults, so there's nothing to share.`
                 )
             } catch {
                 return "Your optimizer settings couldn't be read."

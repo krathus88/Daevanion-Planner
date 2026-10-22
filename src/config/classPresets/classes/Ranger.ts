@@ -11,7 +11,6 @@ import {
     HuntersSoul,
     MarkingShot,
     MeleeFire,
-    Ranger,
     RevitalizationContract,
     RootingEye,
     SnareShot,
@@ -22,13 +21,14 @@ import {
     VigilantEye,
     WindVigor,
 } from "@assets/ranger"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 import { Defiance } from "@assets/gladiator"
 
 export default defineClassPreset({
     id: "ranger",
-    name: "Ranger",
-    icon: Ranger,
+    name: CLASS_NAMES.ranger,
+    icon: CLASS_ICONS.ranger,
     abilities: [
         // SKILLS
         {

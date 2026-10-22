@@ -1,11 +1,12 @@
 import { Button, Flex, Text } from "@chakra-ui/react"
 import type { BoardId } from "@config/boards"
-import { classPresets } from "@config/classPresets"
+import type { ClassPreset } from "@config/classPresets"
 import { STAT_NAMES, STAT_TYPES } from "@config/stats/stats"
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
 import { useState } from "react"
 import { STAT_TIER_NAMES } from "@planner/config/stats"
+import { useBoard } from "@planner/context/boardContext"
 import { SPECIAL_BONUSES } from "@planner/config/specialNodes"
 import { STAT_TIER_COLORS } from "@planner/sidebar/priorities/tierColors"
 import {
@@ -49,8 +50,7 @@ const isInUse = (plan: SharedPlan) => {
 
 // The link's settings, read the same way the planner reads its own. Null
 // if they can't be read.
-const readSummary = (plan: SharedPlan) => {
-    const classPreset = classPresets[plan.classId]
+const readSummary = (plan: SharedPlan, classPreset: ClassPreset) => {
     const settings = plan.settings ?? {}
 
     try {
@@ -75,8 +75,8 @@ export const SharedSettingsPanel = ({
 }: SharedSettingsPanelProps) => {
     const [error, setError] = useState<string | null>(null)
 
-    const classPreset = classPresets[plan.classId]
-    const summary = readSummary(plan)
+    const { classPreset } = useBoard()
+    const summary = readSummary(plan, classPreset)
     const isApplied = isInUse(plan)
 
     const handleApply = () => {

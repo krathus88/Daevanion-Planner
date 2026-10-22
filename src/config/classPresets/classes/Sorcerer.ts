@@ -18,17 +18,17 @@ import {
     RobeOfCold,
     RobeOfEarth,
     RobeOfFlame,
-    Sorcerer,
     VitalityEvaporation,
     WintersShackles,
     WishOfConcentration,
 } from "@assets/sorcerer"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "sorcerer",
-    name: "Sorcerer",
-    icon: Sorcerer,
+    name: CLASS_NAMES.sorcerer,
+    icon: CLASS_ICONS.sorcerer,
     abilities: [
         // SKILLS
         {

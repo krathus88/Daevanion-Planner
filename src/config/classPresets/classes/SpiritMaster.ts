@@ -13,7 +13,6 @@ import {
     RevitalizationContract,
     SoulsCry,
     SpiritCommunion,
-    SpiritMaster,
     SpiritProtection,
     SpiritRevitalization,
     SpiritsDescent,
@@ -23,12 +22,13 @@ import {
     SummonWaterSpirit,
     SummonWindSpirit,
 } from "@assets/spirit-master"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "spirit-master",
-    name: "Spirit Master",
-    icon: SpiritMaster,
+    name: CLASS_NAMES["spirit-master"],
+    icon: CLASS_ICONS["spirit-master"],
     abilities: [
         // SKILLS
         {

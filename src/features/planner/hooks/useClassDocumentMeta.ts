@@ -1,8 +1,11 @@
-import type { ClassPreset } from "@config/classPresets"
+import { CLASS_ICONS, CLASS_NAMES, type ClassId } from "@config/classPresets"
 import { useEffect } from "react"
 
 // Shows the selected class's emblem as the favicon and its name in the title.
-export const useClassDocumentMeta = ({ icon, name }: ClassPreset) => {
+export const useClassDocumentMeta = (classId: ClassId) => {
+    const icon = CLASS_ICONS[classId]
+    const name = CLASS_NAMES[classId]
+
     useEffect(() => {
         const favicon =
             document.querySelector<HTMLLinkElement>('link[rel="icon"]')

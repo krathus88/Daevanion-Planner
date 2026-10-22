@@ -1,6 +1,6 @@
 import { Container, Text } from "@chakra-ui/react"
 import type { BoardId } from "@config/boards"
-import { classPresets, type ClassId } from "@config/classPresets"
+import type { ClassId, ClassPreset } from "@config/classPresets"
 import { Card } from "@common/Card"
 import { useEffect, useState, type ReactNode } from "react"
 import { useClassDocumentMeta } from "@planner/hooks/useClassDocumentMeta"
@@ -11,6 +11,7 @@ import { SharedSettingsContext } from "./sharedSettingsContext"
 
 type SharedPlanPageProps = {
     classId: ClassId
+    classPreset: ClassPreset
     layout: BoardId
     code: string
     // The viewer's own planner, shown under a settings-only link.
@@ -20,11 +21,12 @@ type SharedPlanPageProps = {
 // A plan opened from a share link. Nothing is written until it's saved.
 export const SharedPlanPage = ({
     classId,
+    classPreset,
     layout,
     code,
     ownPlanner,
 }: SharedPlanPageProps) => {
-    useClassDocumentMeta(classPresets[classId])
+    useClassDocumentMeta(classId)
 
     const linkKey = `${classId}:${code}`
     const [decoded, setDecoded] = useState<{
@@ -75,6 +77,7 @@ export const SharedPlanPage = ({
                 <SharedPlanWorkspace
                     // Saving starts over for each link.
                     key={linkKey}
+                    classPreset={classPreset}
                     layout={layout}
                     plan={result}
                 />

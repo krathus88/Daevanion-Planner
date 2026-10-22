@@ -1,5 +1,5 @@
 import { Button, Flex, Text } from "@chakra-ui/react"
-import { classPresets } from "@config/classPresets"
+import { CLASS_NAMES } from "@config/classPresets"
 import { Card } from "@common/Card"
 import { StatusText } from "@common/StatusText"
 import {
@@ -31,7 +31,7 @@ const describeAdded = (plan: ImportPlan) => {
 
 const classNames = (plan: ImportPlan) => {
     return plan.replacedClasses
-        .map((classId) => classPresets[classId].name)
+        .map((classId) => CLASS_NAMES[classId])
         .join(", ")
 }
 

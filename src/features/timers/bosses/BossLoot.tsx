@@ -1,16 +1,19 @@
 import { Flex, Icon, Text } from "@chakra-ui/react"
 import { Section } from "@common/Section"
-import type { BossLoot as BossLootTable } from "@timers/config/fieldBossLoot"
+import { FIELD_BOSS_LOOT } from "@timers/config/fieldBossLoot"
+import type { FieldBossId } from "@timers/config/fieldBosses"
 import { LuLock, LuTrophy } from "react-icons/lu"
 import { LootTile } from "./LootTile"
 
 type BossLootProps = {
-    loot: BossLootTable
+    bossId: FieldBossId
 }
 
 // A boss's own drops: chest, artwork, gear, then the rest. Folded away
 // until opened.
-export const BossLoot = ({ loot }: BossLootProps) => {
+export const BossLoot = ({ bossId }: BossLootProps) => {
+    const loot = FIELD_BOSS_LOOT[bossId]
+
     return (
         <Section variant="sub" title="Loot" count={loot.length}>
             {/* The key to the tiles, up front so a trophy drop doesn't read

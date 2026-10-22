@@ -1,6 +1,6 @@
 import { Button, Flex, Input, Switch, Text } from "@chakra-ui/react"
 import type { BoardId } from "@config/boards"
-import { classPresets } from "@config/classPresets"
+import { CLASS_NAMES } from "@config/classPresets"
 import { StatusText } from "@common/StatusText"
 import { useState, type ChangeEvent } from "react"
 import { BackToMyPlansLink } from "./BackToMyPlansLink"
@@ -21,7 +21,7 @@ export const SharedPlanSave = ({ plan, layout }: SharedPlanSaveProps) => {
         { summary: string } | { error: string } | null
     >(null)
 
-    const className = classPresets[plan.classId].name
+    const className = CLASS_NAMES[plan.classId]
     const isSaved = result !== null && "summary" in result
     const trimmedName = name.trim()
 

@@ -9,19 +9,25 @@ import {
     useRecipe,
     type SystemStyleObject,
 } from "@chakra-ui/react"
-import type { FieldBoss } from "@timers/config/fieldBosses"
+import type { FieldBoss, FieldBossId } from "@timers/config/fieldBosses"
 import type { TimerColor, TimerId } from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import { formatDuration } from "@timers/logic/formatTime"
 import type { BossReport } from "@timers/storage/timerSettings"
-import { useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { LuChevronDown } from "react-icons/lu"
 import { PinButton } from "@timers/card/PinButton"
 import { TimerCustomise } from "@timers/card/TimerCustomise"
-import { BossLoot } from "./BossLoot"
 import { BossNotes } from "./BossNotes"
 import { BossReportForm } from "./BossReportForm"
 import { BossStatus } from "./BossStatus"
+
+// The loot tables are large, so they load the first time a boss is opened.
+const BossLoot = lazy(async () => {
+    const module = await import("./BossLoot")
+
+    return { default: module.BossLoot }
+})
 
 type BossRowProps = {
     entry: TimerEntry
@@ -238,9 +244,13 @@ export const BossRow = ({
                             </Button>
                         )}
 
-                        {entry.timer.loot && (
-                            <BossLoot loot={entry.timer.loot} />
-                        )}
+                        <Suspense
+                            fallback={
+                                <Text textStyle="hint">Loading loot�</Text>
+                            }
+                        >
+                            <BossLoot bossId={boss.id as FieldBossId} />
+                        </Suspense>
 
                         <TimerCustomise
                             id={id}
