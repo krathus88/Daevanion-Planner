@@ -10,6 +10,7 @@ const route = getRouteApi("/planner/$classId/$layout")
 export const BoardRoute = () => {
     const { classId, layout } = route.useParams()
     const { share } = route.useSearch()
+    const classPreset = route.useLoaderData()
 
     // Planner/Manual is the user's choice and survives class switches, so it
     // lives above the class-keyed page.
@@ -27,6 +28,7 @@ export const BoardRoute = () => {
             key={classId}
             boardView={boardView}
             classId={classId}
+            classPreset={classPreset}
             layout={layout}
             onBoardViewChange={setBoardView}
         />
@@ -36,6 +38,7 @@ export const BoardRoute = () => {
         return (
             <SharedPlanPage
                 classId={classId}
+                classPreset={classPreset}
                 code={share}
                 layout={layout}
                 ownPlanner={plannerPage}

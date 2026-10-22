@@ -1,32 +1,28 @@
-import AssassinPreset from "./classes/Assassin"
-import ChanterPreset from "./classes/Chanter"
-import ClericPreset from "./classes/Cleric"
-import GladiatorPreset from "./classes/Gladiator"
-import RangerPreset from "./classes/Ranger"
-import SorcererPreset from "./classes/Sorcerer"
-import SpiritMasterPreset from "./classes/SpiritMaster"
-import TemplarPreset from "./classes/Templar"
+import type { ClassId } from "./classInfo"
 import type { ClassPreset } from "./types"
 
 // Types and defineClassPreset live in ./types so class files can import them
 // without a circular import through this index.
+export * from "./classInfo"
 export * from "./types"
 
-export const classPresets = {
-    templar: TemplarPreset,
-    gladiator: GladiatorPreset,
-    assassin: AssassinPreset,
-    ranger: RangerPreset,
-    sorcerer: SorcererPreset,
-    "spirit-master": SpiritMasterPreset,
-    chanter: ChanterPreset,
-    cleric: ClericPreset,
-} satisfies Record<string, ClassPreset>
+// Each class's abilities are in their own chunk, fetched when the planner
+// opens that class.
+const classPresetLoaders = {
+    templar: () => import("./classes/Templar"),
+    gladiator: () => import("./classes/Gladiator"),
+    assassin: () => import("./classes/Assassin"),
+    ranger: () => import("./classes/Ranger"),
+    sorcerer: () => import("./classes/Sorcerer"),
+    "spirit-master": () => import("./classes/SpiritMaster"),
+    chanter: () => import("./classes/Chanter"),
+    cleric: () => import("./classes/Cleric"),
+} satisfies Record<ClassId, () => Promise<{ default: ClassPreset }>>
 
-export type ClassId = keyof typeof classPresets
+export const loadClassPreset = async (
+    classId: ClassId,
+): Promise<ClassPreset> => {
+    const module = await classPresetLoaders[classId]()
 
-export const DEFAULT_CLASS_ID: ClassId = "gladiator"
-
-export const isClassId = (classId: string): classId is ClassId => {
-    return Object.hasOwn(classPresets, classId)
+    return module.default
 }

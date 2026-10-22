@@ -130,4 +130,33 @@ export default defineConfig({
     resolve: {
         tsconfigPaths: true,
     },
+
+    build: {
+        // Icons stay separate files instead of base64 in the bundle, so the
+        // app's JavaScript parses faster and only icons on screen download.
+        assetsInlineLimit: 0,
+        rolldownOptions: {
+            output: {
+                // Libraries change less often than the app, so they get their
+                // own chunks: they stay cached between deploys and download
+                // alongside the app instead of inside it.
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: "react",
+                            test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+                        },
+                        {
+                            name: "chakra",
+                            test: /node_modules[\\/](@chakra-ui|@ark-ui|@zag-js|@emotion|@floating-ui|@pandacss|stylis)[\\/]/,
+                        },
+                        {
+                            name: "router",
+                            test: /node_modules[\\/]@tanstack[\\/]/,
+                        },
+                    ],
+                },
+            },
+        },
+    },
 })

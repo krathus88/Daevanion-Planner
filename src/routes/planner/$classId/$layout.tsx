@@ -1,4 +1,8 @@
-import { DEFAULT_CLASS_ID, isClassId } from "@config/classPresets"
+import {
+    DEFAULT_CLASS_ID,
+    isClassId,
+    loadClassPreset,
+} from "@config/classPresets"
 import { BoardRoute } from "@planner/BoardRoute"
 import { DEFAULT_BOARD_ID, isBoardId } from "@config/boards"
 import { createFileRoute, Navigate, notFound } from "@tanstack/react-router"
@@ -43,5 +47,7 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
             document.getAnimations().map((animation) => animation.ready),
         )
     },
+    // The class's abilities are a chunk of their own.
+    loader: ({ params }) => loadClassPreset(params.classId),
     component: BoardRoute,
 })

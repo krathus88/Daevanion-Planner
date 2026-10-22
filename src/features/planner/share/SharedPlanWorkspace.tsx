@@ -1,6 +1,6 @@
 import { Flex, SegmentGroup, Text } from "@chakra-ui/react"
 import { BOARD_IDS, BOARD_NAMES, type BoardId } from "@config/boards"
-import { classPresets } from "@config/classPresets"
+import type { ClassPreset } from "@config/classPresets"
 import { useState } from "react"
 import { WorkspaceRow } from "@planner/BoardWorkspace"
 import { BoardColumn } from "@planner/board/BoardColumn"
@@ -24,16 +24,18 @@ const noSelect = () => {}
 
 type SharedPlanWorkspaceProps = {
     plan: SharedPlan
+    // The shared plan's class; links only open on their own class's page.
+    classPreset: ClassPreset
     layout: BoardId
 }
 
 export const SharedPlanWorkspace = ({
     plan,
+    classPreset,
     layout,
 }: SharedPlanWorkspaceProps) => {
     const [preferredView, setPreferredView] = useState<BoardView>("planner")
 
-    const classPreset = classPresets[plan.classId]
     const board = plan.boards[layout]
     const boardLayout = layouts[layout]
     // Shows the other half when this board only has one.

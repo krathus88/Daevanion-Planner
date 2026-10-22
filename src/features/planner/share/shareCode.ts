@@ -1,5 +1,5 @@
 import { BOARD_IDS, isBoardId, type BoardId } from "@config/boards"
-import { classPresets, type ClassId } from "@config/classPresets"
+import { CLASS_NAMES, type ClassId } from "@config/classPresets"
 import { layouts } from "@planner/config/layouts"
 import {
     readBoardProgress,
@@ -428,7 +428,7 @@ export const saveSharedPlan = (
         }
     }
 
-    const className = classPresets[plan.classId].name
+    const className = CLASS_NAMES[plan.classId]
     const added = [
         routeCount > 0 &&
             `${routeCount} ${routeCount === 1 ? "route" : "routes"}`,

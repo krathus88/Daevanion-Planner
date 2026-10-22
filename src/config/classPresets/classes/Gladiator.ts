@@ -7,7 +7,6 @@ import {
     Defiance,
     DestructiveImpulse,
     ExperiencedCounterstrike,
-    Gladiator,
     IdentifyWeakness,
     ImpactHit,
     KeenStrike,
@@ -23,12 +22,13 @@ import {
     SurvivalWillpower,
     SwordAuraRampage,
 } from "@assets/gladiator"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "gladiator",
-    name: "Gladiator",
-    icon: Gladiator,
+    name: CLASS_NAMES.gladiator,
+    icon: CLASS_ICONS.gladiator,
     abilities: [
         // SKILLS
         {

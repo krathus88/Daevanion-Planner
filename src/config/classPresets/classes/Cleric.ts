@@ -1,7 +1,6 @@
 import {
     Bolt,
     ChainOfTorment,
-    Cleric,
     Condemnation,
     DebilitatingMark,
     Defiance,
@@ -23,12 +22,13 @@ import {
     SurvivalWillpower,
     WarmBenediction,
 } from "@assets/cleric"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "cleric",
-    name: "Cleric",
-    icon: Cleric,
+    name: CLASS_NAMES.cleric,
+    icon: CLASS_ICONS.cleric,
     abilities: [
         // SKILLS
         {

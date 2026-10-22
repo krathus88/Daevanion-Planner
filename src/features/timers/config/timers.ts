@@ -1,7 +1,6 @@
 import { isRecord } from "@planner/storage/isRecord"
 import { formatDuration } from "@timers/logic/formatTime"
 import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
-import { FIELD_BOSS_LOOT, type BossLoot } from "./fieldBossLoot"
 import { FIELD_BOSSES, type FieldBoss, type FieldBossId } from "./fieldBosses"
 import {
     DailyReset,
@@ -94,7 +93,6 @@ export type TimerDefinition = {
     // schedule.
     schedule?: FixedSchedule | ServerSchedule
     boss?: FieldBoss
-    loot?: BossLoot
 }
 
 // Wednesday 14 October 2026, 07:00 UTC: a daily and weekly reset.
@@ -176,7 +174,6 @@ const toBossTimer = (boss: (typeof FIELD_BOSSES)[number]): TimerDefinition => {
                 ? `Spawns: ${boss.note} (EU server time).`
                 : `Respawns ${formatDuration(boss.respawn)} after it dies.`,
         boss: boss,
-        loot: FIELD_BOSS_LOOT[boss.id],
     }
 }
 

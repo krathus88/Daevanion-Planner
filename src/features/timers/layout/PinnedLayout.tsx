@@ -1,15 +1,16 @@
 import { Collapsible, Flex, Text } from "@chakra-ui/react"
-import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react"
 import { Card } from "@common/Card"
-import { isTimerId } from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
-import {
-    applyDrop,
-    type LayoutDrop,
-    type PinnedColumns,
-} from "@timers/logic/pinnedColumns"
-import { LayoutBoard } from "./LayoutBoard"
+import type { PinnedColumns } from "@timers/logic/pinnedColumns"
+import { lazy, Suspense } from "react"
 import type { TabEdge } from "./useTabEdge"
+
+// Drag and drop is only needed here, so it loads when the panel first opens.
+const PinnedLayoutBoard = lazy(async () => {
+    const module = await import("./PinnedLayoutBoard")
+
+    return { default: module.PinnedLayoutBoard }
+})
 
 export const PINNED_LAYOUT_ID = "pinned-layout"
 
@@ -31,21 +32,12 @@ export const PinnedLayout = ({
     tabEdge,
     onChange,
 }: PinnedLayoutProps) => {
-    const handleDragEnd = (event: DragEndEvent) => {
-        const id = event.operation.source?.id
-        const drop = event.operation.target?.data as LayoutDrop | undefined
-
-        if (event.canceled || !isTimerId(id) || !drop) {
-            return
-        }
-
-        onChange(applyDrop(ids, id, drop))
-    }
-
-    const ids = columns.map((column) => column.map((entry) => entry.timer.id))
-
     return (
-        <Collapsible.Root open={open} ids={{ content: PINNED_LAYOUT_ID }}>
+        <Collapsible.Root
+            open={open}
+            ids={{ content: PINNED_LAYOUT_ID }}
+            lazyMount
+        >
             <Collapsible.Content>
                 {/* The toggle is this panel's tab: the corner under it is
                     square, unless it's somewhere in the middle. */}
@@ -78,9 +70,13 @@ export const PinnedLayout = ({
                             borderRadius="md"
                             borderWidth="1px"
                         >
-                            <DragDropProvider onDragEnd={handleDragEnd}>
-                                <LayoutBoard columns={columns} now={now} />
-                            </DragDropProvider>
+                            <Suspense>
+                                <PinnedLayoutBoard
+                                    columns={columns}
+                                    now={now}
+                                    onChange={onChange}
+                                />
+                            </Suspense>
                         </Flex>
                     )}
                 </Card>

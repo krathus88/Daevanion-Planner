@@ -1,7 +1,7 @@
 // Site details shared by the link-preview build step (vite.config.ts) and the
 // banner generator (scripts/generateOgBanners.ts). Class names are read from
-// the source files, so adding a class needs no change here.
-import { readdirSync, readFileSync } from "node:fs"
+// src/config/classPresets/classInfo.ts, so adding a class needs no change here.
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 export const SITE_NAME = "Daevanion Planner"
@@ -20,24 +20,20 @@ export type SiteClass = {
 const root = process.cwd()
 
 export const readClasses = (): SiteClass[] => {
-    const dir = join(root, "src/config/classPresets/classes")
+    const source = readFileSync(
+        join(root, "src/config/classPresets/classInfo.ts"),
+        "utf-8",
+    )
+    // One `id: "Name",` line per class in CLASS_NAMES.
+    const block = /CLASS_NAMES = \{([^}]*)\}/.exec(source)?.[1] ?? ""
+    const classes = [...block.matchAll(/^\s*"?([\w-]+)"?:\s*"([^"]+)",?$/gm)]
+    if (classes.length === 0) {
+        throw new Error("Could not read CLASS_NAMES in classInfo.ts.")
+    }
 
-    return readdirSync(dir)
-        .filter((file) => file.endsWith(".ts"))
-        .map((file) => {
-            const source = readFileSync(join(dir, file), "utf-8")
-            // The class's own id and name are the first ones in the file,
-            // before the abilities list.
-            const id = /\bid:\s*"([^"]+)"/.exec(source)?.[1]
-            const name = /\bname:\s*"([^"]+)"/.exec(source)?.[1]
-            if (!id || !name) {
-                throw new Error(`Could not read the class id/name in ${file}.`)
-            }
-
-            return {
-                id,
-                name,
-                emblemPath: join(root, "src/assets", id, `${id}.webp`),
-            }
-        })
+    return classes.map(([, id, name]) => ({
+        id,
+        name,
+        emblemPath: join(root, "src/assets", id, `${id}.webp`),
+    }))
 }

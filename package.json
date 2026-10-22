@@ -8,6 +8,7 @@
         "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",
+        "phone": "vite build && vite preview --host",
         "og:banners": "node scripts/generateOgBanners.ts",
         "typegen": "npx @chakra-ui/cli typegen ./src/theme/index.ts",
         "knip": "knip",

@@ -5,7 +5,13 @@ import {
     Select,
     type SelectValueChangeDetails,
 } from "@chakra-ui/react"
-import { classPresets, isClassId, type ClassId } from "@config/classPresets"
+import {
+    CLASS_ICONS,
+    CLASS_IDS,
+    CLASS_NAMES,
+    isClassId,
+    type ClassId,
+} from "@config/classPresets"
 import { useNavigate } from "@tanstack/react-router"
 import { IconImage } from "@common/IconImage"
 import type { BoardId } from "@config/boards"
@@ -15,10 +21,10 @@ import {
 } from "./storage/plannerLocation"
 
 const classCollection = createListCollection({
-    items: Object.values(classPresets).map((preset) => ({
-        label: preset.name,
-        value: preset.id,
-        icon: preset.icon,
+    items: CLASS_IDS.map((classId) => ({
+        label: CLASS_NAMES[classId],
+        value: classId,
+        icon: CLASS_ICONS[classId],
     })),
 })
 

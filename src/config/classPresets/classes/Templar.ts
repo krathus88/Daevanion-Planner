@@ -18,17 +18,17 @@ import {
     ShieldRush,
     ShieldSmite,
     SurvivalWillpower,
-    Templar,
     ViciousStrike,
     WardingShield,
     WardingStrike,
 } from "@assets/templar"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "templar",
-    name: "Templar",
-    icon: Templar,
+    name: CLASS_NAMES.templar,
+    icon: CLASS_ICONS.templar,
     abilities: [
         // SKILLS
         {

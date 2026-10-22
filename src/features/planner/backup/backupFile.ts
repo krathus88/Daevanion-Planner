@@ -1,5 +1,10 @@
 import { BOARD_IDS, BOARD_NAMES, isBoardId, type BoardId } from "@config/boards"
-import { classPresets, isClassId, type ClassId } from "@config/classPresets"
+import {
+    CLASS_IDS,
+    CLASS_NAMES,
+    isClassId,
+    type ClassId,
+} from "@config/classPresets"
 import {
     isSavedBoard,
     isSavedPlanner,
@@ -41,8 +46,6 @@ type Backup = {
     exportedAt: string
     classes: Partial<Record<ClassId, BackupClass>>
 }
-
-const CLASS_IDS = Object.keys(classPresets) as ClassId[]
 
 // The board's current route and picks, unless already saved, so moving to
 // another device doesn't lose them.
@@ -190,7 +193,7 @@ const parseBoard = (value: unknown, where: string): BackupBoard | string => {
 }
 
 const parseClass = (classId: ClassId, value: unknown): BackupClass | string => {
-    const className = classPresets[classId].name
+    const className = CLASS_NAMES[classId]
     if (!isRecord(value) || !isRecord(value.boards)) {
         return `${className} has no boards.`
     }

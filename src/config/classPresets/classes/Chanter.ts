@@ -1,6 +1,5 @@
 import {
     BlessingOfLife,
-    Chanter,
     Crossguard,
     DarkCrush,
     EarthsPromise,
@@ -25,12 +24,13 @@ import {
     ImpactHit,
     SurvivalWillpower,
 } from "@assets/gladiator"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "chanter",
-    name: "Chanter",
-    icon: Chanter,
+    name: CLASS_NAMES.chanter,
+    icon: CLASS_ICONS.chanter,
     abilities: [
         // SKILLS
         {

@@ -2,7 +2,6 @@ import {
     Ambush,
     AmbushStance,
     ApplyPoison,
-    Assassin,
     AssaultStance,
     DefenseBreak,
     Defiance,
@@ -23,12 +22,13 @@ import {
     StormRampage,
     WhirlwindSlice,
 } from "@assets/assassin"
+import { CLASS_ICONS, CLASS_NAMES } from "../classInfo"
 import { defineClassPreset } from "../types"
 
 export default defineClassPreset({
     id: "assassin",
-    name: "Assassin",
-    icon: Assassin,
+    name: CLASS_NAMES.assassin,
+    icon: CLASS_ICONS.assassin,
     abilities: [
         // SKILLS
         {
