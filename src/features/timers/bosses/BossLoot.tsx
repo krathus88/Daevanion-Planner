@@ -1,5 +1,6 @@
 import { Flex, Icon, Text } from "@chakra-ui/react"
 import { Section } from "@common/Section"
+import { Term } from "@common/Term"
 import { FIELD_BOSS_LOOT } from "@timers/config/fieldBossLoot"
 import type { FieldBossId } from "@timers/config/fieldBosses"
 import { LuLock, LuTrophy } from "react-icons/lu"
@@ -57,8 +58,9 @@ export const BossLoot = ({ bossId }: BossLootProps) => {
             </Flex>
 
             <Text textStyle="hint">
-                Loot chest: everyone with contribution. Trophy drops: top-damage
-                party only (unconfirmed for EU).
+                <Term>Loot chest</Term>: everyone with contribution.{" "}
+                <Term>Trophy drops</Term>: top-damage party only (unconfirmed
+                for EU).
             </Text>
         </Section>
     )

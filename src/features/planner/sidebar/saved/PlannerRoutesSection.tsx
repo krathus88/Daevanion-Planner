@@ -4,6 +4,7 @@ import type { SavedPlanner } from "@planner/storage/boardStorage"
 import { SaveForm } from "@common/SaveForm"
 import { SavedList } from "@common/saved-list/SavedList"
 import { Section } from "@common/Section"
+import { Term } from "@common/Term"
 
 type PlannerRoutesSectionProps = {
     defaultOpen: boolean
@@ -91,7 +92,8 @@ export const PlannerRoutesSection = ({
             >
                 {planner.plannerHistory.length > 0 && (
                     <Text textStyle="hint">
-                        Keeps the last 25 runs. Use Save as to keep one.
+                        Keeps the last 25 runs. Use <Term>Save as</Term> to keep
+                        one.
                     </Text>
                 )}
 

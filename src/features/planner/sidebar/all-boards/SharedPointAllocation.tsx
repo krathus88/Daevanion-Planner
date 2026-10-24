@@ -3,6 +3,7 @@ import { useBoard } from "@planner/context/boardContext"
 import { useSharedAllocation } from "@planner/hooks/useSharedAllocation"
 import { PointsField } from "@common/PointsField"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { ArielSection } from "./ArielSection"
 import { CompareRoutes } from "./CompareRoutes"
 import { PriorityOptimizer } from "../priorities/PriorityOptimizer"
@@ -36,7 +37,12 @@ export const SharedPointAllocation = ({
 
             <PrioritySection
                 classPreset={classPreset}
-                hint="Optimize all boards builds each board's route from these."
+                hint={
+                    <>
+                        <Term>Optimize all boards</Term> builds each
+                        board&apos;s route from these.
+                    </>
+                }
             />
 
             <ArielSection classId={classPreset.id} />

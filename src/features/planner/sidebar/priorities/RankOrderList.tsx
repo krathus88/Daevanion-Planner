@@ -9,6 +9,7 @@ import {
     type SameRankOrder,
 } from "@planner/storage/rankOrder"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { SAME_RANK_ORDER_COLORS } from "./tierColors"
 
 type RankOrderListProps = {
@@ -28,8 +29,9 @@ export const RankOrderList = ({ classId }: RankOrderListProps) => {
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                What goes first when skills, passives and special nodes share a
-                rank. Equal levels go cheapest first.
+                What goes first when <Term>skills</Term>, <Term>passives</Term>{" "}
+                and <Term>special nodes</Term> share a rank. Equal levels go
+                cheapest first.
             </Text>
 
             {RANK_GROUPS.map((group) => (

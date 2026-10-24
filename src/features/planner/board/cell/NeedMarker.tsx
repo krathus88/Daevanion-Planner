@@ -1,12 +1,15 @@
 import { Box } from "@chakra-ui/react"
+import { markerInline, markerOnCell } from "./markerPlacement"
 
-export const NeedMarker = () => {
+type NeedMarkerProps = {
+    inline?: boolean
+}
+
+export const NeedMarker = ({ inline = false }: NeedMarkerProps) => {
     return (
         <Box
-            pos="absolute"
-            top="board.markerInset"
-            right="board.markerInset"
-            zIndex="board.marker"
+            as="span"
+            {...(inline ? markerInline : markerOnCell)}
             boxSize="3"
             bg="board.needDot"
             borderWidth="2px"
