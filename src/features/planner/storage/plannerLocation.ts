@@ -2,8 +2,6 @@ import { DEFAULT_CLASS_ID, isClassId, type ClassId } from "@config/classPresets"
 import { DEFAULT_BOARD_ID, isBoardId, type BoardId } from "@config/boards"
 import { isRecord } from "./isRecord"
 
-// The class and board last open in the planner. Pages without them in the
-// URL (Timers) show this class, and the Planner link returns to this board.
 export type PlannerLocation = {
     classId: ClassId
     layout: BoardId

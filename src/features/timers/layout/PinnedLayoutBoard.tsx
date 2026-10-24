@@ -14,8 +14,6 @@ type PinnedLayoutBoardProps = {
     onChange: (columns: PinnedColumns) => void
 }
 
-// The draggable board in PinnedLayout. Loaded the first time the panel
-// opens, with drag and drop, which nothing else needs.
 export const PinnedLayoutBoard = ({
     columns,
     now,

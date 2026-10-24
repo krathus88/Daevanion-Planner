@@ -12,8 +12,8 @@ const renderChip = (entry: TimerEntry, now: number) => {
     )
 }
 
-// Whether the timers fit in one line across the frame. `measureRef` holds a
-// hidden one-line copy, so the answer doesn't depend on the layout shown.
+// Measures a hidden one-line copy, so the result doesn't depend on the
+// layout shown.
 const useFitsOneLine = (enabled: boolean) => {
     const frameRef = useRef<HTMLDivElement>(null)
     const measureRef = useRef<HTMLDivElement>(null)
@@ -26,8 +26,6 @@ const useFitsOneLine = (enabled: boolean) => {
             return
         }
 
-        // Fires once on observe, then whenever the frame or a countdown
-        // changes width.
         const observer = new ResizeObserver(() => {
             setFits(measure.offsetWidth <= frame.clientWidth)
         })
@@ -40,14 +38,9 @@ const useFitsOneLine = (enabled: boolean) => {
     return { frameRef: frameRef, measureRef: measureRef, fits: fits }
 }
 
-// The pinned timers in the header. Beside the class picker (desktop) they
-// are laid out as the user arranged them: columns read from the right, each
-// with one timer or two stacked. On their own row (smaller screens) they are
-// centred and take one line in that same order, right to left, until it no
-// longer fits; then the arranged columns, scrolling sideways if needed.
+// On their own row: one line while it fits, otherwise the arranged columns.
 export const PinnedTimers = ({ ...props }: FlexProps) => {
     const { now, pinnedColumns, settings } = useTimers()
-    // Matches the header, which gives the timers their own row below xl.
     const isOwnRow = useBreakpointValue({ base: true, xl: false }) ?? false
     const isShown = settings.showPinned && pinnedColumns.length > 0
     const { frameRef, measureRef, fits } = useFitsOneLine(isOwnRow && isShown)
@@ -83,7 +76,6 @@ export const PinnedTimers = ({ ...props }: FlexProps) => {
         )
     }
 
-    // Column by column, top then bottom: the order the columns read in.
     const inOrder = pinnedColumns.flat()
 
     return (
@@ -91,14 +83,12 @@ export const PinnedTimers = ({ ...props }: FlexProps) => {
             ref={frameRef}
             pos="relative"
             minW="0"
-            // Starts scrolled to the right, where the first timer is.
             flexDir="row-reverse"
             overflowX="auto"
             aria-label="Pinned timers"
             {...props}
         >
-            {/* Auto margins centre it and, unlike justify-content, still
-                let a too-wide row scroll from its start. */}
+            {/* Unlike justify-content, auto margins let a wide row scroll from its start. */}
             <Flex
                 mx="auto"
                 flexShrink="0"
@@ -111,8 +101,7 @@ export const PinnedTimers = ({ ...props }: FlexProps) => {
                     : columns}
             </Flex>
 
-            {/* The one-line copy that useFitsOneLine measures. Zero-sized
-                and clipped, so it never adds to the scroll width. */}
+            {/* Zero-sized and clipped so it never adds scroll width. */}
             <Box
                 pos="absolute"
                 top="0"

@@ -9,8 +9,7 @@ export const SavedPanel = () => {
 
     const activeSource = planner.activePlanner?.source
 
-    // Open the section for the current mode, and within planner routes the
-    // list holding the active route. Remounting on change re-applies this.
+    // Applied on mount; remounting re-applies it.
     return (
         <Flex
             key={`${view}-${activeSource ?? "none"}`}

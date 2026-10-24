@@ -10,7 +10,6 @@ export type SavedListItem = {
     id: string
     name: string
     detail?: string
-    // The entry currently loaded on the board.
     active?: boolean
 }
 
@@ -31,7 +30,6 @@ export const SavedListRow = ({
     onRename,
     renameLabel = "Rename",
 }: SavedListRowProps) => {
-    // The name being typed while renaming, or null when not renaming.
     const [draft, setDraft] = useState<string | null>(null)
 
     const handleLoad = () => {

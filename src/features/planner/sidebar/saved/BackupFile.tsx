@@ -35,7 +35,6 @@ const classNames = (plan: ImportPlan) => {
         .join(", ")
 }
 
-// Saves every class's plans to a file, and adds a file's plans back.
 export const BackupFile = () => {
     const inputRef = useRef<HTMLInputElement>(null)
     const { notice } = useStorageRevision()
@@ -104,7 +103,6 @@ export const BackupFile = () => {
         }
 
         const added = describeAdded(pending)
-        // Remounts the board, so it shows the new saved entries.
         bumpStorageRevision(
             [
                 added
@@ -123,8 +121,8 @@ export const BackupFile = () => {
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                A file with every class&apos;s saved routes, manual boards and
-                optimizer priorities, to move them to another device.
+                Move every class&apos;s saved plans and priorities to another
+                device.
             </Text>
 
             <Flex flexWrap="wrap" gap="2">
@@ -156,8 +154,7 @@ export const BackupFile = () => {
                         {added
                             ? `Adds ${added} to your saved lists, marked "(imported)".`
                             : "Every route and board in this file is already saved here."}{" "}
-                        Your current boards and optimizer history stay as they
-                        are.
+                        Current boards and history are unchanged.
                     </Text>
 
                     {pending.replacedClasses.length > 0 && (

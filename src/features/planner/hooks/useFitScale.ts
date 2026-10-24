@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react"
 const FRAME_PADDING = 32
 const MIN_SCALE = 0.55
 
-// Scales content of a fixed size down to fit its frame, never below
-// MIN_SCALE. At the minimum the frame scrolls instead.
+// Below MIN_SCALE the frame scrolls instead.
 export const useFitScale = (contentWidth: number, contentHeight: number) => {
     const [scale, setScale] = useState(1)
     const frameRef = useRef<HTMLDivElement>(null)

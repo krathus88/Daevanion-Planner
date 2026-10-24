@@ -12,20 +12,14 @@ import { readBoardProgress } from "./boardStorage"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
-// Stat focus for one stat.
 export type StatFocusStat = {
-    // All boards: passives ranked after this wait behind the stat's nodes.
     // Null never makes passives wait.
     passiveAfter: number | null
-    // The same for skills.
     skillAfter: number | null
-    // Most points one of its nodes may cost to reach, the node included:
-    // 1 takes nodes touching the route. 0 never adds the stat.
+    // Includes the node itself: 1 takes nodes touching the route, 0 never adds.
     detour: number
 }
 
-// "Stat focus": stat nodes are added to the route, and on All boards take
-// points ahead of low-ranked abilities.
 export type StatFocus = {
     enabled: boolean
     stats: Record<StatType, StatFocusStat>
@@ -33,7 +27,6 @@ export type StatFocus = {
 
 export type StatSettings = {
     tiers: Record<StatType, StatTier>
-    // Spend points left after Min and ranks on stat nodes.
     spendLeftover: boolean
     focus: StatFocus
 }
@@ -49,7 +42,6 @@ const isCount = (value: unknown, min: number): value is number => {
     return typeof value === "number" && Number.isInteger(value) && value >= min
 }
 
-// A whole number of at least `min`, or null when the field was cleared.
 const readOptionalCount = (
     value: unknown,
     min: number,
@@ -62,8 +54,7 @@ const readOptionalCount = (
     return isCount(value, min) ? value : fallback
 }
 
-// Older saves set Stat focus per tier (Best, Good, Okay), with one detour
-// for all of them that didn't count the stat node itself.
+// Legacy: per-tier Stat focus, whose detour didn't count the node itself.
 type LegacyFocusTier = {
     passiveAfter: number | null
     skillAfter: number | null
@@ -84,8 +75,7 @@ const readLegacyTiers = (value: Record<string, unknown>) => {
         FOCUS_TIERS.map((tier) => {
             const saved = isRecord(tiers[tier]) ? tiers[tier] : {}
             const fallback = LEGACY_FOCUS_DEFAULTS[tier]
-            // The oldest saves had one `afterRank` plus a scope of
-            // "passives" or "all" (passives and skills).
+            // Oldest saves: one `afterRank` plus a scope.
             const legacyRank = readOptionalCount(
                 saved.afterRank,
                 1,
@@ -117,8 +107,7 @@ const readLegacyTiers = (value: Record<string, unknown>) => {
     ) as Record<FocusTier, LegacyFocusTier>
 }
 
-// Each stat takes its tier's ranks. A tier that never made anything wait
-// wasn't focused, so its stats start at detour 0.
+// A tier that never made anything wait wasn't focused: detour 0.
 const fromLegacyTiers = (
     tiers: Record<FocusTier, LegacyFocusTier>,
     detour: number,
@@ -143,7 +132,6 @@ const fromLegacyTiers = (
     ) as Record<StatType, StatFocusStat>
 }
 
-// Best stats take nodes touching the route; the rest aren't added.
 const defaultStatFocus = (
     statTiers: Readonly<Record<StatType, StatTier>>,
 ): StatFocus => {
@@ -265,14 +253,10 @@ export const writeStatSettings = (classId: string, settings: StatSettings) => {
 }
 
 export type StatNodeCount = {
-    // Stat nodes on the boards' current routes.
     taken: number
-    // Stat nodes on the counted boards.
     total: number
 }
 
-// Stat nodes taken versus available, per stat, across the given boards
-// (all by default).
 export const readSharedStatNodeCounts = (
     classId: string,
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,

@@ -9,7 +9,6 @@ type SaveFormProps = {
     onSave: () => void
 }
 
-// A name field and Save button.
 export const SaveForm = ({
     value,
     disabled,

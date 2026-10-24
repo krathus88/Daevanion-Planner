@@ -24,12 +24,9 @@ type OptimizeMessage = {
     spendLeftover: boolean
     availablePoints: number
     priorities: PathPriorities
-    // Ariel: the route spends every point it can on the best stats, and
-    // needs no clicked nodes.
     growStats: boolean
 }
 
-// Share of the run left for spending leftover points on stats.
 const STAT_FILL_SHARE = 0.2
 
 const postCandidate = (
@@ -150,7 +147,6 @@ globalThis.addEventListener(
             }
             postCandidate(result)
 
-            // Stat focus grows the route; its nodes stay required below.
             let current = result
             const kept = new Set(targetSet)
             if (priorities.focusGroups.length > 0) {

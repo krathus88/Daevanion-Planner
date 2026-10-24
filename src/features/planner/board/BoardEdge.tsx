@@ -8,7 +8,6 @@ type BoardEdgeProps = {
     isActive: boolean
 }
 
-// One line from a node to its right or lower neighbour.
 export const BoardEdge = ({
     row,
     column,
@@ -19,15 +18,14 @@ export const BoardEdge = ({
     const y = CELL_SIZE / 2 + row * CELL_PITCH
     const thickness = isActive ? "1" : "1px"
 
-    // Vertical lines are drawn upright, not rotated: a rotated hairline can
-    // vanish when a large board like Ariel is scaled down to fit.
+    // Not rotated: a rotated hairline can vanish when the board is scaled down.
     return (
         <Box
             pos="absolute"
             zIndex="board.edge"
             w={horizontal ? undefined : thickness}
             h={horizontal ? thickness : undefined}
-            // Placed from the computed cell grid, so these go in style.
+            // Computed positions, so style rather than tokens.
             style={{
                 left: horizontal ? x : x - 1,
                 top: horizontal ? y - 1 : y,

@@ -8,10 +8,7 @@ type FoundRoute = Extract<PlannerResult, { ok: true }>
 const STEP_MS = 30
 const noProgress = { onBest: () => {}, onProgress: () => {} }
 
-// "Spend leftover points": grows a finished route with stat nodes, best
-// weight in `stats` first, while the route stays within `budget`. The
-// required targets are always kept, so this never gives up a node the route
-// already needed. `weights` break ties between routes of equal cost.
+// Required targets are always kept.
 export const addStatNodes = async ({
     layout,
     start,
@@ -65,12 +62,8 @@ export const addStatNodes = async ({
     return current
 }
 
-// Ariel: grows a route with stat nodes until `budget` runs out. Each step
-// adds the reachable stat node whose connection gives the most stat weight
-// per point; nodes with no weight are only taken as connectors. A node's
-// weight counts once per point it costs, since costlier nodes give more, so
-// a tier is worth the same per point on every node. `route` holds the
-// start. Returns the grown route and its cost.
+// Weight counts once per point a node costs, so a tier is worth the same
+// per point on every node.
 export const growByStatValue = ({
     layout,
     route,
@@ -135,7 +128,6 @@ export const growByStatValue = ({
     return { path: path, cost: total }
 }
 
-// Cheapest points from `route` to every node, with the step each came from.
 const connectionCosts = (layout: BoardLayout, route: ReadonlySet<string>) => {
     const distances = new Map<string, number>()
     const parents = new Map<string, string>()

@@ -1,7 +1,6 @@
 import { Text } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 
-// The board's latest message, pinned to the bottom of the sidebar.
 export const SidebarMessage = ({ children }: { children: ReactNode }) => {
     return (
         <Text

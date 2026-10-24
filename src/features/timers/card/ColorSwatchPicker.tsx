@@ -7,14 +7,12 @@ type ColorSwatchPickerProps = {
     onChange: (color: TimerColor) => void
 }
 
-// One row per tone: strong on top, the soft version of each hue under it.
 export const ColorSwatchPicker = ({
     value,
     onChange,
 }: ColorSwatchPickerProps) => {
     return (
-        // Padded by the selected swatch's outline, which the collapsing
-        // section around it would otherwise clip.
+        // Room for the selected outline, which the collapsible would clip.
         <Flex
             p="0.5"
             flexDir="column"

@@ -3,12 +3,9 @@ import type { LootDetailRow } from "@timers/logic/lootDetails"
 
 type LootDetailLineProps = {
     row: LootDetailRow
-    // A nested line: its value sits further in and dimmer, so it doesn't
-    // line up with the lines above it.
     nested?: boolean
 }
 
-// One line of a loot tooltip: label and detail, then the value at the end.
 export const LootDetailLine = ({ row, nested }: LootDetailLineProps) => {
     return (
         <Flex alignItems="baseline" justifyContent="space-between" gap="4">

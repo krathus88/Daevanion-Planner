@@ -8,10 +8,6 @@ import { Brand } from "./Brand"
 import { NavDrawer } from "./NavDrawer"
 import { PageNav } from "./PageNav"
 
-// Phones: menu, brand and class, then pinned timers.
-// Tablets: brand, pages and class, then pinned timers.
-// Desktop: one row. The board tabs live in the planner's sidebar, with the
-// rest of the board's controls.
 export const Header = () => {
     const plannerMatch = useMatch({
         from: "/planner/$classId/$layout",
@@ -26,7 +22,7 @@ export const Header = () => {
     return (
         <Box
             as="header"
-            // Hovering the header reveals controls inside it (_groupHover).
+            // For _groupHover controls inside.
             className="group"
             pos="sticky"
             top="0"
@@ -45,7 +41,6 @@ export const Header = () => {
                     rowGap="2"
                     columnGap={{ base: "2", md: "6" }}
                 >
-                    {/* On phones the brand is part of the menu button. */}
                     <NavDrawer
                         currentPage={currentPage}
                         plannerLocation={plannerParams ?? plannerLocation}
@@ -61,8 +56,6 @@ export const Header = () => {
                         hideBelow="md"
                     />
 
-                    {/* One evenly spaced group on desktop. Below that it
-                        dissolves, so its parts can take their own rows. */}
                     <Flex
                         minW="0"
                         order={{ xl: 2 }}

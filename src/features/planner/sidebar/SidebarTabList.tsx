@@ -4,7 +4,6 @@ import { GlowDot } from "@common/GlowDot"
 
 type SidebarTabListProps = {
     savedCount: number
-    // New "Optimize all boards" results are waiting on the All boards tab.
     hasUnseenResults: boolean
 }
 

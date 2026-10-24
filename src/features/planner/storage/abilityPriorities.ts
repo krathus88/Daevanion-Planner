@@ -6,12 +6,10 @@ import { isRecord } from "./isRecord"
 
 export type AbilityPriorities = Readonly<Record<string, number>>
 
-// Minimum number of upgrades (nodes on a route, across all boards) the
-// all-board optimizer must reserve for an ability. Missing means 0.
+// Missing means 0.
 export type AbilityMinimums = Readonly<Record<string, number>>
 
-// Most upgrades the all-board optimizer will choose for an ability. A
-// missing entry means no limit.
+// Missing means no limit.
 export type AbilityMaximums = Readonly<Record<string, number>>
 
 export type MinimumShortfall = {
@@ -21,10 +19,8 @@ export type MinimumShortfall = {
     achieved: number
 }
 
-// Saved per ability: its rank plus optional Min and Max.
 type AbilityField = "priority" | "min" | "max"
 
-// Saved abilities by id. Throws if they can't be read.
 const readSavedAbilities = (
     classId: string,
     source?: Record<string, unknown>,
@@ -50,8 +46,7 @@ const readSavedField = (
     return isRecord(ability) ? ability[field] : undefined
 }
 
-// Replaces one field on every ability, keeping the other fields. Abilities
-// missing from `values` lose the field.
+// Abilities missing from `values` lose the field.
 const writeAbilityField = (
     classId: string,
     field: AbilityField,
@@ -211,8 +206,6 @@ export const writeAbilityMaximums = (
 const DEFAULT_MINIMUM = 2
 const DEFAULT_MINIMUM_BELOW_RANK = 5
 
-// Number of nodes each ability has across the given boards (all by
-// default): the most upgrades it can ever get there.
 export const abilityNodeCounts = (
     classPreset: ClassPreset,
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
@@ -228,9 +221,8 @@ export const abilityNodeCounts = (
     return counts
 }
 
-// Minimums the user set win; otherwise rank 1 defaults to every node the
-// ability has, ranks 2-4 to +2 and the rest to +0. Always capped at the
-// ability's node count.
+// Defaults: rank 1 every node, ranks 2-4 +2, the rest +0; capped at the
+// node count.
 export const resolveAbilityMinimums = (
     classPreset: ClassPreset,
     priorities: AbilityPriorities,
@@ -273,8 +265,6 @@ export const writeAbilityMinimums = (
     }
 }
 
-// Upgrades per ability across the given boards' current routes (all by
-// default).
 export const readSharedAbilityUpgradeCounts = (
     classPreset: ClassPreset,
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,

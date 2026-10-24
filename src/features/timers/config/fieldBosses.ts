@@ -1,15 +1,11 @@
 import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
 
-// Global Season 1 field bosses. NCSOFT publishes no global respawn times and
-// the client has none, so these are community figures: names, zones and
-// levels from aion2-guides.info; respawns are half of NCSOFT's Korean notice
-// (December 2025), matching the global kill reports on aion2atlas.app (the
-// same on EU, NA and Asia). Respawn is counted from the kill. The Abyss
-// bosses instead keep a fixed schedule, from the global client.
+// No official global respawns: these are half of NCSOFT's Korean notice
+// (Dec 2025), matching global kill reports on aion2atlas.app. Abyss bosses
+// keep a fixed schedule from the client.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 
-// The sub-tabs of the Field bosses tab.
 export type FieldBossRegion = "verteron" | "altgard" | "abyss"
 
 export const FIELD_BOSS_REGIONS: readonly {
@@ -31,20 +27,16 @@ export type FieldBoss = {
     id: string
     region: FieldBossRegion
     name: string
-    // Used where space is tight, e.g. the pinned timers in the header.
     shortName: string
     zone: string
     level?: number
-    // Null for bosses on a fixed schedule rather than a kill timer.
     respawn: number | null
-    // The fixed schedule, for bosses with no kill timer, and how it reads.
     schedule?: ServerSchedule
     note?: string
 }
 
 const ABYSS_ZONE = "Chaotic Lower Reshanta"
-// Schedules are in EU server time, which follows Central European time
-// (CET/CEST).
+// EU server time (CET/CEST).
 const EXECUTORS_SCHEDULE: ServerSchedule = {
     times: [21 * 60 + 30],
     // Mon, Thu, Sat

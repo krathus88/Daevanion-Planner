@@ -3,8 +3,6 @@ import { isMainBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { PointsField } from "@common/PointsField"
 
-// The shared Total points (same value as the All boards tab) and this
-// board's share of it. Ariel shows its own points instead.
 export const SharedBudgetField = ({ disabled }: { disabled?: boolean }) => {
     const { layoutName, budget } = useBoard()
 

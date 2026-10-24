@@ -8,7 +8,6 @@ type LayoutColumnProps = {
     column: TimerEntry[]
     now: number
     index: number
-    // The timer being dragged, if any.
     draggedId?: string | number
 }
 
@@ -18,7 +17,6 @@ export const LayoutColumn = ({
     index,
     draggedId,
 }: LayoutColumnProps) => {
-    // A lone timer can take another under it, unless it's the one moving.
     const hasSlot =
         draggedId !== undefined &&
         column.length < MAX_PER_COLUMN &&

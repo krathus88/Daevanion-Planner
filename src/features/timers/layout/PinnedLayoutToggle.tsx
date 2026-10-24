@@ -9,9 +9,6 @@ type PinnedLayoutToggleProps = {
     onToggle: () => void
 }
 
-// Opens the pinned layout editor right below it. Open, it becomes the
-// panel's tab: same size and place, no bottom edge, sitting on the panel's
-// top border so the two read as one shape.
 export const PinnedLayoutToggle = ({
     ref,
     open,
@@ -23,8 +20,7 @@ export const PinnedLayoutToggle = ({
             variant="secondary"
             size="xs"
             pos="relative"
-            // Always 1px low, open or closed, so the label never moves:
-            // open, that 1px covers the panel's top border.
+            // Always 1px low so the label never moves; open, it covers the panel border.
             bottom="-1px"
             zIndex="docked"
             h="7"
@@ -40,7 +36,6 @@ export const PinnedLayoutToggle = ({
             fontWeight="medium"
             transitionProperty="common"
             transitionDuration="fast"
-            // Open, it stays the panel's colour so they don't come apart.
             _hover={{ bg: open ? "app.raised" : "app.hover", color: "app.fg" }}
             aria-controls={PINNED_LAYOUT_ID}
             aria-expanded={open}

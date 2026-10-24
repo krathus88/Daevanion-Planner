@@ -13,9 +13,7 @@ import {
 import { isRecord } from "@planner/storage/isRecord"
 import { addSavedEntries, newSavedEntries } from "@planner/storage/savedEntries"
 
-// A plan carried in a link: one board or all of a class's boards, with the
-// class's optimizer priorities. Bump VERSION when the shape changes, and
-// keep reading the older ones.
+// Bump VERSION when the shape changes, and keep reading older ones.
 const VERSION = 1
 
 type SharedRoute = {
@@ -42,12 +40,10 @@ export type SharedPlan = {
     settings: Record<string, unknown> | null
 }
 
-// In the link each cell is its index on the board, row by row, which is
-// much shorter than "row,column".
+// Cells as board indexes, much shorter than "row,column".
 const toIndexes = (layout: BoardId, cells: string[]) => {
     const grid = layouts[layout].grid
     const width = grid[0].length
-    // The start node is never part of a plan.
     return cells.flatMap((cell) => {
         const [row, column] = cell.split(",").map(Number)
         return grid[row]?.[column] === "S" ? [] : [row * width + column]
@@ -88,8 +84,6 @@ const isPoints = (value: unknown): value is number => {
     return typeof value === "number" && Number.isInteger(value) && value >= 0
 }
 
-// The plan as it is saved on this device now. Empty boards are left out;
-// null when there's nothing to share.
 export const readSharedPlan = (
     classId: ClassId,
     boards: readonly BoardId[],
@@ -134,14 +128,12 @@ export const readSharedPlan = (
         const settings = readAllClassSettings(classId)
         plan.settings = Object.keys(settings).length > 0 ? settings : null
     } catch {
-        // Unreadable priorities are left out; the boards still share.
+        // Unreadable priorities are left out.
     }
 
     return plan
 }
 
-// Just the class's optimizer settings, with no routes, picks or points.
-// Null when they were never changed from the defaults.
 export const readSharedSettings = (classId: ClassId): SharedPlan | null => {
     const settings = readAllClassSettings(classId)
 
@@ -150,8 +142,6 @@ export const readSharedSettings = (classId: ClassId): SharedPlan | null => {
         : null
 }
 
-// The name a shared plan is saved under unless the viewer types another:
-// the sharer's first route name.
 export const defaultSharedName = (plan: SharedPlan) => {
     const named = BOARD_IDS.map((id) => plan.boards[id]?.route?.name).find(
         Boolean,
@@ -270,8 +260,6 @@ const decodeSelection = (
     return { selectedCells: selectedCells, availablePoints: points }
 }
 
-// Reads a link's plan for the class in its URL. Returns an error message
-// for a broken, edited or newer link.
 export const decodeSharedPlan = async (
     code: string,
     classId: ClassId,
@@ -328,7 +316,6 @@ export const decodeSharedPlan = async (
         plan.boards[layout] = { route: route, selection: selection }
     }
 
-    // A settings-only link has no boards.
     if (Object.keys(plan.boards).length === 0 && !plan.settings) {
         return BROKEN
     }
@@ -336,8 +323,6 @@ export const decodeSharedPlan = async (
     return plan
 }
 
-// Replaces the viewer's optimizer settings with the link's. Returns an
-// error or null.
 export const applySharedSettings = (plan: SharedPlan) => {
     if (!plan.settings) {
         return "This link has no optimizer settings."
@@ -353,9 +338,6 @@ export const applySharedSettings = (plan: SharedPlan) => {
     }
 }
 
-// Adds the link's routes and picks to the viewer's saved lists, each named
-// `name`, and optionally replaces their priorities with the link's. Entries
-// they already have are skipped. Returns a summary or an error.
 export const saveSharedPlan = (
     plan: SharedPlan,
     name: string,

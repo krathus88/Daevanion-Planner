@@ -1,8 +1,6 @@
 import { useSyncExternalStore } from "react"
 
-// Bumped when an import rewrites saved data the open board read on mount,
-// so the board remounts and reads it again. The notice says what changed
-// and is shown once the board is back.
+// Bumped by imports so the open board remounts and rereads storage.
 type StorageRevision = {
     revision: number
     notice: string | null

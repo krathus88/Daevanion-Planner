@@ -6,19 +6,15 @@ type DurationInputProps = {
     value: number
     max: number
     unit: string
-    // Just wide enough for two digits and a one-letter unit, so a row of
-    // them fits beside its buttons.
     compact?: boolean
     label: string
     onChange: (value: number) => void
 }
 
-// Only set when compact: InputGroup pads the input for its unit, and any
-// padding prop passed here, even undefined, replaces that.
+// Any padding prop, even undefined, replaces InputGroup's unit padding.
 const COMPACT_PADDING: InputProps = { ps: "2", pe: "5" }
 
-// A whole number between 0 and max, with its unit after it. The unit lets
-// clicks through, so clicking anywhere in the box focuses the number.
+// The unit passes clicks through to the input.
 export const DurationInput = ({
     value,
     max,

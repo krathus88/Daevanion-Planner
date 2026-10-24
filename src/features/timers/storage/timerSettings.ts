@@ -7,19 +7,14 @@ import {
 } from "@timers/config/timers"
 import { MAX_PER_COLUMN, type PinnedColumns } from "@timers/logic/pinnedColumns"
 
-// What the user told us about a field boss: when it will spawn (from the
-// in-game timer, or a kill plus its respawn) and when they said it. For a
-// boss with no known respawn, only when it was killed.
 type SpawnReport = { spawnAt: number; reportedAt: number }
 
 export type BossReport = SpawnReport | { killedAt: number }
 
 export type TimerSettings = {
-    // Shown in the header on every page.
     pinned: PinnedColumns
     showPinned: boolean
     bossReports: Partial<Record<TimerId, BossReport>>
-    // The user's changes to each timer's defaults.
     colors: Partial<Record<TimerId, TimerColor>>
     soonMinutes: Partial<Record<TimerId, number>>
 }
@@ -75,7 +70,6 @@ const isPinnedColumns = (value: unknown): value is PinnedColumns => {
     return true
 }
 
-// Keeps the entries whose key is a timer and whose value passes the check.
 const pickPerTimer = <T>(
     value: unknown,
     isValid: (item: unknown) => item is T,

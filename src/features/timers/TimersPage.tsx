@@ -38,8 +38,7 @@ export const TimersPage = () => {
         document.title = "Daevanion - Timers"
     }, [])
 
-    // The timer to focus is a one-off request: the card handles it when it
-    // renders, then it's dropped so the same link works again next time.
+    // One-off: dropped once handled so the same link works again.
     useEffect(() => {
         if (search.timer) {
             navigate({
@@ -70,7 +69,6 @@ export const TimersPage = () => {
     return (
         <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
             <Flex flexDir="column" gap="5">
-                {/* The layout editor opens under the heading row. */}
                 <Flex ref={layoutAreaRef} flexDir="column">
                     <Flex
                         flexWrap="wrap"
@@ -78,15 +76,13 @@ export const TimersPage = () => {
                         justifyContent="space-between"
                         gap="3"
                     >
-                        {/* Room between the text and the open panel, which
-                            meets the toggle with no gap. */}
                         <Flex flexDir="column" gap="1" pb="2">
                             <Heading size="lg">Timers</Heading>
 
                             <Text textStyle="hint">
-                                EU servers. Times are reported by the community
-                                and shown in your local time. Pin a timer to
-                                keep it in the header on every page.
+                                EU servers. Community-reported times, shown in
+                                your local time. Pinned timers show in the
+                                header.
                             </Text>
                         </Flex>
 

@@ -17,7 +17,6 @@ type PriorityOptimizerProps = {
     onComplete: (applyResults: () => void) => void
 }
 
-// Builds routes on all four boards from the priority settings.
 export const PriorityOptimizer = ({
     classPreset,
     totalPoints,

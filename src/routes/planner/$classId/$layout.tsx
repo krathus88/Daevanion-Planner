@@ -8,8 +8,7 @@ import { DEFAULT_BOARD_ID, isBoardId } from "@config/boards"
 import { createFileRoute, Navigate, notFound } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/planner/$classId/$layout")({
-    // Most URLs land on the planner, so it loads with the app instead of as
-    // a separate chunk fetched after it.
+    // Loaded with the app, not as a chunk: most URLs land here.
     codeSplitGroupings: [],
     params: {
         parse: ({ classId, layout }) => {
@@ -24,7 +23,6 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
             layout: layout,
         }),
     },
-    // ?share= opens a plan someone shared, read-only until saved.
     validateSearch: (search: Record<string, unknown>): { share?: string } =>
         typeof search.share === "string" && search.share
             ? { share: search.share }
@@ -36,9 +34,7 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
             to="/planner/$classId/$layout"
         />
     ),
-    // Rendering a board blocks the main thread. Wait a frame for the
-    // navigation progress bar to mount, then for its animation to start,
-    // otherwise it stays frozen until the board is done.
+    // Board rendering blocks the main thread; let the progress bar start first.
     beforeLoad: async ({ preload }) => {
         if (preload) return
 
@@ -47,7 +43,6 @@ export const Route = createFileRoute("/planner/$classId/$layout")({
             document.getAnimations().map((animation) => animation.ready),
         )
     },
-    // The class's abilities are a chunk of their own.
     loader: ({ params }) => loadClassPreset(params.classId),
     component: BoardRoute,
 })

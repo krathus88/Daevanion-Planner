@@ -9,8 +9,6 @@ type TimerChipProps = {
     ref?: Ref<HTMLDivElement>
     entry: TimerEntry
     now: number
-    // In the layout editor: it can be dragged, and shows when another chip
-    // is about to be dropped on it.
     draggable?: boolean
     dropTarget?: boolean
 }
@@ -35,9 +33,6 @@ const getChipText = (state: TimerState, now: number) => {
         : countdown
 }
 
-// A pinned timer's icon, short name and countdown, in the timer's colour. The
-// header and the layout editor on the Timers page both draw it, so they look
-// the same.
 export const TimerChip = ({
     ref,
     entry,

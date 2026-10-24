@@ -8,12 +8,10 @@ export type ClassAbility = {
     type: ClassAbilityType
     priority?: number
     icon?: string
-    // Shown under the name and cost in the node's tooltip.
     tooltip?: string
-    // Seconds; left out when there is none.
+    // Seconds.
     cooldown?: number
-    // Specializations unlocked as the skill levels up, listed in the tooltip.
-    // Levels are per unlock since they differ between skills and stigmas.
+    // Levels are per unlock; they differ between skills and stigmas.
     unlocks?: readonly AbilityUnlock[]
 }
 
@@ -27,7 +25,6 @@ export type ClassPreset<
 > = {
     id: string
     name: string
-    // Class emblem, also used as the page favicon.
     icon?: string
     abilities: Abilities
     assignments: Readonly<
@@ -38,7 +35,6 @@ export type ClassPreset<
     >
 }
 
-// Ability ids that appear more than once in the abilities tuple.
 type DuplicateAbilityIds<
     Abilities extends readonly ClassAbility[],
     Seen extends string = never,
@@ -51,8 +47,7 @@ type DuplicateAbilityIds<
         : DuplicateAbilityIds<Rest, Seen | First["id"]>
     : never
 
-// Adds an impossible requirement when ids repeat, so the preset fails to
-// type-check and the error names the duplicated ids.
+// Fails type-checking on repeated ids, naming them in the error.
 type UniqueAbilityIds<Abilities extends readonly ClassAbility[]> = [
     DuplicateAbilityIds<Abilities>,
 ] extends [never]

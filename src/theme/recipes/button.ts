@@ -7,8 +7,7 @@ const dimmedWhenDisabled = {
     },
 } as const
 
-// Adds the app's button variants on top of Chakra's button recipe.
-// info = undo, danger = clear/reset, so an action's kind is clear at a glance.
+// info = undo, danger = clear/reset.
 export const buttonRecipe = defineRecipe({
     variants: {
         variant: {

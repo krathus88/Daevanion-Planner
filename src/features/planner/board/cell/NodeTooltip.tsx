@@ -11,7 +11,6 @@ import {
 } from "@planner/config/specialNodes"
 import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 
-// The type line matches the node's colour on the board.
 const typeColors = {
     basic: "app.fg",
     skill: "board.skill",

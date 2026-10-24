@@ -1,11 +1,8 @@
 import { useEffect, useState, type RefObject } from "react"
 
-// Which edge of the panel the tab sits on, if any. The corner under it is
-// squared off so the two join; in the middle both corners stay round.
 export type TabEdge = "left" | "middle" | "right"
 
-// The heading row wraps on narrow screens, which moves the tab from the
-// right edge to the middle or the left, so this follows it.
+// The heading row wraps on narrow screens, moving the tab.
 export const useTabEdge = (
     tabRef: RefObject<HTMLElement | null>,
     containerRef: RefObject<HTMLElement | null>,
@@ -20,7 +17,6 @@ export const useTabEdge = (
             return
         }
 
-        // Called once straight away when observing starts, then on resize.
         const observer = new ResizeObserver(() => {
             const tabBox = tab.getBoundingClientRect()
             const containerBox = container.getBoundingClientRect()

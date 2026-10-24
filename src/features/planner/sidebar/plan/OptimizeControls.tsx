@@ -7,7 +7,6 @@ import { formatPlannerDuration } from "@planner/logic/plannerLogic"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
 
-// Starts the route search, or shows its progress while it runs.
 export const OptimizeControls = () => {
     const { layoutName, planner, wants } = useBoard()
 

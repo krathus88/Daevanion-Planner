@@ -10,7 +10,6 @@ import { WantPicker } from "./WantPicker"
 type BoardWantRowProps = {
     want: BoardWant
     value: Want
-    // Its nodes on the current route.
     taken: number
     onChange: (want: BoardWant, value: Want) => void
 }

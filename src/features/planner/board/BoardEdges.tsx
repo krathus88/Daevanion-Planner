@@ -8,8 +8,7 @@ type BoardEdgeLine = {
     horizontal: boolean
 }
 
-// Each node links to the node on its right and the one below it, so every
-// edge is listed exactly once.
+// Right and down neighbours only, so each edge is listed once.
 const getBoardEdges = (layout: BoardLayout) => {
     const edges: BoardEdgeLine[] = []
 
@@ -43,11 +42,9 @@ const getBoardEdges = (layout: BoardLayout) => {
 
 type BoardEdgesProps = {
     layout: BoardLayout
-    // Selected nodes plus the start; an edge between two of them lights up.
     connectedCells: Set<string>
 }
 
-// The lines between neighbouring nodes, drawn behind the cells.
 export const BoardEdges = ({ layout, connectedCells }: BoardEdgesProps) => {
     const isConnected = (edge: BoardEdgeLine) => {
         return (

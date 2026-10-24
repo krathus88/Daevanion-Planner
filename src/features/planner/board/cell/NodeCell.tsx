@@ -25,12 +25,10 @@ export type NodeCellProps = {
     appearance: BoardNodeAppearance
     selected: boolean
     targeted: boolean
-    // Route preferences need it; your own target marker wins when both.
+    // Your own target marker wins when both.
     needed?: boolean
-    // Route preferences prefer it; shown when nothing requires it.
     preferred?: boolean
     canSelect: boolean
-    // Shown as is, not dimmed, and can't be picked (a shared plan).
     readOnly?: boolean
     adjacentAvailable: boolean
     ability?: ClassAbility
@@ -81,8 +79,7 @@ export const NodeCell = ({
         ability?.name ??
         (stat && BOARD_STAT_NAMES[stat]) ??
         (specialBonus && SPECIAL_BONUSES[specialBonus].name)
-    // Special nodes are recognisable by shape (name in the tooltip), and a
-    // selected stat node is already shown by its fill, so neither gets text.
+    // Special nodes read by shape and selected stat nodes by fill: no text.
     const label =
         styles.isSpecial || styles.isBasic
             ? ""

@@ -1,9 +1,7 @@
-// What one point of each Pantheon stat gives, from the global client via
-// aion2data.com. Keyed by the stat's in-game name.
+// Per point, from the global client via aion2data.com.
 type PantheonEffect = {
-    // Shortened for the loot tooltips.
     name: string
-    // Percent per point; negative where the stat lowers it, e.g. cooldowns.
+    // Percent; negative where it lowers, e.g. cooldowns.
     perPoint: number
 }
 

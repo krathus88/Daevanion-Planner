@@ -9,25 +9,17 @@ import type { BossReport } from "@timers/storage/timerSettings"
 import { getServerStarts, type ServerSchedule } from "./serverSchedule"
 
 export type TimerState =
-    // A field boss nobody has entered a timer or kill for.
     | { status: "unset" }
-    // A boss with no known respawn, counted up from its last kill.
     | { status: "killed"; at: number }
-    // Counts down to the event closing, from when it started.
     | ({ status: "open"; startedAt: number } & Countdown)
-    // Counts down to the event starting.
     | ({ status: "upcoming" } & Countdown)
 
 type Countdown = {
     at: number
-    // Worked out from an earlier spawn, assuming the boss died about a
-    // minute after spawning.
     estimated: boolean
-    // A weekly maintenance happened between the report and this spawn.
     afterMaintenance: boolean
 }
 
-// The latest start at or before `time`.
 const lastStart = (schedule: FixedSchedule, time: number) => {
     const periods = Math.floor((time - schedule.anchor) / schedule.period)
 
@@ -55,7 +47,6 @@ const getFixedState = (schedule: FixedSchedule, now: number): TimerState => {
     }
 }
 
-// A schedule in EU server time. A kill during a spawn ends it early.
 const getServerState = (
     schedule: ServerSchedule,
     killedAt: number | null,
@@ -106,12 +97,10 @@ const getBossState = (
         return { status: "killed", at: report.killedAt }
     }
 
-    // On a whole second, like every other timer, so the clock ticks in step
-    // with it. Spawns are firstSpawnAt + cycle * cycleLength.
+    // On a whole second so it ticks in step with the clock.
     const firstSpawnAt = Math.round(report.spawnAt / 1000) * 1000
     const killedAt = firstSpawnAt + BOSS_ALIVE_FOR
 
-    // With no known respawn, nothing follows the first spawn.
     if (boss.respawn === null && now >= killedAt) {
         return { status: "killed", at: killedAt }
     }
@@ -142,7 +131,6 @@ const getBossState = (
     return { status: "upcoming", at: shownSpawnAt, ...countdown }
 }
 
-// How urgently a timer should draw the eye.
 export type TimerAlert = "idle" | "soon" | "active"
 
 export const getTimerAlert = (

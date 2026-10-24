@@ -9,8 +9,7 @@ type LayoutBoardProps = {
     now: number
 }
 
-// The pinned columns with a drop gap on each side of every column. Laid out
-// right to left like the header, so gap 0 is the right edge.
+// Right to left like the header: gap 0 is the right edge.
 export const LayoutBoard = ({ columns, now }: LayoutBoardProps) => {
     const { source } = useDragOperation()
 

@@ -11,8 +11,6 @@ type SharedPlanSaveProps = {
     layout: BoardId
 }
 
-// Copies the shared plan into the viewer's saved lists, under a name they
-// can change. Their priorities are only replaced if they ask.
 export const SharedPlanSave = ({ plan, layout }: SharedPlanSaveProps) => {
     const defaultName = defaultSharedName(plan)
     const [name, setName] = useState(defaultName)
@@ -34,8 +32,6 @@ export const SharedPlanSave = ({ plan, layout }: SharedPlanSaveProps) => {
     }
 
     const handleSave = () => {
-        // The suggested name is tagged so it's clear where it came from; a
-        // typed name is kept as is.
         setResult(
             saveSharedPlan(
                 plan,

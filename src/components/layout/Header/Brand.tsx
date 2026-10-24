@@ -1,6 +1,5 @@
 import { Flex, Text, type FlexProps } from "@chakra-ui/react"
 
-// Two lines on phones so the class picker fits beside it; one line from md up.
 export const Brand = ({ ...props }: FlexProps) => {
     return (
         <Flex

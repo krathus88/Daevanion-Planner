@@ -1,8 +1,6 @@
 import { Badge, Flex, Text } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
 
-// The name of the route on the board, and whether it's saved or from the
-// optimizer history.
 export const ActiveRoute = () => {
     const { planner } = useBoard()
 

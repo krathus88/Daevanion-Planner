@@ -11,7 +11,6 @@ export const fieldSlotRecipe = defineSlotRecipe({
     },
     variants: {
         orientation: {
-            // The label takes its own width instead of a fixed column.
             horizontal: {
                 label: {
                     flex: "0 0 auto",

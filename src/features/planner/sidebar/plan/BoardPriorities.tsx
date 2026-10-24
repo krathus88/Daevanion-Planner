@@ -13,14 +13,11 @@ import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
 import { StatPriorityList } from "../priorities/StatPriorityList"
 import { BoardWantList } from "./BoardWantList"
 
-// Skills and passives share one section, labelled apart as on the All
-// boards tab.
 const ABILITY_GROUPS = [
     { kind: "skill", label: "Skills" },
     { kind: "passive", label: "Passives" },
 ] as const
 
-// What Find a good path should take on this board.
 export const BoardPriorities = () => {
     const { classPreset, layoutName, planner, wants } = useBoard()
 
@@ -41,7 +38,6 @@ export const BoardPriorities = () => {
         wants.setWant(want.id, value)
     }
 
-    // Ariel has only stats, ranked apart from the other boards'.
     if (!isMainBoard(layoutName)) {
         return (
             <Section
@@ -63,11 +59,9 @@ export const BoardPriorities = () => {
             onOpenChange={handleOpenChange}
         >
             <Text textStyle="hint">
-                Need makes Find a good path take all of its nodes on this board,
-                on top of the ones you click (blue dot). Prefer only picks
-                between equally cheap routes, so it never costs extra points
-                (green ring). Defaults follow the ranks on the All boards tab:
-                1–2 Need, 3 Prefer, the rest Skip.
+                Need always takes its nodes (blue dot). Prefer only does when it
+                costs nothing extra (green ring). Defaults follow the All boards
+                ranks.
             </Text>
 
             <Section title="Special nodes" variant="sub">

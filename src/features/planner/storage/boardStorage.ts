@@ -56,7 +56,6 @@ const MAX_PLANNER_HISTORY = 25
 const STORAGE_VERSION = "v1"
 const STORAGE_CHANGE_EVENT = "daevanion-storage-change"
 const PLANS_REPLACED_EVENT = "daevanion-plans-replaced"
-// Everything is stored per class: plans for one class don't apply to another.
 const sharedAllocationKey = (classId: string) => {
     return `daevanion:${STORAGE_VERSION}:${classId}:shared-allocation`
 }
@@ -232,7 +231,6 @@ export const writeSharedAllocation = (
 
 export const DEFAULT_TOTAL_POINTS = 225
 
-// The one point budget shared by every board.
 export const readSharedTotalPoints = (classId: string) => {
     return (
         readSharedAllocation(classId).value?.totalPoints ?? DEFAULT_TOTAL_POINTS
@@ -250,7 +248,6 @@ export const writeSharedTotalPoints = (
     })
 }
 
-// Points the other main boards' current planner routes already use.
 export const readRouteCostOfOtherBoards = (
     classId: string,
     layout: BoardId,
@@ -283,9 +280,8 @@ export const subscribeToBoardStorage = (onChange: () => void) => {
     }
 }
 
-// Fired when plans are written for boards from outside the board's own
-// state (e.g. the all-board optimizer), so a mounted board can reload them.
-// Lists the boards whose plans changed; omitted means every board.
+// For writes from outside the board, e.g. the all-board optimizer. No
+// boards listed means all of them.
 export const notifyPlansReplaced = (layouts?: BoardId[]) => {
     return window.dispatchEvent(
         new CustomEvent<BoardId[] | undefined>(PLANS_REPLACED_EVENT, {
@@ -344,8 +340,6 @@ export const writePlannerUndo = (
     return write(keyFor(classId, "planner-undo", layout), undo)
 }
 
-// Route preferences changed from their rank's default on this board, by
-// ability id or "special:<bonus>" for special nodes.
 export type BoardWantChoices = Record<string, "need" | "prefer" | "skip">
 
 const isWantChoices = (value: unknown): value is BoardWantChoices => {
@@ -432,11 +426,7 @@ export const writePlannerHistory = (
     )
 }
 
-// Moves a history entry to the board's saved routes under `name`, so it
-// can't drop off the end of the history. An "Optimize all boards" run
-// records one entry per board with the same name and time; those move too.
-// A board whose current route is a moved entry keeps it, now as the saved
-// one. Returns the boards it saved on, or an error message.
+// Also moves the rest of its "Optimize all boards" run (same name and time).
 export const keepHistoryRun = (
     classId: string,
     layout: BoardId,
@@ -508,9 +498,7 @@ export const keepHistoryRun = (
     return { boards: boards }
 }
 
-// Makes a saved or history planner the board's current route, or clears the
-// route when plannerId is empty (keeping an undo, like "Clear planner").
-// "current" leaves the board unchanged. Returns an error message or null.
+// Empty plannerId clears the route (with an undo); "current" changes nothing.
 export const applyPlannerToBoard = (
     classId: string,
     layout: BoardId,

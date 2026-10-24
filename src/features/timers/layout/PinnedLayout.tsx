@@ -5,7 +5,6 @@ import type { PinnedColumns } from "@timers/logic/pinnedColumns"
 import { lazy, Suspense } from "react"
 import type { TabEdge } from "./useTabEdge"
 
-// Drag and drop is only needed here, so it loads when the panel first opens.
 const PinnedLayoutBoard = lazy(async () => {
     const module = await import("./PinnedLayoutBoard")
 
@@ -18,13 +17,10 @@ type PinnedLayoutProps = {
     columns: TimerEntry[][]
     now: number
     open: boolean
-    // Where PinnedLayoutToggle sits above the panel.
     tabEdge: TabEdge
     onChange: (columns: PinnedColumns) => void
 }
 
-// Arrange the pinned timers exactly as the header shows them. Opened by
-// PinnedLayoutToggle, which sits beside the "show pinned" switch.
 export const PinnedLayout = ({
     columns,
     now,
@@ -39,8 +35,6 @@ export const PinnedLayout = ({
             lazyMount
         >
             <Collapsible.Content>
-                {/* The toggle is this panel's tab: the corner under it is
-                    square, unless it's somewhere in the middle. */}
                 <Card
                     borderTopLeftRadius={
                         tabEdge === "left" ? "none" : undefined
@@ -50,10 +44,8 @@ export const PinnedLayout = ({
                     }
                 >
                     <Text textStyle="hint">
-                        This is how your pinned timers sit in the header, read
-                        from the right. Drag one onto another to swap them,
-                        under a lone timer to stack them, or between two columns
-                        to give it a column of its own.
+                        As shown in the header. Drag onto a timer to swap, under
+                        one to stack, or between columns for its own column.
                     </Text>
 
                     {columns.length === 0 ? (
@@ -61,8 +53,6 @@ export const PinnedLayout = ({
                             Nothing pinned yet. Use the pin on a timer below.
                         </Text>
                     ) : (
-                        // Drawn on the header's background, so it looks the
-                        // way it will up there.
                         <Flex
                             px="2"
                             bg="app.header"

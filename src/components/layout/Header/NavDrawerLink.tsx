@@ -2,7 +2,6 @@ import { Button } from "@chakra-ui/react"
 import type { ReactElement } from "react"
 
 type NavDrawerLinkProps = {
-    // The router link to style.
     children: ReactElement
     isActive: boolean
     onNavigate: () => void

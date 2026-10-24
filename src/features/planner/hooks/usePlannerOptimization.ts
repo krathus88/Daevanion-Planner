@@ -40,7 +40,7 @@ type SerializedPlannerResult =
           path: string[]
           cost: number
           statScore: number
-          // Grown with stat nodes from leftover points; costs more on purpose.
+          // Leftover stat nodes cost more on purpose.
           extended?: boolean
       }
     | { ok: false; reason: string }
@@ -59,7 +59,6 @@ type UsePlannerOptimizationProps = {
     layoutName: BoardId
     start: Position
     targetCells: Set<string>
-    // Route preferences: nodes marked Need, and ids marked Prefer.
     needCells: ReadonlySet<string>
     preferred: ReadonlySet<string>
     plannedPath: Set<string>
@@ -105,7 +104,6 @@ export const usePlannerOptimization = ({
 
     useEffect(() => () => plannerWorker.current?.terminate(), [])
 
-    // Ariel ranks its own stats and spends all of its points on them.
     const readPriorities = (): {
         statTiers: Parameters<typeof statWeights>[1]
         spendLeftover: boolean
@@ -116,7 +114,7 @@ export const usePlannerOptimization = ({
             try {
                 arielSettings = readArielSettings(classId)
             } catch {
-                // Fall back to the default Ariel priorities.
+                // Use the default Ariel priorities.
             }
 
             return {
@@ -138,7 +136,7 @@ export const usePlannerOptimization = ({
         try {
             statSettings = readStatSettings(classId)
         } catch {
-            // Fall back to the default stat priorities.
+            // Use the default stat priorities.
         }
 
         return {
@@ -156,7 +154,6 @@ export const usePlannerOptimization = ({
     const optimizePlanner = (timeBudgetMs = 1500) => {
         const { statTiers, spendLeftover, priorities } = readPriorities()
         const weights = new Map(priorities.weights)
-        // The nodes you clicked plus the ones Route preferences need.
         const requiredCells = new Set([...targetCells, ...needCells])
         // A route that misses a newly needed node can't be kept.
         const previousBest =
@@ -200,8 +197,7 @@ export const usePlannerOptimization = ({
                 if (resultMessage.type === "candidate") {
                     const best = bestPlannerResult.current
                     const candidate = resultMessage.result
-                    // Cheaper wins; at equal cost, better stats win. Routes
-                    // grown with leftover stat points are always taken.
+                    // Cheaper wins, then better stats; leftover-stat routes are always taken.
                     const isBetter =
                         !best ||
                         candidate.extended ||
@@ -248,7 +244,6 @@ export const usePlannerOptimization = ({
                     )
                     return
                 }
-                // A route grown with stat nodes costs more on purpose.
                 if (
                     previousBest &&
                     !bestResult.extended &&
@@ -299,7 +294,6 @@ export const usePlannerOptimization = ({
                         `Route found, but it could not be saved to browser history: ${saveError}`,
                     )
                 } else if (!isMainBoard(layoutName)) {
-                    // Ariel's route is built in one go, not searched for.
                     setMessage(
                         "Ariel route built and saved to optimization history.",
                     )

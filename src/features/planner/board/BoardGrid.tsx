@@ -14,7 +14,6 @@ type CellStateInput = {
     position: Position
     mode: "interactive" | "planner" | "readonly"
     selectedCells: Set<string>
-    // Cheapest cost to connect this node to the selection, if reachable.
     connectionCost: number | undefined
     availablePoints: number
 }
@@ -37,7 +36,6 @@ const getCellState = ({
         { row: position.row, column: position.column - 1 },
         { row: position.row, column: position.column + 1 },
     ]
-    // In Manual mode, an affordable node right next to the selection.
     const adjacentAvailable =
         mode === "interactive" &&
         !selected &&
@@ -66,13 +64,10 @@ const getCellState = ({
 type BoardGridProps = {
     layout: BoardLayout
     abilitiesByPosition: Readonly<Record<string, ClassAbility>>
-    // "readonly" draws a plan without letting anything be picked.
     mode: "interactive" | "planner" | "readonly"
     selectedCells: Set<string>
     targetCells: Set<string>
-    // Nodes Route preferences need; marked apart from your targets.
     neededCells?: ReadonlySet<string>
-    // Nodes Route preferences prefer, taken only if it costs nothing.
     preferredCells?: ReadonlySet<string>
     availablePoints: number
     onSelect: (position: Position) => void
@@ -117,8 +112,7 @@ export const BoardGrid = ({
             bgImage="board.frame"
             borderRadius="boardFrame"
         >
-            {/* Takes the scaled size, so the frame centres and scrolls it.
-                The size is computed, so it goes in style, not a token. */}
+            {/* Takes the scaled size so the frame centres and scrolls it. */}
             <Box
                 pos="relative"
                 m={isScrollable ? "0" : "auto"}

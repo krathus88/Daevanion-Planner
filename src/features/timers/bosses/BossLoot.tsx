@@ -9,15 +9,11 @@ type BossLootProps = {
     bossId: FieldBossId
 }
 
-// A boss's own drops: chest, artwork, gear, then the rest. Folded away
-// until opened.
 export const BossLoot = ({ bossId }: BossLootProps) => {
     const loot = FIELD_BOSS_LOOT[bossId]
 
     return (
         <Section variant="sub" title="Loot" count={loot.length}>
-            {/* The key to the tiles, up front so a trophy drop doesn't read
-                as sure for everyone. */}
             <Text fontSize="xs" lineHeight="tall">
                 <Icon
                     boxSize="3.5"
@@ -61,11 +57,8 @@ export const BossLoot = ({ bossId }: BossLootProps) => {
             </Flex>
 
             <Text textStyle="hint">
-                Every player with contribution gets the loot chest (NCSOFT,
-                Korean patch of 1 July 2026), and likely the refining stones
-                (unconfirmed). Trophy drops go only to the party (or force) that
-                dealt the most damage: Korean players report this, but nothing
-                confirms it for EU yet. Hover an item for details.
+                Loot chest: everyone with contribution. Trophy drops: top-damage
+                party only (unconfirmed for EU).
             </Text>
         </Section>
     )

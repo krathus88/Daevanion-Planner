@@ -1,6 +1,4 @@
-// Site details shared by the link-preview build step (vite.config.ts) and the
-// banner generator (scripts/generateOgBanners.ts). Class names are read from
-// src/config/classPresets/classInfo.ts, so adding a class needs no change here.
+// Class names come from classInfo.ts, so adding a class needs no change here.
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 

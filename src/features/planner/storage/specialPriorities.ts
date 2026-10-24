@@ -8,14 +8,12 @@ import { readBoardProgress } from "./boardStorage"
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
-// Rank of each special node bonus, on the same scale as ability ranks.
 export type SpecialPriorities = Readonly<Record<SpecialBonusType, number>>
 
 export const SPECIAL_BONUS_TYPES = Object.keys(
     SPECIAL_BONUSES,
 ) as SpecialBonusType[]
 
-// For a special node with no bonus set in layouts.ts.
 export const DEFAULT_SPECIAL_PRIORITY = 1
 
 export const DEFAULT_SPECIAL_PRIORITIES = Object.fromEntries(
@@ -77,14 +75,10 @@ export const writeSpecialPriorities = (
 }
 
 export type SpecialNodeCount = {
-    // Nodes with this bonus on the boards' current routes.
     taken: number
-    // Nodes with this bonus on the counted boards.
     total: number
 }
 
-// Special nodes taken versus available, per bonus, across the given boards
-// (all by default).
 export const readSharedSpecialNodeCounts = (
     classId: string,
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,

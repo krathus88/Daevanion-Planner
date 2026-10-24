@@ -9,7 +9,6 @@ type PointsFieldProps = {
     onChange: (value: number) => void
 }
 
-// A whole, non-negative number of points.
 export const PointsField = ({
     value,
     label,

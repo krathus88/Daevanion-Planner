@@ -30,8 +30,6 @@ const classCollection = createListCollection({
 
 type ClassSelectProps = {
     classId: ClassId
-    // The board on screen, kept when switching class. Pages without a board
-    // only remember the class for the planner.
     layout?: BoardId
 }
 
@@ -77,12 +75,10 @@ export const ClassSelect = ({ classId, layout }: ClassSelectProps) => {
             <Select.HiddenSelect />
 
             <Flex alignItems="center" gap="2">
-                {/* Hidden on phones, where the menu button needs the room. */}
                 <Select.Label srOnly={{ base: true, md: false }}>
                     Class
                 </Select.Label>
 
-                {/* Narrower on phones so it fits beside the brand. */}
                 <Select.Control minW={{ base: "40", md: "44" }} flex="1">
                     <Select.Trigger>
                         <Flex minW="0" alignItems="center" gap="2">

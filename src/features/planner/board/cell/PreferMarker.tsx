@@ -1,7 +1,5 @@
 import { Box } from "@chakra-ui/react"
 
-// A hollow ring in a node's corner: Route preferences prefer it, but the
-// route only goes there when it costs no extra points.
 export const PreferMarker = () => {
     return (
         <Box

@@ -7,9 +7,7 @@ import { Sorcerer } from "@assets/sorcerer"
 import { SpiritMaster } from "@assets/spirit-master"
 import { Templar } from "@assets/templar"
 
-// What every page needs about a class without loading its abilities, which
-// load per class (loadClassPreset). scripts/siteMeta.ts reads CLASS_NAMES
-// from this file for the link previews, so keep one class per line.
+// scripts/siteMeta.ts parses CLASS_NAMES: keep one class per line.
 export const CLASS_NAMES = {
     templar: "Templar",
     gladiator: "Gladiator",
@@ -25,7 +23,6 @@ export type ClassId = keyof typeof CLASS_NAMES
 
 export const CLASS_IDS = Object.keys(CLASS_NAMES) as ClassId[]
 
-// Class emblems, also used as the page favicon.
 export const CLASS_ICONS: Record<ClassId, string> = {
     templar: Templar,
     gladiator: Gladiator,

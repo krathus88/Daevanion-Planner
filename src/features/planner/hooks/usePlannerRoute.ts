@@ -28,7 +28,6 @@ type UsePlannerRouteOptions = {
     layout: BoardLayout
     start: Position
     progress: BoardProgressState
-    // Route preferences: nodes marked Need, and ids marked Prefer.
     needCells: ReadonlySet<string>
     preferred: ReadonlySet<string>
     availablePoints: number
@@ -40,8 +39,6 @@ type UsePlannerRouteOptions = {
     setView: (view: BoardView) => void
 }
 
-// Planner mode: required nodes, the optimized route through them, undo,
-// saved routes and the optimizer history.
 export const usePlannerRoute = ({
     classPreset,
     layoutName,
@@ -84,8 +81,7 @@ export const usePlannerRoute = ({
         setMessage: setMessage,
     })
 
-    // "Optimize all boards" and the All boards tab replace routes in
-    // storage; reload this board's route when that happens.
+    // All-board runs write routes to storage; reload when they do.
     const reloadFromStorage = useEffectEvent(
         (changedLayouts: BoardId[] | undefined) => {
             if (changedLayouts && !changedLayouts.includes(layoutName)) {
@@ -301,7 +297,6 @@ export const usePlannerRoute = ({
 
         setSavedPlanners(nextSavedPlanners)
 
-        // The board shows the active route's name too.
         const active = progress.activePlanner
         if (active?.source === "saved" && active.id === id) {
             const renamed: ActivePlanner = { ...active, name: name }
@@ -317,7 +312,6 @@ export const usePlannerRoute = ({
         setMessage(`Renamed to "${name}".`)
     }
 
-    // Moves a history entry (with the rest of its all-board run) to Saved.
     const keepHistoryEntry = (id: string, name: string) => {
         const result = keepHistoryRun(classId, layoutName, id, name)
         if ("error" in result) {

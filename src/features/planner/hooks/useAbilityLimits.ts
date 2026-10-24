@@ -19,8 +19,6 @@ import {
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
 import { subscribeToClassSettings } from "@planner/storage/classSettings"
 
-// Reads one setting, falling back (and collecting the error) if storage
-// holds something unreadable.
 const readOr = <T>(
     read: () => T,
     fallback: T,
@@ -35,7 +33,6 @@ const readOr = <T>(
     }
 }
 
-// The class's shared rank and Min/Max settings.
 const readLimits = (classPreset: ClassPreset, errors: string[]) => {
     return {
         priorities: readOr(
@@ -77,10 +74,6 @@ const readInitialLimits = (
     }
 }
 
-// Each ability's priority rank and Min/Max upgrade limits, plus how many
-// upgrades the boards' current routes already give it. With a layout, the
-// upgrades and scoped node counts are for that board only; the limits are
-// always the class's shared ones.
 export const useAbilityLimits = (
     classPreset: ClassPreset,
     layout?: MainBoardId,
@@ -115,7 +108,6 @@ export const useAbilityLimits = (
         [classPreset, layout],
     )
 
-    // The other tab's editor may change the shared limits.
     useEffect(
         () =>
             subscribeToClassSettings(classPreset.id, () => {
@@ -161,8 +153,7 @@ export const useAbilityLimits = (
         setError(null)
     }
 
-    // Min and Max stay linked: raising Min above Max raises Max, and
-    // lowering Max below Min lowers Min.
+    // Min and Max stay linked: moving one past the other moves both.
     const updateMinimum = (abilityId: string, minimum: number) => {
         const maximum = maximums[abilityId]
         saveLimits(
@@ -189,9 +180,7 @@ export const useAbilityLimits = (
         )
     }
 
-    // An ability can't need more upgrades than it has nodes across all boards.
     const nodeCounts = abilityNodeCounts(classPreset)
-    // Nodes on the boards counted here; planning caps Min at this.
     const scopedNodeCounts = abilityNodeCounts(classPreset, boards)
     const resolvedMinimums = resolveAbilityMinimums(
         classPreset,

@@ -9,7 +9,6 @@ export const STAT_TIER_COLORS: Record<StatTier, Tokens["colors"]> = {
     ignore: "app.subtle",
 }
 
-// Same scale as the stat tiers: More is the strongest, Less the weakest.
 export const SAME_RANK_ORDER_COLORS: Record<SameRankOrder, Tokens["colors"]> = {
     more: "app.accent",
     equal: "app.success",

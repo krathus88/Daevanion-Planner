@@ -8,7 +8,6 @@ import { AbilityRow } from "./AbilityRow"
 
 type AbilityPriorityListProps = {
     classPreset: ClassPreset
-    // Counts upgrades on this board only and hides abilities it lacks.
     layout?: MainBoardId
 }
 
@@ -48,20 +47,13 @@ export const AbilityPriorityList = ({
         <Flex flexDir="column" alignItems="stretch" gap="2">
             {layout ? (
                 <Text textStyle="hint">
-                    Rank each ability, 1 being the highest priority. Ranks, Min
-                    and Max are shared with the All boards tab. Here Min
-                    reserves upgrades on this board only, up to the nodes it
-                    has; Max stops it choosing more. The +N column shows
-                    upgrades already planned on this board. Abilities with no
-                    nodes here are hidden.
+                    1 is the highest rank. Shared with All boards; Min and Max
+                    count this board only.
                 </Text>
             ) : (
                 <Text textStyle="hint">
-                    Rank each ability, 1 being the highest priority. Min
-                    reserves at least that many upgrades when optimizing all
-                    boards; Max stops it choosing more (a cheaper route may
-                    still pass through extras). The +N column shows upgrades
-                    already planned across all boards.
+                    1 is the highest rank. Min reserves upgrades; Max caps how
+                    many the optimizer picks.
                 </Text>
             )}
 

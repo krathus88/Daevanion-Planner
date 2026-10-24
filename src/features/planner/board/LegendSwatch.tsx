@@ -4,11 +4,9 @@ import { DIAMOND } from "./cell/nodeStyles"
 
 type LegendSwatchProps = {
     type: BoardNodeType
-    // A stat node coloured like a skill or passive.
     tone?: StatNodeTone
 }
 
-// A small sample of a node type's shape and colour.
 export const LegendSwatch = ({ type, tone }: LegendSwatchProps) => {
     if (type === "special") {
         return (

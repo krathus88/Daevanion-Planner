@@ -36,8 +36,6 @@ export const TimerCard = ({
     })
 
     return (
-        // Card spacing, but the border and fill come from the highlight, in
-        // the timer's colour.
         <Flex
             colorPalette={entry.color.hue}
             p="4"

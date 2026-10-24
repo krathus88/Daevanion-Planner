@@ -1,9 +1,7 @@
 import { defineTokens } from "@chakra-ui/react"
 
-// Raw palette. Components use the semantic tokens built on top of these
-// (see ../semantic-tokens), never these directly.
+// Raw palette; components use the semantic tokens.
 export const colors = defineTokens.colors({
-    // Cool neutrals for the dark UI, darkest to lightest.
     ink: {
         950: { value: "#0a0c11" },
         900: { value: "#0e1117" },
@@ -24,7 +22,6 @@ export const colors = defineTokens.colors({
         950: { value: "#2a1d06" },
         975: { value: "#14110a" },
     },
-    // Ariel's name colour in the game's board tabs.
     bronze: {
         400: { value: "#e8913f" },
         500: { value: "#8f5d2c" },

@@ -12,7 +12,6 @@ const router = createRouter({
     scrollRestoration: true,
 })
 
-// Registers the router type so links, params and navigate are type-safe.
 declare module "@tanstack/react-router" {
     interface Register {
         router: typeof router

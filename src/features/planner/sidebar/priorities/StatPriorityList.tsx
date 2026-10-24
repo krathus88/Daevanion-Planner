@@ -7,12 +7,10 @@ import { useStatSettings } from "@planner/hooks/useStatSettings"
 import type { StatFocus } from "@planner/storage/statPriorities"
 import { StatusText } from "@common/StatusText"
 import { StatFocusSettings } from "./StatFocusSettings"
-import { scopeLabel } from "./scopeLabel"
 import { StatPriorityRow } from "./StatPriorityRow"
 
 type StatPriorityListProps = {
     classPreset: ClassPreset
-    // Counts nodes on this board only and hides stats it lacks.
     layout?: MainBoardId
 }
 
@@ -41,11 +39,7 @@ export const StatPriorityList = ({
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                When two routes cost the same, the one through better stats
-                wins. Stats never make a route cost more, unless you let it
-                spend leftover points below. The count shows stat nodes taken{" "}
-                {scopeLabel(layout)}, out of how many exist
-                {layout && "; stats with no nodes here are hidden"}.
+                Better stats win between routes of equal cost.
             </Text>
 
             {stats.map((stat) => (
@@ -73,8 +67,7 @@ export const StatPriorityList = ({
             </Switch.Root>
 
             <Text textStyle="hint">
-                When on, points left after Min and ranks go to the best stat
-                nodes, without giving up anything else.
+                Spends leftover points on the best stat nodes.
             </Text>
 
             <StatFocusSettings

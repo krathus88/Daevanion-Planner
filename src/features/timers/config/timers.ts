@@ -10,15 +10,13 @@ import {
     WeeklyReset,
 } from "@assets/timers"
 
-// EU (Elyos) schedules. NCSOFT publishes none of these, so the times are the
-// ones the community reports. Resets are in UTC; the rift keeps EU server
-// time, so it moves in UTC when the clocks change.
+// Community-reported EU times. Resets are UTC; the rift keeps server time,
+// so it shifts in UTC with daylight saving.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 
-// A timer that repeats every `period` from `anchor`, e.g. every 3 hours from
-// 00:00 UTC. `openFor` is how long the event stays joinable after it starts.
+// `openFor`: how long it stays joinable after starting.
 export type FixedSchedule = {
     anchor: number
     period: number
@@ -27,7 +25,6 @@ export type FixedSchedule = {
 
 export type TimerId = FieldBossId | "rift" | "shugo" | "daily" | "weekly"
 
-// Hues a timer can take; Chakra palettes, so every shade is a theme token.
 export const TIMER_HUES = [
     "red",
     "orange",
@@ -43,7 +40,6 @@ export const TIMER_HUES = [
 
 type TimerHue = (typeof TIMER_HUES)[number]
 
-// Each hue comes strong (its mid shade) or soft (a pastel of the same hue).
 export const TIMER_TONES = ["strong", "soft"] as const
 
 type TimerTone = (typeof TIMER_TONES)[number]
@@ -61,7 +57,6 @@ export const isTimerColor = (value: unknown): value is TimerColor => {
     )
 }
 
-// The tabs on the Timers page.
 export type TimerCategory = "boss" | "event" | "reset"
 
 export const TIMER_CATEGORIES: readonly {
@@ -81,16 +76,11 @@ export type TimerDefinition = {
     id: TimerId
     category: TimerCategory
     name: string
-    // Used where space is tight, e.g. the pinned timers in the header.
     shortName: string
     description: string
     icon?: string
-    // Defaults the user can change on the Timers page.
     color: TimerColor
-    // How many minutes before it starts the timer counts as "soon".
     soonMinutes: number
-    // Missing for field bosses, whose spawns come from the user or their own
-    // schedule.
     schedule?: FixedSchedule | ServerSchedule
     boss?: FieldBoss
 }
@@ -114,7 +104,7 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         color: { hue: "purple", tone: "strong" },
         soonMinutes: 15,
         description:
-            "Every 3 hours from 02:00 EU server time (CET/CEST). The portal stays open for about 10 minutes.",
+            "Every 3 hours from 02:00 server time. Open for about 10 minutes.",
         schedule: { times: everyHours(3, 2), openFor: 10 * MINUTE },
     },
     {
@@ -125,8 +115,7 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         icon: ShugoFestival,
         color: { hue: "green", tone: "strong" },
         soonMinutes: 5,
-        description:
-            "Every hour on the hour. The lobby is open for about 3 minutes.",
+        description: "Every hour on the hour. Open for about 3 minutes.",
         schedule: {
             anchor: Date.UTC(2026, 9, 14, 0),
             period: HOUR,
@@ -186,6 +175,5 @@ export const isTimerId = (value: unknown): value is TimerId => {
     return TIMERS.some((timer) => timer.id === value)
 }
 
-// Players kill a field boss about a minute after it spawns, so a boss that
-// respawns N after dying spawns again every N plus a minute.
+// Bosses die about a minute after spawning, so the cycle is respawn + 1m.
 export const BOSS_ALIVE_FOR = MINUTE

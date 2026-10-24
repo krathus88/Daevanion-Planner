@@ -7,7 +7,6 @@ import { Section } from "@common/Section"
 
 type PlannerRoutesSectionProps = {
     defaultOpen: boolean
-    // Opens Optimizer history instead of Saved.
     isHistoryActive: boolean
 }
 
@@ -17,7 +16,6 @@ export const PlannerRoutesSection = ({
 }: PlannerRoutesSectionProps) => {
     const { view, changeView, planner } = useBoard()
 
-    // Loading switches to Planner mode so the route is visible.
     const openPlanner = (
         entries: SavedPlanner[],
         id: string,
@@ -93,9 +91,7 @@ export const PlannerRoutesSection = ({
             >
                 {planner.plannerHistory.length > 0 && (
                     <Text textStyle="hint">
-                        Only the last 25 runs are kept. Save as moves a run to
-                        Saved under a name; a run from Optimize all boards is
-                        saved on every board.
+                        Keeps the last 25 runs. Use Save as to keep one.
                     </Text>
                 )}
 

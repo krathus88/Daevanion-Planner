@@ -42,8 +42,7 @@ export const PlannerPanel = () => {
             </Flex>
 
             <Text textStyle="hint">
-                Click the nodes you need on the board, then find a connected
-                path from the start. Save routes from the Saved tab.
+                Click the nodes you need, then find a path to them.
             </Text>
         </Flex>
     )

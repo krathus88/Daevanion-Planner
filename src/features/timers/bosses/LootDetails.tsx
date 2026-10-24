@@ -7,8 +7,6 @@ type LootDetailsProps = {
     rows: readonly LootDetailRow[]
 }
 
-// A titled list of lines inside a loot tooltip. A line's children hang
-// under it on a guide line, inset from both sides.
 export const LootDetails = ({ title, rows }: LootDetailsProps) => {
     return (
         <Flex

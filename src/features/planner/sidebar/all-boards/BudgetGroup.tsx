@@ -9,8 +9,6 @@ type BudgetGroupProps = {
     total: number
 }
 
-// The route pickers for boards that spend one budget, and how much of it
-// their routes take.
 export const BudgetGroup = ({
     children,
     title,

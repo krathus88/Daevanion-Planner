@@ -44,7 +44,6 @@ export const useTimerSettings = () => {
         })
     }
 
-    // Back to the timer's own colour.
     const resetTimerColor = (id: TimerId) => {
         const current = readTimerSettings()
         const colors = { ...current.colors }
@@ -66,7 +65,6 @@ export const useTimerSettings = () => {
         writeTimerSettings({ ...readTimerSettings(), showPinned: showPinned })
     }
 
-    // Null clears the boss's timer.
     const changeBossReport = (id: TimerId, report: BossReport | null) => {
         const current = readTimerSettings()
         const bossReports = { ...current.bossReports }

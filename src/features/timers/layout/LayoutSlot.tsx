@@ -3,11 +3,9 @@ import { useDroppable } from "@dnd-kit/react"
 import type { LayoutDrop } from "@timers/logic/pinnedColumns"
 
 type LayoutSlotProps = {
-    // The column it belongs to.
     index: number
 }
 
-// The free spot under a lone timer, shown while dragging.
 export const LayoutSlot = ({ index }: LayoutSlotProps) => {
     const { ref, isDropTarget } = useDroppable<LayoutDrop>({
         id: `column-${index}`,

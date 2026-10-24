@@ -1,31 +1,23 @@
 import type { LootGrade } from "@config/items/grades"
 import type { FieldBossId } from "./fieldBosses"
 
-// Each field boss's own drops, read from the global client's reward tables
-// (client 2.0.6.0 hotfix 1) via aion2data.com; artwork stats from
-// wikily.gg. Left out: the shared drops
-// every monster of the boss's level rolls on top. Bosses that appear on
-// both sides (Dartan, Kashapa, Lagta) share one table.
+// From the client's reward tables (2.0.6.0 hotfix 1) via aion2data.com;
+// artwork stats from wikily.gg. Level-wide shared drops are left out.
 
-// One roll of a loot chest, and its chance per opening.
 export type ChestReward = {
     name: string
     icon?: string
     grade: LootGrade
     chance: number
-    // How many, e.g. "4–8", where it's more than one.
     amount?: string
-    // A set the chest gives one item of, as for a boss's own set.
     pieces?: readonly LootPiece[]
 }
 
-// A Pantheon stat and how much of it an artwork gives.
 export type ArtworkStat = {
     name: string
     value: number
 }
 
-// One item of a set, and its chance once the set drops.
 export type LootPiece = {
     name: string
     itemLevel: number
@@ -34,28 +26,19 @@ export type LootPiece = {
 
 export type LootDrop = {
     name: string
-    // The file name in @assets/timers/loot. Missing where the global client
-    // ships no art for the item yet.
+    // Missing where the client has no art yet.
     icon?: string
     grade: LootGrade
-    // Percent per kill. Each drop rolls on its own.
+    // Percent per kill; each drop rolls on its own.
     chance: number
-    // Every player with contribution gets it. Confirmed for the boss's
-    // loot chest by NCSOFT's Korean patch notes of 1 July 2026; assumed for
-    // refining stones, which no source covers. Everything else goes only to
-    // the party (or force) with the most damage, as Korean players report;
-    // nothing official confirms that, for Korea or EU.
+    // Chest confirmed by NCSOFT's KR notes (1 Jul 2026), stones assumed. The
+    // rest goes to the top-damage party, per KR player reports.
     everyone?: boolean
-    // A set the boss gives one item of, e.g. one piece of its armor.
     pieces?: readonly LootPiece[]
-    // What the boss's loot chest holds.
     contents?: readonly ChestReward[]
-    // What an artwork gives once placed in the Pantheon.
     stats?: readonly ArtworkStat[]
 }
 
-// The boss's chest, its artwork, its gear, then the rest by grade and
-// chance.
 export type BossLoot = readonly LootDrop[]
 
 const KERNON_OF_THE_WEST: BossLoot = [

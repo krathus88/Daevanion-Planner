@@ -23,7 +23,6 @@ import {
     readSpecialPriorities,
 } from "@planner/storage/specialPriorities"
 
-// The ranks set on the All boards tab, which give each want its default.
 const readRanks = (classPreset: ClassPreset) => {
     try {
         return {
@@ -40,8 +39,6 @@ const readRanks = (classPreset: ClassPreset) => {
     }
 }
 
-// Route preferences for one board: Need, Prefer or Skip for each skill,
-// passive and special bonus on it.
 export const useBoardWants = (
     classPreset: ClassPreset,
     layoutName: BoardId,
@@ -54,7 +51,6 @@ export const useBoardWants = (
     )
     const [saveError, setSaveError] = useState(stored.error)
 
-    // Ranks change on the All boards tab, or in another browser tab.
     useEffect(
         () =>
             subscribeToClassSettings(classPreset.id, () => {
@@ -92,7 +88,6 @@ export const useBoardWants = (
         setSaveError(writeWantChoices(classPreset.id, layoutName, next))
     }
 
-    // Highest rank first, as on the All boards tab.
     const rankOf = (want: (typeof wants)[number]) => {
         return wantRank(want, ranks.priorities, ranks.specialPriorities)
     }
@@ -103,9 +98,7 @@ export const useBoardWants = (
     return {
         wants: byRank,
         values: values,
-        // Nodes Find a good path must take, besides the ones you click.
         needCells: needCells,
-        // Nodes equally cheap routes go through.
         preferredCells: preferredCells,
         preferred: preferred,
         error: saveError ?? ranks.error,

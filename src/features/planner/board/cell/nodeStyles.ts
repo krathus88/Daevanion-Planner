@@ -9,14 +9,11 @@ type SizeToken = Tokens["sizes"]
 
 export const DIAMOND = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
 
-// Every cell takes the same square; the node drawn inside varies in size.
 export const CELL_BOX = "14"
 const BASIC_SIZE = "node.stat"
 const SPECIAL_SIZE = "node.special"
 export const START_SIZE = "node.start"
 
-// Toned stat nodes are faceted gems in the skill or passive colour, lit up
-// when selected and drawn larger the more they cost.
 const TONE_STYLES: Record<
     StatNodeTone,
     {
@@ -52,7 +49,6 @@ type NodeStyleInput = {
     canSelect: boolean
 }
 
-// Size, fill, border and glow for a node, from its type and state.
 export const getNodeStyles = ({
     appearance,
     ability,
@@ -101,8 +97,7 @@ export const getNodeStyles = ({
                 ? "board.node.adjacent"
                 : "none"
 
-    // Hovering zooms the artwork inside the frame instead of growing the
-    // node. Stat nodes have no artwork, so they light up instead.
+    // Stat nodes have no artwork, so they light up instead of zooming.
     const hoverCss: SystemStyleObject | undefined = canSelect
         ? {
               _hover: {
@@ -110,7 +105,6 @@ export const getNodeStyles = ({
                       transform: "scale(1.15)",
                       filter: "brightness(1.12)",
                   },
-                  // Gems keep their facets and brighten instead.
                   ...(tone && {
                       "& [data-shape]": { filter: "brightness(1.25)" },
                   }),

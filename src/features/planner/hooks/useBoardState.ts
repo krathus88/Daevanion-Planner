@@ -43,7 +43,6 @@ const readStoredBoard = (classId: string, layoutName: BoardId) => {
     }
 }
 
-// Everything one board shows and does, shared through BoardContext.
 export const useBoardState = ({
     layout,
     layoutName,
@@ -149,7 +148,6 @@ export const useBoardState = ({
         message: message,
         abilitiesByPosition: abilitiesByPosition,
         selectCell: selectCell,
-        // The nodes drawn as taken: the route in Planner, the picks in Manual.
         selectedForView:
             view === "planner" ? planner.plannedPath : manual.selectedCells,
         budget: {

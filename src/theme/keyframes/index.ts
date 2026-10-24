@@ -1,10 +1,6 @@
 import { defineKeyframes } from "@chakra-ui/react"
 
-// A glow in the element's colour palette that swells and settles, e.g. a
-// timer that's open right now. It never drops below the steady glow of a
-// timer about to start, so open always reads as the louder of the two. The
-// border flashes with it, almost fading out as the glow settles. One per tone
-// of the timer highlight recipe.
+// Never dims below the "soon" glow, so open always reads louder.
 const glowPulse = (glowShade: string, borderShade: string) => {
     const border = `var(--chakra-colors-color-palette-${borderShade})`
 
@@ -20,9 +16,6 @@ const glowPulse = (glowShade: string, borderShade: string) => {
     }
 }
 
-// A gentler border flash for a timer about to start, dimming only to half so
-// it stays quieter than an open one. One per tone of the timer highlight
-// recipe.
 const borderFlash = (shade: string) => {
     const border = `var(--chakra-colors-color-palette-${shade})`
 

@@ -25,9 +25,6 @@ const readCounts = (classId: string, layout?: MainBoardId) => {
     }
 }
 
-// How many stat nodes of each stat the boards' current routes take, out of
-// how many exist across all boards, or on `layout` only. Updates when any
-// board changes.
 export const useStatNodeCounts = (classId: string, layout?: MainBoardId) => {
     const [state, setState] = useState<{
         counts: Record<StatType, StatNodeCount> | null

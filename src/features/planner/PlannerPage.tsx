@@ -23,8 +23,7 @@ export const PlannerPage = ({
 }: PlannerPageProps) => {
     useClassDocumentMeta(classId)
 
-    // Lives here, above the per-board state, so switching board keeps the
-    // sidebar tab. The page is keyed by class, so a new class starts on Plan.
+    // Above the per-board state so switching board keeps the sidebar tab.
     const [sidebarTab, setSidebarTab] = useState<SidebarTab>("plan")
 
     return (

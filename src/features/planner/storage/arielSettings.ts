@@ -10,16 +10,13 @@ import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 import type { StatNodeCount } from "./statPriorities"
 
-// Ariel spends its own crystals, not the shared points, and its route only
-// takes stats.
 export type ArielSettings = {
     points: number
     tiers: Record<ArielStatType, StatTier>
 }
 
-// Nothing until you enter the crystals you have; up to 60 (30 each from
-// Krao Cave and Draupnir).
-export const DEFAULT_ARIEL_POINTS = 0
+// Max 60: 30 each from Krao Cave and Draupnir.
+const DEFAULT_ARIEL_POINTS = 0
 
 export const DEFAULT_ARIEL_SETTINGS: ArielSettings = {
     points: DEFAULT_ARIEL_POINTS,
@@ -88,7 +85,6 @@ export const writeArielSettings = (
     }
 }
 
-// Ariel's stat nodes on its current route, out of how many it has.
 export const readArielStatNodeCounts = (classId: string) => {
     const counts = {} as Record<ArielStatType, StatNodeCount>
     for (const stat of ARIEL_STAT_TYPES) {

@@ -12,17 +12,14 @@ export const BoardRoute = () => {
     const { share } = route.useSearch()
     const classPreset = route.useLoaderData()
 
-    // Planner/Manual is the user's choice and survives class switches, so it
-    // lives above the class-keyed page.
+    // Above the class-keyed page so it survives class switches.
     const [boardView, setBoardView] = useState<BoardView>("planner")
 
-    // Other pages show this class, and the Planner link comes back here.
     useEffect(() => {
         writePlannerLocation({ classId: classId, layout: layout })
     }, [classId, layout])
 
-    // Keyed by class: switching class starts the sidebar on the This board
-    // tab, while switching board keeps it.
+    // Keyed by class: a new class resets the sidebar tab, a new board keeps it.
     const plannerPage = (
         <PlannerPage
             key={classId}

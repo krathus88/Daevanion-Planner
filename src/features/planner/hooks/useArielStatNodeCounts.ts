@@ -16,8 +16,6 @@ const readCounts = (classId: string) => {
     }
 }
 
-// How many of each Ariel stat's nodes the Ariel route takes. Updates when
-// the route changes.
 export const useArielStatNodeCounts = (classId: string) => {
     const [state, setState] = useState<{
         counts: Record<ArielStatType, StatNodeCount> | null

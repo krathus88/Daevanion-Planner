@@ -2,7 +2,6 @@ import type { BoardLayout } from "./layouts"
 
 export type Position = { row: number; column: number }
 
-// The "row,column" string used to key cells in sets and maps.
 export const keyOf = (position: Position) => {
     return `${position.row},${position.column}`
 }

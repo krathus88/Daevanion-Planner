@@ -1,8 +1,6 @@
 import type { TimerId } from "@timers/config/timers"
 
-// The pinned timers as the header shows them: columns read from the right,
-// each holding one timer or two stacked, so they never take more than two
-// rows.
+// Columns read from the right, each with one or two stacked timers.
 export type PinnedColumns = TimerId[][]
 
 export const MAX_PER_COLUMN = 2
@@ -15,7 +13,6 @@ export const isPinned = (columns: PinnedColumns, id: TimerId) => {
     return columnOf(columns, id) !== -1
 }
 
-// Takes the timer out, dropping its column if it was alone there.
 export const removeTimer = (columns: PinnedColumns, id: TimerId) => {
     const next: PinnedColumns = []
 
@@ -30,7 +27,6 @@ export const removeTimer = (columns: PinnedColumns, id: TimerId) => {
     return next
 }
 
-// A newly pinned timer gets its own column at the far left.
 export const addTimer = (columns: PinnedColumns, id: TimerId) => {
     if (isPinned(columns, id)) {
         return columns
@@ -39,7 +35,7 @@ export const addTimer = (columns: PinnedColumns, id: TimerId) => {
     return [...columns, [id]]
 }
 
-// Gives the timer its own column. Gap 0 is the right edge, gap N the left.
+// Gap 0 is the right edge.
 const moveToGap = (columns: PinnedColumns, id: TimerId, gap: number) => {
     const from = columnOf(columns, id)
 
@@ -48,7 +44,6 @@ const moveToGap = (columns: PinnedColumns, id: TimerId, gap: number) => {
     }
 
     const wasAlone = columns[from].length === 1
-    // Leaving its own column at the same spot changes nothing.
     if (wasAlone && (gap === from || gap === from + 1)) {
         return columns
     }
@@ -62,7 +57,6 @@ const moveToGap = (columns: PinnedColumns, id: TimerId, gap: number) => {
     return next
 }
 
-// Stacks the timer in a column that holds only one.
 const moveToColumn = (columns: PinnedColumns, id: TimerId, target: number) => {
     const from = columnOf(columns, id)
 
@@ -98,13 +92,9 @@ const swapTimers = (
     )
 }
 
-// Where a timer was dropped in the layout editor.
 export type LayoutDrop =
-    // Onto another timer: the two swap places.
     | { kind: "timer"; id: TimerId }
-    // Onto the free spot under a lone timer: they stack.
     | { kind: "column"; index: number }
-    // Between columns: it gets a column of its own.
     | { kind: "gap"; index: number }
 
 export const applyDrop = (

@@ -12,12 +12,8 @@ import {
 import { TimersPage } from "@timers/TimersPage"
 
 type TimersSearch = {
-    // The open tab.
     tab?: TimerCategory
-    // The open region on the Field bosses tab.
     region?: FieldBossRegion
-    // A timer to scroll to and open for input, e.g. from a pinned
-    // "set timer" chip. Cleared once handled.
     timer?: TimerId
 }
 

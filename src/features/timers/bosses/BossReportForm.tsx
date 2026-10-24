@@ -9,15 +9,12 @@ import { DurationInput } from "@timers/card/DurationInput"
 const MAX_HOURS = 12
 
 type BossReportFormProps = {
-    // Put the cursor in it, e.g. from a "set timer" chip.
     focusRequest: boolean
     onChange: (report: BossReport) => void
-    // Shown beside Update while a timer is set.
     onClear?: () => void
 }
 
-// Takes the countdown from the in-game Field Boss list. Only the Update
-// button sets the timer, not Enter in a field.
+// Only Update sets the timer, not Enter.
 export const BossReportForm = ({
     focusRequest,
     onChange,
@@ -115,8 +112,7 @@ export const BossReportForm = ({
             </Flex>
 
             <Text textStyle="hint">
-                Open the map, then Exploration, then Field Boss, and copy the
-                time left. Enter 0 if it just spawned.
+                Map → Exploration → Field Boss. Enter 0 if it just spawned.
             </Text>
         </Flex>
     )

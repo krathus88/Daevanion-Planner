@@ -2,12 +2,10 @@ import { Link } from "@chakra-ui/react"
 import type { ReactElement } from "react"
 
 type NavTabProps = {
-    // The router link to style.
     children: ReactElement
     isActive: boolean
 }
 
-// A header tab, underlined when it's the current page.
 export const NavTab = ({ children, isActive }: NavTabProps) => {
     return (
         <Link

@@ -7,9 +7,7 @@ type TimerStatusProps = {
     now: number
 }
 
-// The countdown, and when it ends in the viewer's own time.
 export const TimerStatus = ({ state, now }: TimerStatusProps) => {
-    // Events and resets always have one of these; bosses use BossStatus.
     if (state.status !== "open" && state.status !== "upcoming") {
         return null
     }

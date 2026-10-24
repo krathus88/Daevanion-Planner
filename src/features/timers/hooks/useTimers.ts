@@ -19,15 +19,12 @@ export type TimerEntry = {
     state: TimerState
     alert: TimerAlert
     pinned: boolean
-    // The user's choice, or the timer's default.
     color: TimerColor
     hasCustomColor: boolean
     soonMinutes: number
-    // A field boss's timer or kill, as the user entered it.
     report: BossReport | null
 }
 
-// Every timer with its state right now, ticking each second.
 export const useTimers = () => {
     const now = useNow()
     const {
@@ -58,7 +55,6 @@ export const useTimers = () => {
         }
     })
     const entryById = new Map(timers.map((entry) => [entry.timer.id, entry]))
-    // The pinned timers laid out as the header shows them.
     const pinnedColumns = settings.pinned.map((column) =>
         column.flatMap((id) => entryById.get(id) ?? []),
     )

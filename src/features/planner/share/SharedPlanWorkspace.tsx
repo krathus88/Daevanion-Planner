@@ -24,7 +24,7 @@ const noSelect = () => {}
 
 type SharedPlanWorkspaceProps = {
     plan: SharedPlan
-    // The shared plan's class; links only open on their own class's page.
+    // Links only open on their own class's page.
     classPreset: ClassPreset
     layout: BoardId
 }
@@ -38,7 +38,6 @@ export const SharedPlanWorkspace = ({
 
     const board = plan.boards[layout]
     const boardLayout = layouts[layout]
-    // Shows the other half when this board only has one.
     const view: BoardView =
         preferredView === "planner"
             ? board?.route
@@ -102,8 +101,7 @@ export const SharedPlanWorkspace = ({
                         </Text>
 
                         <Text textStyle="hint">
-                            Read-only. Covers {sharedBoardNames}. Save it to
-                            keep a copy in your own plans.
+                            Read-only. Covers {sharedBoardNames}.
                         </Text>
                     </Flex>
 

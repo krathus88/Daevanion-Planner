@@ -8,7 +8,6 @@ import {
     writeSharedAllocation,
 } from "@planner/storage/boardStorage"
 
-// The class's shared point budget and how the boards' routes split it.
 export const useSharedAllocation = (classId: string) => {
     const [snapshot, setSnapshot] = useState(() =>
         readAllocationSnapshot(classId),
@@ -31,7 +30,7 @@ export const useSharedAllocation = (classId: string) => {
         }
     }
 
-    // Picking a route loads it onto that board; "" (None) clears the board.
+    // "" (None) clears the board.
     const selectRoute = (layout: BoardId, plannerId: string) => {
         const error = applyPlannerToBoard(classId, layout, plannerId)
         if (error) {
@@ -43,7 +42,6 @@ export const useSharedAllocation = (classId: string) => {
     }
 
     const totalPoints = snapshot.allocation.totalPoints
-    // Ariel spends its own points, not the shared ones.
     const allocatedPoints = MAIN_BOARD_IDS.reduce(
         (total, layout) => total + snapshot.routeCosts[layout],
         0,

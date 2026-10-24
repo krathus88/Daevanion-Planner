@@ -15,14 +15,11 @@ const route = getRouteApi("/planner/$classId/$layout")
 
 type ShareResult = { url: string; copied: boolean } | { error: string }
 
-// Makes a link to this board's plan, or every board's, with the class's
-// optimizer priorities.
 export const ShareLinks = () => {
     const { classId, layout: layoutName } = route.useParams()
     const router = useRouter()
     const [result, setResult] = useState<ShareResult | null>(null)
 
-    // The plan for a scope, or why there's nothing to share.
     const readPlan = (
         scope: "board" | "class" | "settings",
     ): SharedPlan | string => {
@@ -100,9 +97,7 @@ export const ShareLinks = () => {
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                Anyone with the link sees the plan and can save a copy. Board
-                links include your optimizer settings; the settings link has
-                only those, with no routes or points.
+                Anyone with the link can view it and save a copy.
             </Text>
 
             <Flex flexWrap="wrap" gap="2">

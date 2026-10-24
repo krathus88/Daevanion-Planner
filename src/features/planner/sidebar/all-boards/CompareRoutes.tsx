@@ -13,8 +13,6 @@ type CompareRoutesProps = {
     onOpenChange: (open: boolean) => void
 }
 
-// Each board's current route, grouped by the budget it spends: the shared
-// points of the four main boards, and Ariel's own.
 export const CompareRoutes = ({
     classId,
     allocation,
@@ -38,7 +36,6 @@ export const CompareRoutes = ({
                         {allocation.allocatedPoints} / {allocation.totalPoints}
                     </Text>
                     {" · "}
-                    {/* Ariel's colour names it, as in the board switcher. */}
                     <Text
                         as="span"
                         color={isArielOver ? "app.danger" : "board.arielActive"}
@@ -53,11 +50,8 @@ export const CompareRoutes = ({
             onOpenChange={onOpenChange}
         >
             <Text textStyle="hint">
-                Each board&apos;s current route, and how they fit their points:
-                the four main boards share one budget, Ariel has its own.
-                Picking a route loads it onto that board; None clears the board.
-                Optimize all boards doesn&apos;t read these. It replaces every
-                board&apos;s route.
+                Pick a route to load it onto that board. Optimize all boards
+                replaces these.
             </Text>
 
             <BudgetGroup

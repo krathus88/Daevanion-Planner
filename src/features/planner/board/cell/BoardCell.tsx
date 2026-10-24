@@ -5,8 +5,7 @@ import { NodeCell, type NodeCellProps } from "./NodeCell"
 import { StartCell } from "./StartCell"
 
 type BoardCellProps = Omit<NodeCellProps, "appearance"> & {
-    // The cell's marker in the layout grid: "." empty, "S" start, "#" stat,
-    // or a special node letter.
+    // "." empty, "S" start, "#" stat, or a special node letter.
     kind: string
     layout: BoardLayout
 }

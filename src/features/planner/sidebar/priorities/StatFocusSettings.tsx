@@ -10,7 +10,6 @@ type StatFocusSettingsProps = {
     focus: StatFocus
     stats: readonly StatType[]
     tiers: Readonly<Record<StatType, StatTier>>
-    // On one board there are no ranks: only each stat's detour applies.
     isBoard: boolean
     onChange: (focus: StatFocus) => void
 }
@@ -50,17 +49,14 @@ export const StatFocusSettings = ({
 
             {isBoard ? (
                 <Text textStyle="hint">
-                    When on, Find a good path adds each stat&apos;s nodes near
-                    the route, best tier first, while points last here. These
-                    settings are shared with the All boards tab.
+                    Adds each stat&apos;s nearby nodes to the route, best tier
+                    first. Shared with All boards.
                 </Text>
             ) : (
                 <Text textStyle="hint">
-                    When on, each stat&apos;s nodes take points before the
-                    skills and passives ranked after the numbers you set, e.g.
-                    Attack before a rank 5 healing passive. Special nodes and
-                    Min always come first. Leave Skill or Passive empty so that
-                    type never waits for the stat.
+                    Stat nodes take points before skills and passives ranked
+                    after the numbers you set. Leave a field empty to never
+                    wait.
                 </Text>
             )}
 
@@ -80,15 +76,8 @@ export const StatFocusSettings = ({
                     ))}
 
                     <Text textStyle="hint">
-                        Detour is the most points one of the stat&apos;s nodes
-                        may cost to reach, the node included: 1 takes nodes
-                        touching the route, 2 one node further, and 0 never adds
-                        the stat. Each added node becomes part of the route, and
-                        nodes closer to{" "}
-                        {isBoard
-                            ? "preferred abilities not on the route yet"
-                            : "abilities still waiting"}{" "}
-                        are taken first.
+                        Detour: most points to reach a node, the node included.
+                        0 never adds the stat.
                     </Text>
                 </Flex>
             )}
