@@ -3,6 +3,7 @@ import { getRouteApi } from "@tanstack/react-router"
 import type { FieldBossRegion } from "@timers/config/fieldBosses"
 import { TIMER_CATEGORIES, type TimerCategory } from "@timers/config/timers"
 import { useEffect, useRef, useState } from "react"
+import { Term } from "@common/Term"
 import { useTimers } from "./hooks/useTimers"
 import { ShowPinnedSwitch } from "./ShowPinnedSwitch"
 import { PinnedLayout } from "./layout/PinnedLayout"
@@ -81,8 +82,8 @@ export const TimersPage = () => {
 
                             <Text textStyle="hint">
                                 EU servers. Community-reported times, shown in
-                                your local time. Pinned timers show in the
-                                header.
+                                your local time. <Term>Pinned</Term> timers show
+                                in the header.
                             </Text>
                         </Flex>
 

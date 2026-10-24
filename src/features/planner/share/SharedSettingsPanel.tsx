@@ -4,6 +4,7 @@ import type { ClassPreset } from "@config/classPresets"
 import { STAT_NAMES, STAT_TYPES } from "@config/stats/stats"
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { useState } from "react"
 import { STAT_TIER_NAMES } from "@planner/config/stats"
 import { useBoard } from "@planner/context/boardContext"
@@ -105,8 +106,8 @@ export const SharedSettingsPanel = ({
                 </Text>
 
                 <Text textStyle="hint">
-                    Using these replaces your {classPreset.name} settings.
-                    Boards and saved plans are kept.
+                    Using these replaces your <Term>{classPreset.name}</Term>{" "}
+                    settings. Boards and saved plans are kept.
                 </Text>
             </Flex>
 

@@ -2,6 +2,7 @@ import { Button, Flex, Input, Switch, Text } from "@chakra-ui/react"
 import type { BoardId } from "@config/boards"
 import { CLASS_NAMES } from "@config/classPresets"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { useState, type ChangeEvent } from "react"
 import { BackToMyPlansLink } from "./BackToMyPlansLink"
 import { defaultSharedName, saveSharedPlan, type SharedPlan } from "./shareCode"
@@ -75,7 +76,8 @@ export const SharedPlanSave = ({ plan, layout }: SharedPlanSaveProps) => {
                     </Switch.Root>
 
                     <Text textStyle="hint">
-                        Replaces your {className} optimizer priorities.
+                        Replaces your <Term>{className}</Term> optimizer
+                        priorities.
                     </Text>
                 </Flex>
             )}

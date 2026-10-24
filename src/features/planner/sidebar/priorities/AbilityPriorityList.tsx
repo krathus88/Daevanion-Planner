@@ -3,6 +3,7 @@ import { Flex, Text } from "@chakra-ui/react"
 import type { MainBoardId } from "@config/boards"
 import { useAbilityLimits } from "@planner/hooks/useAbilityLimits"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { AbilityColumnHeaders } from "./AbilityColumnHeaders"
 import { AbilityRow } from "./AbilityRow"
 
@@ -47,13 +48,13 @@ export const AbilityPriorityList = ({
         <Flex flexDir="column" alignItems="stretch" gap="2">
             {layout ? (
                 <Text textStyle="hint">
-                    1 is the highest rank. Shared with All boards; Min and Max
-                    count this board only.
+                    1 is the highest rank. Shared with <Term>All boards</Term>;{" "}
+                    <Term>Min</Term> and <Term>Max</Term> count this board only.
                 </Text>
             ) : (
                 <Text textStyle="hint">
-                    1 is the highest rank. Min reserves upgrades; Max caps how
-                    many the optimizer picks.
+                    1 is the highest rank. <Term>Min</Term> reserves upgrades;{" "}
+                    <Term>Max</Term> caps how many the optimizer picks.
                 </Text>
             )}
 

@@ -3,6 +3,7 @@ import { ARIEL_BOARD_ID, MAIN_BOARD_IDS } from "@config/boards"
 import { useArielSettings } from "@planner/hooks/useArielSettings"
 import type { SharedAllocationState } from "@planner/hooks/useSharedAllocation"
 import { Section } from "@common/Section"
+import { Term } from "@common/Term"
 import { BudgetGroup } from "./BudgetGroup"
 import { RouteSelectRow } from "./RouteSelectRow"
 
@@ -50,8 +51,8 @@ export const CompareRoutes = ({
             onOpenChange={onOpenChange}
         >
             <Text textStyle="hint">
-                Pick a route to load it onto that board. Optimize all boards
-                replaces these.
+                Pick a route to load it onto that board.{" "}
+                <Term>Optimize all boards</Term> replaces these.
             </Text>
 
             <BudgetGroup

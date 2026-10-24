@@ -1,6 +1,8 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { useState } from "react"
 import { isMainBoard } from "@config/boards"
+import { NeedMarker } from "@planner/board/cell/NeedMarker"
+import { PreferMarker } from "@planner/board/cell/PreferMarker"
 import { useBoard } from "@planner/context/boardContext"
 import type { BoardWant, Want } from "@planner/logic/boardWants"
 import {
@@ -9,6 +11,7 @@ import {
 } from "@planner/storage/prioritiesOpen"
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
 import { StatPriorityList } from "../priorities/StatPriorityList"
 import { BoardWantList } from "./BoardWantList"
@@ -59,9 +62,10 @@ export const BoardPriorities = () => {
             onOpenChange={handleOpenChange}
         >
             <Text textStyle="hint">
-                Need always takes its nodes (blue dot). Prefer only does when it
-                costs nothing extra (green ring). Defaults follow the All boards
-                ranks.
+                <Term>Need</Term> always takes its nodes <NeedMarker inline />.{" "}
+                <Term>Prefer</Term> only does when it costs nothing extra{" "}
+                <PreferMarker inline />. Defaults follow the{" "}
+                <Term>All boards</Term> ranks.
             </Text>
 
             <Section title="Special nodes" variant="sub">

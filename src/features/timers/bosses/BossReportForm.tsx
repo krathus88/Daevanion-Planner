@@ -1,6 +1,7 @@
 import { Button, Flex, Icon, IconButton, Text } from "@chakra-ui/react"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { Tooltip } from "@ui/tooltip"
+import { Term } from "@common/Term"
 import { useEffect, useRef, useState } from "react"
 import { LuTimerOff } from "react-icons/lu"
 import { DurationInput } from "@timers/card/DurationInput"
@@ -112,7 +113,8 @@ export const BossReportForm = ({
             </Flex>
 
             <Text textStyle="hint">
-                Map → Exploration → Field Boss. Enter 0 if it just spawned.
+                <Term>Map → Exploration → Field Boss</Term>. Enter 0 if it just
+                spawned.
             </Text>
         </Flex>
     )

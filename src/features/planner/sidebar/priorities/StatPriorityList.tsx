@@ -6,6 +6,7 @@ import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
 import type { StatFocus } from "@planner/storage/statPriorities"
 import { StatusText } from "@common/StatusText"
+import { Term } from "@common/Term"
 import { StatFocusSettings } from "./StatFocusSettings"
 import { StatPriorityRow } from "./StatPriorityRow"
 
@@ -39,7 +40,7 @@ export const StatPriorityList = ({
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                Better stats win between routes of equal cost.
+                Better <Term>stats</Term> win between routes of equal cost.
             </Text>
 
             {stats.map((stat) => (
@@ -67,7 +68,7 @@ export const StatPriorityList = ({
             </Switch.Root>
 
             <Text textStyle="hint">
-                Spends leftover points on the best stat nodes.
+                Spends leftover points on the best <Term>stat</Term> nodes.
             </Text>
 
             <StatFocusSettings

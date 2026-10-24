@@ -3,6 +3,7 @@ import { Flex, Switch, Text } from "@chakra-ui/react"
 import type { StatTier } from "@planner/config/stats"
 import type { StatFocus, StatFocusStat } from "@planner/storage/statPriorities"
 import { Section } from "@common/Section"
+import { Term } from "@common/Term"
 import { StatFocusColumnHeaders } from "./StatFocusColumnHeaders"
 import { StatFocusStatRow } from "./StatFocusStatRow"
 
@@ -49,14 +50,14 @@ export const StatFocusSettings = ({
 
             {isBoard ? (
                 <Text textStyle="hint">
-                    Adds each stat&apos;s nearby nodes to the route, best tier
-                    first. Shared with All boards.
+                    Adds each <Term>stat</Term>&apos;s nearby nodes to the
+                    route, best tier first. Shared with <Term>All boards</Term>.
                 </Text>
             ) : (
                 <Text textStyle="hint">
-                    Stat nodes take points before skills and passives ranked
-                    after the numbers you set. Leave a field empty to never
-                    wait.
+                    <Term>Stat</Term> nodes take points before{" "}
+                    <Term>skills</Term> and <Term>passives</Term> ranked after
+                    the numbers you set. Leave a field empty to never wait.
                 </Text>
             )}
 
@@ -76,8 +77,8 @@ export const StatFocusSettings = ({
                     ))}
 
                     <Text textStyle="hint">
-                        Detour: most points to reach a node, the node included.
-                        0 never adds the stat.
+                        <Term>Detour</Term>: most points to reach a node, the
+                        node included. 0 never adds the <Term>stat</Term>.
                     </Text>
                 </Flex>
             )}

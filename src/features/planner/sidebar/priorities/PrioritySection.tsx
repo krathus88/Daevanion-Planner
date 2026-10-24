@@ -1,6 +1,6 @@
 import type { ClassPreset } from "@config/classPresets"
 import { Text } from "@chakra-ui/react"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import {
     readPrioritiesOpen,
     writePrioritiesOpen,
@@ -13,7 +13,7 @@ import { StatPriorityList } from "./StatPriorityList"
 
 type PrioritySectionProps = {
     classPreset: ClassPreset
-    hint: string
+    hint: ReactNode
 }
 
 export const PrioritySection = ({

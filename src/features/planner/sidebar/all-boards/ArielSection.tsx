@@ -7,6 +7,7 @@ import {
 } from "@planner/storage/prioritiesOpen"
 import { PointsField } from "@common/PointsField"
 import { Section } from "@common/Section"
+import { Term } from "@common/Term"
 import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
 
 type ArielSectionProps = {
@@ -35,8 +36,8 @@ export const ArielSection = ({ classId }: ArielSectionProps) => {
             onOpenChange={handleOpenChange}
         >
             <Text textStyle="hint">
-                Ariel has only stat nodes and its own points (Daevanion Crystal:
-                Ariel).
+                <Term>Ariel</Term> has only <Term>stat</Term> nodes and its own
+                points (<Term>Daevanion Crystal: Ariel</Term>).
             </Text>
 
             <PointsField

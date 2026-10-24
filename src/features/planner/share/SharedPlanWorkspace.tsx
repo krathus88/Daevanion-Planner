@@ -11,6 +11,7 @@ import { resolveAbilitiesByPosition } from "@planner/logic/abilityAssignments"
 import { BoardSwitcher } from "@planner/sidebar/BoardSwitcher"
 import { SidebarFrame } from "@planner/sidebar/SidebarFrame"
 import type { BoardView } from "@planner/types"
+import { Term } from "@common/Term"
 import type { SharedPlan } from "./shareCode"
 import { SharedBoardSummary } from "./SharedBoardSummary"
 import { SharedPlanSave } from "./SharedPlanSave"
@@ -101,7 +102,7 @@ export const SharedPlanWorkspace = ({
                         </Text>
 
                         <Text textStyle="hint">
-                            Read-only. Covers {sharedBoardNames}.
+                            Read-only. Covers <Term>{sharedBoardNames}</Term>.
                         </Text>
                     </Flex>
 
