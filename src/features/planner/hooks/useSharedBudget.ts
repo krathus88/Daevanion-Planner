@@ -15,13 +15,10 @@ import { subscribeToClassSettings } from "@planner/storage/classSettings"
 type SharedBudget = {
     totalPoints: number
     usedByOtherBoards: number
-    // What this board's route may spend: the shared total minus the other
-    // boards' current routes.
     availablePoints: number
 }
 
 const readBudget = (classId: string, layout: BoardId): SharedBudget => {
-    // Ariel spends its own points, which no other board uses.
     if (!isMainBoard(layout)) {
         let points = 0
         try {
@@ -46,8 +43,6 @@ const readBudget = (classId: string, layout: BoardId): SharedBudget => {
     }
 }
 
-// One point budget shared by every main board and by the All boards tab;
-// Ariel has its own.
 export const useSharedBudget = (classId: string, layout: BoardId) => {
     const [budget, setBudget] = useState(() => readBudget(classId, layout))
 

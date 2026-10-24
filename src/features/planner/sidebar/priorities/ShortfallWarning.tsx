@@ -6,7 +6,6 @@ type ShortfallWarningProps = {
     shortfall: OptimizeShortfall
 }
 
-// What the last all-board run couldn't fit in the budget, one row per item.
 export const ShortfallWarning = ({ shortfall }: ShortfallWarningProps) => {
     const specialNodes = shortfall.specialNodes
     const isSpecialShort = specialNodes.taken < specialNodes.total

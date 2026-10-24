@@ -1,7 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 
 type ShortfallRowProps = {
-    // What fell short, e.g. an ability name.
     name: string
     // Got versus needed, e.g. "+1 / +4".
     value: string

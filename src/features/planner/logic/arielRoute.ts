@@ -5,8 +5,6 @@ import type { ArielSettings } from "@planner/storage/arielSettings"
 import { nodeCost, positionOf } from "./boardLogic"
 import { growByStatValue } from "./statFill"
 
-// Ariel's route for Optimize all boards: no required nodes, just the best
-// stats its points reach.
 export const planArielRoute = (settings: ArielSettings) => {
     const layout = layouts.ariel
     const startKey = keyOf(getStart(layout))
@@ -26,10 +24,7 @@ export const planArielRoute = (settings: ArielSettings) => {
     }
 }
 
-// Ariel's 2+ point nodes whose stat is Best or Good, marked on the board
-// like Route preferences on the other boards: Best as Need (blue dot), Good
-// as Prefer (green ring). Only shown; Find a good path still decides by
-// tier.
+// Display only (Best as Need, Good as Prefer); the route still goes by tier.
 export const arielMarkedCells = (tiers: ArielSettings["tiers"]) => {
     const layout = layouts.ariel
     const best = new Set<string>()

@@ -6,23 +6,15 @@ import { STAT_TIERS, statWeights } from "@planner/config/stats"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import { boardWants } from "./boardWants"
 
-// One stat's Stat focus, for Find a good path on one board.
 export type PathFocusGroup = {
-    // The stat's nodes.
     wanted: string[]
-    // Stat nodes that aren't a detour: those of every focused stat.
     free: string[]
-    // Preferred nodes not on the route yet; branches lean toward them.
     waiting: string[]
-    // Most points spent on other nodes to reach one of its nodes.
     detour: number
 }
 
-// What Find a good path prefers on one board.
 export type PathPriorities = {
-    // "row,col" -> weight. Among routes of equal cost, the heavier wins.
     weights: [string, number][]
-    // Stats to grow the route with, best tier first; empty when off.
     focusGroups: PathFocusGroup[]
 }
 
@@ -34,7 +26,6 @@ export const pathPriorities = ({
 }: {
     classPreset: ClassPreset
     layoutName: MainBoardId
-    // Ids of the skills, passives and special bonuses marked Prefer.
     preferred: ReadonlySet<string>
     statSettings: StatSettings
 }): PathPriorities => {
@@ -43,8 +34,7 @@ export const pathPriorities = ({
         .filter((want) => preferred.has(want.id))
         .flatMap((want) => want.keys)
 
-    // A preferred node outweighs every stat node together, so stats only
-    // decide what the preferred nodes leave tied.
+    // Outweighs every stat node together, so stats only break remaining ties.
     const stats = statWeights(layout.nodeStats, statSettings.tiers)
     let statTotal = 0
     for (const weight of stats.values()) {
@@ -55,8 +45,6 @@ export const pathPriorities = ({
         weights.set(key, statTotal + 1)
     }
 
-    // Stats with a detour, best tier first. Any of their nodes on the way
-    // isn't a detour.
     const focus = statSettings.focus
     const detourOf = (stat: StatType) => focus.stats[stat].detour
     const focusStats = !focus.enabled
@@ -74,7 +62,7 @@ export const pathPriorities = ({
         wanted: statKeys.filter((key) => layout.nodeStats[key] === stat),
         free: free,
         waiting: preferredKeys,
-        // The setting counts the stat node's own point.
+        // Counts the stat node's own point.
         detour: detourOf(stat) - 1,
     }))
 

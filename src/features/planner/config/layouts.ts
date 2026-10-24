@@ -8,11 +8,7 @@ export type BoardLayout<Stat extends BoardStat = BoardStat> = {
     mainNode: BoardNodeAppearance
     startNode: BoardNodeAppearance
     specialNodes: Readonly<Record<string, BoardNodeAppearance>>
-    // Stat given by each stat node: "row,col" -> stat. Same for every class.
-    // Nodes left out simply show as "Stat".
     nodeStats: Readonly<Record<string, Stat>>
-    // Bonus given by each special node: "row,col" -> bonus. Same for every
-    // class. Nodes left out simply show as "Special".
     specialNodeBonuses: Readonly<Record<string, SpecialBonusType>>
 }
 
@@ -32,11 +28,8 @@ export type BoardNodeAppearance = {
     backgroundColor: Tokens["colors"]
     type: BoardNodeType
     imageBackground?: string
-    // Points the node costs when it differs from its type's, e.g. Ariel's
-    // 2-4 point stat nodes.
+    // Overrides the type's cost, e.g. Ariel's 2-4 point stat nodes.
     cost?: number
-    // Colours a stat node like the skill or passive nodes that cost the same
-    // on the other boards.
     tone?: StatNodeTone
 }
 
@@ -547,10 +540,8 @@ const mainLayouts: Record<MainBoardId, BoardLayout<StatType>> = {
     },
 }
 
-// Ariel's nodes all give stats and cost 1 to 4 points; the grid marks each
-// costlier node with its cost. 1-3 point nodes are stat nodes, coloured
-// like the passives (2) and skills (3) that cost the same elsewhere, and
-// 4 point ones look like special nodes.
+// Ariel: the grid marks costlier nodes with their cost; 4-point ones look
+// like special nodes.
 const arielStatNode = (
     cost: number,
     tone: StatNodeTone,

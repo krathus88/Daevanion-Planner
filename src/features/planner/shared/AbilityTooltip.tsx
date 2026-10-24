@@ -2,7 +2,6 @@ import type { ClassAbility } from "@config/classPresets"
 import { Flex, Text } from "@chakra-ui/react"
 import { formatSearchTime } from "@planner/config/searchTime"
 
-// The type line matches the ability's colour on the board.
 const typeColors = {
     skill: "board.skill",
     passive: "board.passive",
@@ -10,12 +9,9 @@ const typeColors = {
 
 type AbilityTooltipProps = {
     ability: ClassAbility
-    // Leads the type line, e.g. "Skill node · 3 pts" on the board.
     kind: string
 }
 
-// A skill or passive: its name, kind and cooldown, description and the
-// specializations it unlocks. Shown wherever its icon appears.
 export const AbilityTooltip = ({ ability, kind }: AbilityTooltipProps) => {
     return (
         <Flex p="1" flexDir="column" gap="0.5">

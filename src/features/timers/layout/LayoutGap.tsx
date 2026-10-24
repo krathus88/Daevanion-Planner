@@ -8,7 +8,6 @@ type LayoutGapProps = {
     isDragging: boolean
 }
 
-// Space between columns. Dropping here gives the timer its own column.
 export const LayoutGap = ({ index, isDragging }: LayoutGapProps) => {
     const { ref, isDropTarget } = useDroppable<LayoutDrop>({
         id: `gap-${index}`,

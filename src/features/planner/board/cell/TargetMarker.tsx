@@ -1,6 +1,5 @@
 import { Box } from "@chakra-ui/react"
 
-// The dot in a node's corner that marks it as a required planner target.
 export const TargetMarker = () => {
     return (
         <Box

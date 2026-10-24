@@ -5,7 +5,7 @@ import type { PlannerOption } from "@planner/storage/allocationSnapshot"
 
 type RouteSelectRowProps = {
     layout: BoardId
-    // The option id of the board's current route; "" for none.
+    // "" for none.
     value: string
     options: PlannerOption[]
     onChange: (layout: BoardId, plannerId: string) => void

@@ -10,15 +10,12 @@ const MAX_DETOUR = 20
 
 type StatFocusStatRowProps = {
     stat: StatType
-    // Colours the name like its tier in the stat list.
     tier: StatTier
     value: StatFocusStat
-    // Hides the rank columns, which one board doesn't use.
     isBoard: boolean
     onChange: (stat: StatType, value: StatFocusStat) => void
 }
 
-// Empty clears the field; anything else becomes a whole number in range.
 const toOptionalCount = (text: string, min: number, max: number) => {
     if (text === "") {
         return null

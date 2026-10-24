@@ -25,8 +25,7 @@ export const SharedPointAllocation = ({
     return (
         <Flex w="full" flexDir="column" gap="4">
             <Text textStyle="hint">
-                Split one shared point budget across the four main boards. Ariel
-                has its own points below.
+                One budget shared by the four main boards.
             </Text>
 
             <PointsField
@@ -37,7 +36,7 @@ export const SharedPointAllocation = ({
 
             <PrioritySection
                 classPreset={classPreset}
-                hint="Optimize all boards uses these priorities to build a route on each board."
+                hint="Optimize all boards builds each board's route from these."
             />
 
             <ArielSection classId={classPreset.id} />

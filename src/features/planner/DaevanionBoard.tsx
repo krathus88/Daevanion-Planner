@@ -11,8 +11,7 @@ type DaevanionBoardProps = Omit<
     layout: BoardId
 }
 
-// Keyed by board and class so each one starts from its own saved state,
-// and by storage revision so it reloads after an import.
+// Remounts per board and class, and after an import (storage revision).
 export const DaevanionBoard = ({
     layout,
     classPreset,

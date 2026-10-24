@@ -1,8 +1,6 @@
 import { Box } from "@chakra-ui/react"
 import { DIAMOND } from "./nodeStyles"
 
-// Facets inside a special node's diamond: a sheen across the top-left, an
-// inset diamond outline and a bright centre stone. Zooms on hover.
 export const SpecialGem = () => {
     return (
         <>

@@ -1,7 +1,7 @@
 import type { ArielStatType, BoardStat, StatType } from "@config/stats/stats"
 
-// How much the user values a stat. Stats only ever break ties between routes
-// of equal cost, unless "spend leftover points" is on.
+// Stats only break ties between equal-cost routes, unless "spend leftover
+// points" is on.
 export const STAT_TIERS = ["best", "good", "okay", "ignore"] as const
 
 export type StatTier = (typeof STAT_TIERS)[number]
@@ -22,7 +22,6 @@ export const DEFAULT_STAT_TIERS: Record<StatType, StatTier> = {
     "max-mp": "ignore",
 }
 
-// Ariel's defaults favour damage, then accuracy and damage taken.
 export const DEFAULT_ARIEL_STAT_TIERS: Record<ArielStatType, StatTier> = {
     "pve-damage-boost": "best",
     "pve-damage-tolerance": "good",
@@ -43,14 +42,12 @@ export const DEFAULT_ARIEL_STAT_TIERS: Record<ArielStatType, StatTier> = {
     "ariel-max-mp": "ignore",
 }
 
-// Tiers that older saves set Stat focus for, highest first; Stat focus is
-// now set per stat.
+// Legacy: older saves set Stat focus per tier.
 export const FOCUS_TIERS = ["best", "good", "okay"] as const
 
 export type FocusTier = (typeof FOCUS_TIERS)[number]
 
-// Far apart so one node of a higher tier outweighs any number of nodes of a
-// lower tier.
+// Far apart so one higher-tier node outweighs any number of lower ones.
 const TIER_WEIGHTS: Record<StatTier, number> = {
     best: 1_000_000,
     good: 1_000,
@@ -58,9 +55,6 @@ const TIER_WEIGHTS: Record<StatTier, number> = {
     ignore: 0,
 }
 
-// Weight of each stat node on a board ("row,col" -> weight), for the
-// pathfinder's tie-breaking. Nodes whose stat is ignored are left out.
-// Stats missing from `tiers` count as ignored.
 export const statWeights = <Stat extends BoardStat>(
     nodeStats: Readonly<Record<string, Stat>>,
     tiers: Readonly<Partial<Record<Stat, StatTier>>>,

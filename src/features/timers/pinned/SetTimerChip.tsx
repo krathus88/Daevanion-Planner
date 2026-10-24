@@ -8,8 +8,6 @@ type SetTimerChipProps = {
     now: number
 }
 
-// A pinned timer still waiting for input ("set timer"). Opens its card on
-// the Timers page, ready to type the in-game countdown.
 export const SetTimerChip = ({ entry, now }: SetTimerChipProps) => {
     return (
         <Link

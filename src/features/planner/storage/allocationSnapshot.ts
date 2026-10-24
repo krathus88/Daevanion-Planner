@@ -18,7 +18,6 @@ export type PlannerOption = {
 export type AllocationSnapshot = {
     allocation: SharedAllocation
     planners: Record<BoardId, PlannerOption[]>
-    // Each board's current route: which option it matches, and its cost.
     selected: Record<BoardId, string>
     routeCosts: Record<BoardId, number>
     error: string | null
@@ -41,7 +40,6 @@ const routeOptions = (
     )
 }
 
-// Every board's current route and the routes it could switch to.
 export const readAllocationSnapshot = (classId: string): AllocationSnapshot => {
     const storedAllocation = readSharedAllocation(classId)
     const planners = {} as Record<BoardId, PlannerOption[]>
@@ -66,7 +64,6 @@ export const readAllocationSnapshot = (classId: string): AllocationSnapshot => {
               : ""
 
         planners[layout] = [
-            // A saved or history route is listed under its own name instead.
             ...(hasRoute && !activePlanner
                 ? [
                       {

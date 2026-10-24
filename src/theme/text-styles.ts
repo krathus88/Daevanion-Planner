@@ -1,7 +1,6 @@
 import { defineTextStyles } from "@chakra-ui/react"
 
 export const textStyles = defineTextStyles({
-    // Small uppercase heading above a group of controls.
     label: {
         value: {
             color: "app.subtle",
@@ -11,7 +10,6 @@ export const textStyles = defineTextStyles({
             textTransform: "uppercase",
         },
     },
-    // Helper text under or above controls.
     hint: {
         value: {
             color: "app.subtle",
@@ -25,7 +23,6 @@ export const textStyles = defineTextStyles({
             fontSize: "xs",
         },
     },
-    // The big number in a stat tile.
     stat: {
         value: {
             fontSize: "lg",

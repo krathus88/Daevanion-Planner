@@ -6,7 +6,6 @@ type BossNotesProps = {
     state: TimerState
 }
 
-// Warns when the spawn time is a guess rather than the in-game timer.
 export const BossNotes = ({ name, state }: BossNotesProps) => {
     if (state.status !== "open" && state.status !== "upcoming") {
         return null
@@ -29,16 +28,13 @@ export const BossNotes = ({ name, state }: BossNotesProps) => {
         >
             {state.estimated && (
                 <Text>
-                    Estimated: this assumes {name} died about a minute after it
-                    spawned. Enter the in-game timer again for an exact time.
+                    Estimated, assuming {name} died a minute after spawning.
+                    Re-enter the in-game timer to fix it.
                 </Text>
             )}
 
             {state.afterMaintenance && (
-                <Text>
-                    A weekly maintenance happened since the timer was entered,
-                    so this may be off.
-                </Text>
+                <Text>Maintenance since this was entered; it may be off.</Text>
             )}
         </Flex>
     )

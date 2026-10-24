@@ -7,7 +7,6 @@ type SavedListProps = {
     loadLabel?: string
     onLoad: (id: string) => void
     onDelete: (id: string) => void
-    // Shows a button on each row that asks for a new name.
     onRename?: (id: string, name: string) => void
     renameLabel?: string
 }

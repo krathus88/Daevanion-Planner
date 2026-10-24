@@ -9,13 +9,11 @@ type BoardSwitcherLinkProps = {
     isActive: boolean
 }
 
-// One board in the switcher; the current one is raised like a toggle's thumb.
 export const BoardSwitcherLink = ({
     classId,
     layout,
     isActive,
 }: BoardSwitcherLinkProps) => {
-    // Ariel stands out since it spends its own points.
     const isAriel = !isMainBoard(layout)
 
     return (
@@ -47,7 +45,6 @@ export const BoardSwitcherLink = ({
             <RouterLink
                 params={{ classId: classId, layout: layout }}
                 to="/planner/$classId/$layout"
-                // Keeps a shared plan open while switching board.
                 search={true}
                 resetScroll={false}
                 aria-current={isActive ? "page" : undefined}

@@ -7,7 +7,6 @@ const NODE_ADJACENT = "0 0 10px 2px rgba(45, 212, 191, 0.55)"
 
 export const shadows = defineTokens.shadows({
     none: { value: "none" },
-    // A 1px inset ring, used for the selected segment of a toggle.
     insetRing: { value: "inset 0 0 0 1px {colors.app.borderStrong}" },
     accent: {
         glow: { value: "0 0 10px rgba(224, 173, 76, 0.75)" },
@@ -27,7 +26,6 @@ export const shadows = defineTokens.shadows({
                 value: "0 0 0 3px rgba(250, 204, 21, 0.9), 0 0 14px rgba(250, 204, 21, 0.45)",
             },
             adjacent: { value: NODE_ADJACENT },
-            // Stat nodes light up on hover, on top of their state's shadow.
             hover: { value: NODE_HOVER_GLOW },
             selectedHover: { value: `${NODE_SELECTED}, ${NODE_HOVER_GLOW}` },
             adjacentHover: { value: `${NODE_ADJACENT}, ${NODE_HOVER_GLOW}` },

@@ -43,9 +43,6 @@ const readCounts = (classId: string, layout?: MainBoardId) => {
     }
 }
 
-// Each special node bonus's rank, plus how many of its nodes the boards'
-// current routes take (on `layout` only, if given). Counts update when any
-// board changes.
 export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
     const [initial] = useState(() => readPriorities(classId))
     const [priorities, setPriorities] = useState(initial.priorities)
@@ -63,7 +60,6 @@ export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
         [classId, layout],
     )
 
-    // The other tab's editor may change the shared ranks.
     useEffect(
         () =>
             subscribeToClassSettings(classId, () => {

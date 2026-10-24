@@ -1,6 +1,4 @@
-// Generates the 1200x630 link-preview banners in public/og/: one per class
-// (named after the class id) plus default.png. Re-run after adding a class:
-//   npm run og:banners
+// Re-run after adding a class: npm run og:banners
 import { mkdirSync } from "node:fs"
 import { join } from "node:path"
 import sharp, { type OverlayOptions } from "sharp"
@@ -14,7 +12,6 @@ const outDir = join(process.cwd(), "public/og")
 const escapeXml = (value: string) =>
     value.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`)
 
-// Dark theme background with a gold glow behind the emblem and the text.
 const background = (title: string, hasEmblem: boolean) => {
     const textX = hasEmblem ? 520 : WIDTH / 2
     const anchor = hasEmblem ? "start" : "middle"

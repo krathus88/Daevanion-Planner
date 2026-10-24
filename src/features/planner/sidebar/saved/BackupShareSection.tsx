@@ -6,7 +6,6 @@ import { ShareLinks } from "./ShareLinks"
 export const BackupShareSection = () => {
     const { notice } = useStorageRevision()
 
-    // Opens after an import remounts the board, to show what it did.
     return (
         <Section defaultOpen={notice !== null} title="Backup & share">
             <Section variant="sub" defaultOpen title="Share a link">

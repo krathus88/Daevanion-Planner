@@ -30,7 +30,6 @@ type UseManualBoardOptions = {
     cancelOptimization: () => void
 }
 
-// Manual mode: picking nodes by hand, with undo and saved boards.
 export const useManualBoard = ({
     classId,
     layoutName,

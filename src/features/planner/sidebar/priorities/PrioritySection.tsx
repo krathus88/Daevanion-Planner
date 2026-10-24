@@ -16,8 +16,6 @@ type PrioritySectionProps = {
     hint: string
 }
 
-// The priority lists the All boards optimizer reads, folded into one
-// section.
 export const PrioritySection = ({
     classPreset,
     hint,

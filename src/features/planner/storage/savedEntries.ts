@@ -26,8 +26,7 @@ const isSameBoard = (a: SavedBoard, b: SavedBoard) => {
     return a.id === b.id || sameCells(a.selectedCells, b.selectedCells)
 }
 
-// The given entries the board doesn't already have, by id or by
-// identical nodes, so importing or saving twice adds nothing new.
+// Matches by id or identical nodes, so importing twice adds nothing.
 export const newSavedEntries = (
     classId: string,
     layout: BoardId,
@@ -40,7 +39,6 @@ export const newSavedEntries = (
         throw new Error(savedPlanners.error ?? savedBoards.error ?? "")
     }
 
-    // Also drops repeats among the given entries.
     const keepNew = <T>(
         existing: T[],
         entries: T[],
@@ -62,8 +60,6 @@ export const newSavedEntries = (
     }
 }
 
-// Adds entries to the top of the board's saved lists, as saving does.
-// Returns an error message or null.
 export const addSavedEntries = (
     classId: string,
     layout: BoardId,

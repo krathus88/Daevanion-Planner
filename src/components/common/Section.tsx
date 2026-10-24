@@ -5,20 +5,15 @@ import { LuChevronRight } from "react-icons/lu"
 type SectionProps = {
     children: ReactNode
     title: string
-    // "card" is a bordered section; "featured" adds an accent edge; "sub" is a
-    // lighter heading inside one; "nested" is a slightly darker box inside a
-    // "sub".
     variant?: "card" | "featured" | "sub" | "nested"
     open?: boolean
     // Read on mount; remount (via key) to apply a new default.
     defaultOpen?: boolean
     count?: number
-    // Shown at the end of the heading, e.g. a running total.
     aside?: ReactNode
     onOpenChange?: (open: boolean) => void
 }
 
-// A collapsible group of controls.
 export const Section = ({
     children,
     title,

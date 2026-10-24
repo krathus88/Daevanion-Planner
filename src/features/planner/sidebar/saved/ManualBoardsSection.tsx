@@ -10,7 +10,6 @@ export const ManualBoardsSection = ({
 }) => {
     const { view, changeView, manual } = useBoard()
 
-    // Loading switches to Manual mode so the board is visible.
     const openBoard = (id: string) => {
         const entry = manual.savedBoards.find(
             (candidate) => candidate.id === id,

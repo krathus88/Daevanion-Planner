@@ -5,13 +5,11 @@ import { LuRotateCcw } from "react-icons/lu"
 import { ColorSwatchPicker } from "./ColorSwatchPicker"
 import { DurationInput } from "./DurationInput"
 
-// A day, the longest sensible reminder.
 const MAX_SOON_MINUTES = 24 * 60
 
 type TimerCustomiseProps = {
     id: TimerId
     color: TimerColor
-    // The colour was changed from the timer's default.
     hasCustomColor: boolean
     soonMinutes: number
     onColorChange: (id: TimerId, color: TimerColor) => void
@@ -19,7 +17,6 @@ type TimerCustomiseProps = {
     onSoonMinutesChange: (id: TimerId, minutes: number) => void
 }
 
-// The timer's colour and how early it starts to stand out.
 export const TimerCustomise = ({
     id,
     color,
@@ -59,7 +56,6 @@ export const TimerCustomise = ({
                 )}
             </Flex>
 
-            {/* The input sits right after the label, however wide. */}
             <Field.Root
                 orientation="horizontal"
                 justifyContent="flex-start"

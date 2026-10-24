@@ -6,7 +6,6 @@ type SummaryRowProps = {
     valueColor?: Tokens["colors"]
 }
 
-// One read-only line of shared settings: a name and its value.
 export const SummaryRow = ({
     label,
     value,

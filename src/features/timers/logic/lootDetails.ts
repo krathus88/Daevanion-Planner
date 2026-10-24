@@ -6,19 +6,14 @@ import type {
     LootPiece,
 } from "@timers/config/fieldBossLoot"
 
-// A line in a loot tooltip: a label, an optional detail beside it and a
-// value at the end. An "effect" value says what a stat does in game.
 export type LootDetailRow = {
     label: string
     value: string
     detail?: string
     valueTone?: "muted" | "effect"
-    // Lines nested under this one, e.g. a chest set's pieces.
     children?: readonly LootDetailRow[]
 }
 
-// Who gets a drop and how likely, e.g. "25% per kill, top-damage party
-// only".
 export const getLootChanceLabel = (drop: LootDrop) => {
     if (drop.everyone) {
         return `${drop.chance}% per kill, for every player with contribution`
@@ -29,8 +24,7 @@ export const getLootChanceLabel = (drop: LootDrop) => {
         : `${drop.chance}% per kill, top-damage party only`
 }
 
-// Bound drops carry "(Bound)" in their game name: the loot chest, along
-// with everything it holds, and souls. The rest is unbound.
+// Bound drops have "(Bound)" in their game name.
 export const isBoundLoot = (drop: LootDrop) => {
     return drop.name.endsWith("(Bound)")
 }
@@ -50,7 +44,6 @@ const formatPercent = (value: number) => {
     return `${value > 0 ? "+" : ""}${Number(value.toFixed(2))}%`
 }
 
-// The item level every piece shares, or null if they differ.
 const getSharedItemLevel = (pieces: readonly LootPiece[]) => {
     const level = pieces[0]?.itemLevel
 

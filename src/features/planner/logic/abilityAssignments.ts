@@ -2,8 +2,6 @@ import type { ClassAbility, ClassPreset } from "@config/classPresets"
 import { isMainBoard, type BoardId } from "@config/boards"
 import type { BoardLayout } from "@planner/config/layouts"
 
-// Maps "row,col" to the class ability on that node. Throws when a class
-// assigns an ability to a node that can't hold it.
 export const resolveAbilitiesByPosition = (
     layout: BoardLayout,
     layoutName: BoardId,
@@ -14,7 +12,6 @@ export const resolveAbilitiesByPosition = (
     )
     const abilitiesByPosition: Record<string, ClassAbility> = {}
 
-    // Ariel holds no abilities.
     const assignments = isMainBoard(layoutName)
         ? classPreset.assignments[layoutName]
         : undefined
@@ -57,9 +54,7 @@ const describeNode = (kind: string | undefined, expected: string) => {
         : `not a ${expected}`
 }
 
-// Throws when layouts.ts gives a stat or special bonus to the wrong node.
-// Stats go on stat nodes ("#" or a costlier stat node's marker), or on
-// Ariel's special nodes, which give a stat instead of a bonus.
+// Catches stats or bonuses given to the wrong node in layouts.ts.
 export const validateLayoutBonuses = (
     layout: BoardLayout,
     layoutName: BoardId,

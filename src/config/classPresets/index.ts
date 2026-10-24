@@ -1,13 +1,10 @@
 import type { ClassId } from "./classInfo"
 import type { ClassPreset } from "./types"
 
-// Types and defineClassPreset live in ./types so class files can import them
-// without a circular import through this index.
+// Types live in ./types to avoid a circular import.
 export * from "./classInfo"
 export * from "./types"
 
-// Each class's abilities are in their own chunk, fetched when the planner
-// opens that class.
 const classPresetLoaders = {
     templar: () => import("./classes/Templar"),
     gladiator: () => import("./classes/Gladiator"),

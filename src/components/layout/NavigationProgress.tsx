@@ -2,21 +2,19 @@ import { Box } from "@chakra-ui/react"
 import { useRouterState } from "@tanstack/react-router"
 import { useLayoutEffect, useRef } from "react"
 
-// Never reaches the end on its own; the real finish happens when loading stops.
+// Never reaches the end; finishing happens when loading stops.
 const GROW_MS = 8000
-// Fills the rest of the bar, then fades out.
 const FINISH_MS = 500
 
-// A thin bar across the top of the page while a route loads. Rendering a
-// board blocks the main thread, so the bar animates `transform` and `opacity`
-// with the Web Animations API, which the browser runs off the main thread.
+// Uses the Web Animations API so it runs off the main thread, which board
+// renders block.
 export const NavigationProgress = () => {
     const isLoading = useRouterState({ select: (state) => state.isLoading })
 
     const barRef = useRef<HTMLDivElement>(null)
     const growRef = useRef<{ animation: Animation; startedAt: number }>(null)
 
-    // A layout effect, so the bar starts before the browser paints.
+    // Layout effect so the bar starts before paint.
     useLayoutEffect(() => {
         const bar = barRef.current
 
@@ -42,14 +40,12 @@ export const NavigationProgress = () => {
             return
         }
 
-        // Nothing to finish when no load was shown, e.g. on first render.
         const grow = growRef.current
 
         if (!grow) return
 
         growRef.current = null
-        // Animation time only moves between frames, so after a long render it
-        // lags behind what the screen shows. Catch it up before reading it.
+        // Animation time lags after a long render; catch it up before reading.
         grow.animation.currentTime = performance.now() - grow.startedAt
 
         const { transform } = getComputedStyle(bar)

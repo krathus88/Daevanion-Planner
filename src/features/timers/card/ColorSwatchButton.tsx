@@ -16,7 +16,6 @@ export const ColorSwatchButton = ({
         onSelect(color)
     }
 
-    // The same shades the timer highlight uses for each tone.
     const swatch =
         color.tone === "strong" ? "colorPalette.500" : "colorPalette.300"
 

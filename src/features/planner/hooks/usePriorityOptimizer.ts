@@ -50,18 +50,14 @@ type RecordedPlans = Partial<Record<BoardId, SavedPlanner>>
 type UsePriorityOptimizerOptions = {
     classPreset: ClassPreset
     totalPoints: number
-    // Receives a callback that applies the results to the boards.
     onComplete: (applyResults: () => void) => void
 }
 
-// What the last run couldn't fit in the budget.
 export type OptimizeShortfall = {
     shortfalls: MinimumShortfall[]
     specialNodes: { taken: number; total: number }
 }
 
-// Runs the priority optimizer for the four main boards in a worker, then
-// plans Ariel from its own points.
 export const usePriorityOptimizer = ({
     classPreset,
     totalPoints,
@@ -86,7 +82,6 @@ export const usePriorityOptimizer = ({
         setIsOptimizing(false)
     }
 
-    // Records each board's result in its optimizer history right away.
     const recordPlans = (
         mainPlans: PriorityPlans,
         arielSettings: ArielSettings,
@@ -148,9 +143,8 @@ export const usePriorityOptimizer = ({
         return entries
     }
 
-    // Makes the recorded results every board's current route. The sidebar
-    // calls this once the All boards tab is open, so a finished run doesn't
-    // replace the board while you're working elsewhere.
+    // Called once the All boards tab is open, so a run doesn't replace the
+    // board you're on.
     const applyPlans = (entries: RecordedPlans) => {
         const errors: string[] = []
         for (const layoutName of Object.keys(entries) as BoardId[]) {

@@ -1,12 +1,10 @@
 import { readClassSettings, writeClassSettings } from "./classSettings"
 import { isRecord } from "./isRecord"
 
-// Node groups that share the rank scale.
 export const RANK_GROUPS = ["skill", "passive", "special"] as const
 export type RankGroup = (typeof RANK_GROUPS)[number]
 
-// Order within one rank: "more" goes before "equal", which goes before
-// "less". Groups on the same level compete, cheapest path first.
+// Groups on the same level compete, cheapest path first.
 export const SAME_RANK_ORDERS = ["more", "equal", "less"] as const
 export type SameRankOrder = (typeof SAME_RANK_ORDERS)[number]
 

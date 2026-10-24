@@ -20,7 +20,6 @@ const spentPoints = (layout: BoardId, cells: string[]) => {
     }, 0)
 }
 
-// The numbers for the shared route or picks shown on the board.
 export const SharedBoardSummary = ({
     board,
     layout,

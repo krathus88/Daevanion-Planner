@@ -15,13 +15,10 @@ export const tokens = defineTokens({
         visible: { value: 1 },
     },
     borderStyles: {
-        // A drop zone.
         dashed: { value: "dashed" },
     },
     cursor: {
-        // A drag handle.
         grab: { value: "grab" },
-        // Shown but not clickable, e.g. a shared plan's nodes.
         static: { value: "default" },
     },
     animations: {
@@ -43,9 +40,7 @@ export const tokens = defineTokens({
     radii: {
         boardFrame: { value: "10px" },
     },
-    // strictTokens only accepts token values, and Chakra's defaults have no
-    // tokens for these everyday values. Naming them after their value keeps
-    // props readable, e.g. borderWidth="1px", m="0".
+    // strictTokens only accepts tokens, and Chakra has none for these values.
     borderWidths: {
         0: { value: "0" },
         "1px": { value: "1px" },
@@ -55,13 +50,11 @@ export const tokens = defineTokens({
     spacing: {
         0: { value: "0" },
         auto: { value: "auto" },
-        // Overlapping a 1px border, e.g. a tab sitting on its panel.
         "1px": { value: "1px" },
-        // Below the sticky header (4rem) with a little room.
+        // Below the 4rem sticky header.
         headerOffset: { value: "5.5rem" },
         board: {
             markerInset: { value: "0.1rem" },
-            // The rings of a special node's gem, from the edge inwards.
             gemRing: { value: "22%" },
             gemFacet: { value: "calc(22% + 2px)" },
             gemCore: { value: "39%" },

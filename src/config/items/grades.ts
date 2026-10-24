@@ -1,4 +1,4 @@
-// Highest first, as the game ranks them; "special" is the boss's own chest.
+// Highest first; "special" is the boss's own chest.
 export type LootGrade =
     "heroic" | "unique" | "epic" | "rare" | "common" | "special"
 

@@ -15,8 +15,6 @@ type UseBoardProgressOptions = {
     setMessage: (message: string) => void
 }
 
-// The board's saved progress: the hand-picked nodes and the planner route.
-// Every change is written back with persistProgress.
 export const useBoardProgress = ({
     classId,
     layoutName,
@@ -41,8 +39,6 @@ export const useBoardProgress = ({
         () => initial?.activePlanner ?? null,
     )
 
-    // Writes the current progress with `updates` applied. Returns the error,
-    // if any, after showing it.
     const persistProgress = (updates: Partial<BoardProgress> = {}) => {
         const progress: BoardProgress = {
             selectedCells: [...selectedCells],

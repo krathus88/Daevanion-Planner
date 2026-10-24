@@ -19,13 +19,11 @@ const readOrder = (classId: string) => {
     }
 }
 
-// Which of skills, passives and special nodes go first within one rank.
 export const useRankOrder = (classId: string) => {
     const [initial] = useState(() => readOrder(classId))
     const [order, setOrder] = useState(initial.order)
     const [error, setError] = useState<string | null>(initial.error)
 
-    // The other tab's editor may change the same order.
     useEffect(
         () =>
             subscribeToClassSettings(classId, () => {

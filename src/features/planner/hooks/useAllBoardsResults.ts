@@ -1,9 +1,8 @@
 import { useRef, useState } from "react"
 import type { SidebarTab } from "../types"
 
-// "Optimize all boards" results wait until the All boards tab is open: a
-// finished run doesn't replace the board you're looking at. Until then the
-// tab glows.
+// Results wait for the All boards tab so a finished run doesn't replace the
+// board you're on.
 export const useAllBoardsResults = (
     tab: SidebarTab,
     changeSidebarTab: (tab: SidebarTab) => void,
@@ -11,8 +10,7 @@ export const useAllBoardsResults = (
     const [hasUnseenResults, setHasUnseenResults] = useState(false)
     const [isCompareOpen, setIsCompareOpen] = useState(false)
     const pendingResults = useRef<(() => void) | null>(null)
-    // The optimizer's completion callback is created when the run starts, so
-    // it reads the live tab from a ref rather than a stale render value.
+    // A ref: the completion callback is created when the run starts.
     const tabRef = useRef(tab)
 
     const changeTab = (nextTab: SidebarTab) => {

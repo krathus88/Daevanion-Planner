@@ -19,7 +19,6 @@ const nodeCost = (layout: BoardLayout, index: number, width: number) => {
 }
 
 export type PlannerResult =
-    // statScore: total stat weight of the route (see config/stats.ts).
     | { ok: true; path: Set<string>; cost: number; statScore: number }
     | { ok: false; reason: string }
 
@@ -237,8 +236,6 @@ export const findPlannerPath = async (
     targets: Set<string>,
     timeBudgetMs: number,
     callbacks: PlannerSearchCallbacks,
-    // "row,col" -> stat weight. Among routes of equal cost, the one through
-    // better stats wins; stats never make a route cost more points.
     statWeights: ReadonlyMap<string, number> = new Map(),
 ): Promise<PlannerResult> => {
     if (targets.size === 0) {
@@ -274,8 +271,7 @@ export const findPlannerPath = async (
     const keyAt = (node: number) => {
         return keyOf(positionOf(gridIndices[node], width))
     }
-    // Each stat node gets a tiny discount by weight. All discounts together
-    // stay under half a point, so they only decide between equal-cost paths.
+    // Discounts total under half a point, so they only break cost ties.
     let totalWeight = 0
     for (const weight of statWeights.values()) {
         totalWeight += weight

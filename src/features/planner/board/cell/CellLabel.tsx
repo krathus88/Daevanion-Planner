@@ -3,7 +3,6 @@ import { AbsoluteCenter, Text } from "@chakra-ui/react"
 type CellLabelProps = {
     label: string
     selected: boolean
-    // Over artwork the label gets a dark backing so it stays readable.
     hasImage: boolean
 }
 

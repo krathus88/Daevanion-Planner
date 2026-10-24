@@ -2,7 +2,6 @@ import { BoardWorkspace } from "./BoardWorkspace"
 import { BoardContext } from "./context/boardContext"
 import { useBoardState, type UseBoardStateOptions } from "./hooks/useBoardState"
 
-// Owns one board's state and shares it with everything below.
 export const BoardInstance = ({
     layout,
     layoutName,

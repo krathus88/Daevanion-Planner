@@ -19,13 +19,11 @@ const readSettings = (classId: string) => {
     }
 }
 
-// The class's stat tiers and whether leftover points go to stats.
 export const useStatSettings = (classId: string) => {
     const [initial] = useState(() => readSettings(classId))
     const [settings, setSettings] = useState(initial.settings)
     const [error, setError] = useState<string | null>(initial.error)
 
-    // The other tab's editor may change the same settings.
     useEffect(
         () =>
             subscribeToClassSettings(classId, () => {

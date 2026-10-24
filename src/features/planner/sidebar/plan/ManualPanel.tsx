@@ -45,8 +45,7 @@ export const ManualPanel = () => {
             </Flex>
 
             <Text textStyle="hint">
-                Click an affordable node to add it with the lowest-cost
-                connection. Save boards from the Saved tab.
+                Click a node to add it via the cheapest connection.
             </Text>
         </Flex>
     )

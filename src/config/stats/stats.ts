@@ -1,6 +1,3 @@
-// The stat each stat (basic) node gives. Which node gives which stat is set
-// per board in @planner/config/layouts.ts (`nodeStats`) and is the same for
-// every class.
 export const STAT_TYPES = [
     "attack",
     "critical-hit",
@@ -21,8 +18,7 @@ export const STAT_NAMES: Record<StatType, string> = {
     "max-mp": "Max MP",
 }
 
-// Shown in a stat node's tooltip.
-export const STAT_TOOLTIPS: Record<StatType, string> = {
+const STAT_TOOLTIPS: Record<StatType, string> = {
     attack: "Attack +3",
     "critical-hit": "Critical Hit +5",
     "max-hp": "Max HP +100",
@@ -31,9 +27,7 @@ export const STAT_TOOLTIPS: Record<StatType, string> = {
     "max-mp": "Max MP +50",
 }
 
-// The stats on Ariel's nodes. They have their own priorities, so Ariel's
-// Critical Hit, Max HP and Max MP are separate from the other boards'.
-// Nodes that give two stats are their own entry.
+// Ariel's stats have their own priorities, so they're separate entries.
 export const ARIEL_STAT_TYPES = [
     "pve-damage-boost",
     "pve-damage-tolerance",
@@ -76,7 +70,7 @@ export const ARIEL_STAT_NAMES: Record<ArielStatType, string> = {
     "ariel-max-mp": "Max MP",
 }
 
-export const ARIEL_STAT_TOOLTIPS: Record<ArielStatType, string> = {
+const ARIEL_STAT_TOOLTIPS: Record<ArielStatType, string> = {
     "pve-damage-boost": "PvE Damage Boost +1.5%",
     "pve-damage-tolerance": "PvE Damage Tolerance +1.5%",
     "boss-damage-boost": "Boss Damage Boost +1%",
@@ -96,7 +90,6 @@ export const ARIEL_STAT_TOOLTIPS: Record<ArielStatType, string> = {
     "ariel-max-mp": "Max MP +50",
 }
 
-// Any stat a board node can give.
 export type BoardStat = StatType | ArielStatType
 
 export const BOARD_STAT_NAMES: Record<BoardStat, string> = {

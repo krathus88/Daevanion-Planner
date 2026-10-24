@@ -8,7 +8,6 @@ type LayoutChipProps = {
     now: number
 }
 
-// A pinned timer you can drag, and drop another onto to swap them.
 export const LayoutChip = ({ entry, now }: LayoutChipProps) => {
     const { ref: dragRef, isDragging } = useDraggable({ id: entry.timer.id })
     const { ref: dropRef, isDropTarget } = useDroppable<LayoutDrop>({

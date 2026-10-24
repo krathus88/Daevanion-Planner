@@ -22,7 +22,7 @@ import { BossNotes } from "./BossNotes"
 import { BossReportForm } from "./BossReportForm"
 import { BossStatus } from "./BossStatus"
 
-// The loot tables are large, so they load the first time a boss is opened.
+// Loot tables are large, so they load on first open.
 const BossLoot = lazy(async () => {
     const module = await import("./BossLoot")
 
@@ -33,7 +33,6 @@ type BossRowProps = {
     entry: TimerEntry
     boss: FieldBoss
     now: number
-    // Scrolled to and opened for input, e.g. from a pinned "set timer" chip.
     focused: boolean
     onTogglePinned: (id: TimerId) => void
     onColorChange: (id: TimerId, color: TimerColor) => void
@@ -42,8 +41,6 @@ type BossRowProps = {
     onReportChange: (id: TimerId, report: BossReport | null) => void
 }
 
-// One field boss: its countdown and a one-click "Killed" up front, with the
-// in-game timer form, its loot and its colours tucked away until opened.
 export const BossRow = ({
     entry,
     boss,
@@ -59,13 +56,11 @@ export const BossRow = ({
 
     const [open, setOpen] = useState(focused)
     const [lastFocused, setLastFocused] = useState(focused)
-    // Outlasts the one-off focus request, since the form only mounts once
-    // the row has opened.
+    // Outlasts the focus request: the form only mounts once the row is open.
     const [focusForm, setFocusForm] = useState(focused)
     const rowRef = useRef<HTMLDivElement>(null)
     const killedRef = useRef<HTMLButtonElement>(null)
 
-    // A new focus request opens the row straight away, in this render.
     if (focused !== lastFocused) {
         setLastFocused(focused)
 
@@ -82,7 +77,6 @@ export const BossRow = ({
 
         rowRef.current?.scrollIntoView({ block: "center" })
 
-        // With no in-game timer to type, the kill is the thing to set.
         if (boss.respawn === null) {
             killedRef.current?.focus()
         }
@@ -129,7 +123,6 @@ export const BossRow = ({
             borderRadius="lg"
             css={highlightStyles}
         >
-            {/* The pin sits by the name, the rest on a second line. */}
             <Grid
                 px="3"
                 py="2"
@@ -232,7 +225,6 @@ export const BossRow = ({
                             />
                         )}
 
-                        {/* Bosses without the form clear their kill here. */}
                         {boss.respawn === null && entry.report && (
                             <Button
                                 variant="dangerGhost"

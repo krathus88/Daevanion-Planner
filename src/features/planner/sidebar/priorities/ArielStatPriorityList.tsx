@@ -10,7 +10,6 @@ type ArielStatPriorityListProps = {
     classId: string
 }
 
-// Ariel's own stat tiers, with the nodes its route takes.
 export const ArielStatPriorityList = ({
     classId,
 }: ArielStatPriorityListProps) => {
@@ -24,11 +23,9 @@ export const ArielStatPriorityList = ({
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                Find a good path spends Ariel&apos;s points on the best stats it
-                can reach, most value per point first. Ignored stats are only
-                taken to reach better ones. On the board, 2+ point nodes get a
-                blue dot when their stat is Best and a green ring when Good. The
-                count shows nodes taken on Ariel, out of how many exist.
+                Spends Ariel&apos;s points on the best stats, most value per
+                point first. On the board, Best shows a blue dot and Good a
+                green ring.
             </Text>
 
             {ARIEL_STAT_TYPES.map((stat) => (

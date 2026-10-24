@@ -1,6 +1,5 @@
 import type { SystemConfig } from "@chakra-ui/react"
 
-// Extra named values for style props that don't read from a token scale.
 export const utilities = {
     transitionProperty: {
         values: {
@@ -10,11 +9,8 @@ export const utilities = {
             position: "left, right, top, bottom, inset-inline, inset-block",
             background:
                 "background, background-color, background-image, background-position",
-            // Artwork zooming and brightening on hover.
             zoom: "transform, filter",
-            // Something turning or moving, e.g. a chevron flipping.
             transform: "transform",
-            // A node's fill and glow changing with its state.
             shape: "background, box-shadow",
             none: "none",
         },

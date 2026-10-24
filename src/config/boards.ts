@@ -1,5 +1,4 @@
-// The Daevanion boards the planner covers. Azphel is PvP only and left
-// out. Each board's grid and nodes are in @planner/config/layouts.ts.
+// Azphel is PvP only and left out.
 export const BOARD_IDS = [
     "nezekan",
     "zikel",
@@ -10,8 +9,6 @@ export const BOARD_IDS = [
 
 export type BoardId = (typeof BOARD_IDS)[number]
 
-// The boards that split one shared point budget and hold the class's
-// skills, passives and special nodes.
 export const MAIN_BOARD_IDS = [
     "nezekan",
     "zikel",

@@ -1,6 +1,5 @@
 import { defineRecipe } from "@chakra-ui/react"
 
-// Shared by Input and NativeSelect's field.
 export const fieldStyles = {
     bg: "app.inset",
     borderColor: "app.borderStrong",
@@ -12,8 +11,7 @@ export const fieldStyles = {
 
 export const inputRecipe = defineRecipe({
     base: {
-        // Hide number spinners; they don't fit the narrow inputs. Firefox
-        // hides them with `textfield`.
+        // Hide number spinners; Firefox needs `textfield`.
         "&[type=number]": {
             appearance: "textfield",
             "&::-webkit-inner-spin-button, &::-webkit-outer-spin-button": {

@@ -19,8 +19,6 @@ type NavDrawerProps = HTMLChakraProps<"button"> & {
     plannerLocation: PlannerLocation
 }
 
-// The site's pages on phones, behind a menu button. The brand next to the
-// menu icon is part of the button, so tapping either opens it.
 export const NavDrawer = ({
     currentPage,
     plannerLocation,

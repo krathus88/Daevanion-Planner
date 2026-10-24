@@ -6,11 +6,9 @@ import type { SitePage } from "./sitePage"
 
 type PageNavProps = FlexProps & {
     currentPage: SitePage | null
-    // Where the Planner tab opens.
     plannerLocation: PlannerLocation
 }
 
-// The site's pages, as tabs. Phones get the same links in a drawer.
 export const PageNav = ({
     currentPage,
     plannerLocation,

@@ -13,7 +13,6 @@ const toneColors = {
     danger: "app.danger",
 } as const
 
-// A live message under a group of controls, e.g. an error or a result.
 export const StatusText = ({
     children,
     role = "status",

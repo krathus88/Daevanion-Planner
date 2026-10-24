@@ -15,7 +15,6 @@ import { TimerGrid } from "./TimerGrid"
 type TimerTabsProps = {
     tab: TimerCategory
     region: FieldBossRegion
-    // A timer to scroll to and open for input.
     focusedTimer?: TimerId
     timers: TimerEntry[]
     now: number
@@ -28,7 +27,6 @@ type TimerTabsProps = {
     onBossReportChange: (id: TimerId, report: BossReport | null) => void
 }
 
-// The timers grouped by kind: field bosses, events and resets.
 export const TimerTabs = ({
     tab,
     region,

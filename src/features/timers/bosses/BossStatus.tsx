@@ -29,7 +29,6 @@ const getStatusText = (state: TimerState, now: number) => {
     }
 }
 
-// A boss row's countdown, and when it ends in the viewer's own time.
 export const BossStatus = ({ state, now }: BossStatusProps) => {
     const text = getStatusText(state, now)
 

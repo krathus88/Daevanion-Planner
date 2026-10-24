@@ -28,10 +28,8 @@ export const RankOrderList = ({ classId }: RankOrderListProps) => {
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                When skills, passives and special nodes share a rank, More goes
-                before Equal, and Equal before Less. Groups on the same level
-                compete: each step takes the node with the cheapest path to it,
-                not counting the node's own cost.
+                What goes first when skills, passives and special nodes share a
+                rank. Equal levels go cheapest first.
             </Text>
 
             {RANK_GROUPS.map((group) => (

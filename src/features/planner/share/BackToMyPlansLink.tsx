@@ -8,7 +8,6 @@ type BackToMyPlansLinkProps = {
     layout: BoardId
 }
 
-// Leaves the shared plan for the viewer's own plan on the same board.
 export const BackToMyPlansLink = ({
     classId,
     layout,

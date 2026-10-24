@@ -4,12 +4,10 @@ import { useSpecialPriorities } from "@planner/hooks/useSpecialPriorities"
 import { SPECIAL_BONUS_TYPES } from "@planner/storage/specialPriorities"
 import { StatusText } from "@common/StatusText"
 import { LIMIT_COLUMN_WIDTH, PLANNED_COLUMN_WIDTH } from "./abilityColumns"
-import { scopeLabel } from "./scopeLabel"
 import { SpecialPriorityRow } from "./SpecialPriorityRow"
 
 type SpecialPriorityListProps = {
     classId: string
-    // Counts nodes on this board only and hides bonuses it lacks.
     layout?: MainBoardId
 }
 
@@ -26,12 +24,7 @@ export const SpecialPriorityList = ({
 
     return (
         <Flex flexDir="column" alignItems="stretch" gap="2">
-            <Text textStyle="hint">
-                Rank each special node bonus on the same scale as abilities.
-                Same-rank order sets what goes first when ranks tie. The count
-                shows nodes taken {scopeLabel(layout)}, out of how many exist
-                {layout && "; bonuses with no nodes here are hidden"}.
-            </Text>
+            <Text textStyle="hint">Ranked on the same scale as abilities.</Text>
 
             <Flex justifyContent="flex-end" gap="2" textStyle="caption">
                 <Text w={LIMIT_COLUMN_WIDTH} textAlign="center">

@@ -6,9 +6,6 @@ type LootChanceProps = {
     drop: LootDrop
 }
 
-// The line under a loot icon. A trophy marks a top-damage-party drop, with
-// its chance beside it unless it's sure; a drop for everyone shows just
-// its chance.
 export const LootChance = ({ drop }: LootChanceProps) => {
     const showChance = drop.everyone || drop.chance < 100
 

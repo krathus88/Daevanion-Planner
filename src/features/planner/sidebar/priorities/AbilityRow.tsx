@@ -12,7 +12,6 @@ import { scopeLabel } from "./scopeLabel"
 type AbilityRowProps = {
     ability: ClassAbility
     limits: ReturnType<typeof useAbilityLimits>
-    // Upgrades are counted on this board only.
     layout?: MainBoardId
 }
 
@@ -55,7 +54,6 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
     const maximum = limits.maximums[ability.id]
     const nodeCount = limits.nodeCounts.get(ability.id) ?? 0
     const scopedNodeCount = limits.scopedNodeCounts.get(ability.id) ?? 0
-    // On one board, Min can only ask for the nodes that board has.
     const scopedMinimum = Math.min(minimum, scopedNodeCount)
     const isBelowMinimum = upgrades < scopedMinimum
 

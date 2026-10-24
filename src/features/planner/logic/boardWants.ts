@@ -6,8 +6,6 @@ import type { SpecialBonusType } from "@planner/config/specialNodes"
 import type { AbilityPriorities } from "@planner/storage/abilityPriorities"
 import type { SpecialPriorities } from "@planner/storage/specialPriorities"
 
-// Something the route can be asked to take on one board: a skill, a
-// passive or a special node bonus, with all of its nodes there.
 export type BoardWant =
     | { id: string; kind: "special"; bonus: SpecialBonusType; keys: string[] }
     | {
@@ -17,14 +15,10 @@ export type BoardWant =
           keys: string[]
       }
 
-// Preferred ids for special nodes, kept apart from ability ids.
-export const specialWantId = (bonus: SpecialBonusType) => `special:${bonus}`
+const specialWantId = (bonus: SpecialBonusType) => `special:${bonus}`
 
-// Every skill, passive and special bonus on the board: special nodes first,
-// then skills and passives in the class's order.
 export const boardWants = (classPreset: ClassPreset, layoutName: BoardId) => {
     const layout = layouts[layoutName]
-    // Ariel holds no abilities.
     const assignments =
         (isMainBoard(layoutName) && classPreset.assignments[layoutName]) || {}
     const specials = new Map<SpecialBonusType, string[]>()
@@ -81,11 +75,10 @@ export const WANTS = ["need", "prefer", "skip"] as const
 export type Want = (typeof WANTS)[number]
 
 // Ranks 1 and 2 default to Need, rank 3 to Prefer, the rest to Skip.
-export const defaultWant = (rank: number): Want => {
+const defaultWant = (rank: number): Want => {
     return rank <= 2 ? "need" : rank === 3 ? "prefer" : "skip"
 }
 
-// A want's rank, as the All boards tab sets it.
 export const wantRank = (
     want: BoardWant,
     priorities: AbilityPriorities,
@@ -96,7 +89,6 @@ export const wantRank = (
         : (priorities[want.ability.id] ?? Number.MAX_SAFE_INTEGER)
 }
 
-// Each want's choice: the saved one, or its rank's default.
 export const resolveWants = ({
     wants,
     choices,

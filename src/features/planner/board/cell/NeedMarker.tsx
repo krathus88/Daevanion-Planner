@@ -1,7 +1,5 @@
 import { Box } from "@chakra-ui/react"
 
-// The dot in a node's corner that marks it as needed by Route preferences,
-// apart from the yellow dot of a target you clicked.
 export const NeedMarker = () => {
     return (
         <Box

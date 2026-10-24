@@ -17,8 +17,6 @@ type LootTooltipProps = {
     drop: LootDrop
 }
 
-// A drop's name, grade and chance, plus what it holds: a set's pieces, a
-// chest's contents or an artwork's Pantheon stats.
 export const LootTooltip = ({ drop }: LootTooltipProps) => {
     return (
         <Flex p="1" flexDir="column" gap="0.5">
@@ -31,7 +29,6 @@ export const LootTooltip = ({ drop }: LootTooltipProps) => {
                 {drop.name}
             </Text>
 
-            {/* Top-damage-party drops read in the trophy's gold. */}
             <Text color="app.muted" lineHeight="short">
                 {GRADE_LABELS[drop.grade]}
                 {" · "}

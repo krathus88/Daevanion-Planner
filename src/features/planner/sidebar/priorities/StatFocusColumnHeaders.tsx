@@ -2,7 +2,6 @@ import { Flex, Text } from "@chakra-ui/react"
 import { LIMIT_COLUMN_WIDTH } from "./abilityColumns"
 
 type StatFocusColumnHeadersProps = {
-    // Hides the rank columns, which one board doesn't use.
     isBoard: boolean
 }
 

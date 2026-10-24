@@ -36,7 +36,6 @@ type SharedSettingsPanelProps = {
     layout: BoardId
 }
 
-// Already the viewer's settings, e.g. right after applying them.
 const isInUse = (plan: SharedPlan) => {
     try {
         return (
@@ -48,8 +47,6 @@ const isInUse = (plan: SharedPlan) => {
     }
 }
 
-// The link's settings, read the same way the planner reads its own. Null
-// if they can't be read.
 const readSummary = (plan: SharedPlan, classPreset: ClassPreset) => {
     const settings = plan.settings ?? {}
 
@@ -67,8 +64,6 @@ const readSummary = (plan: SharedPlan, classPreset: ClassPreset) => {
     }
 }
 
-// A settings-only link: the shared optimizer settings, with a button to use
-// them. Shown in place of the sidebar's tabs.
 export const SharedSettingsPanel = ({
     plan,
     layout,
@@ -83,7 +78,6 @@ export const SharedSettingsPanel = ({
         const applyError = applySharedSettings(plan)
         setError(applyError)
         if (!applyError) {
-            // Remounts the board so it uses the new settings.
             bumpStorageRevision()
         }
     }
@@ -111,9 +105,8 @@ export const SharedSettingsPanel = ({
                 </Text>
 
                 <Text textStyle="hint">
-                    Read-only optimizer settings, with no routes or points.
-                    Using them replaces your {classPreset.name} settings. Your
-                    boards and saved plans stay as they are.
+                    Using these replaces your {classPreset.name} settings.
+                    Boards and saved plans are kept.
                 </Text>
             </Flex>
 

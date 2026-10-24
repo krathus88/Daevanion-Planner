@@ -15,8 +15,6 @@ type LootTileProps = {
     drop: LootDrop
 }
 
-// One drop as its icon, framed in its grade's colour, over who gets it and
-// its chance. A lock in the corner marks a bound drop.
 export const LootTile = ({ drop }: LootTileProps) => {
     const icon = drop.icon && getLootIcon(drop.icon)
 

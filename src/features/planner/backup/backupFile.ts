@@ -23,9 +23,7 @@ import {
 import { isRecord } from "@planner/storage/isRecord"
 import { addSavedEntries, newSavedEntries } from "@planner/storage/savedEntries"
 
-// The backup file: every class's saved routes, manual boards, optimizer
-// priorities and point budget. Bump VERSION when the shape changes, and
-// keep reading the older ones.
+// Bump VERSION when the shape changes, and keep reading older ones.
 const FORMAT = "daevanion-planner-backup"
 const VERSION = 1
 
@@ -47,8 +45,7 @@ type Backup = {
     classes: Partial<Record<ClassId, BackupClass>>
 }
 
-// The board's current route and picks, unless already saved, so moving to
-// another device doesn't lose them.
+// Unsaved current routes and picks, so moving device doesn't lose them.
 const currentEntries = (classId: ClassId, layout: BoardId) => {
     const progress = readBoardProgress(classId, layout).value
     const now = Date.now()
@@ -129,8 +126,6 @@ const exportClass = (classId: ClassId) => {
     return { exported: hasData ? exported : null, skipped: skipped }
 }
 
-// Downloads the backup file. Returns a note when some saved data couldn't be
-// read and was left out, or when there's nothing to back up.
 export const exportBackup = (): { error: string } | { note: string } => {
     const backup: Backup = {
         format: FORMAT,
@@ -302,7 +297,6 @@ export type ImportPlan = {
     classes: ImportClass[]
     routeCount: number
     boardCount: number
-    // Classes whose priorities or budget the import replaces.
     replacedClasses: ClassId[]
 }
 
@@ -310,8 +304,6 @@ const markImported = <T extends { name: string }>(entry: T): T => {
     return { ...entry, name: `${entry.name} (imported)` }
 }
 
-// Reads a backup file and works out what importing it would change, so the
-// user can confirm first. Returns an error message for a bad file.
 export const planImport = (text: string): ImportPlan | string => {
     const backup = parseBackup(text)
     if (typeof backup === "string") {
@@ -379,8 +371,7 @@ export const planImport = (text: string): ImportPlan | string => {
     }
 }
 
-// Adds the new saved entries and replaces priorities and budgets. Current
-// boards and optimizer history are left alone. Returns an error or null.
+// Current boards and optimizer history are left alone.
 export const applyImport = (plan: ImportPlan) => {
     try {
         for (const classData of plan.classes) {

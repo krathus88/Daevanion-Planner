@@ -19,8 +19,6 @@ const readSettings = (classId: string) => {
     }
 }
 
-// Ariel's points and stat tiers, shared by the Ariel board and the All
-// boards tab.
 export const useArielSettings = (classId: string) => {
     const [initial] = useState(() => readSettings(classId))
     const [settings, setSettings] = useState(initial.settings)

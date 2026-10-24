@@ -1,11 +1,9 @@
 import { useSyncExternalStore } from "react"
 
-// Timers end on whole seconds. Ticking a little after each one keeps a timer
-// that fires a few ms early or late from showing a second twice and then
-// skipping one.
+// Ticks just after each second so a timer a few ms off doesn't repeat or
+// skip a second.
 const TICK_OFFSET = 50
 
-// One clock for every timer on the page, ticking once a second.
 let now = Date.now()
 const listeners = new Set<() => void>()
 let timeout: ReturnType<typeof setTimeout> | null = null

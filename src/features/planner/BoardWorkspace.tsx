@@ -2,7 +2,6 @@ import { Flex, type FlexProps } from "@chakra-ui/react"
 import { BoardCanvas } from "./board/BoardCanvas"
 import { Sidebar } from "./sidebar/Sidebar"
 
-// A board with its sidebar beside it on wide screens and below otherwise.
 export const WorkspaceRow = ({ ...props }: FlexProps) => {
     return (
         <Flex

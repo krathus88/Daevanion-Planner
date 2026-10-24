@@ -1,5 +1,3 @@
-// The bonus each special node gives. Which node gives which bonus is set per
-// board in layouts.ts (`specialNodeBonuses`) and is the same for every class.
 export type SpecialBonusType =
     | "combat-speed"
     | "cooldown-reduction"
@@ -12,7 +10,6 @@ export type SpecialBonusType =
 
 export const SPECIAL_BONUSES: Record<
     SpecialBonusType,
-    // defaultPriority: rank used until the user sets one.
     { name: string; tooltip: string; defaultPriority: number }
 > = {
     "combat-speed": {

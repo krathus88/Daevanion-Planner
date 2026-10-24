@@ -1,8 +1,6 @@
 import { defineSemanticTokens } from "@chakra-ui/react"
 
 export const colors = defineSemanticTokens.colors({
-    // The planner is a dark-only UI. Surfaces step up in lightness so
-    // panels, cards and inputs read as distinct layers.
     app: {
         bg: { value: "{colors.ink.950}" },
         header: { value: "rgba(20, 24, 33, 0.9)" },
@@ -33,15 +31,12 @@ export const colors = defineSemanticTokens.colors({
         edge: { value: "rgba(148, 163, 184, 0.16)" },
         edgeActive: { value: "rgba(255, 204, 102, 0.88)" },
         ink: { value: "{colors.gray.900}" },
-        // Stat nodes: a translucent dot that fills in when selected.
         stat: { value: "rgba(255, 255, 255, 0.12)" },
         statHover: { value: "rgba(255, 255, 255, 0.32)" },
         statSelected: { value: "{colors.white}" },
         statBorder: { value: "{colors.white}" },
         skill: { value: "{colors.blue.400}" },
         passive: { value: "{colors.green.400}" },
-        // Ariel's stat nodes that cost as much as a skill or passive.
-        // Opaque so they stand out from the board behind them.
         skillTint: { value: "#1f4f8f" },
         passiveTint: { value: "#1c6b3d" },
         special: { value: "{colors.gold.400}" },
@@ -53,17 +48,12 @@ export const colors = defineSemanticTokens.colors({
         selected: { value: "{colors.yellow.400}" },
         target: { value: "{colors.yellow.500}" },
         targetDot: { value: "{colors.yellow.400}" },
-        // Nodes Route preferences need, apart from the ones you click.
         needDot: { value: "{colors.periwinkle.400}" },
-        // Nodes Route preferences prefer: taken only when it costs nothing.
         preferRing: { value: "{colors.mint.400}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
-        // Ariel's name in the board switcher, coloured as in the game.
         ariel: { value: "{colors.bronze.500}" },
-        // Brighter when selected or hovered, as the other boards turn white.
         arielActive: { value: "{colors.bronze.400}" },
     },
-    // Item grades, coloured as the game colours item names.
     grade: {
         heroic: { value: "{colors.orange.400}" },
         unique: { value: "{colors.yellow.300}" },

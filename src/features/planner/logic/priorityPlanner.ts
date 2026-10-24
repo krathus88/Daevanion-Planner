@@ -40,34 +40,26 @@ type PriorityTarget = {
     layout: MainBoardId
     key: string
     priority: number
-    // Place within its rank, from the same-rank order setting.
     orderLevel: number
     cost: number
     abilityId?: string
     isSpecial?: boolean
-    // Stat node added with leftover points; not shown as a required target.
     isStat?: boolean
 }
 
-// Stat focus: a stat's nodes, taken before `waiting`, the abilities ranked
-// after it.
 type StatBlock = {
     stat: StatType
     waiting: PriorityTarget[]
 }
 
-// Targets of one rank and same-rank order level, in sort order; none wins
-// over another just for coming first.
+// None wins over another just for coming first.
 type RankStep = { targets: PriorityTarget[] } | { block: StatBlock }
 
-// Share of the run spent on the first greedy pass; the rest refines it.
 const GREEDY_SHARE = 0.4
 const MIN_STEP_MS = 12
 const MAX_STEP_MS = 250
 const MAX_REFINE_SLICE_MS = 1500
 const PROGRESS_INTERVAL_MS = 250
-// With "spend leftover points" on, the last part of the run adds stat nodes,
-// after everything else has had the full budget.
 const STAT_FILL_SHARE = 0.15
 const STAT_STEP_MS = 30
 
@@ -82,7 +74,6 @@ export const optimizePriorityPlans = async (
     timeBudgetMs: number,
     statSettings: StatSettings,
     onProgress: (progress: PriorityPlannerProgress) => void,
-    // Boards to plan; the others are left empty.
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ): Promise<PriorityPlannerResult> => {
     const startedAt = performance.now()
@@ -181,11 +172,8 @@ export const optimizePriorityPlans = async (
             left.key.localeCompare(right.key, undefined, { numeric: true }),
     )
 
-    // Stat focus puts each stat's nodes just before the first passive
-    // ranked after the stat's passive rank, or the first skill ranked after
-    // its skill rank, whichever comes first. Abilities of a type with no
-    // rank set keep their place in rank order. A stat with detour 0 isn't
-    // focused; at the same place, better tiers go first.
+    // A stat's nodes go before the first passive/skill ranked after its
+    // thresholds. Detour 0 isn't focused; ties go to the better tier.
     const focus = statSettings.focus
     const waitsBehind = (target: PriorityTarget, stat: StatType) => {
         if (target.abilityId === undefined) {
@@ -261,7 +249,6 @@ export const optimizePriorityPlans = async (
         triniel: emptyPlan(),
     } satisfies PriorityPlans
     let totalCost = 0
-    // Stats only break ties: equal total cost -> higher total stat score.
     const weightsByBoard = Object.fromEntries(
         MAIN_BOARD_IDS.map((layoutName) => [
             layoutName,
@@ -312,8 +299,6 @@ export const optimizePriorityPlans = async (
         )
     }
 
-    // Tries adding one target to its board's plan and returns the result
-    // without committing it, or null if no route fits the shared budget.
     const tryAddTarget = async (target: PriorityTarget, stepMs: number) => {
         const currentPlan = plans[target.layout]
         const candidateTargets = new Set([
@@ -361,7 +346,6 @@ export const optimizePriorityPlans = async (
     }
 
     type Candidate = NonNullable<Awaited<ReturnType<typeof tryAddTarget>>>
-    // Fewer total points first; at equal points, better stats.
     const isBetter = (candidate: Candidate, best: Candidate | null) => {
         return (
             best === null ||
@@ -371,9 +355,8 @@ export const optimizePriorityPlans = async (
         )
     }
 
-    // Fewer points spent reaching the node, leaving out its own cost, so
-    // skills, passives and special nodes compete fairly; at equal path
-    // cost, better stats.
+    // Excludes the node's own cost so skills, passives and specials compete
+    // fairly.
     const isBetterPath = (candidate: Candidate, best: Candidate | null) => {
         if (best === null) {
             return true
@@ -397,8 +380,7 @@ export const optimizePriorityPlans = async (
             (target) => target.abilityId === abilityId && isOnRoute(target),
         ).length
     }
-    // Max only stops the optimizer from choosing more of an ability's nodes;
-    // a cheaper route may still pass through extra ones.
+    // Max only limits choices; a cheaper route may still pass extra nodes.
     const isAtMaximum = (abilityId: string | undefined) => {
         return (
             abilityId !== undefined &&
@@ -407,7 +389,6 @@ export const optimizePriorityPlans = async (
         )
     }
 
-    // Min can't ask for more upgrades than the planned boards have nodes.
     const requiredUpgrades = new Map(
         classPreset.abilities.map((ability) => [
             ability.id,
@@ -428,8 +409,6 @@ export const optimizePriorityPlans = async (
 
     const specialTargets = targets.filter((target) => target.isSpecial)
 
-    // Reserve minimum upgrades in rank order. Each step takes the ability's
-    // node that adds the fewest points to the shared total.
     const fillMinimums = async (stepMs: number, until: number) => {
         for (const ability of minimumAbilities) {
             if (performance.now() >= until) {
@@ -459,8 +438,7 @@ export const optimizePriorityPlans = async (
         return layouts[layoutName].nodeStats[key] as StatType | undefined
     }
 
-    // Makes stat nodes targets, so later routes for lower-ranked abilities
-    // can't trade them away. They still aren't shown as required targets.
+    // Pinned as targets so lower-ranked routes can't trade them away.
     const pinStatNodes = (layoutName: MainBoardId, keys: string[]) => {
         const plan = plans[layoutName]
         const added = keys.filter((key) => !plan.targetCells.includes(key))
@@ -473,7 +451,6 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    // Adds a stat step's nodes to its board and pins its wanted stat nodes.
     const commitStatStep = (
         layoutName: MainBoardId,
         step: StatStep,
@@ -496,14 +473,11 @@ export const optimizePriorityPlans = async (
         pinStatNodes(layoutName, step.connector.filter(isFree))
     }
 
-    // Stat focus: takes the stat's nodes, least detour first, while each is
-    // within its detour and the shared budget lasts. Among equal detours,
-    // nodes closer to an ability still waiting win, so the branch is more
-    // likely to become part of that ability's route later.
+    // Ties go to nodes near a waiting ability, so its route can reuse the
+    // branch.
     const fillStatBlock = (block: StatBlock) => {
         const stepsByBoard = new Map<MainBoardId, StatStep[]>()
 
-        // Nodes of every focused stat aren't a detour.
         const isFreeOn = (layoutName: MainBoardId) => {
             return (key: string) => {
                 const stat = statAt(layoutName, key)
@@ -511,7 +485,6 @@ export const optimizePriorityPlans = async (
             }
         }
 
-        // Keep the wanted stat nodes routes already pass through.
         for (const layoutName of boards) {
             pinStatNodes(
                 layoutName,
@@ -573,8 +546,6 @@ export const optimizePriorityPlans = async (
         while (totalCost < pointBudget) {
             let best: { layoutName: MainBoardId; step: StatStep } | null = null
             for (const layoutName of boards) {
-                // Sorted best first, so the first one that fits is the
-                // board's best.
                 const step = stepsFor(layoutName).find(
                     (candidate) => totalCost + candidate.cost <= pointBudget,
                 )
@@ -606,8 +577,7 @@ export const optimizePriorityPlans = async (
                 continue
             }
 
-            // Equal ranks: each step takes the target with the cheapest path.
-            // One that doesn't fit now won't fit later in this pass.
+            // Something that doesn't fit now won't fit later in this pass.
             let remaining = step.targets
             while (performance.now() < until) {
                 remaining = remaining.filter(
@@ -635,8 +605,6 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    // "Spend leftover points": add stat nodes, best weight first, while the
-    // shared budget allows. Existing targets stay, so nothing major is lost.
     const statCandidates = boards
         .flatMap((layoutName) =>
             [...weightsByBoard[layoutName].entries()].map(([key, weight]) => ({
@@ -669,8 +637,6 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    // Search each board's current targets again for a cheaper route, or an
-    // equally cheap one through better stats.
     const refineRoutes = async () => {
         const boards = (Object.keys(plans) as MainBoardId[]).filter(
             (layoutName) => plans[layoutName].targetCells.length > 0,
@@ -713,7 +679,6 @@ export const optimizePriorityPlans = async (
                     .length,
         0,
     )
-    // Picking the cheapest of equal ranks each step tries every remaining one.
     const rankCalls = rankSteps.reduce(
         (calls, step) =>
             "targets" in step
@@ -772,8 +737,6 @@ export const optimizePriorityPlans = async (
             : []
     })
 
-    // Stat nodes from leftover points stay on the route but aren't shown as
-    // required targets.
     for (const layoutName of Object.keys(plans) as MainBoardId[]) {
         plans[layoutName].targetCells = plans[layoutName].targetCells.filter(
             (key) => !statTargetKeys[layoutName].has(key),

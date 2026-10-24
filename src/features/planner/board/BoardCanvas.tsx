@@ -22,8 +22,7 @@ export const BoardCanvas = () => {
     const ariel = useArielSettings(classPreset.id)
 
     const isManual = view === "board"
-    // Ariel has no Route preferences; its Best and Good costly stats get
-    // the Need and Prefer markers instead.
+    // Ariel has no Route preferences; its Best/Good costly stats get the markers.
     const arielCells = isMainBoard(layoutName)
         ? null
         : arielMarkedCells(ariel.settings.tiers)

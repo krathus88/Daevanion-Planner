@@ -14,11 +14,10 @@ type SharedPlanPageProps = {
     classPreset: ClassPreset
     layout: BoardId
     code: string
-    // The viewer's own planner, shown under a settings-only link.
     ownPlanner: ReactNode
 }
 
-// A plan opened from a share link. Nothing is written until it's saved.
+// Nothing is written until it's saved.
 export const SharedPlanPage = ({
     classId,
     classPreset,
@@ -49,8 +48,6 @@ export const SharedPlanPage = ({
 
     const result = decoded?.linkKey === linkKey ? decoded.result : null
 
-    // Settings only: the viewer's own board, with the settings in the
-    // sidebar.
     if (
         result !== null &&
         typeof result !== "string" &&
@@ -75,7 +72,6 @@ export const SharedPlanPage = ({
                 </Card>
             ) : (
                 <SharedPlanWorkspace
-                    // Saving starts over for each link.
                     key={linkKey}
                     classPreset={classPreset}
                     layout={layout}

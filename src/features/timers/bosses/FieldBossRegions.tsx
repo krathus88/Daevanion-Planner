@@ -12,7 +12,6 @@ import { BossRow } from "./BossRow"
 type FieldBossRegionsProps = {
     region: FieldBossRegion
     entries: TimerEntry[]
-    // A boss to scroll to and open for input.
     focusedTimer?: TimerId
     now: number
     onRegionChange: (region: FieldBossRegion) => void
@@ -23,7 +22,6 @@ type FieldBossRegionsProps = {
     onReportChange: (id: TimerId, report: BossReport | null) => void
 }
 
-// The field bosses of one region at a time: Verteron, Altgard or the Abyss.
 export const FieldBossRegions = ({
     region,
     entries,
@@ -42,8 +40,6 @@ export const FieldBossRegions = ({
         }
     }
 
-    // Longest respawn first, as those are the bosses worth planning around;
-    // then by name.
     const shown = entries
         .filter((entry) => entry.timer.boss?.region === region)
         .sort(
@@ -82,13 +78,11 @@ export const FieldBossRegions = ({
 
             {region === "abyss" && (
                 <Text textStyle="hint">
-                    These bosses spawn on a fixed schedule rather than a kill
-                    timer. Times are EU server time, which follows Central
-                    European time. Marking a kill ends its spawn early.
+                    Fixed schedule in EU server time. Marking a kill ends its
+                    spawn early.
                 </Text>
             )}
 
-            {/* As many columns as fit at about 18rem each, up to three. */}
             <Grid
                 templateColumns="repeat(auto-fit, minmax(min(100%, max(18.25rem, calc((100% - 1rem) / 3))), 1fr))"
                 alignItems="start"
@@ -113,10 +107,7 @@ export const FieldBossRegions = ({
                 )}
             </Grid>
 
-            <Text textStyle="hint">
-                Respawn times are counted from the kill. The in-game Field Boss
-                list is always the exact time.
-            </Text>
+            <Text textStyle="hint">Respawns count from the kill.</Text>
         </Flex>
     )
 }
