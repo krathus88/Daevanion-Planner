@@ -7,6 +7,8 @@ export const colors = defineSemanticTokens.colors({
         panel: { value: "{colors.ink.850}" },
         raised: { value: "{colors.ink.800}" },
         hover: { value: "{colors.ink.750}" },
+        // List rows on a raised card: a shade darker than the card.
+        row: { value: "{colors.ink.825}" },
         inset: { value: "{colors.ink.900}" },
         border: { value: "{colors.ink.700}" },
         borderStrong: { value: "{colors.ink.600}" },
@@ -53,6 +55,22 @@ export const colors = defineSemanticTokens.colors({
         labelBg: { value: "{colors.blackAlpha.600}" },
         ariel: { value: "{colors.bronze.500}" },
         arielActive: { value: "{colors.bronze.400}" },
+    },
+    pet: {
+        cogni: { value: "{colors.periwinkle.400}" },
+        fera: { value: "{colors.coral.400}" },
+        natura: { value: "{colors.mint.400}" },
+        varian: { value: "{colors.purple.300}" },
+        special: { value: "{colors.gold.400}" },
+        pin: { value: "{colors.gold.300}" },
+        // Pet Insight levels, in rarity order (green, blue, orange).
+        level1: { value: "{colors.green.400}" },
+        level1Muted: { value: "rgba(74, 222, 128, 0.16)" },
+        level2: { value: "{colors.blue.400}" },
+        level2Muted: { value: "rgba(96, 165, 250, 0.16)" },
+        level3: { value: "{colors.orange.400}" },
+        level3Muted: { value: "rgba(251, 146, 60, 0.16)" },
+        pinRing: { value: "{colors.ink.950}" },
     },
     grade: {
         heroic: { value: "{colors.orange.400}" },

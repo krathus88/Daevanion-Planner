@@ -1,1 +1,1 @@
-export type SitePage = "planner" | "timers"
+export type SitePage = "planner" | "timers" | "pets"

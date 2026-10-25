@@ -1,0 +1,215 @@
+// Groups map spawns into spots: tight clusters of pins within one area.
+// Used by scripts/buildPetAtlas.ts for every pet together, and by the page
+// for one pet's own spawns.
+// Spots: spawns closer than size / SPOT_LINK join one spot; a spot wider
+// than size / SPOT_WIDTH is split; spots under SPOT_MIN_SPAWNS fold into a
+// neighbour when the result stays narrow enough.
+const SPOT_LINK = 136
+const SPOT_WIDTH = 20
+const SPOT_MIN_SPAWNS = 10
+
+export type SpotSpawn = { x: number; y: number; area: number; key: number }
+
+const getWidth = (spawns: SpotSpawn[]) => {
+    const xs = spawns.map((spawn) => spawn.x)
+    const ys = spawns.map((spawn) => spawn.y)
+
+    return Math.max(
+        Math.max(...xs) - Math.min(...xs),
+        Math.max(...ys) - Math.min(...ys),
+    )
+}
+
+export const getCenter = (spawns: SpotSpawn[]) => {
+    let x = 0
+    let y = 0
+
+    for (const spawn of spawns) {
+        x += spawn.x
+        y += spawn.y
+    }
+
+    return { x: x / spawns.length, y: y / spawns.length }
+}
+
+// Spawns of one area within `distance` of each other, chained.
+const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
+    const parents = spawns.map((_, index) => index)
+    const findRoot = (index: number): number => {
+        if (parents[index] !== index) {
+            parents[index] = findRoot(parents[index])
+        }
+
+        return parents[index]
+    }
+    const cells = new Map<string, number[]>()
+    const getCell = (x: number, y: number) => {
+        return `${Math.floor(x / distance)},${Math.floor(y / distance)}`
+    }
+
+    for (const [index, spawn] of spawns.entries()) {
+        const cell = getCell(spawn.x, spawn.y)
+
+        cells.set(cell, [...(cells.get(cell) ?? []), index])
+    }
+
+    for (const [index, spawn] of spawns.entries()) {
+        for (const dx of [-distance, 0, distance]) {
+            for (const dy of [-distance, 0, distance]) {
+                for (const other of cells.get(
+                    getCell(spawn.x + dx, spawn.y + dy),
+                ) ?? []) {
+                    const near =
+                        Math.hypot(
+                            spawn.x - spawns[other].x,
+                            spawn.y - spawns[other].y,
+                        ) <= distance
+
+                    if (near && spawns[other].area === spawn.area) {
+                        parents[findRoot(index)] = findRoot(other)
+                    }
+                }
+            }
+        }
+    }
+
+    const groups = new Map<number, SpotSpawn[]>()
+
+    for (const [index, spawn] of spawns.entries()) {
+        const root = findRoot(index)
+
+        groups.set(root, [...(groups.get(root) ?? []), spawn])
+    }
+
+    return [...groups.values()]
+}
+
+// k-means seeded with far-apart spawns, so results never change between runs.
+const splitInto = (spawns: SpotSpawn[], count: number) => {
+    const seeds = [spawns[0]]
+
+    while (seeds.length < count) {
+        let farthest = spawns[0]
+        let farthestDistance = -1
+
+        for (const spawn of spawns) {
+            const distance = Math.min(
+                ...seeds.map((seed) => {
+                    return Math.hypot(spawn.x - seed.x, spawn.y - seed.y)
+                }),
+            )
+
+            if (distance > farthestDistance) {
+                farthest = spawn
+                farthestDistance = distance
+            }
+        }
+
+        seeds.push(farthest)
+    }
+
+    let centers = seeds.map((seed) => ({ x: seed.x, y: seed.y }))
+    let parts: SpotSpawn[][] = []
+
+    for (let round = 0; round < 30; round++) {
+        parts = centers.map((): SpotSpawn[] => [])
+
+        for (const spawn of spawns) {
+            let closest = 0
+
+            for (const [index, center] of centers.entries()) {
+                const distance = Math.hypot(
+                    spawn.x - center.x,
+                    spawn.y - center.y,
+                )
+                const best = Math.hypot(
+                    spawn.x - centers[closest].x,
+                    spawn.y - centers[closest].y,
+                )
+
+                if (distance < best) {
+                    closest = index
+                }
+            }
+
+            parts[closest].push(spawn)
+        }
+
+        centers = parts.map((part, index) => {
+            return part.length > 0 ? getCenter(part) : centers[index]
+        })
+    }
+
+    return parts.filter((part) => part.length > 0)
+}
+
+const splitWide = (spawns: SpotSpawn[], maxWidth: number) => {
+    if (getWidth(spawns) <= maxWidth) {
+        return [spawns]
+    }
+
+    for (let count = 2; ; count++) {
+        const parts = splitInto(spawns, count)
+
+        if (parts.every((part) => getWidth(part) <= maxWidth)) {
+            return parts
+        }
+    }
+}
+
+// Small spots join the nearest spot of their area while it stays narrow.
+const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
+    const done = new Set<SpotSpawn[]>()
+
+    for (;;) {
+        spots.sort((a, b) => a.length - b.length)
+
+        const small = spots.find((spot) => {
+            return spot.length < SPOT_MIN_SPAWNS && !done.has(spot)
+        })
+
+        if (!small) {
+            return spots
+        }
+
+        const center = getCenter(small)
+        let target: SpotSpawn[] | null = null
+        let targetDistance = Infinity
+
+        for (const spot of spots) {
+            if (spot === small || spot[0].area !== small[0].area) {
+                continue
+            }
+
+            const other = getCenter(spot)
+            const distance = Math.hypot(center.x - other.x, center.y - other.y)
+
+            if (
+                distance < targetDistance &&
+                getWidth([...spot, ...small]) <= maxWidth
+            ) {
+                target = spot
+                targetDistance = distance
+            }
+        }
+
+        if (!target) {
+            done.add(small)
+            continue
+        }
+
+        target.push(...small)
+        spots.splice(spots.indexOf(small), 1)
+    }
+}
+
+export const clusterSpawns = (spawns: SpotSpawn[], size: number) => {
+    const maxWidth = size / SPOT_WIDTH
+
+    return foldSmall(
+        linkSpawns(spawns, size / SPOT_LINK).flatMap((group) => {
+            return splitWide(group, maxWidth)
+        }),
+        maxWidth,
+    )
+}

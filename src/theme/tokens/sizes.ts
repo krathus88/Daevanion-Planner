@@ -10,6 +10,8 @@ export const sizes = defineTokens.sizes({
     searchTimeSelect: { value: "5.5rem" },
     serverSelect: { value: "11rem" },
     plannedColumn: { value: "1.5rem" },
+    petList: { value: "22rem" },
+    petMap: { value: "max(28rem, calc(100vh - 22rem))" },
     node: {
         stat: { value: "1.875rem" },
         statPassive: { value: "2.25rem" },

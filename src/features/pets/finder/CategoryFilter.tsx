@@ -1,0 +1,42 @@
+import { SegmentGroup } from "@chakra-ui/react"
+import {
+    isPetCategoryId,
+    PET_CATEGORY_IDS,
+    PET_CATEGORY_NAMES,
+    type PetCategoryId,
+} from "@pets/config/petCategories"
+
+const ALL = "all"
+
+const items = [
+    { value: ALL, label: "All" },
+    ...PET_CATEGORY_IDS.map((id) => ({
+        value: id,
+        label: PET_CATEGORY_NAMES[id],
+    })),
+]
+
+type CategoryFilterProps = {
+    value: PetCategoryId | null
+    onChange: (value: PetCategoryId | null) => void
+}
+
+export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
+    const handleValueChange = (details: SegmentGroup.ValueChangeDetails) => {
+        onChange(isPetCategoryId(details.value) ? details.value : null)
+    }
+
+    return (
+        <SegmentGroup.Root
+            size="xs"
+            layout="fill"
+            value={value ?? ALL}
+            aria-label="Pet type"
+            onValueChange={handleValueChange}
+        >
+            <SegmentGroup.Indicator />
+
+            <SegmentGroup.Items items={items} />
+        </SegmentGroup.Root>
+    )
+}

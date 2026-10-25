@@ -1,0 +1,63 @@
+/* Leaflet ships light styles outside Chakra's cascade layers, so theme
+   overrides must be unlayered too. Colors come from the theme's CSS vars. */
+.leaflet-container {
+    background: var(--chakra-colors-app-inset);
+    font-family: var(--chakra-fonts-body);
+}
+
+.leaflet-tooltip {
+    /* Near the map's right edge a tooltip shrinks to the space left, and its
+       one-line text spills past the background; size it to its content. */
+    width: max-content;
+    background: var(--chakra-colors-app-raised);
+    border-color: var(--chakra-colors-app-border-strong);
+    color: var(--chakra-colors-app-fg);
+    box-shadow: var(--chakra-shadows-md);
+}
+
+.leaflet-container.pet-map-pointer {
+    cursor: pointer;
+}
+
+.pet-tooltip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pet-tooltip img {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.375rem;
+    background: var(--chakra-colors-app-inset);
+    object-fit: contain;
+}
+
+.leaflet-tooltip-top::before {
+    border-top-color: var(--chakra-colors-app-border-strong);
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+    background: var(--chakra-colors-app-raised);
+    border-color: var(--chakra-colors-app-border);
+    color: var(--chakra-colors-app-fg);
+}
+
+.leaflet-bar a:hover {
+    background: var(--chakra-colors-app-hover);
+}
+
+.leaflet-touch .leaflet-bar,
+.leaflet-bar {
+    border-color: var(--chakra-colors-app-border);
+}
+
+.leaflet-container .leaflet-control-attribution {
+    background: var(--chakra-colors-app-header);
+    color: var(--chakra-colors-app-subtle);
+}
+
+.leaflet-control-attribution a {
+    color: var(--chakra-colors-app-muted);
+}
