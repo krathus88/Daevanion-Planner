@@ -15,6 +15,7 @@ import {
 import {
     clusterSpawns,
     getCenter,
+    getMainArea,
     type SpotSpawn,
 } from "../src/features/pets/logic/spotClusters.ts"
 
@@ -353,7 +354,7 @@ const nameSpots = (groups: SpotSpawn[][], landmarks: Landmark[]) => {
         used.add(name)
         spots.push({
             name: name,
-            area: entry.spawns[0].area,
+            area: getMainArea(entry.spawns),
             spawns: entry.spawns,
         })
     }
