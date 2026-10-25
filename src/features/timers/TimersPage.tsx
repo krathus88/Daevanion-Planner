@@ -92,7 +92,6 @@ export const TimersPage = () => {
                                 checked={settings.showPinned}
                                 onChange={changeShowPinned}
                             />
-
                             <PinnedLayoutToggle
                                 ref={layoutToggleRef}
                                 open={isLayoutOpen}

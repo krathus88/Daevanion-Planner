@@ -6,6 +6,10 @@ import {
     type TimerId,
 } from "@timers/config/timers"
 import {
+    DEFAULT_COMING_NEXT_COUNT,
+    isComingNextCount,
+} from "@timers/logic/comingNext"
+import {
     isComingNextPosition,
     type ComingNextPosition,
 } from "@timers/logic/comingNextPosition"
@@ -24,6 +28,7 @@ export type TimerSettings = {
     // Overrides only; see isInComingNext for the defaults.
     comingNext: Partial<Record<TimerId, boolean>>
     showComingNext: boolean
+    comingNextCount: number
     // Null hangs it from the header at the content's left edge.
     comingNextPosition: ComingNextPosition | null
 }
@@ -44,6 +49,7 @@ const DEFAULT_SETTINGS: TimerSettings = {
     soonMinutes: {},
     comingNext: {},
     showComingNext: false,
+    comingNextCount: DEFAULT_COMING_NEXT_COUNT,
     comingNextPosition: null,
 }
 
@@ -143,6 +149,9 @@ const parse = (raw: string | null): TimerSettings => {
             showComingNext: isBoolean(value.showComingNext)
                 ? value.showComingNext
                 : DEFAULT_SETTINGS.showComingNext,
+            comingNextCount: isComingNextCount(value.comingNextCount)
+                ? value.comingNextCount
+                : DEFAULT_SETTINGS.comingNextCount,
             comingNextPosition: isComingNextPosition(value.comingNextPosition)
                 ? value.comingNextPosition
                 : DEFAULT_SETTINGS.comingNextPosition,

@@ -3,12 +3,18 @@ import { Link as RouterLink } from "@tanstack/react-router"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import { TimerChip } from "./TimerChip"
 
-type SetTimerChipProps = {
+type BossChipLinkProps = {
     entry: TimerEntry
     now: number
 }
 
-export const SetTimerChip = ({ entry, now }: SetTimerChipProps) => {
+// Opens the boss's row on the Timers page.
+export const BossChipLink = ({ entry, now }: BossChipLinkProps) => {
+    const label =
+        entry.state.status === "unset"
+            ? `Set the ${entry.timer.name} timer`
+            : `Go to ${entry.timer.name}`
+
     return (
         <Link
             asChild
@@ -24,7 +30,7 @@ export const SetTimerChip = ({ entry, now }: SetTimerChipProps) => {
                     region: entry.timer.boss?.region,
                     timer: entry.timer.id,
                 }}
-                aria-label={`Set the ${entry.timer.name} timer`}
+                aria-label={label}
             >
                 <TimerChip entry={entry} now={now} />
             </RouterLink>
