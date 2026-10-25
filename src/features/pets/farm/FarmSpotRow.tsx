@@ -1,4 +1,8 @@
 import { Button, chakra, Flex, Text } from "@chakra-ui/react"
+import {
+    PET_CATEGORY_NAMES,
+    type PetCategoryId,
+} from "@pets/config/petCategories"
 import type { FarmSpot } from "@pets/logic/farmSpots"
 import { useState } from "react"
 import { FarmPetList } from "./FarmPetList"
@@ -10,6 +14,8 @@ type FarmSpotRowProps = {
     spot: FarmSpot
     rank: number
     selected: boolean
+    // Shown as "2 Cogni" in the caption.
+    requiredCategories: PetCategoryId[]
     // Null clears the focus (clicking the focused spot again).
     onFocus: (spot: string | null) => void
     onPetSelect: (petId: number) => void
@@ -19,6 +25,7 @@ export const FarmSpotRow = ({
     spot,
     rank,
     selected,
+    requiredCategories,
     onFocus,
     onPetSelect,
 }: FarmSpotRowProps) => {
@@ -38,6 +45,13 @@ export const FarmSpotRow = ({
         spot.minLevel === spot.maxLevel
             ? `Lv${spot.minLevel}`
             : `Lv${spot.minLevel}-${spot.maxLevel}`
+    const required = requiredCategories.map((category) => {
+        const count = spot.pets.filter((entry) => {
+            return entry.pet.category === category
+        }).length
+
+        return ` · ${count} ${PET_CATEGORY_NAMES[category]}`
+    })
 
     // A spot that isn't focused gets a lighter fill than the panel, not just
     // an outline, like the pet's map cards.
@@ -83,6 +97,7 @@ export const FarmSpotRow = ({
                 <Text textStyle="caption">
                     {spot.pets.length} {spot.pets.length === 1 ? "pet" : "pets"}{" "}
                     · {spot.spawns} spawns · {levels}
+                    {required.join("")}
                 </Text>
             </chakra.button>
 

@@ -1,3 +1,4 @@
+import type { PetCategoryId } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
 import { getPetLevel } from "./petLevels"
@@ -98,4 +99,38 @@ export const getFarmSpots = (
     return ranked.sort((a, b) => {
         return b.pets.length - a.pets.length || b.spawns - a.spawns
     })
+}
+
+// Spots that still have a pet of every required category, ranked as before.
+// Their pets of those categories come first, so they show before "+N more".
+export const filterFarmSpots = (
+    spots: FarmSpot[],
+    categories: PetCategoryId[],
+) => {
+    if (categories.length === 0) {
+        return spots
+    }
+
+    const filtered: FarmSpot[] = []
+
+    for (const spot of spots) {
+        const hasAll = categories.every((category) => {
+            return spot.pets.some((entry) => entry.pet.category === category)
+        })
+
+        if (!hasAll) {
+            continue
+        }
+
+        const required = spot.pets.filter((entry) => {
+            return categories.includes(entry.pet.category)
+        })
+        const others = spot.pets.filter((entry) => {
+            return !categories.includes(entry.pet.category)
+        })
+
+        filtered.push({ ...spot, pets: [...required, ...others] })
+    }
+
+    return filtered
 }

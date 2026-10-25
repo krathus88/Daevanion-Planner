@@ -1,7 +1,14 @@
 import { Container, Flex, Grid, Heading, Link, Text } from "@chakra-ui/react"
-import type { PetCategoryId } from "@pets/config/petCategories"
+import {
+    PET_CATEGORY_IDS,
+    type PetCategoryId,
+} from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
-import { getFarmSpots, isPetNeeded } from "@pets/logic/farmSpots"
+import {
+    filterFarmSpots,
+    getFarmSpots,
+    isPetNeeded,
+} from "@pets/logic/farmSpots"
 import { getPetLevel } from "@pets/logic/petLevels"
 import {
     filterPets,
@@ -40,6 +47,10 @@ export const PetsPage = () => {
 
     const [query, setQuery] = useState("")
     const [category, setCategory] = useState<PetCategoryId | null>(null)
+    // Best spots must still have a pet of each of these types.
+    const [requiredCategories, setRequiredCategories] = useState<
+        PetCategoryId[]
+    >([])
     // The inputs update at once; the list, map and ranking follow when the
     // browser has time, so typing never waits on them.
     const deferredQuery = useDeferredValue(query)
@@ -131,6 +142,19 @@ export const PetsPage = () => {
         })
     }
 
+    const handleRequiredChange = (
+        changed: PetCategoryId,
+        required: boolean,
+    ) => {
+        setRequiredCategories(
+            PET_CATEGORY_IDS.filter((item) => {
+                return item === changed
+                    ? required
+                    : requiredCategories.includes(item)
+            }),
+        )
+    }
+
     const handleMinimize = () => {
         changeMinimized(true)
     }
@@ -161,7 +185,10 @@ export const PetsPage = () => {
         mapId,
         source?.labels,
     )
-    const farmSpots = getFarmSpots(atlas, pets, deferredLevels, mapId)
+    const farmSpots = filterFarmSpots(
+        getFarmSpots(atlas, pets, deferredLevels, mapId),
+        requiredCategories,
+    )
     // A focused spot shows only its pins: the open pet's, or a farm spot's
     // still-Locked pets.
     const focusPins = selectedPet
@@ -254,7 +281,9 @@ export const PetsPage = () => {
                                 spots={farmSpots}
                                 mapId={mapId}
                                 focusedSpot={focusedSpot}
+                                requiredCategories={requiredCategories}
                                 onSpotFocus={handleSpotFocus}
+                                onRequiredChange={handleRequiredChange}
                                 onPetSelect={handleFarmPetSelect}
                                 onMinimize={handleMinimize}
                             />
