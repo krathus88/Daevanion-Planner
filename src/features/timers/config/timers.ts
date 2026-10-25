@@ -137,11 +137,11 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         icon: DimensionalInvasion,
         color: { hue: "orange", tone: "strong" },
         soonMinutes: 5,
-        description: "Every hour at half past.",
+        description: "Every hour at half past. Open for about 3 minutes.",
         schedule: {
             anchor: Date.UTC(2026, 9, 14, 0, 30),
             period: HOUR,
-            openFor: 0,
+            openFor: 3 * MINUTE,
         },
     },
     {

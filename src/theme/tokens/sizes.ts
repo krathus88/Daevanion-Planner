@@ -8,6 +8,7 @@ export const sizes = defineTokens.sizes({
     sidebarMaxH: { value: "calc(100vh - 7rem)" },
     board: { value: "880px" },
     searchTimeSelect: { value: "5.5rem" },
+    serverSelect: { value: "11rem" },
     plannedColumn: { value: "1.5rem" },
     node: {
         stat: { value: "1.875rem" },

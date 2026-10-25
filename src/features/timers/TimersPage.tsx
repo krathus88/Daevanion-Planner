@@ -1,6 +1,7 @@
 import { Container, Flex, Heading, Text } from "@chakra-ui/react"
 import { getRouteApi } from "@tanstack/react-router"
 import type { FieldBossRegion } from "@timers/config/fieldBosses"
+import { getFactionRegion, getServerRegions } from "@timers/config/servers"
 import { TIMER_CATEGORIES, type TimerCategory } from "@timers/config/timers"
 import { useEffect, useRef, useState } from "react"
 import { Term } from "@common/Term"
@@ -18,6 +19,7 @@ export const TimersPage = () => {
     const navigate = route.useNavigate()
     const {
         now,
+        server,
         timers,
         pinnedColumns,
         settings,
@@ -27,6 +29,8 @@ export const TimersPage = () => {
         resetTimerColor,
         changeSoonMinutes,
         changeShowPinned,
+        changeServer,
+        changeShowShared,
         changeBossReport,
     } = useTimers()
 
@@ -66,6 +70,13 @@ export const TimersPage = () => {
     const handleLayoutToggle = () => {
         setIsLayoutOpen(!isLayoutOpen)
     }
+
+    const regions = getServerRegions(server)
+    // A link may name the other faction's region.
+    const region =
+        search.region && regions.includes(search.region)
+            ? search.region
+            : getFactionRegion(server)
 
     return (
         <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
@@ -111,11 +122,16 @@ export const TimersPage = () => {
 
                 <TimerTabs
                     tab={search.tab ?? TIMER_CATEGORIES[0].id}
-                    region={search.region ?? "verteron"}
+                    server={server}
+                    region={region}
+                    regions={regions}
                     focusedTimer={search.timer}
                     timers={timers}
                     now={now}
+                    shared={settings.showShared}
                     onTabChange={handleTabChange}
+                    onServerChange={changeServer}
+                    onSharedChange={changeShowShared}
                     onRegionChange={handleRegionChange}
                     onTogglePinned={togglePinned}
                     onColorChange={changeTimerColor}

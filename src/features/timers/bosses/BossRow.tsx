@@ -236,11 +236,15 @@ export const BossRow = ({
                             <BossReportForm
                                 focusRequest={focusForm}
                                 onChange={handleReport}
-                                onClear={entry.report ? handleClear : undefined}
+                                onClear={
+                                    entry.canClearReport
+                                        ? handleClear
+                                        : undefined
+                                }
                             />
                         )}
 
-                        {boss.schedule && entry.report && (
+                        {boss.schedule && entry.canClearReport && (
                             <Button
                                 variant="dangerGhost"
                                 size="xs"

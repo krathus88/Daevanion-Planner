@@ -15,7 +15,7 @@ export const isComingNextCount = (value: unknown): value is number => {
 }
 
 // Field bosses that count by default, on top of the Abyss ones.
-const DEFAULT_BOSSES: readonly TimerId[] = ["gartua"]
+const DEFAULT_BOSSES: readonly TimerId[] = ["gartua", "immortal-gartua"]
 
 // Events, resets, Abyss bosses and DEFAULT_BOSSES count unless turned off.
 const isDefaultInComingNext = (timer: TimerDefinition) => {
