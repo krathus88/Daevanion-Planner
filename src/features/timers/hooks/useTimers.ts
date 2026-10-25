@@ -38,6 +38,7 @@ export const useTimers = () => {
         changeSoonMinutes,
         changeShowPinned,
         changeShowComingNext,
+        changeComingNextCount,
         changeComingNextPosition,
         changeBossReport,
     } = useTimerSettings()
@@ -63,7 +64,7 @@ export const useTimers = () => {
     const pinnedColumns = settings.pinned.map((column) =>
         column.flatMap((id) => entryById.get(id) ?? []),
     )
-    const comingNext = getComingNext(timers)
+    const comingNext = getComingNext(timers, settings.comingNextCount)
 
     return {
         now: now,
@@ -78,6 +79,7 @@ export const useTimers = () => {
         changeSoonMinutes: changeSoonMinutes,
         changeShowPinned: changeShowPinned,
         changeShowComingNext: changeShowComingNext,
+        changeComingNextCount: changeComingNextCount,
         changeComingNextPosition: changeComingNextPosition,
         changeBossReport: changeBossReport,
     }

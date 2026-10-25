@@ -82,6 +82,10 @@ export const useTimerSettings = () => {
         })
     }
 
+    const changeComingNextCount = (count: number) => {
+        writeTimerSettings({ ...readTimerSettings(), comingNextCount: count })
+    }
+
     const changeComingNextPosition = (position: ComingNextPosition) => {
         writeTimerSettings({
             ...readTimerSettings(),
@@ -113,6 +117,7 @@ export const useTimerSettings = () => {
         changeShowPinned: changeShowPinned,
         changeComingNext: changeComingNext,
         changeShowComingNext: changeShowComingNext,
+        changeComingNextCount: changeComingNextCount,
         changeComingNextPosition: changeComingNextPosition,
         changeBossReport: changeBossReport,
     }

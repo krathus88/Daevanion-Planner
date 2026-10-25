@@ -1,15 +1,10 @@
 import { Box, Flex, useBreakpointValue, type FlexProps } from "@chakra-ui/react"
 import { useTimers, type TimerEntry } from "@timers/hooks/useTimers"
 import { useLayoutEffect, useRef, useState } from "react"
-import { SetTimerChip } from "./SetTimerChip"
-import { TimerChip } from "./TimerChip"
+import { HeaderTimerChip } from "./HeaderTimerChip"
 
 const renderChip = (entry: TimerEntry, now: number) => {
-    return entry.state.status === "unset" ? (
-        <SetTimerChip key={entry.timer.id} entry={entry} now={now} />
-    ) : (
-        <TimerChip key={entry.timer.id} entry={entry} now={now} />
-    )
+    return <HeaderTimerChip key={entry.timer.id} entry={entry} now={now} />
 }
 
 // Measures a hidden one-line copy, so the result doesn't depend on the

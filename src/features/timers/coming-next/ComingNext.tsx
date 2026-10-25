@@ -7,6 +7,7 @@ export const ComingNext = () => {
         comingNext,
         settings,
         changeShowComingNext,
+        changeComingNextCount,
         changeComingNextPosition,
     } = useTimers()
 
@@ -23,9 +24,11 @@ export const ComingNext = () => {
             entries={comingNext}
             now={now}
             position={settings.comingNextPosition}
+            count={settings.comingNextCount}
             open={settings.showComingNext}
             onToggle={handleToggle}
             onMove={changeComingNextPosition}
+            onCountChange={changeComingNextCount}
         />
     )
 }
