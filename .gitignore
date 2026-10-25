@@ -27,3 +27,5 @@ dist-ssr
 
 # TanStack Router generator temp files
 .tanstack
+
+CLAUDE.md
