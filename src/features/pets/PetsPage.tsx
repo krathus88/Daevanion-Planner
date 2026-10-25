@@ -185,16 +185,14 @@ export const PetsPage = () => {
         ? getPetMapCounts(atlas, selectedPet)
         : getMapCounts(atlas, pets)
     const source = sources.find((item) => item.mapId === mapId)
+    const farm = getFarmSpots(atlas, pets, deferredLevels, mapId)
     const pins = getMapPins(
         atlas,
         selectedPet ? [selectedPet] : pets,
         mapId,
-        source?.labels,
+        selectedPet ? source?.labels : farm.labels,
     )
-    const farmSpots = filterFarmSpots(
-        getFarmSpots(atlas, pets, deferredLevels, mapId),
-        requiredCategories,
-    )
+    const farmSpots = filterFarmSpots(farm.spots, requiredCategories)
     // A focused spot shows only its pins: the open pet's, or a farm spot's
     // pets below Lv3.
     const focusPins = selectedPet

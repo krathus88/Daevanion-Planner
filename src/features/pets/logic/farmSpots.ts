@@ -1,8 +1,9 @@
 import type { PetCategoryId } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
-import { getFarmSpotIndexes } from "./farmSpotIndexes"
+import { getPetPatches, mergePatches } from "./farmPatches"
 import { getPetLevel, MAX_PET_LEVEL } from "./petLevels"
+import { nameSpotGroup, type SpotLabels } from "./spotNames"
 
 export type FarmSpotPet = {
     pet: Pet
@@ -25,72 +26,90 @@ export const isPetNeeded = (pet: Pet, levels: Record<string, number>) => {
     return getPetLevel(levels, pet.id) < MAX_PET_LEVEL
 }
 
-// Spots of one map ranked by how many pets below Lv3 spawn there, then by
-// how many spawns those pets have in it.
+// Spots of one map where pets below Lv3 spawn, made from each pet's own
+// patches (`mergePatches`), ranked by how many of those pets spawn there,
+// then by how many spawns they have in it. Labels name each spawn's spot
+// for the map pins.
 export const getFarmSpots = (
     atlas: PetAtlas,
     pets: Pet[],
     levels: Record<string, number>,
     mapId: PetMapId,
 ) => {
-    const mapSpots = atlas.spots[mapId]
-    const spots = new Map<number, FarmSpot>()
+    const patches = pets
+        .filter((pet) => isPetNeeded(pet, levels))
+        .flatMap((pet) => getPetPatches(atlas, pet, mapId))
+    const ranked = mergePatches(patches, mapId).map((group) => {
+        const spawnsByPet = new Map<Pet, number>()
+        const levelsSeen: number[] = []
 
-    for (const pet of pets) {
-        if (!isPetNeeded(pet, levels)) {
-            continue
-        }
+        for (const patch of group) {
+            spawnsByPet.set(
+                patch.pet,
+                (spawnsByPet.get(patch.pet) ?? 0) + patch.spawns.length,
+            )
 
-        const spawnsBySpot = new Map<number, number>()
-        const petSpots = getFarmSpotIndexes(atlas, pet, mapId)
-
-        for (const [monster, spotIndexes] of petSpots) {
-            for (const spotIndex of spotIndexes) {
-                if (spotIndex < 0) {
-                    continue
-                }
-
-                spawnsBySpot.set(
-                    spotIndex,
-                    (spawnsBySpot.get(spotIndex) ?? 0) + 1,
-                )
-
-                let spot = spots.get(spotIndex)
-
-                if (!spot) {
-                    spot = {
-                        name: mapSpots[spotIndex].name,
-                        area:
-                            atlas.areas[mapId][mapSpots[spotIndex].area] ??
-                            null,
-                        pets: [],
-                        spawns: 0,
-                        minLevel: monster.level,
-                        maxLevel: monster.level,
-                    }
-                    spots.set(spotIndex, spot)
-                }
-
-                spot.spawns++
-                spot.minLevel = Math.min(spot.minLevel, monster.level)
-                spot.maxLevel = Math.max(spot.maxLevel, monster.level)
+            for (const spawn of patch.spawns) {
+                levelsSeen.push(spawn.monster.level)
             }
         }
 
-        for (const [spotIndex, spawns] of spawnsBySpot) {
-            spots.get(spotIndex)?.pets.push({ pet: pet, spawns: spawns })
+        const spotPets = [...spawnsByPet].map(([pet, spawns]) => {
+            return { pet: pet, spawns: spawns }
+        })
+
+        return {
+            group: group,
+            pets: spotPets.sort((a, b) => b.spawns - a.spawns),
+            spawns: levelsSeen.length,
+            minLevel: Math.min(...levelsSeen),
+            maxLevel: Math.max(...levelsSeen),
+        }
+    })
+
+    ranked.sort((a, b) => {
+        return b.pets.length - a.pets.length || b.spawns - a.spawns
+    })
+
+    const spots: FarmSpot[] = []
+    const labels: SpotLabels = new Map()
+    const used = new Set<string>()
+
+    // Named in rank order, so the best spots get the plain names.
+    for (const entry of ranked) {
+        const named = nameSpotGroup(
+            atlas,
+            mapId,
+            entry.group.flatMap((patch) => {
+                return patch.spawns.map((spawn) => spawn.spot)
+            }),
+            used,
+        )
+
+        if (!named) {
+            continue
+        }
+
+        spots.push({
+            name: named.name,
+            area: named.area,
+            pets: entry.pets,
+            spawns: entry.spawns,
+            minLevel: entry.minLevel,
+            maxLevel: entry.maxLevel,
+        })
+
+        for (const patch of entry.group) {
+            for (const spawn of patch.spawns) {
+                const monsterLabels = labels.get(spawn.monster) ?? []
+
+                monsterLabels[spawn.index] = named.name
+                labels.set(spawn.monster, monsterLabels)
+            }
         }
     }
 
-    const ranked = [...spots.values()]
-
-    for (const spot of ranked) {
-        spot.pets.sort((a, b) => b.spawns - a.spawns)
-    }
-
-    return ranked.sort((a, b) => {
-        return b.pets.length - a.pets.length || b.spawns - a.spawns
-    })
+    return { spots: spots, labels: labels }
 }
 
 // Spots that still have a pet of every required category, ranked as before.
