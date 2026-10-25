@@ -1,4 +1,4 @@
-import { SegmentGroup } from "@chakra-ui/react"
+import { SegmentGroup, Text } from "@chakra-ui/react"
 import {
     isPetCategoryId,
     PET_CATEGORY_IDS,
@@ -8,11 +8,16 @@ import {
 
 const ALL = "all"
 
+// Each type's name in its color, as in the list's dots and the spot filter.
 const items = [
     { value: ALL, label: "All" },
     ...PET_CATEGORY_IDS.map((id) => ({
         value: id,
-        label: PET_CATEGORY_NAMES[id],
+        label: (
+            <Text as="span" color={`pet.${id}`}>
+                {PET_CATEGORY_NAMES[id]}
+            </Text>
+        ),
     })),
 ]
 

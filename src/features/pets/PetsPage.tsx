@@ -190,7 +190,7 @@ export const PetsPage = () => {
         requiredCategories,
     )
     // A focused spot shows only its pins: the open pet's, or a farm spot's
-    // still-Locked pets.
+    // pets below Lv3.
     const focusPins = selectedPet
         ? pins.filter((pin) => {
               return focusedSpot === null || pin.spot === focusedSpot
