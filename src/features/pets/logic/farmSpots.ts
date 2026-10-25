@@ -1,6 +1,7 @@
 import type { PetCategoryId } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
+import { getFarmSpotIndexes } from "./farmSpotIndexes"
 import { getPetLevel, MAX_PET_LEVEL } from "./petLevels"
 
 export type FarmSpotPet = {
@@ -18,8 +19,6 @@ export type FarmSpot = {
     minLevel: number
     maxLevel: number
 }
-
-const SPAWN_STRIDE = 3
 
 // Pets below Insight Lv3: their souls still count, whether locked or not.
 export const isPetNeeded = (pet: Pet, levels: Record<string, number>) => {
@@ -43,17 +42,10 @@ export const getFarmSpots = (
         }
 
         const spawnsBySpot = new Map<number, number>()
+        const petSpots = getFarmSpotIndexes(atlas, pet, mapId)
 
-        for (const index of pet.monsters) {
-            const monster = atlas.monsters[index]
-
-            if (monster.map !== mapId) {
-                continue
-            }
-
-            for (let i = 2; i < monster.spawns.length; i += SPAWN_STRIDE) {
-                const spotIndex = monster.spawns[i]
-
+        for (const [monster, spotIndexes] of petSpots) {
+            for (const spotIndex of spotIndexes) {
                 if (spotIndex < 0) {
                     continue
                 }
