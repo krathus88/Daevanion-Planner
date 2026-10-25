@@ -1,5 +1,6 @@
 import { requestPersistentStorage } from "@planner/storage/persistStorage"
 import type { TimerColor, TimerId } from "@timers/config/timers"
+import type { ComingNextPosition } from "@timers/logic/comingNextPosition"
 import {
     addTimer,
     isPinned,
@@ -65,6 +66,29 @@ export const useTimerSettings = () => {
         writeTimerSettings({ ...readTimerSettings(), showPinned: showPinned })
     }
 
+    const changeComingNext = (id: TimerId, included: boolean) => {
+        const current = readTimerSettings()
+
+        writeTimerSettings({
+            ...current,
+            comingNext: { ...current.comingNext, [id]: included },
+        })
+    }
+
+    const changeShowComingNext = (showComingNext: boolean) => {
+        writeTimerSettings({
+            ...readTimerSettings(),
+            showComingNext: showComingNext,
+        })
+    }
+
+    const changeComingNextPosition = (position: ComingNextPosition) => {
+        writeTimerSettings({
+            ...readTimerSettings(),
+            comingNextPosition: position,
+        })
+    }
+
     const changeBossReport = (id: TimerId, report: BossReport | null) => {
         const current = readTimerSettings()
         const bossReports = { ...current.bossReports }
@@ -87,6 +111,9 @@ export const useTimerSettings = () => {
         resetTimerColor: resetTimerColor,
         changeSoonMinutes: changeSoonMinutes,
         changeShowPinned: changeShowPinned,
+        changeComingNext: changeComingNext,
+        changeShowComingNext: changeShowComingNext,
+        changeComingNextPosition: changeComingNextPosition,
         changeBossReport: changeBossReport,
     }
 }

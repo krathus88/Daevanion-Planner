@@ -1,5 +1,6 @@
 import { IconButton } from "@chakra-ui/react"
 import type { TimerId } from "@timers/config/timers"
+import { Tooltip } from "@ui/tooltip"
 import { LuPin, LuPinOff } from "react-icons/lu"
 
 type PinButtonProps = {
@@ -14,16 +15,20 @@ export const PinButton = ({ id, pinned, name, onToggle }: PinButtonProps) => {
         onToggle(id)
     }
 
+    const label = pinned ? `Unpin ${name}` : `Pin ${name} to the header`
+
     return (
-        <IconButton
-            variant={pinned ? "secondary" : "ghost"}
-            size="xs"
-            color={pinned ? "app.accent" : undefined}
-            aria-label={pinned ? `Unpin ${name}` : `Pin ${name} to the header`}
-            aria-pressed={pinned}
-            onClick={handleClick}
-        >
-            {pinned ? <LuPinOff /> : <LuPin />}
-        </IconButton>
+        <Tooltip content={label} openDelay={100} showArrow>
+            <IconButton
+                variant={pinned ? "secondary" : "ghost"}
+                size="xs"
+                color={pinned ? "app.accent" : undefined}
+                aria-label={label}
+                aria-pressed={pinned}
+                onClick={handleClick}
+            >
+                {pinned ? <LuPinOff /> : <LuPin />}
+            </IconButton>
+        </Tooltip>
     )
 }

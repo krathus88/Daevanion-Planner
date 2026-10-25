@@ -17,7 +17,7 @@ import {
 } from "@assets/timers"
 
 // Community-reported EU times. Resets are UTC; the rest keep server time
-// (UTC+2 all year).
+// (Central European, with daylight saving).
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR

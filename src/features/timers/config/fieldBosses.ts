@@ -59,7 +59,7 @@ export type FieldBoss = {
 }
 
 const ABYSS_ZONE = "Chaotic Lower Reshanta"
-// EU server time (UTC+2 all year).
+// EU server time (Central European, with daylight saving).
 const EXECUTORS_SCHEDULE: ServerSchedule = {
     times: [21 * 60 + 30],
     // Mon, Thu, Sat

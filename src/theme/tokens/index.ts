@@ -19,6 +19,7 @@ export const tokens = defineTokens({
     },
     cursor: {
         grab: { value: "grab" },
+        grabbing: { value: "grabbing" },
         static: { value: "default" },
     },
     animations: {
