@@ -29,6 +29,10 @@ const ICON_DIR = join(process.cwd(), "src/assets/pets")
 const ICON_SIZE = 96
 // Spawns just outside every outline still take the closest area.
 const MAX_AREA_DISTANCE = 300
+// A spot within size / NEAR_LANDMARK of a landmark is named after it; one
+// within size / AREA_CENTRAL of its area's middle is "central".
+const NEAR_LANDMARK = 40
+const AREA_CENTRAL = 100
 // Named map markers used as spot names; battlefields repeat area names.
 const LANDMARK_SUBTYPES = new Set(["seal", "occupation", "village"])
 const COMPASS = [
@@ -313,9 +317,28 @@ const readLandmarks = async (code: string, size: number) => {
 
 type Spot = { name: string; area: number; spawns: SpotSpawn[] }
 
-// Named after the closest landmark; when several spots share one, the
-// closest keeps the plain name and the others say which side they are on.
-const nameSpots = (groups: SpotSpawn[][], landmarks: Landmark[]) => {
+const getSide = (
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+) => {
+    const angle = Math.atan2(to.y - from.y, to.x - from.x)
+
+    return COMPASS[Math.round((angle / (Math.PI / 4) + 8) % 8) % 8]
+}
+
+type AreaPlace = { name: string; x: number; y: number }
+
+// A spot near a landmark takes its name; the closest spot keeps it plain and
+// other near ones say which side of it they are on. A spot far from every
+// landmark (big areas have few) is named by where it sits in its area, like
+// "Eternal Isle (south)". Repeats get a number.
+const nameSpots = (
+    groups: SpotSpawn[][],
+    landmarks: Landmark[],
+    areas: AreaPlace[],
+    size: number,
+) => {
+    const near = size / NEAR_LANDMARK
     const placed = groups.map((spawns) => {
         const center = getCenter(spawns)
         let landmark = landmarks[0]
@@ -331,9 +354,10 @@ const nameSpots = (groups: SpotSpawn[][], landmarks: Landmark[]) => {
 
         return {
             spawns: spawns,
+            center: center,
             landmark: landmark,
+            area: getMainArea(spawns),
             distance: Math.hypot(landmark.x - center.x, landmark.y - center.y),
-            angle: Math.atan2(center.y - landmark.y, center.x - landmark.x),
         }
     })
     const used = new Set<string>()
@@ -343,31 +367,55 @@ const nameSpots = (groups: SpotSpawn[][], landmarks: Landmark[]) => {
 
     for (const entry of placed) {
         const plain = entry.landmark.name
-        const side =
-            COMPASS[Math.round((entry.angle / (Math.PI / 4) + 8) % 8) % 8]
-        let name = used.has(plain) ? `${plain} (${side})` : plain
+        const byLandmark = `${plain} (${getSide(entry.landmark, entry.center)})`
+        const area = areas[entry.area]
+        const byArea = area
+            ? Math.hypot(area.x - entry.center.x, area.y - entry.center.y) <
+              size / AREA_CENTRAL
+                ? `${area.name} (central)`
+                : `${area.name} (${getSide(area, entry.center)})`
+            : byLandmark
+        const candidates =
+            entry.distance <= near
+                ? [plain, byLandmark, byArea]
+                : [byArea, byLandmark]
+        let name = candidates.find((candidate) => !used.has(candidate))
+        const last = candidates[candidates.length - 1]
 
-        for (let number = 2; used.has(name); number++) {
-            name = `${plain} (${side} ${number})`
+        for (let number = 2; !name; number++) {
+            const numbered = `${last.slice(0, -1)} ${number})`
+
+            name = used.has(numbered) ? undefined : numbered
         }
 
         used.add(name)
-        spots.push({
-            name: name,
-            area: getMainArea(entry.spawns),
-            spawns: entry.spawns,
-        })
+        spots.push({ name: name, area: entry.area, spawns: entry.spawns })
     }
 
     return spots
 }
 
+// Each area's name and the middle of its spawns, for naming far spots.
+const getAreaPlaces = (spawns: SpotSpawn[], names: string[]) => {
+    return names.map((name, area): AreaPlace => {
+        const inArea = spawns.filter((spawn) => spawn.area === area)
+        const center =
+            inArea.length > 0 ? getCenter(inArea) : { x: -1e6, y: -1e6 }
+
+        return { name: name, x: center.x, y: center.y }
+    })
+}
+
 const buildSpots = (
     spawns: SpotSpawn[],
     landmarks: Landmark[],
+    areaNames: string[],
     size: number,
 ) => {
-    return nameSpots(clusterSpawns(spawns, size), landmarks).sort((a, b) => {
+    const groups = clusterSpawns(spawns, size)
+    const areas = getAreaPlaces(spawns, areaNames)
+
+    return nameSpots(groups, landmarks, areas, size).sort((a, b) => {
         return a.name.localeCompare(b.name)
     })
 }
@@ -488,6 +536,7 @@ const main = async () => {
         const mapSpots = buildSpots(
             mapSpawns[mapId],
             landmarks[mapId],
+            maps[mapId].names,
             PET_MAPS[mapId].size,
         )
 

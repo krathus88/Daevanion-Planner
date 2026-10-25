@@ -3,10 +3,13 @@
 // Used by scripts/buildPetAtlas.ts for every pet together, and by the page
 // for one pet's own spawns.
 // Spots: spawns closer than size / SPOT_LINK join one spot; a spot wider
-// than size / SPOT_WIDTH is split; spots under SPOT_MIN_SPAWNS fold into a
-// neighbour when the result stays narrow enough.
+// than size / SPOT_WIDTH is split; a spot made of up to SPOT_MAX_BLOBS
+// blobs splits into them when they score SPOT_BLOB_SCORE or more; spots
+// under SPOT_MIN_SPAWNS fold into a neighbour when it stays narrow enough.
 const SPOT_LINK = 136
 const SPOT_WIDTH = 20
+const SPOT_MAX_BLOBS = 4
+const SPOT_BLOB_SCORE = 0.5
 const SPOT_MIN_SPAWNS = 10
 
 export type SpotSpawn = { x: number; y: number; area: number; key: number }
@@ -204,13 +207,79 @@ const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
     }
 }
 
+// Silhouette score: how much closer each spawn is to its own part than to
+// the nearest other part, averaged. Near 1 for separate blobs, near 0 for
+// one even spread that was cut in two.
+const getSilhouette = (parts: SpotSpawn[][]) => {
+    const getMeanDistance = (spawn: SpotSpawn, part: SpotSpawn[]) => {
+        let total = 0
+
+        for (const other of part) {
+            total += Math.hypot(spawn.x - other.x, spawn.y - other.y)
+        }
+
+        return total / part.length
+    }
+    let total = 0
+    let count = 0
+
+    for (const [index, part] of parts.entries()) {
+        for (const spawn of part) {
+            // The spawn itself adds 0 to its own part's total.
+            const own =
+                part.length > 1
+                    ? (getMeanDistance(spawn, part) * part.length) /
+                      (part.length - 1)
+                    : 0
+            const nearest = Math.min(
+                ...parts
+                    .filter((_, other) => other !== index)
+                    .map((other) => getMeanDistance(spawn, other)),
+            )
+
+            total += (nearest - own) / Math.max(own, nearest, 1)
+            count++
+        }
+    }
+
+    return total / count
+}
+
+// Linking chains blobs joined by a thin trail of spawns (a road, a shore)
+// into one spot; split it into those blobs when they stand clearly apart.
+const splitBlobs = (spawns: SpotSpawn[]): SpotSpawn[][] => {
+    let best: SpotSpawn[][] | null = null
+    let bestScore = SPOT_BLOB_SCORE
+
+    for (let count = 2; count <= SPOT_MAX_BLOBS; count++) {
+        if (spawns.length < count * SPOT_MIN_SPAWNS) {
+            break
+        }
+
+        const parts = splitInto(spawns, count)
+
+        if (parts.some((part) => part.length < SPOT_MIN_SPAWNS)) {
+            continue
+        }
+
+        const score = getSilhouette(parts)
+
+        if (score > bestScore) {
+            best = parts
+            bestScore = score
+        }
+    }
+
+    return best ? best.flatMap(splitBlobs) : [spawns]
+}
+
 export const clusterSpawns = (spawns: SpotSpawn[], size: number) => {
     const maxWidth = size / SPOT_WIDTH
 
     return foldSmall(
-        linkSpawns(spawns, size / SPOT_LINK).flatMap((group) => {
-            return splitWide(group, maxWidth)
-        }),
+        linkSpawns(spawns, size / SPOT_LINK)
+            .flatMap((group) => splitWide(group, maxWidth))
+            .flatMap(splitBlobs),
         maxWidth,
     )
 }
