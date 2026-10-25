@@ -1,4 +1,5 @@
-// Groups map spawns into spots: tight clusters of pins within one area.
+// Groups map spawns into spots: tight clusters of pins. A spot may cross area
+// outlines; a patch where three areas meet is still one place to farm.
 // Used by scripts/buildPetAtlas.ts for every pet together, and by the page
 // for one pet's own spawns.
 // Spots: spawns closer than size / SPOT_LINK join one spot; a spot wider
@@ -32,7 +33,7 @@ export const getCenter = (spawns: SpotSpawn[]) => {
     return { x: x / spawns.length, y: y / spawns.length }
 }
 
-// Spawns of one area within `distance` of each other, chained.
+// Spawns within `distance` of each other, chained.
 const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
     const parents = spawns.map((_, index) => index)
     const findRoot = (index: number): number => {
@@ -65,7 +66,7 @@ const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
                             spawn.y - spawns[other].y,
                         ) <= distance
 
-                    if (near && spawns[other].area === spawn.area) {
+                    if (near) {
                         parents[findRoot(index)] = findRoot(other)
                     }
                 }
@@ -157,7 +158,7 @@ const splitWide = (spawns: SpotSpawn[], maxWidth: number) => {
     }
 }
 
-// Small spots join the nearest spot of their area while it stays narrow.
+// Small spots join the nearest spot while it stays narrow.
 const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
     const done = new Set<SpotSpawn[]>()
 
@@ -177,7 +178,7 @@ const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
         let targetDistance = Infinity
 
         for (const spot of spots) {
-            if (spot === small || spot[0].area !== small[0].area) {
+            if (spot === small) {
                 continue
             }
 
@@ -212,4 +213,25 @@ export const clusterSpawns = (spawns: SpotSpawn[], size: number) => {
         }),
         maxWidth,
     )
+}
+
+// The area most of a spot's spawns lie in; -1 when none has one.
+export const getMainArea = (spawns: SpotSpawn[]) => {
+    const counts = new Map<number, number>()
+
+    for (const spawn of spawns) {
+        if (spawn.area >= 0) {
+            counts.set(spawn.area, (counts.get(spawn.area) ?? 0) + 1)
+        }
+    }
+
+    let main = -1
+
+    for (const [area, count] of counts) {
+        if (main < 0 || count > (counts.get(main) ?? 0)) {
+            main = area
+        }
+    }
+
+    return main
 }
