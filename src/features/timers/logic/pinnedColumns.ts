@@ -32,7 +32,16 @@ export const addTimer = (columns: PinnedColumns, id: TimerId) => {
         return columns
     }
 
-    return [...columns, [id]]
+    // Only the newest column takes it; older gaps the user left stay as they are.
+    const newest = columns.length - 1
+
+    if (newest === -1 || columns[newest].length >= MAX_PER_COLUMN) {
+        return [...columns, [id]]
+    }
+
+    return columns.map((column, index) =>
+        index === newest ? [...column, id] : column,
+    )
 }
 
 // Gap 0 is the right edge.

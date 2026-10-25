@@ -23,7 +23,12 @@ const KEY = "daevanion:timers:v1:settings"
 const CHANGE_EVENT = "daevanion-timers-change"
 
 const DEFAULT_SETTINGS: TimerSettings = {
-    pinned: [["weekly", "daily"], ["rift", "shugo"], ["gartua"]],
+    pinned: [
+        ["weekly", "daily"],
+        ["rift", "shugo"],
+        ["invasion", "siege"],
+        ["gartua"],
+    ],
     showPinned: true,
     bossReports: {},
     colors: {},

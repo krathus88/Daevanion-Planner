@@ -1,5 +1,6 @@
-// EU server time is CET/CEST, so server-time schedules shift in UTC.
-const SERVER_TIME_ZONE = "Europe/Berlin"
+// The EU server clock stays on UTC+2 all year, no daylight saving.
+// IANA flips the sign: "Etc/GMT-2" is UTC+2.
+const SERVER_TIME_ZONE = "Etc/GMT-2"
 const MINUTE = 60_000
 const DAY = 24 * 60 * MINUTE
 

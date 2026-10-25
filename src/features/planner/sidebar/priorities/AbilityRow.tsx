@@ -7,6 +7,7 @@ import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 import { Tooltip } from "@ui/tooltip"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { LimitInput } from "./LimitInput"
+import { PriorityInput } from "./PriorityInput"
 import { scopeLabel } from "./scopeLabel"
 
 type AbilityRowProps = {
@@ -31,11 +32,8 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
         return Number.isFinite(next) ? clamp(next, 0, nodeCount) : 0
     }
 
-    const handlePriorityChange = (event: ChangeEvent<HTMLInputElement>) => {
-        limits.updatePriority(
-            ability.id,
-            clamp(Math.floor(Number(event.target.value)), 1, 99),
-        )
+    const handlePriorityCommit = (priority: number) => {
+        limits.updatePriority(ability.id, priority)
     }
 
     const handleMinimumChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -85,12 +83,10 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
                 {ability.name}
             </Text>
 
-            <LimitInput
-                max={99}
-                min={1}
+            <PriorityInput
                 value={limits.priorities[ability.id] ?? 1}
                 aria-label={`${ability.name} priority rank`}
-                onChange={handlePriorityChange}
+                onCommit={handlePriorityCommit}
             />
 
             <LimitInput

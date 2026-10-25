@@ -15,8 +15,10 @@ export type LootDetailRow = {
 }
 
 export const getLootChanceLabel = (drop: LootDrop) => {
+    const amount = drop.amount ? ` ×${drop.amount}` : ""
+
     if (drop.everyone) {
-        return `${drop.chance}% per kill, for every player with contribution`
+        return `${drop.chance}% per kill${amount}, for every player with contribution`
     }
 
     return drop.chance >= 100

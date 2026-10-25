@@ -3,6 +3,7 @@ import { Card } from "@common/Card"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import type { PinnedColumns } from "@timers/logic/pinnedColumns"
 import { lazy, Suspense } from "react"
+import { LayoutLoading } from "./LayoutLoading"
 import type { TabEdge } from "./useTabEdge"
 
 const PinnedLayoutBoard = lazy(async () => {
@@ -60,7 +61,14 @@ export const PinnedLayout = ({
                             borderRadius="md"
                             borderWidth="1px"
                         >
-                            <Suspense>
+                            <Suspense
+                                fallback={
+                                    <LayoutLoading
+                                        columns={columns}
+                                        now={now}
+                                    />
+                                }
+                            >
                                 <PinnedLayoutBoard
                                     columns={columns}
                                     now={now}

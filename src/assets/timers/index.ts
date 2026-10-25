@@ -1,4 +1,7 @@
+export { default as AbyssBoss } from "./abyss-boss.webp"
+export { default as ArtifactSiege } from "./artifact-siege.webp"
 export { default as DailyReset } from "./daily-reset.webp"
+export { default as DimensionalInvasion } from "./dimensional-invasion.webp"
 export { default as FieldBoss } from "./field-boss.webp"
 export { default as ShugoFestival } from "./shugo-festival.webp"
 export { default as SpacetimeRift } from "./spacetime-rift.webp"

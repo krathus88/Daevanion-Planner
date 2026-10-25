@@ -1,3 +1,4 @@
+import { AbyssBoss, FieldBoss as FieldBossIcon } from "@assets/timers"
 import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
 
 // No official global respawns: these are half of NCSOFT's Korean notice
@@ -10,13 +11,33 @@ export type FieldBossRegion = "verteron" | "altgard" | "abyss"
 
 export const FIELD_BOSS_REGIONS: readonly {
     id: FieldBossRegion
-    // "Elyos · Verteron" where there's room, "Verteron" on phones.
-    label: string
+    // "Elyos <icon> Verteron" where there's room, "<icon> Verteron" on phones.
+    faction: string
+    zone: string
     shortLabel: string
+    icon: string
 }[] = [
-    { id: "verteron", label: "Elyos · Verteron", shortLabel: "Verteron" },
-    { id: "altgard", label: "Asmodians · Altgard", shortLabel: "Altgard" },
-    { id: "abyss", label: "Abyss · Lower Reshanta", shortLabel: "Abyss" },
+    {
+        id: "verteron",
+        faction: "Elyos",
+        zone: "Verteron",
+        shortLabel: "Verteron",
+        icon: FieldBossIcon,
+    },
+    {
+        id: "abyss",
+        faction: "Abyss",
+        zone: "Lower Reshanta",
+        shortLabel: "Abyss",
+        icon: AbyssBoss,
+    },
+    {
+        id: "altgard",
+        faction: "Asmodians",
+        zone: "Altgard",
+        shortLabel: "Altgard",
+        icon: FieldBossIcon,
+    },
 ]
 
 export const isFieldBossRegion = (value: unknown): value is FieldBossRegion => {
@@ -31,12 +52,14 @@ export type FieldBoss = {
     zone: string
     level?: number
     respawn: number | null
+    // How long it usually lives after spawning; BOSS_ALIVE_FOR when missing.
+    aliveFor?: number
     schedule?: ServerSchedule
     note?: string
 }
 
 const ABYSS_ZONE = "Chaotic Lower Reshanta"
-// EU server time (CET/CEST).
+// EU server time (UTC+2 all year).
 const EXECUTORS_SCHEDULE: ServerSchedule = {
     times: [21 * 60 + 30],
     // Mon, Thu, Sat
@@ -263,6 +286,8 @@ export const FIELD_BOSSES = [
         zone: "Isle of Eternity",
         level: 51,
         respawn: 12 * HOUR,
+        // Usually dies within 30 seconds.
+        aliveFor: MINUTE / 2,
     },
 
     // Altgard (Asmodians)
@@ -483,18 +508,33 @@ export const FIELD_BOSSES = [
         respawn: 12 * HOUR,
     },
 
-    // Chaotic Lower Reshanta (Abyss): fixed schedules, not kill timers.
+    // Chaotic Lower Reshanta (Abyss), in the order the tab lists them.
     {
-        id: "watcher-kaira",
+        // No schedule: a kill timer, halved from the same KR notice.
+        id: "argo-spirit-king",
         region: "abyss",
-        name: "Watcher Kaira",
-        shortName: "Kaira",
+        name: "Argo, the Spirit King",
+        shortName: "Spirit King",
+        zone: ABYSS_ZONE,
+        level: 65,
+        respawn: 12 * HOUR,
+    },
+    {
+        // "siege-boss" from before it had a name; saved timers use it.
+        id: "siege-boss",
+        region: "abyss",
+        name: "Guardian Lord Nahma",
+        shortName: "Nahma",
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        // Up for about 30 minutes.
-        schedule: { times: everyHours(3, 1), openFor: 30 * MINUTE },
-        note: "Every 3 h from 01:00",
+        schedule: {
+            times: [21 * 60],
+            // Sun, Fri
+            days: [0, 5],
+            openFor: 30 * MINUTE,
+        },
+        note: "Fri, Sun 21:00",
     },
     {
         id: "argo",
@@ -530,21 +570,16 @@ export const FIELD_BOSSES = [
         note: EXECUTORS_NOTE,
     },
     {
-        // "siege-boss" from before it had a name; saved timers use it.
-        id: "siege-boss",
+        id: "watcher-kaira",
         region: "abyss",
-        name: "Guardian Lord Nahma",
-        shortName: "Nahma",
+        name: "Watcher Kaira",
+        shortName: "Kaira",
         zone: ABYSS_ZONE,
         level: 65,
         respawn: null,
-        schedule: {
-            times: [21 * 60],
-            // Sun, Fri
-            days: [0, 5],
-            openFor: 30 * MINUTE,
-        },
-        note: "Fri, Sun 21:00",
+        // Up for about 30 minutes.
+        schedule: { times: everyHours(3, 1), openFor: 30 * MINUTE },
+        note: "Every 3 h from 01:00",
     },
 ] as const satisfies readonly FieldBoss[]
 

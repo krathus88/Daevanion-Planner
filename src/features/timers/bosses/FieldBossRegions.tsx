@@ -1,4 +1,5 @@
 import { Flex, Grid, SegmentGroup, Text } from "@chakra-ui/react"
+import { IconImage } from "@common/IconImage"
 import {
     FIELD_BOSS_REGIONS,
     isFieldBossRegion,
@@ -40,19 +41,22 @@ export const FieldBossRegions = ({
         }
     }
 
+    // Longest respawn first, then by name; scheduled bosses keep config order.
     const shown = entries
         .filter((entry) => entry.timer.boss?.region === region)
         .sort(
             (a, b) =>
                 (b.timer.boss?.respawn ?? 0) - (a.timer.boss?.respawn ?? 0) ||
-                a.timer.name.localeCompare(b.timer.name),
+                (a.timer.boss?.schedule || b.timer.boss?.schedule
+                    ? 0
+                    : a.timer.name.localeCompare(b.timer.name)),
         )
 
     return (
         <Flex flexDir="column" gap="4">
             <SegmentGroup.Root
                 layout="fill"
-                maxW="xl"
+                maxW="2xl"
                 value={region}
                 aria-label="Region"
                 onValueChange={handleValueChange}
@@ -62,13 +66,29 @@ export const FieldBossRegions = ({
                 {FIELD_BOSS_REGIONS.map((item) => (
                     <SegmentGroup.Item key={item.id} value={item.id}>
                         <SegmentGroup.ItemText>
-                            <Text as="span" hideBelow="md">
-                                {item.label}
-                            </Text>
+                            <Flex
+                                as="span"
+                                hideBelow="md"
+                                alignItems="center"
+                                gap="1.5"
+                            >
+                                <Text as="span">{item.faction}</Text>
 
-                            <Text as="span" hideFrom="md">
-                                {item.shortLabel}
-                            </Text>
+                                <IconImage icon={item.icon} size="4" />
+
+                                <Text as="span">{item.zone}</Text>
+                            </Flex>
+
+                            <Flex
+                                as="span"
+                                hideFrom="md"
+                                alignItems="center"
+                                gap="1.5"
+                            >
+                                <IconImage icon={item.icon} size="4" />
+
+                                <Text as="span">{item.shortLabel}</Text>
+                            </Flex>
                         </SegmentGroup.ItemText>
 
                         <SegmentGroup.ItemHiddenInput />

@@ -3,6 +3,7 @@ import { Section } from "@common/Section"
 import { Term } from "@common/Term"
 import { FIELD_BOSS_LOOT } from "@timers/config/fieldBossLoot"
 import type { FieldBossId } from "@timers/config/fieldBosses"
+import { isBoundLoot } from "@timers/logic/lootDetails"
 import { LuLock, LuTrophy } from "react-icons/lu"
 import { LootTile } from "./LootTile"
 
@@ -12,6 +13,7 @@ type BossLootProps = {
 
 export const BossLoot = ({ bossId }: BossLootProps) => {
     const loot = FIELD_BOSS_LOOT[bossId]
+    const hasBound = loot.some(isBoundLoot)
 
     return (
         <Section variant="sub" title="Loot" count={loot.length}>
@@ -33,21 +35,33 @@ export const BossLoot = ({ bossId }: BossLootProps) => {
                     {" · "}
                 </Text>
 
-                <Icon
-                    boxSize="3.5"
-                    mr="1"
-                    color="app.danger"
-                    verticalAlign="text-bottom"
-                >
-                    <LuLock />
-                </Icon>
+                {hasBound && (
+                    <>
+                        <Icon
+                            boxSize="3.5"
+                            mr="1"
+                            color="app.danger"
+                            verticalAlign="text-bottom"
+                        >
+                            <LuLock />
+                        </Icon>
 
-                <Text as="span" color="app.danger" fontWeight="semibold">
-                    Bound
-                </Text>
+                        <Text
+                            as="span"
+                            color="app.danger"
+                            fontWeight="semibold"
+                        >
+                            Bound
+                        </Text>
+
+                        <Text as="span" color="app.muted">
+                            {", the rest is unbound · "}
+                        </Text>
+                    </>
+                )}
 
                 <Text as="span" color="app.muted">
-                    {", the rest is unbound · % = chance per kill"}
+                    % = chance per kill
                 </Text>
             </Text>
 

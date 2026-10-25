@@ -3,10 +3,11 @@ import type { TimerState } from "@timers/logic/timerState"
 
 type BossNotesProps = {
     name: string
+    aliveFor: number
     state: TimerState
 }
 
-export const BossNotes = ({ name, state }: BossNotesProps) => {
+export const BossNotes = ({ name, aliveFor, state }: BossNotesProps) => {
     if (state.status !== "open" && state.status !== "upcoming") {
         return null
     }
@@ -28,8 +29,11 @@ export const BossNotes = ({ name, state }: BossNotesProps) => {
         >
             {state.estimated && (
                 <Text>
-                    Estimated, assuming {name} died a minute after spawning.
-                    Re-enter the in-game timer to fix it.
+                    Estimated, assuming {name} died{" "}
+                    {aliveFor < 60_000
+                        ? `${aliveFor / 1000} seconds`
+                        : "a minute"}{" "}
+                    after spawning. Re-enter the in-game timer to fix it.
                 </Text>
             )}
 

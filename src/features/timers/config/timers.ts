@@ -1,17 +1,23 @@
 import { isRecord } from "@planner/storage/isRecord"
 import { formatDuration } from "@timers/logic/formatTime"
 import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
-import { FIELD_BOSSES, type FieldBoss, type FieldBossId } from "./fieldBosses"
 import {
+    FIELD_BOSS_REGIONS,
+    FIELD_BOSSES,
+    type FieldBoss,
+    type FieldBossId,
+} from "./fieldBosses"
+import {
+    ArtifactSiege,
     DailyReset,
-    FieldBoss as FieldBossIcon,
+    DimensionalInvasion,
     ShugoFestival,
     SpacetimeRift,
     WeeklyReset,
 } from "@assets/timers"
 
-// Community-reported EU times. Resets are UTC; the rift keeps server time,
-// so it shifts in UTC with daylight saving.
+// Community-reported EU times. Resets are UTC; the rest keep server time
+// (UTC+2 all year).
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
@@ -23,7 +29,8 @@ export type FixedSchedule = {
     openFor: number
 }
 
-export type TimerId = FieldBossId | "rift" | "shugo" | "daily" | "weekly"
+export type TimerId =
+    FieldBossId | "rift" | "shugo" | "invasion" | "siege" | "daily" | "weekly"
 
 export const TIMER_HUES = [
     "red",
@@ -123,6 +130,32 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         },
     },
     {
+        id: "invasion",
+        category: "event",
+        name: "Dimensional Invasion",
+        shortName: "Invasion",
+        icon: DimensionalInvasion,
+        color: { hue: "orange", tone: "strong" },
+        soonMinutes: 5,
+        description: "Every hour at half past.",
+        schedule: {
+            anchor: Date.UTC(2026, 9, 14, 0, 30),
+            period: HOUR,
+            openFor: 0,
+        },
+    },
+    {
+        id: "siege",
+        category: "event",
+        name: "Artifact Siege",
+        shortName: "Siege",
+        icon: ArtifactSiege,
+        color: { hue: "cyan", tone: "strong" },
+        soonMinutes: 30,
+        description: "Monday, Thursday and Saturday at 21:00 server time.",
+        schedule: { times: [21 * 60], days: [1, 4, 6], openFor: 0 },
+    },
+    {
         id: "daily",
         category: "reset",
         name: "Daily reset",
@@ -155,8 +188,13 @@ const toBossTimer = (boss: (typeof FIELD_BOSSES)[number]): TimerDefinition => {
         category: "boss",
         name: boss.name,
         shortName: boss.shortName,
-        icon: FieldBossIcon,
-        color: { hue: "red", tone: "strong" },
+        icon: FIELD_BOSS_REGIONS.find((region) => region.id === boss.region)
+            ?.icon,
+        // Matches the region icon: purple for the Abyss, red elsewhere.
+        color: {
+            hue: boss.region === "abyss" ? "purple" : "red",
+            tone: "strong",
+        },
         soonMinutes: isLong ? 15 : 5,
         description:
             boss.respawn === null
@@ -176,4 +214,5 @@ export const isTimerId = (value: unknown): value is TimerId => {
 }
 
 // Bosses die about a minute after spawning, so the cycle is respawn + 1m.
+// A boss's own aliveFor overrides it.
 export const BOSS_ALIVE_FOR = MINUTE
