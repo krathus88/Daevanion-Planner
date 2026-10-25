@@ -2,9 +2,15 @@ import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas, PetMonster } from "@pets/data/petAtlas"
 import { clusterSpawns, type SpotSpawn } from "./spotClusters"
 
-// One spawn of a pet: its monster, its index in the monster's spawns, and
-// the map spot it lies in.
-type PatchSpawn = { monster: PetMonster; index: number; spot: number }
+// One spawn of a pet: where it is, its monster, its index in the monster's
+// spawns, and the map spot it lies in.
+type PatchSpawn = {
+    x: number
+    y: number
+    monster: PetMonster
+    index: number
+    spot: number
+}
 
 // One pet's own cluster of pins and the box around them.
 export type PetPatch = {
@@ -18,10 +24,15 @@ export type PetPatch = {
 
 const SPAWN_STRIDE = 3
 
-// Patches this close count as touching: the distance spots link pins at.
+// Pins within size / PATCH_GAP of each other count as the same ground: the
+// distance spots link pins at.
 const PATCH_GAP = 136
 // A Best spot stays as narrow as a map spot.
 const PATCH_WIDTH = 20
+// Two spots merge when this share of the smaller one's pins lies on the
+// other's ground. Patch pairs below PATCH_PAIR_SHARE are never tried.
+const PATCH_SHARE = 0.5
+const PATCH_PAIR_SHARE = 0.2
 
 const buildPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
     const spawns: SpotSpawn[] = []
@@ -44,6 +55,8 @@ const buildPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
                 key: owners.length,
             })
             owners.push({
+                x: monster.spawns[i],
+                y: monster.spawns[i + 1],
                 monster: monster,
                 index: i / SPAWN_STRIDE,
                 spot: spot,
@@ -84,57 +97,95 @@ export const getPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
     return patches
 }
 
-const getWidth = (patches: PetPatch[]) => {
-    return Math.max(
-        Math.max(...patches.map((patch) => patch.right)) -
-            Math.min(...patches.map((patch) => patch.left)),
-        Math.max(...patches.map((patch) => patch.bottom)) -
-            Math.min(...patches.map((patch) => patch.top)),
+// Share of the smaller list's pins that have a pin of the other within
+// `gap`: near 1 when two pets spawn on the same ground, near 0 when they
+// only touch at an edge.
+const getNearShare = (a: PatchSpawn[], b: PatchSpawn[], gap: number) => {
+    const [small, large] = a.length <= b.length ? [a, b] : [b, a]
+    const cells = new Map<string, PatchSpawn[]>()
+    const getCell = (x: number, y: number) => {
+        return `${Math.floor(x / gap)},${Math.floor(y / gap)}`
+    }
+
+    for (const spawn of large) {
+        const cell = getCell(spawn.x, spawn.y)
+
+        cells.set(cell, [...(cells.get(cell) ?? []), spawn])
+    }
+
+    let near = 0
+
+    for (const spawn of small) {
+        const found = [-gap, 0, gap].some((dx) => {
+            return [-gap, 0, gap].some((dy) => {
+                return (
+                    cells.get(getCell(spawn.x + dx, spawn.y + dy)) ?? []
+                ).some((other) => {
+                    return (
+                        Math.hypot(spawn.x - other.x, spawn.y - other.y) <= gap
+                    )
+                })
+            })
+        })
+
+        if (found) {
+            near++
+        }
+    }
+
+    return near / small.length
+}
+
+// Whether two patches' boxes, grown by `gap`, touch.
+const isTouching = (a: PetPatch, b: PetPatch, gap: number) => {
+    return (
+        a.left - gap <= b.right + gap &&
+        b.left - gap <= a.right + gap &&
+        a.top - gap <= b.bottom + gap &&
+        b.top - gap <= a.bottom + gap
     )
 }
 
-// How much two patches' boxes (grown by `gap`) overlap, as a share of the
-// smaller box; 0 when they don't touch.
-const getOverlap = (a: PetPatch, b: PetPatch, gap: number) => {
-    const width =
-        Math.min(a.right, b.right) - Math.max(a.left, b.left) + 2 * gap
-    const height =
-        Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) + 2 * gap
+const getWidth = (spawns: PatchSpawn[]) => {
+    const xs = spawns.map((spawn) => spawn.x)
+    const ys = spawns.map((spawn) => spawn.y)
 
-    if (width <= 0 || height <= 0) {
-        return 0
-    }
-
-    const getArea = (patch: PetPatch) => {
-        return (
-            (patch.right - patch.left + 2 * gap) *
-            (patch.bottom - patch.top + 2 * gap)
-        )
-    }
-
-    return (width * height) / Math.min(getArea(a), getArea(b))
+    return Math.max(
+        Math.max(...xs) - Math.min(...xs),
+        Math.max(...ys) - Math.min(...ys),
+    )
 }
 
-// Groups patches of different pets that cover the same ground into one Best
-// spot, the most overlapping first, while the spot stays narrow. Each pet's
+// Groups patches of different pets that spawn on the same ground into one
+// Best spot, the pairs sharing the most first. A merge needs the two whole
+// spots to share ground, not just one pair, so a pet that spreads between
+// two places doesn't chain them together; spots also stay narrow. Each pet's
 // patch stays whole, so a pet never shows up split over two spots next to
 // each other.
 export const mergePatches = (patches: PetPatch[], mapId: PetMapId) => {
     const size = PET_MAPS[mapId].size
     const gap = size / PATCH_GAP
-    const pairs: { a: number; b: number; overlap: number }[] = []
+    const pairs: { a: number; b: number; share: number }[] = []
 
     for (let a = 0; a < patches.length; a++) {
         for (let b = a + 1; b < patches.length; b++) {
-            const overlap = getOverlap(patches[a], patches[b], gap)
+            if (!isTouching(patches[a], patches[b], gap)) {
+                continue
+            }
 
-            if (overlap > 0) {
-                pairs.push({ a: a, b: b, overlap: overlap })
+            const share = getNearShare(
+                patches[a].spawns,
+                patches[b].spawns,
+                gap,
+            )
+
+            if (share >= PATCH_PAIR_SHARE) {
+                pairs.push({ a: a, b: b, share: share })
             }
         }
     }
 
-    pairs.sort((first, second) => second.overlap - first.overlap)
+    pairs.sort((first, second) => second.share - first.share)
 
     const groups = patches.map((patch) => [patch])
     const groupOf = patches.map((_, index) => index)
@@ -147,13 +198,17 @@ export const mergePatches = (patches: PetPatch[], mapId: PetMapId) => {
             continue
         }
 
-        const merged = [...groups[first], ...groups[second]]
+        const firstSpawns = groups[first].flatMap((patch) => patch.spawns)
+        const secondSpawns = groups[second].flatMap((patch) => patch.spawns)
+        const fits =
+            getWidth([...firstSpawns, ...secondSpawns]) <= size / PATCH_WIDTH &&
+            getNearShare(firstSpawns, secondSpawns, gap) >= PATCH_SHARE
 
-        if (getWidth(merged) > size / PATCH_WIDTH) {
+        if (!fits) {
             continue
         }
 
-        groups[first] = merged
+        groups[first] = [...groups[first], ...groups[second]]
         groups[second] = []
 
         for (const [index, group] of groupOf.entries()) {
