@@ -5,6 +5,10 @@ import {
     type TimerColor,
     type TimerId,
 } from "@timers/config/timers"
+import {
+    isComingNextPosition,
+    type ComingNextPosition,
+} from "@timers/logic/comingNextPosition"
 import { MAX_PER_COLUMN, type PinnedColumns } from "@timers/logic/pinnedColumns"
 
 type SpawnReport = { spawnAt: number; reportedAt: number }
@@ -17,6 +21,11 @@ export type TimerSettings = {
     bossReports: Partial<Record<TimerId, BossReport>>
     colors: Partial<Record<TimerId, TimerColor>>
     soonMinutes: Partial<Record<TimerId, number>>
+    // Overrides only; see isInComingNext for the defaults.
+    comingNext: Partial<Record<TimerId, boolean>>
+    showComingNext: boolean
+    // Null hangs it from the header at the content's left edge.
+    comingNextPosition: ComingNextPosition | null
 }
 
 const KEY = "daevanion:timers:v1:settings"
@@ -33,6 +42,9 @@ const DEFAULT_SETTINGS: TimerSettings = {
     bossReports: {},
     colors: {},
     soonMinutes: {},
+    comingNext: {},
+    showComingNext: false,
+    comingNextPosition: null,
 }
 
 const isTime = (value: unknown): value is number => {
@@ -98,6 +110,10 @@ const isMinutes = (value: unknown): value is number => {
     return typeof value === "number" && Number.isInteger(value) && value >= 0
 }
 
+const isBoolean = (value: unknown): value is boolean => {
+    return typeof value === "boolean"
+}
+
 const parse = (raw: string | null): TimerSettings => {
     if (raw === null) {
         return DEFAULT_SETTINGS
@@ -114,16 +130,22 @@ const parse = (raw: string | null): TimerSettings => {
             pinned: isPinnedColumns(value.pinned)
                 ? value.pinned
                 : DEFAULT_SETTINGS.pinned,
-            showPinned:
-                typeof value.showPinned === "boolean"
-                    ? value.showPinned
-                    : DEFAULT_SETTINGS.showPinned,
+            showPinned: isBoolean(value.showPinned)
+                ? value.showPinned
+                : DEFAULT_SETTINGS.showPinned,
             // Before other bosses, Gartua's report had a field of its own.
             bossReports: isSpawnReport(value.gartua)
                 ? { gartua: value.gartua }
                 : pickPerTimer(value.bossReports, isBossReport),
             colors: pickPerTimer(value.colors, isTimerColor),
             soonMinutes: pickPerTimer(value.soonMinutes, isMinutes),
+            comingNext: pickPerTimer(value.comingNext, isBoolean),
+            showComingNext: isBoolean(value.showComingNext)
+                ? value.showComingNext
+                : DEFAULT_SETTINGS.showComingNext,
+            comingNextPosition: isComingNextPosition(value.comingNextPosition)
+                ? value.comingNextPosition
+                : DEFAULT_SETTINGS.comingNextPosition,
         }
     } catch {
         return DEFAULT_SETTINGS

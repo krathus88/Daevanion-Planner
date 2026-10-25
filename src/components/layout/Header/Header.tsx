@@ -2,6 +2,7 @@ import { Box, Container, Flex } from "@chakra-ui/react"
 import { ClassSelect } from "@planner/ClassSelect"
 import { usePlannerLocation } from "@planner/hooks/usePlannerLocation"
 import { useMatch } from "@tanstack/react-router"
+import { ComingNext } from "@timers/coming-next/ComingNext"
 import { PinnedTimers } from "@timers/pinned/PinnedTimers"
 import { PinnedToggleButton } from "@timers/pinned/PinnedToggleButton"
 import { Brand } from "./Brand"
@@ -88,6 +89,8 @@ export const Header = () => {
                     </Flex>
                 </Flex>
             </Container>
+
+            <ComingNext />
         </Box>
     )
 }

@@ -7,6 +7,7 @@ import {
 } from "@chakra-ui/react"
 import type { TimerColor, TimerId } from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
+import { ComingNextButton } from "./ComingNextButton"
 import { PinButton } from "./PinButton"
 import { TimerCustomise } from "./TimerCustomise"
 import { TimerStatus } from "./TimerStatus"
@@ -59,6 +60,12 @@ export const TimerCard = ({
                 <Text flex="1" fontWeight="semibold">
                     {entry.timer.name}
                 </Text>
+
+                <ComingNextButton
+                    id={entry.timer.id}
+                    included={entry.inComingNext}
+                    name={entry.timer.name}
+                />
 
                 <PinButton
                     id={entry.timer.id}

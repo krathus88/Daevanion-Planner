@@ -3,6 +3,7 @@ import {
     type TimerColor,
     type TimerDefinition,
 } from "@timers/config/timers"
+import { getComingNext, isInComingNext } from "@timers/logic/comingNext"
 import { isPinned } from "@timers/logic/pinnedColumns"
 import {
     getTimerAlert,
@@ -19,6 +20,7 @@ export type TimerEntry = {
     state: TimerState
     alert: TimerAlert
     pinned: boolean
+    inComingNext: boolean
     color: TimerColor
     hasCustomColor: boolean
     soonMinutes: number
@@ -35,6 +37,8 @@ export const useTimers = () => {
         resetTimerColor,
         changeSoonMinutes,
         changeShowPinned,
+        changeShowComingNext,
+        changeComingNextPosition,
         changeBossReport,
     } = useTimerSettings()
 
@@ -48,6 +52,7 @@ export const useTimers = () => {
             state: state,
             alert: getTimerAlert(state, soonMinutes, now),
             pinned: isPinned(settings.pinned, timer.id),
+            inComingNext: isInComingNext(settings.comingNext, timer),
             color: settings.colors[timer.id] ?? timer.color,
             hasCustomColor: settings.colors[timer.id] !== undefined,
             soonMinutes: soonMinutes,
@@ -58,11 +63,13 @@ export const useTimers = () => {
     const pinnedColumns = settings.pinned.map((column) =>
         column.flatMap((id) => entryById.get(id) ?? []),
     )
+    const comingNext = getComingNext(timers)
 
     return {
         now: now,
         timers: timers,
         pinnedColumns: pinnedColumns,
+        comingNext: comingNext,
         settings: settings,
         togglePinned: togglePinned,
         changePinnedColumns: changePinnedColumns,
@@ -70,6 +77,8 @@ export const useTimers = () => {
         resetTimerColor: resetTimerColor,
         changeSoonMinutes: changeSoonMinutes,
         changeShowPinned: changeShowPinned,
+        changeShowComingNext: changeShowComingNext,
+        changeComingNextPosition: changeComingNextPosition,
         changeBossReport: changeBossReport,
     }
 }

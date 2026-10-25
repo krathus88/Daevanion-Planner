@@ -20,6 +20,7 @@ import { formatDuration } from "@timers/logic/formatTime"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { LuChevronDown } from "react-icons/lu"
+import { ComingNextButton } from "@timers/card/ComingNextButton"
 import { PinButton } from "@timers/card/PinButton"
 import { TimerCustomise } from "@timers/card/TimerCustomise"
 import { BossNotes } from "./BossNotes"
@@ -197,7 +198,13 @@ export const BossRow = ({
                     </IconButton>
                 </Flex>
 
-                <Flex gridArea="pin">
+                <Flex gridArea="pin" gap="1">
+                    <ComingNextButton
+                        id={id}
+                        included={entry.inComingNext}
+                        name={boss.name}
+                    />
+
                     <PinButton
                         id={id}
                         pinned={entry.pinned}
