@@ -50,9 +50,9 @@ export const FarmSpotsPanel = ({
         .join(", ")
     const emptyText =
         requiredCategories.length > 0
-            ? `No spot in ${mapName} still has a Locked pet of every type picked (${requiredNames}).`
+            ? `No spot in ${mapName} still has a pet below Lv3 of every type picked (${requiredNames}).`
             : hasSpotNames
-              ? `Every pet in your list that spawns in ${mapName} is unlocked.`
+              ? `Every pet in your list that spawns in ${mapName} is at Lv3.`
               : `${mapName} has no named spots; use the map below.`
 
     return (
@@ -60,17 +60,17 @@ export const FarmSpotsPanel = ({
             <Flex flexDir="column" gap="1">
                 <Flex alignItems="flex-start" gap="2">
                     <Text flex="1" fontWeight="semibold">
-                        Best spots in {mapName} for pets you haven't unlocked
+                        Best spots in {mapName} for pets below Lv3
                     </Text>
 
                     <MinimizeButton onClick={onMinimize} />
                 </Flex>
 
                 <Text textStyle="hint">
-                    Ranked by how many pets from your list, still marked{" "}
-                    <Term>Locked</Term>, spawn in each spot. Click a spot to
-                    show only its pins on the map, or a pet to open it. Switch
-                    maps with the <Term>map tabs</Term> below.
+                    Ranked by how many pets from your list, not yet at{" "}
+                    <Term>Lv3</Term>, spawn in each spot. Click a spot to show
+                    only its pins on the map, or a pet to open it. Switch maps
+                    with the <Term>map tabs</Term> below.
                 </Text>
             </Flex>
 

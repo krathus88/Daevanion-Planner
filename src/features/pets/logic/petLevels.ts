@@ -1,6 +1,8 @@
 // Pet Insight levels an unlocked pet can be at; 0 means locked.
 export const PET_LEVELS = [1, 2, 3]
 
+export const MAX_PET_LEVEL = 3
+
 type LevelColors = {
     fg: "pet.level1" | "pet.level2" | "pet.level3"
     bg: "pet.level1Muted" | "pet.level2Muted" | "pet.level3Muted"

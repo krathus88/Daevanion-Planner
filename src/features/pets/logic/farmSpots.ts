@@ -1,7 +1,7 @@
 import type { PetCategoryId } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
-import { getPetLevel } from "./petLevels"
+import { getPetLevel, MAX_PET_LEVEL } from "./petLevels"
 
 export type FarmSpotPet = {
     pet: Pet
@@ -21,12 +21,12 @@ export type FarmSpot = {
 
 const SPAWN_STRIDE = 3
 
-// Pets still locked; the ranking is for unlocking new pets.
+// Pets below Insight Lv3: their souls still count, whether locked or not.
 export const isPetNeeded = (pet: Pet, levels: Record<string, number>) => {
-    return getPetLevel(levels, pet.id) === 0
+    return getPetLevel(levels, pet.id) < MAX_PET_LEVEL
 }
 
-// Spots of one map ranked by how many still-locked pets spawn there, then by
+// Spots of one map ranked by how many pets below Lv3 spawn there, then by
 // how many spawns those pets have in it.
 export const getFarmSpots = (
     atlas: PetAtlas,
