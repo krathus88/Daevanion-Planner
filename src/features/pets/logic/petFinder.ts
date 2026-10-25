@@ -1,6 +1,7 @@
 import type { PetCategoryId } from "@pets/config/petCategories"
 import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas, PetMonster } from "@pets/data/petAtlas"
+import { getFarmSpotIndexes } from "./farmSpotIndexes"
 import { getPetLevel } from "./petLevels"
 import { clusterSpawns, type SpotSpawn } from "./spotClusters"
 
@@ -278,7 +279,8 @@ export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
     return sources.sort((a, b) => b.count - a.count)
 }
 
-// labels: one pet's own spot names (PetMapSource.labels) in place of the map's.
+// labels: one pet's own spot names (PetMapSource.labels). Without them, pins
+// take the map spot their pet's patch counts in for Best spots.
 export const getMapPins = (
     atlas: PetAtlas,
     pets: Pet[],
@@ -295,16 +297,21 @@ export const getMapPins = (
                 continue
             }
 
+            const farmSpots = labels
+                ? null
+                : getFarmSpotIndexes(atlas, pet, mapId)
+
             for (let i = 0; i < monster.spawns.length; i += SPAWN_STRIDE) {
                 pins.push({
                     x: monster.spawns[i],
                     y: monster.spawns[i + 1],
                     pet: pet,
                     monster: monster,
-                    spot:
-                        labels?.get(monster)?.[i / SPAWN_STRIDE] ??
-                        atlas.spots[mapId][monster.spawns[i + 2]]?.name ??
-                        null,
+                    spot: labels
+                        ? (labels.get(monster)?.[i / SPAWN_STRIDE] ?? null)
+                        : (atlas.spots[mapId][
+                              farmSpots?.get(monster)?.[i / SPAWN_STRIDE] ?? -1
+                          ]?.name ?? null),
                     area: getSpotArea(atlas, mapId, monster.spawns[i + 2]),
                 })
             }

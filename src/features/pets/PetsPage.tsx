@@ -76,6 +76,7 @@ export const PetsPage = () => {
                 spot: undefined,
             }),
             replace: true,
+            resetScroll: false,
         })
     }
 
@@ -94,6 +95,7 @@ export const PetsPage = () => {
                 spot: undefined,
             }),
             replace: true,
+            resetScroll: false,
         })
     }
 
@@ -106,6 +108,7 @@ export const PetsPage = () => {
                 spot: undefined,
             }),
             replace: true,
+            resetScroll: false,
         })
     }
 
@@ -117,6 +120,7 @@ export const PetsPage = () => {
                 spot: undefined,
             }),
             replace: true,
+            resetScroll: false,
         })
     }
 
@@ -131,6 +135,7 @@ export const PetsPage = () => {
                 spot: same ? undefined : spot,
             }),
             replace: true,
+            resetScroll: false,
         })
     }
 
@@ -139,6 +144,7 @@ export const PetsPage = () => {
         navigate({
             search: (previous) => ({ ...previous, spot: spot ?? undefined }),
             replace: true,
+            resetScroll: false,
         })
     }
 
