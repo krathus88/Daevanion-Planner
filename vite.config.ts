@@ -6,6 +6,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
 import { BOARD_IDS, BOARD_NAMES } from "./src/config/boards.ts"
 import {
+    PETS_DESCRIPTION,
     readClasses,
     SITE_DESCRIPTION,
     SITE_NAME,
@@ -89,6 +90,16 @@ const sharePreviews = (): Plugin => {
                     "og/default.png",
                     "timers",
                     TIMERS_DESCRIPTION,
+                ),
+            )
+
+            writePage(
+                "pets",
+                tags(
+                    "Daevanion - Pets",
+                    "og/default.png",
+                    "pets",
+                    PETS_DESCRIPTION,
                 ),
             )
 

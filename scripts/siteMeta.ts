@@ -9,6 +9,9 @@ export const SITE_DESCRIPTION =
 export const TIMERS_DESCRIPTION =
     "AION 2 timers for EU servers: Eternal Gartua, Spacetime Rift, Shugo Festival, and the daily and weekly resets, in your local time."
 
+export const PETS_DESCRIPTION =
+    "AION 2 pet finder: search any pet and see which maps spawn its soul monsters, how many, and the best areas to farm, on an interactive map."
+
 export type SiteClass = {
     id: string
     name: string

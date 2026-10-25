@@ -16,11 +16,18 @@ export const Header = () => {
         shouldThrow: false,
     })
     const timersMatch = useMatch({ from: "/timers", shouldThrow: false })
+    const petsMatch = useMatch({ from: "/pets", shouldThrow: false })
     const plannerLocation = usePlannerLocation()
 
     const plannerParams = plannerMatch?.params
     const classId = plannerParams?.classId ?? plannerLocation.classId
-    const currentPage = plannerMatch ? "planner" : timersMatch ? "timers" : null
+    const currentPage = plannerMatch
+        ? "planner"
+        : timersMatch
+          ? "timers"
+          : petsMatch
+            ? "pets"
+            : null
 
     useClassFavicon(classId)
 

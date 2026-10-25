@@ -31,6 +31,7 @@
             "@common/*": ["./src/components/common/*"],
             "@planner/*": ["./src/features/planner/*"],
             "@timers/*": ["./src/features/timers/*"],
+            "@pets/*": ["./src/features/pets/*"],
             "@theme/*": ["./src/theme/*"]
         }
     },

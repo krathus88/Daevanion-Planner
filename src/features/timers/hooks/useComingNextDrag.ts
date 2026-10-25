@@ -1,5 +1,5 @@
 import {
-    clampComingNext,
+    placeComingNext,
     snapComingNext,
     type ComingNextLayout,
     type ComingNextPosition,
@@ -8,24 +8,7 @@ import { useLayoutEffect, useRef, useState, type PointerEvent } from "react"
 
 type Point = { x: number; y: number }
 
-const getTopLeft = (
-    position: ComingNextPosition | null,
-    layout: ComingNextLayout,
-): Point => {
-    const settled = clampComingNext(
-        position ?? { dock: "header", offset: 0 },
-        layout,
-    )
-
-    if (settled.dock === "header") {
-        return {
-            x: layout.contentLeft + settled.offset,
-            y: layout.headerBottom,
-        }
-    }
-
-    return { x: settled.x, y: settled.y }
-}
+const DEFAULT_POSITION: ComingNextPosition = { dock: "header", along: 0 }
 
 // `anchorRef` sits at the header's bottom edge and spans the content width.
 export const useComingNextDrag = (
@@ -49,7 +32,6 @@ export const useComingNextDrag = (
 
         const measure = () => {
             const anchorRect = anchor.getBoundingClientRect()
-
             setLayout({
                 viewportWidth: document.documentElement.clientWidth,
                 viewportHeight: window.innerHeight,
@@ -63,7 +45,9 @@ export const useComingNextDrag = (
 
         measure()
 
+        // The root resizes when a scrollbar appears, without a window resize.
         const observer = new ResizeObserver(measure)
+        observer.observe(document.documentElement)
         observer.observe(header)
         observer.observe(anchor)
         observer.observe(strip)
@@ -123,7 +107,9 @@ export const useComingNextDrag = (
         }
     }
 
-    const topLeft = drag ?? (layout ? getTopLeft(position, layout) : null)
+    const topLeft =
+        drag ??
+        (layout ? placeComingNext(position ?? DEFAULT_POSITION, layout) : null)
     const isDocked =
         drag === null && (position === null || position.dock === "header")
 

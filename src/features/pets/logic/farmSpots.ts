@@ -1,0 +1,101 @@
+import type { PetMapId } from "@pets/config/petMaps"
+import type { Pet, PetAtlas } from "@pets/data/petAtlas"
+import { getPetLevel } from "./petLevels"
+
+export type FarmSpotPet = {
+    pet: Pet
+    spawns: number
+}
+
+export type FarmSpot = {
+    name: string
+    // Big area the spot lies in.
+    area: string | null
+    // Most spawns first.
+    pets: FarmSpotPet[]
+    spawns: number
+    minLevel: number
+    maxLevel: number
+}
+
+const SPAWN_STRIDE = 3
+
+// Pets still locked; the ranking is for unlocking new pets.
+export const isPetNeeded = (pet: Pet, levels: Record<string, number>) => {
+    return getPetLevel(levels, pet.id) === 0
+}
+
+// Spots of one map ranked by how many still-locked pets spawn there, then by
+// how many spawns those pets have in it.
+export const getFarmSpots = (
+    atlas: PetAtlas,
+    pets: Pet[],
+    levels: Record<string, number>,
+    mapId: PetMapId,
+) => {
+    const mapSpots = atlas.spots[mapId]
+    const spots = new Map<number, FarmSpot>()
+
+    for (const pet of pets) {
+        if (!isPetNeeded(pet, levels)) {
+            continue
+        }
+
+        const spawnsBySpot = new Map<number, number>()
+
+        for (const index of pet.monsters) {
+            const monster = atlas.monsters[index]
+
+            if (monster.map !== mapId) {
+                continue
+            }
+
+            for (let i = 2; i < monster.spawns.length; i += SPAWN_STRIDE) {
+                const spotIndex = monster.spawns[i]
+
+                if (spotIndex < 0) {
+                    continue
+                }
+
+                spawnsBySpot.set(
+                    spotIndex,
+                    (spawnsBySpot.get(spotIndex) ?? 0) + 1,
+                )
+
+                let spot = spots.get(spotIndex)
+
+                if (!spot) {
+                    spot = {
+                        name: mapSpots[spotIndex].name,
+                        area:
+                            atlas.areas[mapId][mapSpots[spotIndex].area] ??
+                            null,
+                        pets: [],
+                        spawns: 0,
+                        minLevel: monster.level,
+                        maxLevel: monster.level,
+                    }
+                    spots.set(spotIndex, spot)
+                }
+
+                spot.spawns++
+                spot.minLevel = Math.min(spot.minLevel, monster.level)
+                spot.maxLevel = Math.max(spot.maxLevel, monster.level)
+            }
+        }
+
+        for (const [spotIndex, spawns] of spawnsBySpot) {
+            spots.get(spotIndex)?.pets.push({ pet: pet, spawns: spawns })
+        }
+    }
+
+    const ranked = [...spots.values()]
+
+    for (const spot of ranked) {
+        spot.pets.sort((a, b) => b.spawns - a.spawns)
+    }
+
+    return ranked.sort((a, b) => {
+        return b.pets.length - a.pets.length || b.spawns - a.spawns
+    })
+}

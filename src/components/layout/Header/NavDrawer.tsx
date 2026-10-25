@@ -116,6 +116,13 @@ export const NavDrawer = ({
                                 >
                                     <RouterLink to="/timers">Timers</RouterLink>
                                 </NavDrawerLink>
+
+                                <NavDrawerLink
+                                    isActive={currentPage === "pets"}
+                                    onNavigate={handleNavigate}
+                                >
+                                    <RouterLink to="/pets">Pets</RouterLink>
+                                </NavDrawerLink>
                             </Flex>
                         </Drawer.Body>
                     </Drawer.Content>

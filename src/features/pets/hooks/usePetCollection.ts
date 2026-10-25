@@ -1,0 +1,62 @@
+import { PET_LEVELS } from "@pets/logic/petLevels"
+import {
+    readPetCollection,
+    subscribeToPetCollection,
+    writePetCollection,
+} from "@pets/storage/petCollection"
+import { requestPersistentStorage } from "@planner/storage/persistStorage"
+import { useSyncExternalStore } from "react"
+
+export const usePetCollection = () => {
+    const collection = useSyncExternalStore(
+        subscribeToPetCollection,
+        readPetCollection,
+    )
+
+    // 0 marks the pet as locked again.
+    const changeLevel = (petId: number, level: number) => {
+        const current = readPetCollection()
+        const nextLevels = { ...current.levels }
+
+        if (level > 0) {
+            nextLevels[petId] = level
+        } else {
+            delete nextLevels[petId]
+        }
+
+        writePetCollection({ ...current, levels: nextLevels })
+        requestPersistentStorage()
+    }
+
+    const changeLevelHidden = (level: number, hidden: boolean) => {
+        const current = readPetCollection()
+
+        writePetCollection({
+            ...current,
+            hiddenLevels: PET_LEVELS.filter((item) => {
+                return item === level
+                    ? hidden
+                    : current.hiddenLevels.includes(item)
+            }),
+        })
+    }
+
+    const changeMinimized = (minimized: boolean) => {
+        writePetCollection({ ...readPetCollection(), minimized: minimized })
+    }
+
+    const dismissTip = () => {
+        writePetCollection({ ...readPetCollection(), tipDismissed: true })
+    }
+
+    return {
+        levels: collection.levels,
+        hiddenLevels: collection.hiddenLevels,
+        minimized: collection.minimized,
+        tipDismissed: collection.tipDismissed,
+        changeLevel: changeLevel,
+        changeLevelHidden: changeLevelHidden,
+        changeMinimized: changeMinimized,
+        dismissTip: dismissTip,
+    }
+}

@@ -1,9 +1,11 @@
 import { isRecord } from "@planner/storage/isRecord"
 
-// Docked hangs from the header, `offset` px from the content's left edge.
-// Free floats at viewport coordinates.
+// Stored as fractions of the room the strip can move in (0 = left/top,
+// 1 = right/bottom), so it keeps its place when the window resizes.
+// Docked hangs from the header, `along` the content width.
+// Free floats `fx`/`fy` across the viewport.
 export type ComingNextPosition =
-    { dock: "header"; offset: number } | { dock: "free"; x: number; y: number }
+    { dock: "header"; along: number } | { dock: "free"; fx: number; fy: number }
 
 // Everything measured in viewport px.
 export type ComingNextLayout = {
@@ -30,14 +32,27 @@ export const isComingNextPosition = (
     }
 
     if (value.dock === "header") {
-        return isNumber(value.offset)
+        return isNumber(value.along)
     }
 
-    return value.dock === "free" && isNumber(value.x) && isNumber(value.y)
+    return value.dock === "free" && isNumber(value.fx) && isNumber(value.fy)
 }
 
 const clamp = (value: number, min: number, max: number) => {
     return Math.min(Math.max(value, min), Math.max(min, max))
+}
+
+// `value` as a fraction of `range`, and back.
+const toFraction = (value: number, range: number) => {
+    return range > 0 ? value / range : 0
+}
+
+const fromFraction = (fraction: number, range: number) => {
+    return fraction * Math.max(range, 0)
+}
+
+const getHeaderRange = (layout: ComingNextLayout) => {
+    return layout.contentRight - layout.contentLeft - layout.width
 }
 
 // The closest edge within reach, or the value unchanged.
@@ -70,31 +85,45 @@ export const snapComingNext = (
     const left = clamp(snappedX, 0, layout.viewportWidth - layout.width)
 
     if (Math.abs(y - layout.headerBottom) <= SNAP_DISTANCE) {
-        return { dock: "header", offset: left - layout.contentLeft }
+        return {
+            dock: "header",
+            along: toFraction(
+                left - layout.contentLeft,
+                getHeaderRange(layout),
+            ),
+        }
     }
 
     const bottom = layout.viewportHeight - layout.height
     const top = clamp(snapTo(y, [0, bottom]), 0, bottom)
 
-    return { dock: "free", x: left, y: top }
+    return {
+        dock: "free",
+        fx: toFraction(left, layout.viewportWidth - layout.width),
+        fy: toFraction(top, bottom),
+    }
 }
 
-// Keeps a saved position on screen after the window or strip resizes.
-export const clampComingNext = (
+// The strip's top-left corner in viewport px for the current window, kept
+// on screen.
+export const placeComingNext = (
     position: ComingNextPosition,
     layout: ComingNextLayout,
-): ComingNextPosition => {
+) => {
     const maxLeft = layout.viewportWidth - layout.width
+    const maxTop = layout.viewportHeight - layout.height
 
     if (position.dock === "header") {
-        const left = clamp(position.offset + layout.contentLeft, 0, maxLeft)
+        const offset = fromFraction(position.along, getHeaderRange(layout))
 
-        return { dock: "header", offset: left - layout.contentLeft }
+        return {
+            x: clamp(layout.contentLeft + offset, 0, maxLeft),
+            y: layout.headerBottom,
+        }
     }
 
     return {
-        dock: "free",
-        x: clamp(position.x, 0, maxLeft),
-        y: clamp(position.y, 0, layout.viewportHeight - layout.height),
+        x: clamp(fromFraction(position.fx, maxLeft), 0, maxLeft),
+        y: clamp(fromFraction(position.fy, maxTop), 0, maxTop),
     }
 }

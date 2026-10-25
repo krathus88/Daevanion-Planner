@@ -36,6 +36,15 @@ export const PageNav = ({
                     Timers
                 </RouterLink>
             </NavTab>
+
+            <NavTab isActive={currentPage === "pets"}>
+                <RouterLink
+                    to="/pets"
+                    aria-current={currentPage === "pets" ? "page" : undefined}
+                >
+                    Pets
+                </RouterLink>
+            </NavTab>
         </Flex>
     )
 }
