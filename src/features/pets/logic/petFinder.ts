@@ -1,9 +1,9 @@
 import type { PetCategoryId } from "@pets/config/petCategories"
 import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas, PetMonster } from "@pets/data/petAtlas"
-import { getFarmSpotIndexes } from "./farmSpotIndexes"
 import { getPetLevel } from "./petLevels"
 import { clusterSpawns, type SpotSpawn } from "./spotClusters"
+import { getSpotArea, nameSpotGroup, type SpotLabels } from "./spotNames"
 
 export type PetFilters = {
     query: string
@@ -23,9 +23,6 @@ export type SourceMonster = {
     rank: PetMonster["rank"]
     count: number
 }
-
-// Spot name per spawn of each monster, for one pet's own spots.
-type SpotLabels = Map<PetMonster, (string | null)[]>
 
 export type PetMapSource = {
     mapId: PetMapId
@@ -55,20 +52,8 @@ const byCountThenName = (a: CountedName, b: CountedName) => {
     return b.count - a.count || a.name.localeCompare(b.name)
 }
 
-const getSpotArea = (atlas: PetAtlas, mapId: PetMapId, spotIndex: number) => {
-    const spot = atlas.spots[mapId][spotIndex]
-
-    return spot ? (atlas.areas[mapId][spot.area] ?? null) : null
-}
-
-// "Destroyed Scriptorium (southeast)" -> "Destroyed Scriptorium".
-const getSpotBase = (name: string) => {
-    return name.replace(/ \([^)]*\)$/, "")
-}
-
 // Groups one pet's spawns on a map the way the map's spots were made, and
-// names each group after the map spot most of its spawns sit in; when all
-// of them share a landmark, the "(southeast)" side is dropped.
+// names each group after the map spots it covers.
 const getPetSpots = (
     atlas: PetAtlas,
     monsters: PetMonster[],
@@ -102,50 +87,20 @@ const getPetSpots = (
     const used = new Set<string>()
 
     for (const group of clusterSpawns(spawns, PET_MAPS[mapId].size)) {
-        const counts = new Map<number, number>()
+        const named = nameSpotGroup(
+            atlas,
+            mapId,
+            group.map((spawn) => owners[spawn.key].spot),
+            used,
+        )
 
-        for (const spawn of group) {
-            const spot = owners[spawn.key].spot
-
-            if (spot >= 0) {
-                counts.set(spot, (counts.get(spot) ?? 0) + 1)
-            }
-        }
-
-        // Map spots this group covers, most of its spawns first.
-        const ranked = [...counts].sort((a, b) => {
-            return (
-                b[1] - a[1] ||
-                atlas.spots[mapId][a[0]].name.localeCompare(
-                    atlas.spots[mapId][b[0]].name,
-                )
-            )
-        })
-        const main = ranked[0]
-
-        if (!main) {
+        if (!named) {
             continue
         }
 
-        const mainName = atlas.spots[mapId][main[0]].name
-        const base = getSpotBase(mainName)
-        const shared = ranked.every(([spot]) => {
-            return getSpotBase(atlas.spots[mapId][spot].name) === base
-        })
-        // Another group already took the main name: use the next spot's.
-        const free = ranked
-            .map(([spot]) => atlas.spots[mapId][spot].name)
-            .find((spotName) => !used.has(spotName))
-        let name = shared && !used.has(base) ? base : (free ?? mainName)
-
-        for (let number = 2; used.has(name); number++) {
-            name = `${mainName} ${number}`
-        }
-
-        used.add(name)
         spots.push({
-            name: name,
-            area: getSpotArea(atlas, mapId, main[0]),
+            name: named.name,
+            area: named.area,
             count: group.length,
         })
 
@@ -154,7 +109,7 @@ const getPetSpots = (
             const monsterLabels = labels.get(owner.monster)
 
             if (monsterLabels) {
-                monsterLabels[owner.index] = name
+                monsterLabels[owner.index] = named.name
             }
         }
     }
@@ -279,8 +234,8 @@ export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
     return sources.sort((a, b) => b.count - a.count)
 }
 
-// labels: one pet's own spot names (PetMapSource.labels). Without them, pins
-// take the map spot their pet's patch counts in for Best spots.
+// labels: spot names to show instead of the map's own, from an open pet's
+// spots (PetMapSource.labels) or the Best spots (getFarmSpots).
 export const getMapPins = (
     atlas: PetAtlas,
     pets: Pet[],
@@ -297,21 +252,18 @@ export const getMapPins = (
                 continue
             }
 
-            const farmSpots = labels
-                ? null
-                : getFarmSpotIndexes(atlas, pet, mapId)
-
             for (let i = 0; i < monster.spawns.length; i += SPAWN_STRIDE) {
+                const label = labels?.get(monster)?.[i / SPAWN_STRIDE]
+
                 pins.push({
                     x: monster.spawns[i],
                     y: monster.spawns[i + 1],
                     pet: pet,
                     monster: monster,
-                    spot: labels
-                        ? (labels.get(monster)?.[i / SPAWN_STRIDE] ?? null)
-                        : (atlas.spots[mapId][
-                              farmSpots?.get(monster)?.[i / SPAWN_STRIDE] ?? -1
-                          ]?.name ?? null),
+                    spot:
+                        label ??
+                        atlas.spots[mapId][monster.spawns[i + 2]]?.name ??
+                        null,
                     area: getSpotArea(atlas, mapId, monster.spawns[i + 2]),
                 })
             }
