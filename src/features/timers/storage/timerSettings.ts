@@ -14,6 +14,7 @@ import {
     type ComingNextPosition,
 } from "@timers/logic/comingNextPosition"
 import { MAX_PER_COLUMN, type PinnedColumns } from "@timers/logic/pinnedColumns"
+import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
 
 type SpawnReport = { spawnAt: number; reportedAt: number }
 
@@ -31,6 +32,9 @@ export type TimerSettings = {
     comingNextCount: number
     // Null hangs it from the header at the content's left edge.
     comingNextPosition: ComingNextPosition | null
+    server: string
+    // Off keeps every boss report on this device only.
+    showShared: boolean
 }
 
 const KEY = "daevanion:timers:v1:settings"
@@ -41,7 +45,8 @@ const DEFAULT_SETTINGS: TimerSettings = {
         ["weekly", "daily"],
         ["rift", "shugo"],
         ["invasion", "siege"],
-        ["gartua"],
+        // Only the selected server's faction shows.
+        ["gartua", "immortal-gartua"],
     ],
     showPinned: true,
     bossReports: {},
@@ -51,6 +56,8 @@ const DEFAULT_SETTINGS: TimerSettings = {
     showComingNext: false,
     comingNextCount: DEFAULT_COMING_NEXT_COUNT,
     comingNextPosition: null,
+    server: DEFAULT_SERVER_ID,
+    showShared: true,
 }
 
 const isTime = (value: unknown): value is number => {
@@ -155,6 +162,12 @@ const parse = (raw: string | null): TimerSettings => {
             comingNextPosition: isComingNextPosition(value.comingNextPosition)
                 ? value.comingNextPosition
                 : DEFAULT_SETTINGS.comingNextPosition,
+            server: isServerId(value.server)
+                ? value.server
+                : DEFAULT_SETTINGS.server,
+            showShared: isBoolean(value.showShared)
+                ? value.showShared
+                : DEFAULT_SETTINGS.showShared,
         }
     } catch {
         return DEFAULT_SETTINGS

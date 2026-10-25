@@ -1,5 +1,6 @@
 import { Tabs, type TabsValueChangeDetails } from "@chakra-ui/react"
 import type { FieldBossRegion } from "@timers/config/fieldBosses"
+import type { Server } from "@timers/config/servers"
 import {
     isTimerCategory,
     TIMER_CATEGORIES,
@@ -14,11 +15,16 @@ import { TimerGrid } from "./TimerGrid"
 
 type TimerTabsProps = {
     tab: TimerCategory
+    server: Server
     region: FieldBossRegion
+    regions: FieldBossRegion[]
     focusedTimer?: TimerId
     timers: TimerEntry[]
     now: number
+    shared: boolean
     onTabChange: (tab: TimerCategory) => void
+    onServerChange: (server: string) => void
+    onSharedChange: (shared: boolean) => void
     onRegionChange: (region: FieldBossRegion) => void
     onTogglePinned: (id: TimerId) => void
     onColorChange: (id: TimerId, color: TimerColor) => void
@@ -29,11 +35,16 @@ type TimerTabsProps = {
 
 export const TimerTabs = ({
     tab,
+    server,
     region,
+    regions,
     focusedTimer,
     timers,
     now,
+    shared,
     onTabChange,
+    onServerChange,
+    onSharedChange,
     onRegionChange,
     onTogglePinned,
     onColorChange,
@@ -70,10 +81,15 @@ export const TimerTabs = ({
                 >
                     {group.category.id === "boss" ? (
                         <FieldBossRegions
+                            server={server}
                             region={region}
+                            regions={regions}
                             entries={group.entries}
                             focusedTimer={focusedTimer}
                             now={now}
+                            shared={shared}
+                            onServerChange={onServerChange}
+                            onSharedChange={onSharedChange}
                             onRegionChange={onRegionChange}
                             onTogglePinned={onTogglePinned}
                             onColorChange={onColorChange}

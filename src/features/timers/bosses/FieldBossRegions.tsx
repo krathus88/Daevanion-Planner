@@ -7,14 +7,22 @@ import {
 } from "@timers/config/fieldBosses"
 import type { TimerColor, TimerId } from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
+import { getPartner, type Server } from "@timers/config/servers"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { BossRow } from "./BossRow"
+import { ServerSelect } from "./ServerSelect"
+import { SharingPopover } from "./SharingPopover"
 
 type FieldBossRegionsProps = {
+    server: Server
     region: FieldBossRegion
+    regions: FieldBossRegion[]
     entries: TimerEntry[]
     focusedTimer?: TimerId
     now: number
+    shared: boolean
+    onServerChange: (server: string) => void
+    onSharedChange: (shared: boolean) => void
     onRegionChange: (region: FieldBossRegion) => void
     onTogglePinned: (id: TimerId) => void
     onColorChange: (id: TimerId, color: TimerColor) => void
@@ -24,10 +32,15 @@ type FieldBossRegionsProps = {
 }
 
 export const FieldBossRegions = ({
+    server,
     region,
+    regions,
     entries,
     focusedTimer,
     now,
+    shared,
+    onServerChange,
+    onSharedChange,
     onRegionChange,
     onTogglePinned,
     onColorChange,
@@ -52,49 +65,78 @@ export const FieldBossRegions = ({
                     : a.timer.name.localeCompare(b.timer.name)),
         )
 
+    // In the server's order: its own faction first, then the Abyss.
+    const shownRegions = regions.flatMap(
+        (id) => FIELD_BOSS_REGIONS.find((item) => item.id === id) ?? [],
+    )
+
     return (
         <Flex flexDir="column" gap="4">
-            <SegmentGroup.Root
-                layout="fill"
-                maxW="2xl"
-                value={region}
-                aria-label="Region"
-                onValueChange={handleValueChange}
-            >
-                <SegmentGroup.Indicator />
+            <Flex flexDir="column" gap="1.5">
+                <Flex flexWrap="wrap" alignItems="center" gap="3">
+                    <SegmentGroup.Root
+                        layout="fill"
+                        maxW="xl"
+                        flex="1"
+                        value={region}
+                        aria-label="Region"
+                        onValueChange={handleValueChange}
+                    >
+                        <SegmentGroup.Indicator />
 
-                {FIELD_BOSS_REGIONS.map((item) => (
-                    <SegmentGroup.Item key={item.id} value={item.id}>
-                        <SegmentGroup.ItemText>
-                            <Flex
-                                as="span"
-                                hideBelow="md"
-                                alignItems="center"
-                                gap="1.5"
-                            >
-                                <Text as="span">{item.faction}</Text>
+                        {shownRegions.map((item) => (
+                            <SegmentGroup.Item key={item.id} value={item.id}>
+                                <SegmentGroup.ItemText>
+                                    <Flex
+                                        as="span"
+                                        hideBelow="md"
+                                        alignItems="center"
+                                        gap="1.5"
+                                    >
+                                        <Text as="span">{item.faction}</Text>
 
-                                <IconImage icon={item.icon} size="4" />
+                                        <IconImage icon={item.icon} size="4" />
 
-                                <Text as="span">{item.zone}</Text>
-                            </Flex>
+                                        <Text as="span">{item.zone}</Text>
+                                    </Flex>
 
-                            <Flex
-                                as="span"
-                                hideFrom="md"
-                                alignItems="center"
-                                gap="1.5"
-                            >
-                                <IconImage icon={item.icon} size="4" />
+                                    <Flex
+                                        as="span"
+                                        hideFrom="md"
+                                        alignItems="center"
+                                        gap="1.5"
+                                    >
+                                        <IconImage icon={item.icon} size="4" />
 
-                                <Text as="span">{item.shortLabel}</Text>
-                            </Flex>
-                        </SegmentGroup.ItemText>
+                                        <Text as="span">{item.shortLabel}</Text>
+                                    </Flex>
+                                </SegmentGroup.ItemText>
 
-                        <SegmentGroup.ItemHiddenInput />
-                    </SegmentGroup.Item>
-                ))}
-            </SegmentGroup.Root>
+                                <SegmentGroup.ItemHiddenInput />
+                            </SegmentGroup.Item>
+                        ))}
+                    </SegmentGroup.Root>
+
+                    {/* Stays right-aligned, even when it wraps below. */}
+                    <Flex ml="auto" alignItems="center" gap="2">
+                        <SharingPopover
+                            shared={shared}
+                            onSharedChange={onSharedChange}
+                        />
+
+                        <ServerSelect
+                            value={server.id}
+                            onChange={onServerChange}
+                        />
+                    </Flex>
+                </Flex>
+
+                <Text textStyle="hint">
+                    {shared
+                        ? `Using shared timers for ${server.name}, and for ${server.name} + ${getPartner(server).name} in the Abyss.`
+                        : "Shared timers are off: only your own timers show."}
+                </Text>
+            </Flex>
 
             {region === "abyss" && (
                 <Text textStyle="hint">

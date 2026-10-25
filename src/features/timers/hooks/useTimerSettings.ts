@@ -93,6 +93,14 @@ export const useTimerSettings = () => {
         })
     }
 
+    const changeServer = (server: string) => {
+        writeTimerSettings({ ...readTimerSettings(), server: server })
+    }
+
+    const changeShowShared = (showShared: boolean) => {
+        writeTimerSettings({ ...readTimerSettings(), showShared: showShared })
+    }
+
     const changeBossReport = (id: TimerId, report: BossReport | null) => {
         const current = readTimerSettings()
         const bossReports = { ...current.bossReports }
@@ -119,6 +127,8 @@ export const useTimerSettings = () => {
         changeShowComingNext: changeShowComingNext,
         changeComingNextCount: changeComingNextCount,
         changeComingNextPosition: changeComingNextPosition,
+        changeServer: changeServer,
+        changeShowShared: changeShowShared,
         changeBossReport: changeBossReport,
     }
 }

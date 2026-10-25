@@ -69,12 +69,12 @@ export const snapComingNext = (
     const snappedX = snappedLeft !== x ? snappedLeft : snappedRight
     const left = clamp(snappedX, 0, layout.viewportWidth - layout.width)
 
-    if (y - layout.headerBottom <= SNAP_DISTANCE) {
+    if (Math.abs(y - layout.headerBottom) <= SNAP_DISTANCE) {
         return { dock: "header", offset: left - layout.contentLeft }
     }
 
     const bottom = layout.viewportHeight - layout.height
-    const top = clamp(snapTo(y, [bottom]), layout.headerBottom, bottom)
+    const top = clamp(snapTo(y, [0, bottom]), 0, bottom)
 
     return { dock: "free", x: left, y: top }
 }
@@ -95,10 +95,6 @@ export const clampComingNext = (
     return {
         dock: "free",
         x: clamp(position.x, 0, maxLeft),
-        y: clamp(
-            position.y,
-            layout.headerBottom,
-            layout.viewportHeight - layout.height,
-        ),
+        y: clamp(position.y, 0, layout.viewportHeight - layout.height),
     }
 }

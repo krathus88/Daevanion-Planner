@@ -1,5 +1,6 @@
 import { Box, Container, Flex } from "@chakra-ui/react"
 import { ClassSelect } from "@planner/ClassSelect"
+import { useClassFavicon } from "@planner/hooks/useClassFavicon"
 import { usePlannerLocation } from "@planner/hooks/usePlannerLocation"
 import { useMatch } from "@tanstack/react-router"
 import { ComingNext } from "@timers/coming-next/ComingNext"
@@ -18,7 +19,10 @@ export const Header = () => {
     const plannerLocation = usePlannerLocation()
 
     const plannerParams = plannerMatch?.params
+    const classId = plannerParams?.classId ?? plannerLocation.classId
     const currentPage = plannerMatch ? "planner" : timersMatch ? "timers" : null
+
+    useClassFavicon(classId)
 
     return (
         <Box
@@ -79,10 +83,7 @@ export const Header = () => {
                             <PinnedToggleButton />
 
                             <ClassSelect
-                                classId={
-                                    plannerParams?.classId ??
-                                    plannerLocation.classId
-                                }
+                                classId={classId}
                                 layout={plannerParams?.layout}
                             />
                         </Flex>
