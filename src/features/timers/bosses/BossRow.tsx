@@ -10,7 +10,11 @@ import {
     type SystemStyleObject,
 } from "@chakra-ui/react"
 import type { FieldBoss, FieldBossId } from "@timers/config/fieldBosses"
-import type { TimerColor, TimerId } from "@timers/config/timers"
+import {
+    BOSS_ALIVE_FOR,
+    type TimerColor,
+    type TimerId,
+} from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import { formatDuration } from "@timers/logic/formatTime"
 import type { BossReport } from "@timers/storage/timerSettings"
@@ -215,9 +219,13 @@ export const BossRow = ({
                         borderTopWidth="1px"
                         borderColor="app.border"
                     >
-                        <BossNotes name={boss.shortName} state={entry.state} />
+                        <BossNotes
+                            name={boss.shortName}
+                            aliveFor={boss.aliveFor ?? BOSS_ALIVE_FOR}
+                            state={entry.state}
+                        />
 
-                        {boss.respawn !== null && (
+                        {!boss.schedule && (
                             <BossReportForm
                                 focusRequest={focusForm}
                                 onChange={handleReport}
@@ -225,7 +233,7 @@ export const BossRow = ({
                             />
                         )}
 
-                        {boss.respawn === null && entry.report && (
+                        {boss.schedule && entry.report && (
                             <Button
                                 variant="dangerGhost"
                                 size="xs"

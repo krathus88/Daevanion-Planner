@@ -31,6 +31,8 @@ export type LootDrop = {
     grade: LootGrade
     // Percent per kill; each drop rolls on its own.
     chance: number
+    // How many per kill, e.g. "1–5".
+    amount?: string
     // Chest confirmed by NCSOFT's KR notes (1 Jul 2026), stones assumed. The
     // rest goes to the top-damage party, per KR player reports.
     everyone?: boolean
@@ -3815,7 +3817,30 @@ const IMMORTAL_GARTUA: BossLoot = [
     },
 ]
 
+// Every player with contribution gets 1–5, more for more contribution
+// (player reports). The Executors share the one for Lower Reshanta.
+const proofOfHero = (boss: "Argo" | "Kaira" | "Nahma"): LootDrop => {
+    return {
+        name: `Proof of Hero (${boss}) (Bound)`,
+        icon: `proof-of-hero-${boss.toLowerCase()}`,
+        grade: "special",
+        chance: 100,
+        amount: "1–5",
+        everyone: true,
+    }
+}
+
+const LOWER_RESHANTA_PROOF: LootDrop = {
+    name: "Proof of Hero: Lower Reshanta (Bound)",
+    icon: "proof-of-hero-argo",
+    grade: "special",
+    chance: 100,
+    amount: "1–5",
+    everyone: true,
+}
+
 const WATCHER_KAIRA: BossLoot = [
+    proofOfHero("Kaira"),
     {
         name: "Artwork: Watcher Kaira",
         icon: "artwork-silent-dartan",
@@ -4002,6 +4027,7 @@ const WATCHER_KAIRA: BossLoot = [
 ]
 
 const EXECUTOR_ARGO: BossLoot = [
+    LOWER_RESHANTA_PROOF,
     {
         name: "Artwork: Argo, the Spirit King",
         icon: "artwork-argo-the-spirit-king",
@@ -4181,7 +4207,13 @@ const EXECUTOR_ARGO: BossLoot = [
     },
 ]
 
+// Shares Executor Argo's table, with its own proof.
+const ARGO_THE_SPIRIT_KING: BossLoot = EXECUTOR_ARGO.map((drop) =>
+    drop === LOWER_RESHANTA_PROOF ? proofOfHero("Argo") : drop,
+)
+
 const EXECUTOR_KAIRA: BossLoot = [
+    LOWER_RESHANTA_PROOF,
     {
         name: "Artwork: Watcher Kaira",
         icon: "artwork-silent-dartan",
@@ -4368,6 +4400,7 @@ const EXECUTOR_KAIRA: BossLoot = [
 ]
 
 const EXECUTOR_TAMASA: BossLoot = [
+    LOWER_RESHANTA_PROOF,
     {
         name: "Artwork: Executor Tamasa",
         icon: "artwork-executor-tamasa",
@@ -4531,6 +4564,7 @@ const EXECUTOR_TAMASA: BossLoot = [
 ]
 
 const GUARDIAN_LORD_NAHMA: BossLoot = [
+    proofOfHero("Nahma"),
     {
         name: "Artwork: Guardian Lord Nahma",
         icon: "artwork-guardian-lord-nahma",
@@ -4541,6 +4575,12 @@ const GUARDIAN_LORD_NAHMA: BossLoot = [
             { name: "Illusion [Kaisinel]", value: 5 },
             { name: "Life [Yustiel]", value: 5 },
         ],
+    },
+    {
+        name: "Colossus: Guardian Lord Nahma",
+        icon: "colossus-guardian-lord-nahma",
+        grade: "heroic",
+        chance: 25,
     },
     {
         name: "Fallen Ancient God weapon",
@@ -4689,12 +4729,6 @@ const GUARDIAN_LORD_NAHMA: BossLoot = [
         ],
     },
     {
-        name: "Colossus: Guardian Lord Nahma",
-        icon: "colossus-guardian-lord-nahma",
-        grade: "heroic",
-        chance: 25,
-    },
-    {
         name: "Artisan's Refining Stone",
         icon: "artisans-refining-stone",
         grade: "epic",
@@ -4771,4 +4805,5 @@ export const FIELD_BOSS_LOOT: Record<FieldBossId, BossLoot> = {
     "executor-kaira": EXECUTOR_KAIRA,
     tamasa: EXECUTOR_TAMASA,
     "siege-boss": GUARDIAN_LORD_NAHMA,
+    "argo-spirit-king": ARGO_THE_SPIRIT_KING,
 }

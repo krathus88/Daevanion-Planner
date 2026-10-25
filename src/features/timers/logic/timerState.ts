@@ -99,16 +99,17 @@ const getBossState = (
 
     // On a whole second so it ticks in step with the clock.
     const firstSpawnAt = Math.round(report.spawnAt / 1000) * 1000
-    const killedAt = firstSpawnAt + BOSS_ALIVE_FOR
+    const aliveFor = boss.aliveFor ?? BOSS_ALIVE_FOR
+    const killedAt = firstSpawnAt + aliveFor
 
     if (boss.respawn === null && now >= killedAt) {
         return { status: "killed", at: killedAt }
     }
 
-    const cycleLength = BOSS_ALIVE_FOR + (boss.respawn ?? 0)
+    const cycleLength = aliveFor + (boss.respawn ?? 0)
     const cycle = Math.max(0, Math.floor((now - firstSpawnAt) / cycleLength))
     const spawnAt = firstSpawnAt + cycle * cycleLength
-    const isAlive = now >= spawnAt && now - spawnAt < BOSS_ALIVE_FOR
+    const isAlive = now >= spawnAt && now - spawnAt < aliveFor
     const shownCycle = isAlive || now < spawnAt ? cycle : cycle + 1
     const shownSpawnAt = firstSpawnAt + shownCycle * cycleLength
     const nextWeeklyReset =
@@ -122,7 +123,7 @@ const getBossState = (
     if (isAlive) {
         return {
             status: "open",
-            at: spawnAt + BOSS_ALIVE_FOR,
+            at: spawnAt + aliveFor,
             startedAt: spawnAt,
             ...countdown,
         }
