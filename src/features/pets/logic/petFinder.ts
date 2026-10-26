@@ -2,7 +2,7 @@ import type { PetCategoryId } from "@pets/config/petCategories"
 import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas, PetMonster } from "@pets/data/petAtlas"
 import { getPetLevel } from "./petLevels"
-import { clusterSpawns, type SpotSpawn } from "./spotClusters"
+import { clusterSpawns, getCenter, type SpotSpawn } from "./spotClusters"
 import { getSpotArea, nameSpotGroup, type SpotLabels } from "./spotNames"
 
 export type PetFilters = {
@@ -95,12 +95,9 @@ const getPetSpots = (
             atlas,
             mapId,
             group.map((spawn) => owners[spawn.key].spot),
+            getCenter(group),
             used,
         )
-
-        if (!named) {
-            continue
-        }
 
         // Two monsters can share a name at different levels.
         const monsterCounts = new Map<PetMonster, number>()

@@ -3,6 +3,7 @@ import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
 import { getPetPatches, mergePatches } from "./farmPatches"
 import { getPetLevel, MAX_PET_LEVEL } from "./petLevels"
+import { getCenter } from "./spotClusters"
 import { nameSpotGroup, type SpotLabels } from "./spotNames"
 
 export type FarmSpotPet = {
@@ -77,18 +78,14 @@ export const getFarmSpots = (
 
     // Named in rank order, so the best spots get the plain names.
     for (const entry of ranked) {
+        const spawns = entry.group.flatMap((patch) => patch.spawns)
         const named = nameSpotGroup(
             atlas,
             mapId,
-            entry.group.flatMap((patch) => {
-                return patch.spawns.map((spawn) => spawn.spot)
-            }),
+            spawns.map((spawn) => spawn.spot),
+            getCenter(spawns),
             used,
         )
-
-        if (!named) {
-            continue
-        }
 
         spots.push({
             name: named.name,

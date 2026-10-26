@@ -24,7 +24,7 @@ const getWidth = (spawns: SpotSpawn[]) => {
     )
 }
 
-export const getCenter = (spawns: SpotSpawn[]) => {
+export const getCenter = (spawns: { x: number; y: number }[]) => {
     let x = 0
     let y = 0
 
