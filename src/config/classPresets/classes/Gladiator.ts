@@ -271,7 +271,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Wrath Burst] Chain Skill" },
                 {
@@ -295,7 +295,7 @@ export default defineClassPreset({
             priority: 3,
             icon: SurvivalStance,
             tooltip:
-                "Increases the caster's HP by 200. Increases Max HP by an additional 7%, Natural HP Regen by 20, PvE Damage Tolerance by 5.5%, and PvP Damage Tolerance by 2.75%.",
+                "Increases the caster's HP by X. Increases Max HP by an additional X%, Natural HP Regen by X, PvE Damage Tolerance by X%, and PvP Damage Tolerance by X%.",
         },
         {
             id: "ppa",
@@ -304,7 +304,7 @@ export default defineClassPreset({
             priority: 99,
             icon: ProtectionArmor,
             tooltip:
-                "Increases the caster's Block by 200 and restores 53-64 HP on Block.\n\nCooldown: 1s",
+                "Increases the caster's Block by 200 and restores X HP on Block.\n\nCooldown: 1s",
         },
         {
             id: "pba",
@@ -313,7 +313,7 @@ export default defineClassPreset({
             priority: 5,
             icon: BloodAbsorption,
             tooltip:
-                "The caster has a 50% chance to restore 20-24 HP and 1.6% Max HP on landing an attack.\nImmediately restores 26% Max HP when HP drops to 50% or less.\n\nCooldown: 1s\nInstant Healing Cooldown: 60s",
+                "The caster has a 50% chance to restore X HP and X% Max HP on landing an attack.\nImmediately restores X% Max HP when HP drops to 50% or less.\n\nCooldown: 1s\nInstant Healing Cooldown: 60s",
         },
         {
             id: "piw",
@@ -322,7 +322,7 @@ export default defineClassPreset({
             priority: 3,
             icon: IdentifyWeakness,
             tooltip:
-                "Increases the caster's Critical Hit by 100 and Perfect Chance by 0.5%.",
+                "Increases the caster's Critical Hit by X and Perfect Chance by X%.",
         },
         {
             id: "pap",
@@ -331,7 +331,7 @@ export default defineClassPreset({
             priority: 1,
             icon: AttackPreparation,
             tooltip:
-                "Increases the caster's PvE Damage Boost by 5.5%, PvP Damage Boost by 2.75%, Defense by 2%, and Accuracy by 100.",
+                "Increases the caster's PvE Damage Boost by X%, PvP Damage Boost by X%, Defense by X%, and Accuracy by 100.",
         },
         {
             id: "pih",
@@ -340,7 +340,7 @@ export default defineClassPreset({
             priority: 1,
             icon: ImpactHit,
             tooltip:
-                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
+                "Increases the caster's Impact-type Chance by X% and Double Chance by X%.",
         },
         {
             id: "pdi",
@@ -358,7 +358,7 @@ export default defineClassPreset({
             priority: 1,
             icon: ExperiencedCounterstrike,
             tooltip:
-                "Increases Front Attack Damage Boost by 0.4%. Increases PvE Damage Boost by 5.4%, PvP Damage Boost by 2.7% for 20s for the caster and party members on Block.\n\nPvE Damage Boost and PvP Damage Boost does not stack with Templar's [Fury] effect.",
+                "Increases Front Attack Damage Boost by X%. Increases PvE Damage Boost by X%, PvP Damage Boost by X% for 20s for the caster and party members on Block.\n\nPvE Damage Boost and PvP Damage Boost does not stack with Templar's [Fury] effect.",
         },
         {
             id: "psw",
@@ -367,7 +367,7 @@ export default defineClassPreset({
             priority: 4,
             icon: SurvivalWillpower,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "pmb",
@@ -376,7 +376,7 @@ export default defineClassPreset({
             priority: 1,
             icon: MurderousBurst,
             tooltip:
-                "Grants a stack of Menace for 3s when landing an attack. Removes Menace at 5 stacks and deals X damage to up to 4 enemies within 5m of the caster and increases the caster's Critical Damage Boost by 5.5% for 3s.",
+                "Grants a stack of Menace for 3s when landing an attack. Removes Menace at 5 stacks and deals X damage to up to 4 enemies within 5m of the caster and increases the caster's Critical Damage Boost by X% for 3s.",
         },
     ],
     assignments: {

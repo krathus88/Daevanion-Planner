@@ -7,6 +7,23 @@ type BossNotesProps = {
     state: TimerState
 }
 
+// "30 seconds", "a minute", "8 minutes 30 seconds".
+const formatAliveFor = (aliveFor: number) => {
+    const minutes = Math.floor(aliveFor / 60_000)
+    const seconds = Math.round((aliveFor % 60_000) / 1000)
+    const parts = []
+
+    if (minutes > 0) {
+        parts.push(minutes === 1 ? "a minute" : `${minutes} minutes`)
+    }
+
+    if (seconds > 0) {
+        parts.push(`${seconds} seconds`)
+    }
+
+    return parts.join(" ")
+}
+
 export const BossNotes = ({ name, aliveFor, state }: BossNotesProps) => {
     if (state.status !== "open" && state.status !== "upcoming") {
         return null
@@ -29,10 +46,7 @@ export const BossNotes = ({ name, aliveFor, state }: BossNotesProps) => {
         >
             {state.estimated && (
                 <Text>
-                    Estimated, assuming {name} died{" "}
-                    {aliveFor < 60_000
-                        ? `${aliveFor / 1000} seconds`
-                        : "a minute"}{" "}
+                    Estimated, assuming {name} died {formatAliveFor(aliveFor)}{" "}
                     after spawning. Re-enter the in-game timer to fix it.
                 </Text>
             )}

@@ -89,6 +89,8 @@ export type TimerDefinition = {
     color: TimerColor
     soonMinutes: number
     schedule?: FixedSchedule | ServerSchedule
+    // Only a chance to happen at each scheduled time.
+    chance?: boolean
     boss?: FieldBoss
 }
 
@@ -137,12 +139,14 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         icon: DimensionalInvasion,
         color: { hue: "orange", tone: "strong" },
         soonMinutes: 5,
-        description: "Every hour at half past. Open for about 3 minutes.",
+        description:
+            "May start every hour at half past (random chance, not every hour). Open for about 3 minutes.",
         schedule: {
             anchor: Date.UTC(2026, 9, 14, 0, 30),
             period: HOUR,
             openFor: 3 * MINUTE,
         },
+        chance: true,
     },
     {
         id: "siege",

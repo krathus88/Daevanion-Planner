@@ -66,7 +66,7 @@ export const PetListItem = memo(function PetListItem({
                 </Flex>
 
                 <Text textStyle="caption" truncate>
-                    {describePetSpawns(pet.source, getPetMapCounts(atlas, pet))}
+                    {describePetSpawns(pet, getPetMapCounts(atlas, pet))}
                 </Text>
             </Flex>
         </chakra.button>

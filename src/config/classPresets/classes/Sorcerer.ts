@@ -58,7 +58,7 @@ export default defineClassPreset({
             priority: 2,
             icon: WishOfConcentration,
             tooltip:
-                "Increases the caster's Attack by 10% and Accuracy by 100 for 10s.",
+                "Increases the caster's Attack by 10% and Accuracy by 100 for Xs.",
             cooldown: 60,
             unlocks: [
                 { level: 8, effect: "Reduces MP Cost by 10%" },
@@ -203,7 +203,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Curse: Old Tree] Chain Skill" },
                 {
@@ -283,7 +283,7 @@ export default defineClassPreset({
             priority: 1,
             icon: RobeOfFlame,
             tooltip:
-                "Increases the caster's Accuracy by 100, PvE Damage Boost by 1%, PvP Damage Boost by 0.5%, and Double Chance by 0.2%.",
+                "Increases the caster's Accuracy by 100, PvE Damage Boost by X%, PvP Damage Boost by X%, and Double Chance by X%.",
         },
         {
             id: "proe",
@@ -292,7 +292,7 @@ export default defineClassPreset({
             priority: 2,
             icon: RobeOfEarth,
             tooltip:
-                "Increases Max MP by 7% and Natural MP Regen by 5. Increases Critical Hit by 105 when MP is 50% or more.",
+                "Increases Max MP by X% and Natural MP Regen by X. Increases Critical Hit by X when MP is 50% or more.",
         },
         {
             id: "pfm",
@@ -328,7 +328,7 @@ export default defineClassPreset({
             priority: 4,
             icon: VitalityEvaporation,
             tooltip:
-                "Deals X damage on hit if the target's HP is above 70%.\n\nCooldown: 1s",
+                "Deals X damage on hit if the target's HP is above X%.\n\nCooldown: 1s",
         },
         {
             id: "proc",
@@ -337,7 +337,7 @@ export default defineClassPreset({
             priority: 5,
             icon: RobeOfCold,
             tooltip:
-                "Increases the caster's Defense by 1% and Critical Hit Resist by 55 and inflicts Slow on an enemy when struck by them, reducing the enemy's Move Speed by 25% for 2s.\n\nCooldown: 10s",
+                "Increases the caster's Defense by X% and Critical Hit Resist by X and inflicts Slow on an enemy when struck by them, reducing the enemy's Move Speed by X% for 2s.\n\nCooldown: 10s",
         },
         {
             id: "pae",
@@ -346,7 +346,7 @@ export default defineClassPreset({
             priority: 6,
             icon: AbsorbEssence,
             tooltip:
-                "Increases Ailment-type and Mental-type Chance by 10.7% and restores 25 MP on landing an attack.\n\nCooldown: 1s",
+                "Increases Ailment-type and Mental-type Chance by X% and restores X MP on landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "pgor",
@@ -355,7 +355,7 @@ export default defineClassPreset({
             priority: 6,
             icon: GraceOfResistance,
             tooltip:
-                "Increases the caster's Mental-type Resist and Impact-type Resist by 11.2%.",
+                "Increases the caster's Mental-type Resist and Impact-type Resist by X%.",
         },
         {
             id: "prc",
@@ -364,7 +364,7 @@ export default defineClassPreset({
             priority: 6,
             icon: RevitalizationContract,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores X% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
     ],
     assignments: {

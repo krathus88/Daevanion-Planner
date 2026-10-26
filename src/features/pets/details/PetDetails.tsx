@@ -4,12 +4,14 @@ import { Term } from "@common/Term"
 import { CategoryDot } from "@pets/CategoryDot"
 import { MinimizeButton } from "@pets/MinimizeButton"
 import { PetIcon } from "@pets/PetIcon"
+import { PET_BOSSES } from "@pets/config/petBosses"
 import { PET_CATEGORY_NAMES } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
-import { NO_SPAWN_TEXT } from "@pets/logic/petLabels"
+import { getNoSpawnText } from "@pets/logic/petLabels"
 import { LuX } from "react-icons/lu"
+import { BossSource } from "./BossSource"
 import { MapSourceList } from "./MapSourceList"
 import { LevelPicker } from "./LevelPicker"
 
@@ -48,7 +50,9 @@ export const PetDetails = ({
             ? sources.length === 1
                 ? "Spawns on 1 map"
                 : `Spawns on ${sources.length} maps, most first`
-            : NO_SPAWN_TEXT[pet.source]
+            : getNoSpawnText(pet)
+
+    const boss = PET_BOSSES[pet.id]
 
     return (
         <Card gap="4">
@@ -99,6 +103,8 @@ export const PetDetails = ({
                         onSpotSelect={onSpotSelect}
                     />
                 </Grid>
+            ) : boss ? (
+                <BossSource boss={boss} />
             ) : (
                 <Text textStyle="hint">
                     {pet.source === "field" ? (

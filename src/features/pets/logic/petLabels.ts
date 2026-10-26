@@ -1,18 +1,34 @@
+import { PET_BOSSES } from "@pets/config/petBosses"
 import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
-import type { PetSource } from "@pets/data/petAtlas"
+import type { Pet, PetSource } from "@pets/data/petAtlas"
 
-export const NO_SPAWN_TEXT: Record<Exclude<PetSource, "field">, string> = {
+const NO_SPAWN_TEXT: Record<Exclude<PetSource, "field">, string> = {
     other: "No open-world spawn: shop, quest, chest or dungeon",
     special: "Special pet: no open-world spawn",
 }
 
+// "Fire Temple boss", or why a pet has no open-world spawn.
+export const getNoSpawnText = (pet: Pet) => {
+    const boss = PET_BOSSES[pet.id]
+
+    if (boss) {
+        return boss.confirmed
+            ? `${boss.dungeon} boss`
+            : `${boss.dungeon} boss (unconfirmed)`
+    }
+
+    return pet.source === "field"
+        ? "No tracked spawns"
+        : NO_SPAWN_TEXT[pet.source]
+}
+
 // "Verteron 377 · Altgard 69", or why there is no spawn.
 export const describePetSpawns = (
-    source: PetSource,
+    pet: Pet,
     counts: Partial<Record<PetMapId, number>>,
 ) => {
-    if (source !== "field") {
-        return NO_SPAWN_TEXT[source]
+    if (pet.source !== "field" || PET_BOSSES[pet.id]) {
+        return getNoSpawnText(pet)
     }
 
     const parts: string[] = []

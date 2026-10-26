@@ -1,13 +1,15 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { formatCountdown, formatLocalTime } from "@timers/logic/formatTime"
 import type { TimerState } from "@timers/logic/timerState"
+import { ChanceMarker } from "./ChanceMarker"
 
 type TimerStatusProps = {
     state: TimerState
     now: number
+    chance?: boolean
 }
 
-export const TimerStatus = ({ state, now }: TimerStatusProps) => {
+export const TimerStatus = ({ state, now, chance }: TimerStatusProps) => {
     if (state.status !== "open" && state.status !== "upcoming") {
         return null
     }
@@ -17,14 +19,18 @@ export const TimerStatus = ({ state, now }: TimerStatusProps) => {
 
     return (
         <Flex flexDir="column" gap="0.5">
-            <Text
-                textStyle="stat"
-                color={isOpen ? "app.success" : "app.fg"}
-                fontVariantNumeric="tabular-nums"
-            >
-                {isUncertain && "~"}
-                {formatCountdown(state.at - now)}
-            </Text>
+            <Flex alignItems="center" gap="2">
+                <Text
+                    textStyle="stat"
+                    color={isOpen ? "app.success" : "app.fg"}
+                    fontVariantNumeric="tabular-nums"
+                >
+                    {isUncertain && "~"}
+                    {formatCountdown(state.at - now)}
+                </Text>
+
+                {chance && <ChanceMarker showLabel />}
+            </Flex>
 
             <Text textStyle="caption">
                 {isOpen

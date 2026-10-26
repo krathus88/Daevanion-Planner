@@ -151,7 +151,7 @@ export default defineClassPreset({
             priority: 3,
             icon: RadiantRecovery,
             tooltip:
-                "Restores 379-417 HP and removes 1 debuff for the caster and party members within 40m.",
+                "Restores X HP and removes 1 debuff for the caster and party members within 40m.",
             cooldown: 12,
             unlocks: [
                 { level: 8, effect: "Removes up to 2 debuffs" },
@@ -184,7 +184,7 @@ export default defineClassPreset({
             priority: 3,
             icon: HealingLight,
             tooltip:
-                "Restores 192-211 HP to the caster and the party member with the lowest HP within 40m.",
+                "Restores X HP to the caster and the party member with the lowest HP within 40m.",
             cooldown: 6,
             unlocks: [
                 { level: 8, effect: "+2 consecutive uses" },
@@ -260,7 +260,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 {
                     level: 8,
@@ -310,7 +310,7 @@ export default defineClassPreset({
             priority: 1,
             icon: EmpyreanLordsGrace,
             tooltip:
-                "Increases the caster's Critical Hit by 100, Double Chance by 0.2% and deals X extra damage on landing an attack on a target.\n\nCooldown: 1s",
+                "Increases the caster's Critical Hit by X, Double Chance by X% and deals X extra damage on landing an attack on a target.\n\nCooldown: 1s",
         },
         {
             id: "phe",
@@ -318,7 +318,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: HealingEnhancement,
-            tooltip: "Increases the caster's Heal Boost by 22400% of Attack.",
+            tooltip: "Increases the caster's Heal Boost by X% of Attack.",
         },
         {
             id: "peg",
@@ -327,7 +327,7 @@ export default defineClassPreset({
             priority: 2,
             icon: EarthsGrace,
             tooltip:
-                "Increases the caster's Critical Damage Boost by 10.5% and Accuracy by 100.",
+                "Increases the caster's Critical Damage Boost by X% and Accuracy by 100.",
         },
         {
             id: "prb",
@@ -336,7 +336,7 @@ export default defineClassPreset({
             priority: 3,
             icon: RadiantBenediction,
             tooltip:
-                "Restores 384-461 HP to the caster and party members within 40m on landing an attack.\n\nCooldown: 5s",
+                "Restores X HP to the caster and party members within 40m on landing an attack.\n\nCooldown: 5s",
         },
         {
             id: "pwb",
@@ -344,7 +344,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 4,
             icon: WarmBenediction,
-            tooltip: "Increases the caster's Max HP by 6% and Max MP by 7.",
+            tooltip: "Increases the caster's Max HP by X% and Max MP by X.",
         },
         {
             id: "piv",
@@ -353,7 +353,7 @@ export default defineClassPreset({
             priority: 4,
             icon: ImmortalVeil,
             tooltip:
-                "Increases the caster's Defense by 2% and Critical Hit Resist by 100.",
+                "Increases the caster's Defense by X% and Critical Hit Resist by X.",
         },
         {
             id: "psw",
@@ -362,7 +362,7 @@ export default defineClassPreset({
             priority: 5,
             icon: SurvivalWillpower,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "ppoc",
@@ -371,7 +371,7 @@ export default defineClassPreset({
             priority: 97,
             icon: PrayerOfConcentration,
             tooltip:
-                "Forms a Protective Shield which blocks 424 damage and increases the caster's Heal Boost by 20% for 30s when HP is 50% or less.\n\nCooldown: 60s",
+                "Forms a Protective Shield which blocks X damage and increases the caster's Heal Boost by 20% for 30s when HP is 50% or less.\n\nCooldown: 60s",
         },
         {
             id: "phb",
@@ -380,7 +380,7 @@ export default defineClassPreset({
             priority: 98,
             icon: HealBlock,
             tooltip:
-                "Has a 7% chance to reduce the target's Incoming Heal by 32% for 5s on landing an attack.\n\nCooldown: 5s",
+                "Has a 7% chance to reduce the target's Incoming Heal by X% for 5s on landing an attack.\n\nCooldown: 5s",
         },
         {
             id: "pelb",
@@ -389,7 +389,7 @@ export default defineClassPreset({
             priority: 99,
             icon: EmpyreanLordsBenediction,
             tooltip:
-                "Increases the caster's Block by 200 and restores 53-64 HP on Block.\n\nCooldown: 3s",
+                "Increases the caster's Block by 200 and restores X HP on Block.\n\nCooldown: 3s",
         },
     ],
     assignments: {

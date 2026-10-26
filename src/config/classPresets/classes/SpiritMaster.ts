@@ -183,7 +183,7 @@ export default defineClassPreset({
             priority: 3,
             icon: SummonEarthSpirit,
             tooltip:
-                "Summons an Earth Spirit.\nThe Earth Spirit uses a skill that deals X Earth damage to a target within 20m and increases Enmity by 3750. Has a 30% chance to inflict Taunt for 2s if the target is a player.\nThe Earth Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and increasing Enmity each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Earth Spirit's Defense and HP by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+                "Summons an Earth Spirit.\nThe Earth Spirit uses a skill that deals X Earth damage to a target within 20m and increases Enmity by X. Has a 30% chance to inflict Taunt for 2s if the target is a player.\nThe Earth Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and increasing Enmity each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Earth Spirit's Defense and HP by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
             cooldown: 15,
             unlocks: [
                 { level: 8, effect: "-50% MP Cost" },
@@ -225,7 +225,7 @@ export default defineClassPreset({
             priority: 98,
             icon: SummonWindSpirit,
             tooltip:
-                "Summons a Wind Spirit.\nThe Wind Spirit selects a target within 20m and uses a skill that deals X Wind damage to up to 4 enemies within 5m of the target and restores 134-147 HP to the Spiritmaster.\nThe Wind Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and restores 1.5% of the Spiritmaster's HP each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Wind Spirit's Accuracy and Critical Hit by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
+                "Summons a Wind Spirit.\nThe Wind Spirit selects a target within 20m and uses a skill that deals X Wind damage to up to 4 enemies within 5m of the target and restores X HP to the Spiritmaster.\nThe Wind Spirit fights alongside the caster using basic attacks, with a 10% chance to use its skill and restores 1.5% of the Spiritmaster's HP each time an attack lands. It is dismissed upon selecting the summon icon.\nEach skill level increases the Wind Spirit's Accuracy and Critical Hit by 2%.\n\n7 Stagger Gauge Damage\nSpirit Skill Cooldown: 3s",
             cooldown: 15,
             unlocks: [
                 { level: 8, effect: "-50% MP Cost" },
@@ -266,7 +266,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Curse of Despair] Chain Skill" },
                 {
@@ -290,7 +290,7 @@ export default defineClassPreset({
             priority: 1,
             icon: SpiritStrike,
             tooltip:
-                "Increases the caster's PvE Damage Boost by 6%, PvP Damage Boost by 3%, and Perfect Chance by 0.4%. Increases the Spirit's PvE Damage Boost by 6%, PvP Damage Boost by 3%, and Perfect Chance 0.4%.",
+                "Increases the caster's PvE Damage Boost by X%, PvP Damage Boost by X%, and Perfect Chance by X%. Increases the Spirit's PvE Damage Boost by X%, PvP Damage Boost by X%, and Perfect Chance X%.",
         },
         {
             id: "pmf",
@@ -299,7 +299,7 @@ export default defineClassPreset({
             priority: 1,
             icon: MentalFocus,
             tooltip:
-                "Increases the caster's Mental-type Chance(s) by 11% and Double Chance by 0.3%.",
+                "Increases the caster's Mental-type Chance(s) by X% and Double Chance by X%.",
         },
         {
             id: "peu",
@@ -308,7 +308,7 @@ export default defineClassPreset({
             priority: 2,
             icon: ElementUnification,
             tooltip:
-                "Increases Critical Damage Boost by 1.1% for the caster and Spirit for 10s upon landing a Spirit skill attack. Stacks up to 5 times.\n\nCooldown: 1s",
+                "Increases Critical Damage Boost by X% for the caster and Spirit for 10s upon landing a Spirit skill attack. Stacks up to 5 times.\n\nCooldown: 1s",
         },
         {
             id: "psr",
@@ -317,7 +317,7 @@ export default defineClassPreset({
             priority: 2,
             icon: SpiritRevitalization,
             tooltip:
-                "Has a 11% chance to reduce the cooldown of Spirit summon skills by 1s on hit. Immediately heals the Spirit for 12% of its Max HP when its HP is 50% or less.\n\nCooldown: 1s\nSpirit Healing Cooldown: 30s",
+                "Has a X% chance to reduce the cooldown of Spirit summon skills by 1s on hit. Immediately heals the Spirit for X% of its Max HP when its HP is 50% or less.\n\nCooldown: 1s\nSpirit Healing Cooldown: 30s",
             cooldown: 30,
         },
         {
@@ -345,7 +345,7 @@ export default defineClassPreset({
             priority: 3,
             icon: Corrode,
             tooltip:
-                "Increases the caster's Critical Hit by 100, with a 50% chance to deal X damage on landing a Critical Hit.\n\nCooldown: 1s",
+                "Increases the caster's Critical Hit by X, with a 50% chance to deal X damage on landing a Critical Hit.\n\nCooldown: 1s",
         },
         {
             id: "psp",
@@ -354,7 +354,7 @@ export default defineClassPreset({
             priority: 4,
             icon: SpiritProtection,
             tooltip:
-                "Increases the caster's Defense by 2% and Spirit's Defense by 2%.",
+                "Increases the caster's Defense by X% and Spirit's Defense by X%.",
         },
         {
             id: "psc",
@@ -363,7 +363,7 @@ export default defineClassPreset({
             priority: 5,
             icon: SpiritCommunion,
             tooltip:
-                "Increases the caster's Accuracy by 100. Has a 10% chance to restore the caster's and Spirit's HP by 182-200 when landing an attack.\n\nCooldown: 1s",
+                "Increases the caster's Accuracy by 100. Has a 10% chance to restore the caster's and Spirit's HP by X when landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "prc",
@@ -372,7 +372,7 @@ export default defineClassPreset({
             priority: 4,
             icon: RevitalizationContract,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores X% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
     ],
     assignments: {

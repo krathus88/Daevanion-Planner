@@ -183,7 +183,7 @@ export default defineClassPreset({
             priority: 2,
             icon: Recuperation,
             tooltip:
-                "Restores 183-201 HP and removes 1 debuff(s) for the caster and party members within 40m. Restores X HP every 2s for 8s.",
+                "Restores X HP and removes 1 debuff(s) for the caster and party members within 40m. Restores X HP every 2s for 8s.",
             cooldown: 15,
             unlocks: [
                 {
@@ -261,7 +261,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Crushing Strike] Chain Skill" },
                 {
@@ -285,7 +285,7 @@ export default defineClassPreset({
             priority: 3,
             icon: BlessingOfLife,
             tooltip:
-                "Increases the caster's HP by 150. Increases Max HP by an additional 6.5% and Heal Boost by 15300% of Attack.",
+                "Increases the caster's HP by X. Increases Max HP by an additional X% and Heal Boost by X% of Attack.",
         },
         {
             id: "pc",
@@ -294,7 +294,7 @@ export default defineClassPreset({
             priority: 99,
             icon: Crossguard,
             tooltip:
-                "Increases the caster's Block by 200 and restores 53-58 HP on Block.\n\nCooldown: 1s",
+                "Increases the caster's Block by 200 and restores X HP on Block.\n\nCooldown: 1s",
         },
         {
             id: "ppc",
@@ -303,7 +303,7 @@ export default defineClassPreset({
             priority: 3,
             icon: ProtectionCircle,
             tooltip:
-                "Grants a Protection Circle that lasts for 5s on landing an attack. Removes the Protection Circle at 10 stacks and grants Divine Barrier to the caster and party members, which blocks damage equaling 3.1% of Max HP for 10s. The Divine Barrier refreshes upon reaching 10 stacks of Protection Circle while Divine Barrier is active.\nGrants a Noble Protective Shield for 5s that blocks 21% damage when the caster's HP drops below 50%.\n\nProtection Circle Cooldown: 0.5s\nNoble Protective Shield Cooldown: 60s",
+                "Grants a Protection Circle that lasts for 5s on landing an attack. Removes the Protection Circle at 10 stacks and grants Divine Barrier to the caster and party members, which blocks damage equaling X% of Max HP for 10s. The Divine Barrier refreshes upon reaching 10 stacks of Protection Circle while Divine Barrier is active.\nGrants a Noble Protective Shield for 5s that blocks X% damage when the caster's HP drops below 50%.\n\nProtection Circle Cooldown: 0.5s\nNoble Protective Shield Cooldown: 60s",
         },
         {
             id: "pis",
@@ -312,7 +312,7 @@ export default defineClassPreset({
             priority: 1,
             icon: InspiringSpell,
             tooltip:
-                "Increases the caster's Critical Hit by 100 and Perfect Chance by 0.5%.",
+                "Increases the caster's Critical Hit by X and Perfect Chance by X%.",
         },
         {
             id: "pap",
@@ -321,7 +321,7 @@ export default defineClassPreset({
             priority: 1,
             icon: AttackPreparation,
             tooltip:
-                "Increases the caster's PvE Damage Boost by 5.5%, PvP Damage Boost by 2.75%, Defense by 2%, and Accuracy by 100.",
+                "Increases the caster's PvE Damage Boost by X%, PvP Damage Boost by X%, Defense by X%, and Accuracy by 100.",
         },
         {
             id: "pih",
@@ -330,7 +330,7 @@ export default defineClassPreset({
             priority: 2,
             icon: ImpactHit,
             tooltip:
-                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
+                "Increases the caster's Impact-type Chance by X% and Double Chance by X%.",
         },
         {
             id: "prs",
@@ -348,7 +348,7 @@ export default defineClassPreset({
             priority: 3,
             icon: EarthsPromise,
             tooltip:
-                "Reduces the target's PvE Damage Tolerance by 5.4% and PvP Damage Tolerance by 2.7% for 5s each time an attack lands.\n\n[Earth's Promise]'s PvE/PvP Damage Tolerance reduction effect does not apply when used together with the Cleric skill [Chain of Torment].\n\nCooldown: 10s",
+                "Reduces the target's PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s each time an attack lands.\n\n[Earth's Promise]'s PvE/PvP Damage Tolerance reduction effect does not apply when used together with the Cleric skill [Chain of Torment].\n\nCooldown: 10s",
         },
         {
             id: "psw",
@@ -357,7 +357,7 @@ export default defineClassPreset({
             priority: 4,
             icon: SurvivalWillpower,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "pwp",
@@ -366,7 +366,7 @@ export default defineClassPreset({
             priority: 2,
             icon: WindsPromise,
             tooltip:
-                "Increases the caster's Critical Damage Boost by 5.7% and has a 50% chance to deal X extra damage to the target on landing a Critical Hit.\n\nExtra Damage Cooldown: 1s",
+                "Increases the caster's Critical Damage Boost by X% and has a 50% chance to deal X extra damage to the target on landing a Critical Hit.\n\nExtra Damage Cooldown: 1s",
         },
     ],
     assignments: {

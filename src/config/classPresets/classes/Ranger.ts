@@ -241,7 +241,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Lightning Arrow] Chain Skill" },
                 {
@@ -265,7 +265,7 @@ export default defineClassPreset({
             priority: 1,
             icon: FocusedEye,
             tooltip:
-                "Increases the caster's Accuracy by 100, PvE Damage Boost by 1%, PvP Damage Boost by 0.5%, and Double Chance by 0.2%.",
+                "Increases the caster's Accuracy by 100, PvE Damage Boost by X%, PvP Damage Boost by X%, and Double Chance by X%.",
         },
         {
             id: "phr",
@@ -273,7 +273,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 1,
             icon: HuntersResolve,
-            tooltip: "Increases the caster's Critical Damage Boost by 6%.",
+            tooltip: "Increases the caster's Critical Damage Boost by X%.",
         },
         {
             id: "phs",
@@ -318,7 +318,7 @@ export default defineClassPreset({
             priority: 4,
             icon: VigilantEye,
             tooltip:
-                "Increases the caster's Evasion by 200, Max HP by 6%, and restores 85-102 HP on Evasion.\n\nCooldown: 3s",
+                "Increases the caster's Evasion by 200, Max HP by X%, and restores X HP on Evasion.\n\nCooldown: 3s",
         },
         {
             id: "prc",
@@ -327,7 +327,7 @@ export default defineClassPreset({
             priority: 4,
             icon: RevitalizationContract,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores X% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
         {
             id: "pur",
@@ -336,7 +336,7 @@ export default defineClassPreset({
             priority: 5,
             icon: UnyieldingResolve,
             tooltip:
-                "Increases the caster's Ailment-type Resist and Impact-type Resist by 11.2%.",
+                "Increases the caster's Ailment-type Resist and Impact-type Resist by X%.",
         },
         {
             id: "pwv",
@@ -345,7 +345,7 @@ export default defineClassPreset({
             priority: 6,
             icon: WindVigor,
             tooltip:
-                "Increases Max Stamina by 15. Increases Move Speed by 10% for 1s when attacked.\n\nCooldown: 5s",
+                "Increases Max Stamina by X. Increases Move Speed by X% for 1s when attacked.\n\nCooldown: 5s",
         },
     ],
     assignments: {

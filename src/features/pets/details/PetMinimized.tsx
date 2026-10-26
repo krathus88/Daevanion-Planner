@@ -6,7 +6,7 @@ import { PetIcon } from "@pets/PetIcon"
 import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
-import { NO_SPAWN_TEXT } from "@pets/logic/petLabels"
+import { getNoSpawnText } from "@pets/logic/petLabels"
 import { LuX } from "react-icons/lu"
 
 type PetMinimizedProps = {
@@ -62,7 +62,7 @@ export const PetMinimized = ({
               .join(" · ")
         : pet.source === "field"
           ? `No spawns in ${PET_MAPS[mapId].name}`
-          : NO_SPAWN_TEXT[pet.source]
+          : getNoSpawnText(pet)
 
     return (
         <MinimizedBar
