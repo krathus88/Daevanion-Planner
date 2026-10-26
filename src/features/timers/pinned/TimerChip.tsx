@@ -1,5 +1,6 @@
 import { Flex, Text, useRecipe, type SystemStyleObject } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
+import { ChanceMarker } from "@timers/card/ChanceMarker"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import { formatCountdown } from "@timers/logic/formatTime"
 import type { TimerState } from "@timers/logic/timerState"
@@ -81,6 +82,8 @@ export const TimerChip = ({
             >
                 {getChipText(state, now)}
             </Text>
+
+            {entry.timer.chance && <ChanceMarker />}
         </Flex>
     )
 }

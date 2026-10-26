@@ -518,6 +518,8 @@ export const FIELD_BOSSES = [
         zone: ABYSS_ZONE,
         level: 65,
         respawn: 12 * HOUR,
+        // Usually dies about 8m30s after spawning.
+        aliveFor: 8 * MINUTE + MINUTE / 2,
     },
     {
         // "siege-boss" from before it had a name; saved timers use it.

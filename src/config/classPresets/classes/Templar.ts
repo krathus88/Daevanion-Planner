@@ -146,7 +146,7 @@ export default defineClassPreset({
             priority: 3,
             icon: WardingStrike,
             tooltip:
-                "Deals X damage to up to 4 enemies within 5m of the caster. Immediately restores 180-198 HP and grants Warding to the caster for 10s. Triggers [Judgment] for 2s.\nWarding: Increases PvE Damage Tolerance by 20% and PvP Damage Tolerance by 10%\n\n5 Stagger Gauge Damage",
+                "Deals X damage to up to 4 enemies within 5m of the caster. Immediately restores X HP and grants Warding to the caster for 10s. Triggers [Judgment] for 2s.\nWarding: Increases PvE Damage Tolerance by 20% and PvP Damage Tolerance by 10%\n\n5 Stagger Gauge Damage",
             cooldown: 30,
             unlocks: [
                 { level: 8, effect: "-5s cooldown" },
@@ -230,7 +230,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Capture] Chain Skill" },
                 {
@@ -286,7 +286,7 @@ export default defineClassPreset({
             priority: 1,
             icon: Fury,
             tooltip:
-                "Increases Front Attack Damage Boost by 0.3% for the caster, and increases PvE Damage Boost by 5.5% and PvP Damage Boost by 2.75% for 20s for the caster and party members on Block.\n\nCooldown: 1s",
+                "Increases Front Attack Damage Boost by X% for the caster, and increases PvE Damage Boost by X% and PvP Damage Boost by X% for 20s for the caster and party members on Block.\n\nCooldown: 1s",
         },
         {
             id: "ppb",
@@ -295,7 +295,7 @@ export default defineClassPreset({
             priority: 2,
             icon: PunishingBenediction,
             tooltip:
-                "Increases the caster's Critical Hit by 100 and grants Punishing Benediction for 10s when landing an attack.\nPunishing Benediction: Has a 50% chance to deal X extra damage to the target when landing an attack.\n\nCooldown: 1s",
+                "Increases the caster's Critical Hit by X and grants Punishing Benediction for 10s when landing an attack.\nPunishing Benediction: Has a 50% chance to deal X extra damage to the target when landing an attack.\n\nCooldown: 1s",
         },
         {
             id: "pir",
@@ -304,7 +304,7 @@ export default defineClassPreset({
             priority: 3,
             icon: InsultingRoar,
             tooltip:
-                "Increases Enmity Boost by 100% for the caster and increases Attack by 5.5% for 5s on landing a Front Attack.\n\nCooldown: 5s",
+                "Increases Enmity Boost by 100% for the caster and increases Attack by X% for 5s on landing a Front Attack.\n\nCooldown: 5s",
         },
         {
             id: "pid",
@@ -313,7 +313,7 @@ export default defineClassPreset({
             priority: 4,
             icon: IroncladDefense,
             tooltip:
-                "Increases the caster's Defense by 7% and Endurance by 1%.",
+                "Increases the caster's Defense by X% and Endurance by X%.",
         },
         {
             id: "peh",
@@ -322,7 +322,7 @@ export default defineClassPreset({
             priority: 5,
             icon: EnhanceHealth,
             tooltip:
-                "Increases the caster's HP by 250. Increases Max HP by an additional 7.5% and Incoming Heal by 6%.",
+                "Increases the caster's HP by X. Increases Max HP by an additional X% and Incoming Heal by X%.",
         },
         {
             id: "pgs",
@@ -331,7 +331,7 @@ export default defineClassPreset({
             priority: 5,
             icon: GuardingSeal,
             tooltip:
-                "Grants a Guarding Seal that blocks damage equaling 21% of Max HP for 30s when HP is 50% or less.\n\nCooldown: 60s",
+                "Grants a Guarding Seal that blocks damage equaling X% of Max HP for 30s when HP is 50% or less.\n\nCooldown: 60s",
         },
         {
             id: "pih",
@@ -340,7 +340,7 @@ export default defineClassPreset({
             priority: 5,
             icon: ImpactHit,
             tooltip:
-                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
+                "Increases the caster's Impact-type Chance by X% and Double Chance by X%.",
         },
         {
             id: "pbp",
@@ -349,7 +349,7 @@ export default defineClassPreset({
             priority: 5,
             icon: BlockPain,
             tooltip:
-                "Grants Block Pain for 10s when struck by an enemy.\nBlock Pain: Increases PvE Damage Tolerance by 11% and PvP Damage Tolerance by 5.5%\n\nCooldown: 20s",
+                "Grants Block Pain for 10s when struck by an enemy.\nBlock Pain: Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X%\n\nCooldown: 20s",
         },
         {
             id: "psw",
@@ -358,7 +358,7 @@ export default defineClassPreset({
             priority: 5,
             icon: SurvivalWillpower,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases PvE Damage Tolerance by 12% and PvP Damage Tolerance by 6% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
         },
         {
             id: "pws",
@@ -367,7 +367,7 @@ export default defineClassPreset({
             priority: 99,
             icon: WardingShield,
             tooltip:
-                "Increases the caster's Block by 200 and restores 53-64 HP on Block.\n\nCooldown: 3s",
+                "Increases the caster's Block by 200 and restores X HP on Block.\n\nCooldown: 3s",
         },
     ],
     assignments: {

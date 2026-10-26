@@ -143,7 +143,7 @@ export default defineClassPreset({
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
-            cooldown: 60,
+            cooldown: "X",
             unlocks: [
                 { level: 8, effect: "Adds [Storm Slice] Chain Skill" },
                 {
@@ -298,7 +298,7 @@ export default defineClassPreset({
             priority: 1,
             icon: RearSmite,
             tooltip:
-                "Increases the caster's Back Attack Damage Boost by 3%, PvE Damage Boost by 3%, and PvP Damage Boost by 1.5%.",
+                "Increases the caster's Back Attack Damage Boost by X%, PvE Damage Boost by X%, and PvP Damage Boost by X%.",
         },
         {
             id: "pew",
@@ -307,7 +307,7 @@ export default defineClassPreset({
             priority: 2,
             icon: ExploitWeakness,
             tooltip:
-                "Increases caster's Critical Hit by 100. Has a 25% chance to increase Attack by 5.5% for 10s, and a 7% chance to summon up to 5 clones on landing a Critical Hit. Each clone deals X damage and inflicts Insignia that lasts for 10s (up to 5 Insignia stacks).\n\nClone cooldown: 1s\nAttack increase cooldown: 1s",
+                "Increases caster's Critical Hit by X. Has a 25% chance to increase Attack by X% for 10s, and a 7% chance to summon up to 5 clones on landing a Critical Hit. Each clone deals X damage and inflicts Insignia that lasts for 10s (up to 5 Insignia stacks).\n\nClone cooldown: 1s\nAttack increase cooldown: 1s",
         },
         {
             id: "pas",
@@ -315,7 +315,7 @@ export default defineClassPreset({
             type: "passive",
             priority: 2,
             icon: AssaultStance,
-            tooltip: "Increases the caster's Critical Damage Boost by 6%.",
+            tooltip: "Increases the caster's Critical Damage Boost by X%.",
         },
         {
             id: "pd",
@@ -324,7 +324,7 @@ export default defineClassPreset({
             priority: 3,
             icon: Determination,
             tooltip:
-                "Deals X damage when landing an attack on a target with 30% HP or less.\n\nCooldown: 1s",
+                "Deals X damage when landing an attack on a target with X% HP or less.\n\nCooldown: 1s",
         },
         {
             id: "pih",
@@ -333,7 +333,7 @@ export default defineClassPreset({
             priority: 4,
             icon: ImpactHit,
             tooltip:
-                "Increases the caster's Impact-type Chance by 11.2% and Double Chance by 0.3%.",
+                "Increases the caster's Impact-type Chance by X% and Double Chance by X%.",
         },
         {
             id: "pams",
@@ -351,7 +351,7 @@ export default defineClassPreset({
             priority: 5,
             icon: HeightenedSixthSense,
             tooltip:
-                "Increases the caster's Evasion by 200 and HP by 150. Increases Max HP by an extra 6% and restores 85-102 HP on Evasion.\n\nCooldown: 3s",
+                "Increases the caster's Evasion by 200 and HP by X. Increases Max HP by an extra X% and restores X HP on Evasion.\n\nCooldown: 3s",
         },
         {
             id: "prc",
@@ -360,7 +360,7 @@ export default defineClassPreset({
             priority: 6,
             icon: RevitalizationContract,
             tooltip:
-                "Increases the caster's Status Effect Resist by 17%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores 35% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
+                "Increases the caster's Status Effect Resist by X%. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\nImmediately restores X% Max HP when HP is 10% or less.\n\nHealing Cooldown: 60s\nStatus Effect Resist Cooldown: 1s",
         },
         {
             id: "pap",
@@ -369,7 +369,7 @@ export default defineClassPreset({
             priority: 99,
             icon: ApplyPoison,
             tooltip:
-                "Has a 15% chance to reduce the target's Incoming Heal by 12% and inflict Poison for 10s on landing an attack. Poison deals X Damage over Time every 1s.\n\nCooldown: 1s",
+                "Has a 15% chance to reduce the target's Incoming Heal by X% and inflict Poison for 10s on landing an attack. Poison deals X Damage over Time every 1s.\n\nCooldown: 1s",
         },
         {
             id: "pdb",
@@ -378,7 +378,7 @@ export default defineClassPreset({
             priority: 99,
             icon: DefenseBreak,
             tooltip:
-                "Reduces the target's Defense by 12% and Status Effect Resist by 11% for 10s when landing an attack on a target afflicted with Stagger or an Impact-type status.\n\nCooldown: 20s",
+                "Reduces the target's Defense by X% and Status Effect Resist by X% for 10s when landing an attack on a target afflicted with Stagger or an Impact-type status.\n\nCooldown: 20s",
         },
     ],
     assignments: {

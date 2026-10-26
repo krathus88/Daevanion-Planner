@@ -14,8 +14,12 @@ export type PetFilters = {
 
 type CountedName = { name: string; count: number }
 
-// A spot and the big area it lies in.
-export type SpotCount = CountedName & { area: string | null }
+// A spot, the big area it lies in, and the soul monsters spawning there,
+// most spawns first.
+export type SpotCount = CountedName & {
+    area: string | null
+    monsters: (CountedName & { level: number })[]
+}
 
 export type SourceMonster = {
     name: string
@@ -98,10 +102,28 @@ const getPetSpots = (
             continue
         }
 
+        // Two monsters can share a name at different levels.
+        const monsterCounts = new Map<PetMonster, number>()
+
+        for (const spawn of group) {
+            const monster = owners[spawn.key].monster
+
+            monsterCounts.set(monster, (monsterCounts.get(monster) ?? 0) + 1)
+        }
+
         spots.push({
             name: named.name,
             area: named.area,
             count: group.length,
+            monsters: [...monsterCounts]
+                .map(([monster, count]) => {
+                    return {
+                        name: monster.name,
+                        level: monster.level,
+                        count: count,
+                    }
+                })
+                .sort(byCountThenName),
         })
 
         for (const spawn of group) {

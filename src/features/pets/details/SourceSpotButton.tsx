@@ -19,6 +19,18 @@ export const SourceSpotButton = ({
         onSelect(spot.name)
     }
 
+    // The monsters to kill there: "Ridge Skyray Lv27", or "Starturtle Lv37
+    // ×9 · Starturtle Lv49 ×4" when several share the spot.
+    const monsterText = spot.monsters
+        .map((monster) => {
+            const name = `${monster.name} Lv${monster.level}`
+
+            return spot.monsters.length === 1
+                ? name
+                : `${name} ×${monster.count}`
+        })
+        .join(" · ")
+
     // Hover is gold, not grey: it has to show on a card's own hover fill.
     return (
         <chakra.button
@@ -41,6 +53,10 @@ export const SourceSpotButton = ({
         >
             <Flex minW="0" flex="1" flexDir="column">
                 <Text truncate>{spot.name}</Text>
+
+                <Text color="app.muted" fontSize="xs">
+                    {monsterText}
+                </Text>
 
                 {spot.area && (
                     <Text textStyle="caption" truncate>

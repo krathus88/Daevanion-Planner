@@ -1,6 +1,8 @@
-import { Badge, chakra, Flex, Text } from "@chakra-ui/react"
+import { Badge, Box, chakra, Flex, Text } from "@chakra-ui/react"
+import { Section } from "@common/Section"
 import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { PetMapSource } from "@pets/logic/petFinder"
+import type { MouseEvent } from "react"
 import { SourceSpotList } from "./SourceSpotList"
 import { SourceMonsterRows } from "./SourceMonsterRows"
 
@@ -30,6 +32,11 @@ export const MapSourceCard = ({
 
     const handleSpotSelect = (spot: string) => {
         onSpotSelect(source.mapId, spot)
+    }
+
+    // Opening the monster list shouldn't also switch the map.
+    const handleMonstersClick = (event: MouseEvent) => {
+        event.stopPropagation()
     }
 
     // Buttons can't nest, so the card takes the clicks and its header is the
@@ -85,11 +92,17 @@ export const MapSourceCard = ({
                 </Flex>
             )}
 
-            <Flex flexDir="column" gap="1">
-                <Text textStyle="label">Soul monsters</Text>
-
-                <SourceMonsterRows monsters={source.monsters} />
-            </Flex>
+            <Box onClick={handleMonstersClick}>
+                <Section
+                    title="Soul monsters"
+                    variant="sub"
+                    count={source.monsters.length}
+                >
+                    <Flex flexDir="column" gap="1">
+                        <SourceMonsterRows monsters={source.monsters} />
+                    </Flex>
+                </Section>
+            </Box>
         </Flex>
     )
 }

@@ -1,6 +1,7 @@
 import type { ClassAbility } from "@config/classPresets"
 import { Flex, Text } from "@chakra-ui/react"
 import { formatSearchTime } from "@planner/config/searchTime"
+import { AbilityTooltipText } from "./AbilityTooltipText"
 
 const typeColors = {
     skill: "board.skill",
@@ -13,6 +14,11 @@ type AbilityTooltipProps = {
 }
 
 export const AbilityTooltip = ({ ability, kind }: AbilityTooltipProps) => {
+    const cooldown =
+        ability.cooldown === "X"
+            ? "Xs"
+            : ability.cooldown && formatSearchTime(ability.cooldown)
+
     return (
         <Flex p="1" flexDir="column" gap="0.5">
             <Text fontSize="md" fontWeight="semibold" lineHeight="short">
@@ -25,14 +31,14 @@ export const AbilityTooltip = ({ ability, kind }: AbilityTooltipProps) => {
                 lineHeight="short"
             >
                 {kind}
-                {ability.cooldown
-                    ? ` · ${formatSearchTime(ability.cooldown)} cooldown`
-                    : ""}
+                {cooldown && (
+                    <AbilityTooltipText text={` · ${cooldown} cooldown`} />
+                )}
             </Text>
 
             {ability.tooltip && (
                 <Text mt="1.5" lineHeight="short" whiteSpace="pre-line">
-                    {ability.tooltip}
+                    <AbilityTooltipText text={ability.tooltip} />
                 </Text>
             )}
 

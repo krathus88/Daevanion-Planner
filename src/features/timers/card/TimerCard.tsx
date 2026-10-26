@@ -75,7 +75,11 @@ export const TimerCard = ({
                 />
             </Flex>
 
-            <TimerStatus state={entry.state} now={now} />
+            <TimerStatus
+                state={entry.state}
+                now={now}
+                chance={entry.timer.chance}
+            />
 
             <Text textStyle="hint">{entry.timer.description}</Text>
 

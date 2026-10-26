@@ -41,6 +41,8 @@ export const colors = defineSemanticTokens.colors({
         passive: { value: "{colors.green.400}" },
         skillTint: { value: "#1f4f8f" },
         passiveTint: { value: "#1c6b3d" },
+        // Tooltip values that change with skill level, like in game.
+        scaling: { value: "{colors.gold.300}" },
         special: { value: "{colors.gold.400}" },
         specialSwatch: { value: "{colors.gold.600}" },
         startFg: { value: "{colors.gold.950}" },

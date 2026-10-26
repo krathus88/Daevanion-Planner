@@ -3,7 +3,7 @@ import {
     PET_CATEGORY_IDS,
     type PetCategoryId,
 } from "@pets/config/petCategories"
-import type { PetMapId } from "@pets/config/petMaps"
+import { PET_MAP_IDS, type PetMapId } from "@pets/config/petMaps"
 import {
     filterFarmSpots,
     getFarmSpots,
@@ -205,11 +205,42 @@ export const PetsPage = () => {
                   isPetNeeded(pin.pet, deferredLevels)
               )
           })
+    // "Must include" also narrows the map to the pins of the spots it keeps,
+    // and each map's tab to the spawns of its kept spots.
+    const filteringSpots = !selectedPet && requiredCategories.length > 0
+    const keptSpots = new Set(farmSpots.map((spot) => spot.name))
+    const spotPins = filteringSpots
+        ? pins.filter((pin) => {
+              return (
+                  pin.spot !== null &&
+                  keptSpots.has(pin.spot) &&
+                  isPetNeeded(pin.pet, deferredLevels)
+              )
+          })
+        : pins
+    const spotCounts: Partial<Record<PetMapId, number>> = {}
+
+    if (filteringSpots) {
+        for (const id of PET_MAP_IDS) {
+            const kept =
+                id === mapId
+                    ? farmSpots
+                    : filterFarmSpots(
+                          getFarmSpots(atlas, pets, deferredLevels, id).spots,
+                          requiredCategories,
+                      )
+
+            spotCounts[id] = kept.reduce((total, spot) => {
+                return total + spot.spawns
+            }, 0)
+        }
+    }
+
     const focusKey = `${mapId}:${selectedPet?.id ?? ""}:${focusedSpot ?? ""}`
     // With a spot focused, the open map's tab counts the pins it shows.
     const tabCounts = focusedSpot
-        ? { ...mapCounts, [mapId]: focusPins.length }
-        : mapCounts
+        ? { ...mapCounts, ...spotCounts, [mapId]: focusPins.length }
+        : { ...mapCounts, ...spotCounts }
 
     return (
         <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
@@ -295,7 +326,7 @@ export const PetsPage = () => {
 
                         <PetMapPanel
                             mapId={mapId}
-                            pins={focusedSpot ? focusPins : pins}
+                            pins={focusedSpot ? focusPins : spotPins}
                             focusPins={focusPins}
                             focusKey={focusKey}
                             counts={tabCounts}

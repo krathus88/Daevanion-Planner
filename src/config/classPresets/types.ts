@@ -9,8 +9,8 @@ export type ClassAbility = {
     priority?: number
     icon?: string
     tooltip?: string
-    // Seconds.
-    cooldown?: number
+    // Seconds, or "X" when it changes with skill level.
+    cooldown?: number | "X"
     // Levels are per unlock; they differ between skills and stigmas.
     unlocks?: readonly AbilityUnlock[]
 }
