@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js"
 import { supabase } from "./supabaseClient"
 
-type AuthState =
+export type AuthState =
     | { status: "loading" }
     | {
           status: "signedOut"
@@ -10,8 +10,9 @@ type AuthState =
       }
     | {
           status: "signedIn"
+          userId: string
           name: string
-          // On the reporters allowlist: their reports are shared.
+          // Allowed to edit shared timers: their reports are shared.
           isReporter: boolean
       }
 
@@ -83,6 +84,7 @@ const applySession = async (session: Session | null) => {
 
     setState({
         status: "signedIn",
+        userId: session.user.id,
         name: getName(session),
         isReporter: wasReporter,
     })
@@ -92,6 +94,7 @@ const applySession = async (session: Session | null) => {
     if (check === latestCheck) {
         setState({
             status: "signedIn",
+            userId: session.user.id,
             name: getName(session),
             isReporter: !error && data === true,
         })

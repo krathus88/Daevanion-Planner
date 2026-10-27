@@ -1,3 +1,4 @@
+import { setStoredItem } from "@account/sync/syncMeta"
 import { isPetLevel, levelFromSouls, PET_LEVELS } from "@pets/logic/petLevels"
 import { isRecord } from "@planner/storage/isRecord"
 
@@ -105,7 +106,7 @@ export const readPetCollection = () => {
 
 export const writePetCollection = (collection: PetCollection) => {
     try {
-        window.localStorage.setItem(KEY, JSON.stringify(collection))
+        setStoredItem(KEY, JSON.stringify(collection))
     } catch {
         // Nothing to do: the change only lasts until the page reloads.
         cached = { raw: null, collection: collection }

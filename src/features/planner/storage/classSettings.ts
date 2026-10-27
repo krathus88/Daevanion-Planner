@@ -1,3 +1,4 @@
+import { setStoredItem } from "@account/sync/syncMeta"
 import { isRecord } from "./isRecord"
 
 export type ClassSettingsSection =
@@ -60,7 +61,7 @@ export const replaceClassSettings = (
     classId: string,
     settings: Record<string, unknown>,
 ) => {
-    window.localStorage.setItem(keyFor(classId), JSON.stringify(settings))
+    setStoredItem(keyFor(classId), JSON.stringify(settings))
     notifyChange(classId)
 }
 
@@ -85,7 +86,7 @@ export const writeClassSettings = (
         settings = {}
     }
 
-    window.localStorage.setItem(
+    setStoredItem(
         keyFor(classId),
         JSON.stringify({ ...settings, [section]: value }),
     )

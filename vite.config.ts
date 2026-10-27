@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import babel from "@rolldown/plugin-babel"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
+import basicSsl from "@vitejs/plugin-basic-ssl"
 import react, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
 import { BOARD_IDS, BOARD_NAMES } from "./src/config/boards.ts"
@@ -122,7 +123,7 @@ const sharePreviews = (): Plugin => {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     // GitHub Pages serves the app from /<repo>/; the deploy workflow sets
     // BASE_PATH. Local dev and builds stay at the site root.
     base: process.env.BASE_PATH ?? "/",
@@ -136,6 +137,10 @@ export default defineConfig({
             presets: [reactCompilerPreset()],
         }),
         sharePreviews(),
+        // `npm run phone` serves over https (self-signed). Supabase won't return
+        // a login to the PC's bare IP, so phones open https://<PC IP>.nip.io:4173,
+        // a name that resolves to that IP.
+        mode === "phone" && basicSsl(),
     ],
 
     resolve: {
@@ -170,4 +175,4 @@ export default defineConfig({
             },
         },
     },
-})
+}))

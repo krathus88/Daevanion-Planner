@@ -23,7 +23,7 @@ import {
     writeSharedReport,
 } from "@timers/shared/sharedReports"
 import type { BossReport } from "@timers/storage/timerSettings"
-import { useAuth } from "./useAuth"
+import { useAuth } from "@account/hooks/useAuth"
 import { useNow } from "./useNow"
 import { useSharedReports } from "./useSharedReports"
 import { useTimerSettings } from "./useTimerSettings"

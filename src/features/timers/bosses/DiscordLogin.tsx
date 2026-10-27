@@ -1,6 +1,6 @@
 import { Button, Flex, Icon, Text } from "@chakra-ui/react"
-import { useAuth } from "@timers/hooks/useAuth"
-import { signIn, signOut } from "@timers/shared/auth"
+import { useAuth } from "@account/hooks/useAuth"
+import { signIn, signOut } from "@account/auth"
 import { FaDiscord } from "react-icons/fa6"
 
 export const DiscordLogin = () => {
@@ -21,9 +21,7 @@ export const DiscordLogin = () => {
     if (auth.status === "signedOut") {
         return (
             <Flex flexDir="column" alignItems="flex-start" gap="1.5">
-                <Text textStyle="hint">
-                    Only for the group that keeps the shared timers.
-                </Text>
+                <Text textStyle="hint">Only for people on the list.</Text>
 
                 {auth.error && (
                     <Text textStyle="caption" color="app.danger">
