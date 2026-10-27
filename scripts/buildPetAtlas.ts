@@ -35,6 +35,13 @@ const NEAR_LANDMARK = 40
 const AREA_CENTRAL = 100
 // Named map markers used as spot names; battlefields repeat area names.
 const LANDMARK_SUBTYPES = new Set(["seal", "occupation", "village"])
+// Pets neither the Atlas nor gegebase lists yet. Their portraits in ICON_DIR
+// were cut from the game's (locked, grey) cards. Dropped once the Atlas has a
+// pet of the same name.
+const EXTRA_PETS = [
+    { id: -2001, name: "Little Ghost", icon: "littleghost-01" },
+    { id: -2002, name: "Pumpkin Carriage", icon: "pumpkincarriage-01" },
+]
 const COMPASS = [
     "east",
     "southeast",
@@ -562,8 +569,19 @@ const main = async () => {
     }
 
     const icons = await readPetIcons()
-    const pets = [...atlas.pets]
-        .sort((a, b) => a.name.localeCompare(b.name))
+    const extraPets = EXTRA_PETS.filter((extra) => {
+        return !atlas.pets.some((pet) => pet.name === extra.name)
+    }).map((extra) => {
+        return {
+            id: extra.id,
+            name: extra.name,
+            category: "special",
+            source: "special",
+            icon: { icon: extra.icon, url: "" },
+            monsters: [] as number[],
+        }
+    })
+    const pets = atlas.pets
         .map((pet) => {
             return {
                 id: pet.id,
@@ -574,6 +592,8 @@ const main = async () => {
                 monsters: pet.sources.flat(),
             }
         })
+        .concat(extraPets)
+        .sort((a, b) => a.name.localeCompare(b.name))
 
     for (const pet of pets) {
         if (!pet.category || !pet.source) {

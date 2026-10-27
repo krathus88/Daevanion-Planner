@@ -28,6 +28,23 @@ export const usePetCollection = () => {
         requestPersistentStorage()
     }
 
+    // Many pets in one save, e.g. levels read from screenshots.
+    const changeLevels = (updates: { petId: number; level: number }[]) => {
+        const current = readPetCollection()
+        const nextLevels = { ...current.levels }
+
+        for (const update of updates) {
+            if (update.level > 0) {
+                nextLevels[update.petId] = update.level
+            } else {
+                delete nextLevels[update.petId]
+            }
+        }
+
+        writePetCollection({ ...current, levels: nextLevels })
+        requestPersistentStorage()
+    }
+
     const changeLevelHidden = (level: number, hidden: boolean) => {
         const current = readPetCollection()
 
@@ -55,6 +72,7 @@ export const usePetCollection = () => {
         minimized: collection.minimized,
         tipDismissed: collection.tipDismissed,
         changeLevel: changeLevel,
+        changeLevels: changeLevels,
         changeLevelHidden: changeLevelHidden,
         changeMinimized: changeMinimized,
         dismissTip: dismissTip,

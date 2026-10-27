@@ -9,7 +9,7 @@ import { PET_CATEGORY_NAMES } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
-import { getNoSpawnText } from "@pets/logic/petLabels"
+import { getBossText, getNoSpawnText } from "@pets/logic/petLabels"
 import { LuX } from "react-icons/lu"
 import { BossSource } from "./BossSource"
 import { MapSourceList } from "./MapSourceList"
@@ -45,11 +45,17 @@ export const PetDetails = ({
         onLevelChange(pet.id, value)
     }
 
+    const bossText = getBossText(pet)
     const summary =
         pet.source === "field"
-            ? sources.length === 1
-                ? "Spawns on 1 map"
-                : `Spawns on ${sources.length} maps, most first`
+            ? [
+                  sources.length === 1
+                      ? "Spawns on 1 map"
+                      : `Spawns on ${sources.length} maps, most first`,
+                  bossText,
+              ]
+                  .filter(Boolean)
+                  .join(" · ")
             : getNoSpawnText(pet)
 
     const boss = PET_BOSSES[pet.id]
@@ -103,20 +109,22 @@ export const PetDetails = ({
                         onSpotSelect={onSpotSelect}
                     />
                 </Grid>
-            ) : boss ? (
-                <BossSource boss={boss} />
             ) : (
-                <Text textStyle="hint">
-                    {pet.source === "field" ? (
-                        "Its soul monsters have no tracked spawns on these maps yet."
-                    ) : (
-                        <>
-                            Check the pet's <Term>Source</Term> tab in the
-                            in-game Pets menu for where to get it.
-                        </>
-                    )}
-                </Text>
+                !boss && (
+                    <Text textStyle="hint">
+                        {pet.source === "field" ? (
+                            "Its soul monsters have no tracked spawns on these maps yet."
+                        ) : (
+                            <>
+                                Check the pet's <Term>Source</Term> tab in the
+                                in-game Pets menu for where to get it.
+                            </>
+                        )}
+                    </Text>
+                )
             )}
+
+            {boss && <BossSource boss={boss} field={pet.source === "field"} />}
         </Card>
     )
 }

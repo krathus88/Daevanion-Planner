@@ -4,18 +4,21 @@ import type { PetBoss } from "@pets/config/petBosses"
 
 type BossSourceProps = {
     boss: PetBoss
+    // A field pet: its soul monsters also spawn on the maps above.
+    field: boolean
 }
 
-// Where a dungeon boss pet's soul drops; like other non-field pets, it
-// also comes from chests and merchants.
-export const BossSource = ({ boss }: BossSourceProps) => {
+// Where a dungeon boss pet's soul drops. Non-field pets also come from
+// chests and merchants.
+export const BossSource = ({ boss, field }: BossSourceProps) => {
     const bossName = boss.boss ? <Term>{boss.boss}</Term> : "it"
+    const verb = field ? "also drops" : "drops"
 
     return (
         <Text textStyle="hint">
             {boss.confirmed ? (
                 <>
-                    Its soul drops from killing {bossName} as a boss in the{" "}
+                    Its soul {verb} from killing {bossName} as a boss in the{" "}
                     <Term>{boss.dungeon}</Term> expedition.
                 </>
             ) : (
@@ -24,9 +27,14 @@ export const BossSource = ({ boss }: BossSourceProps) => {
                     <Term>{boss.dungeon}</Term> expedition; not yet confirmed in
                     game.
                 </>
-            )}{" "}
-            Souls also come from <Term>pet soul chests</Term> and the{" "}
-            <Term>Black Cloud Merchants</Term>.
+            )}
+            {!field && (
+                <>
+                    {" "}
+                    Souls also come from <Term>pet soul chests</Term> and the{" "}
+                    <Term>Black Cloud Merchants</Term>.
+                </>
+            )}
         </Text>
     )
 }

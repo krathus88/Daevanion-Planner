@@ -19,4 +19,6 @@ export const PET_BOSSES: Record<number, PetBoss> = {
     1215: { dungeon: "Draupnir", confirmed: true },
     // Harcon
     1077: { dungeon: "Krao Cave", boss: "Enhanced Harcon", confirmed: true },
+    // Silver Blade Rotan: an optional boss, and also spawns in Lower Reshanta
+    1192: { dungeon: "Fire Temple", confirmed: true },
 }
