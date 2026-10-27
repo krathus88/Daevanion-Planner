@@ -15,10 +15,10 @@ import { summarizeImport } from "@pets/logic/screenshotImport"
 import { Tooltip } from "@ui/tooltip"
 import { useId, useState, type ClipboardEvent } from "react"
 import { LuImageUp } from "react-icons/lu"
-import { AddScreenshotsButton } from "./AddScreenshotsButton"
+import { AddScreenshotsButton } from "@common/AddScreenshotsButton"
 import { ImportCardWarning } from "./ImportCardWarning"
-import { ImportDropzone } from "./ImportDropzone"
-import { ImportProgress } from "./ImportProgress"
+import { ScreenshotDropzone } from "@common/ScreenshotDropzone"
+import { ScreenshotProgress } from "@common/ScreenshotProgress"
 import { ImportReview } from "./ImportReview"
 import { ImportSteps } from "./ImportSteps"
 
@@ -134,7 +134,7 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
 
                         <Dialog.Body>
                             {progress ? (
-                                <ImportProgress
+                                <ScreenshotProgress
                                     done={progress.done}
                                     total={progress.total}
                                 />
@@ -151,7 +151,7 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
 
                                     <ImportCardWarning />
 
-                                    <ImportDropzone onFiles={handleFiles} />
+                                    <ScreenshotDropzone onFiles={handleFiles} />
 
                                     <Text textStyle="hint">
                                         You review every change before it's

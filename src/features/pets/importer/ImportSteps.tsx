@@ -1,11 +1,11 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { ImportStep } from "./ImportStep"
+import { NumberedStep } from "@common/NumberedStep"
 
 // How to take the screenshots, with the key words lit so they get read.
 export const ImportSteps = () => {
     return (
         <Flex as="ol" flexDir="column" gap="2">
-            <ImportStep step={1}>
+            <NumberedStep step={1}>
                 In game, open{" "}
                 <Text as="span" color="app.accentHover" fontWeight="semibold">
                     Pets
@@ -15,22 +15,22 @@ export const ImportSteps = () => {
                     ALL
                 </Text>{" "}
                 tab.
-            </ImportStep>
+            </NumberedStep>
 
-            <ImportStep step={2}>
+            <NumberedStep step={2}>
                 Screenshot the pet grid,{" "}
                 <Text as="span" fontWeight="semibold">
                     full screen or cropped around the grid
                 </Text>
                 .
-            </ImportStep>
+            </NumberedStep>
 
-            <ImportStep step={3}>
+            <NumberedStep step={3}>
                 <Text as="span" fontWeight="semibold">
                     Scroll down and repeat
                 </Text>{" "}
                 until every pet has shown once.
-            </ImportStep>
+            </NumberedStep>
         </Flex>
     )
 }

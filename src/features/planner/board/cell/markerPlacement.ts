@@ -8,6 +8,14 @@ export const markerOnCell: SystemStyleObject = {
     zIndex: "board.marker",
 }
 
+// Bottom-left, clear of the target markers.
+export const markerBottomOnCell: SystemStyleObject = {
+    position: "absolute",
+    bottom: "board.markerInset",
+    left: "board.markerInset",
+    zIndex: "board.marker",
+}
+
 // Same marker drawn inside a line of text, e.g. sidebar hints.
 export const markerInline: SystemStyleObject = {
     display: "inline-block",

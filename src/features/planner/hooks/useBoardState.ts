@@ -3,6 +3,7 @@ import { useState } from "react"
 import { getStart, keyOf, type Position } from "@planner/config/boardConfig"
 import type { BoardId } from "@config/boards"
 import type { BoardLayout } from "@planner/config/layouts"
+import { compareWithGame } from "@planner/logic/gameGaps"
 import {
     resolveAbilitiesByPosition,
     validateLayoutBonuses,
@@ -18,6 +19,7 @@ import {
 import type { BoardView, SidebarTab } from "../types"
 import { useBoardProgress } from "./useBoardProgress"
 import { useBoardWants } from "./useBoardWants"
+import type { GameCheck } from "./useGameCheck"
 import { useManualBoard } from "./useManualBoard"
 import { usePlannerRoute } from "./usePlannerRoute"
 import { useSharedBudget } from "./useSharedBudget"
@@ -26,6 +28,7 @@ export type UseBoardStateOptions = {
     layout: BoardLayout
     layoutName: BoardId
     classPreset: ClassPreset
+    gameCheck: GameCheck
     view: BoardView
     sidebarTab: SidebarTab
     onViewChange: (view: BoardView) => void
@@ -47,6 +50,7 @@ export const useBoardState = ({
     layout,
     layoutName,
     classPreset,
+    gameCheck,
     view,
     sidebarTab,
     onViewChange,
@@ -136,6 +140,9 @@ export const useBoardState = ({
         layoutName,
         classPreset,
     )
+    const selectedForView =
+        view === "planner" ? planner.plannedPath : manual.selectedCells
+    const gameAcquired = gameCheck.readings[layoutName]
 
     return {
         layout: layout,
@@ -148,8 +155,12 @@ export const useBoardState = ({
         message: message,
         abilitiesByPosition: abilitiesByPosition,
         selectCell: selectCell,
-        selectedForView:
-            view === "planner" ? planner.plannedPath : manual.selectedCells,
+        selectedForView: selectedForView,
+        gameCheck: gameCheck,
+        // Null until a screenshot of this board was read.
+        gameGaps: gameAcquired
+            ? compareWithGame(layout, gameAcquired, selectedForView)
+            : null,
         budget: {
             totalPoints: budget.totalPoints,
             usedByOtherBoards: budget.usedByOtherBoards,

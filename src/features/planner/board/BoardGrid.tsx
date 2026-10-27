@@ -4,6 +4,7 @@ import { getStart, keyOf, type Position } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import { useFitScale } from "@planner/hooks/useFitScale"
 import { getConnectionCosts, nodeCost } from "@planner/logic/boardLogic"
+import type { GameGap } from "@planner/logic/gameGaps"
 import { BoardEdges } from "./BoardEdges"
 import { gridExtent } from "./boardMetrics"
 import { BoardCell } from "./cell/BoardCell"
@@ -69,6 +70,7 @@ type BoardGridProps = {
     targetCells: Set<string>
     neededCells?: ReadonlySet<string>
     preferredCells?: ReadonlySet<string>
+    gameGaps?: ReadonlyMap<string, GameGap>
     availablePoints: number
     onSelect: (position: Position) => void
 }
@@ -81,6 +83,7 @@ export const BoardGrid = ({
     targetCells,
     neededCells,
     preferredCells,
+    gameGaps,
     availablePoints,
     onSelect,
 }: BoardGridProps) => {
@@ -172,6 +175,7 @@ export const BoardGrid = ({
                                     preferred={
                                         preferredCells?.has(key) ?? false
                                     }
+                                    gameGap={gameGaps?.get(key)}
                                     position={position}
                                     readOnly={mode === "readonly"}
                                     onSelect={onSelect}

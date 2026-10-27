@@ -2,6 +2,7 @@ import { isMainBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { useArielSettings } from "@planner/hooks/useArielSettings"
 import { arielMarkedCells } from "@planner/logic/arielRoute"
+import { gapsByCell } from "@planner/logic/gameGaps"
 import { BoardColumn } from "./BoardColumn"
 import { BoardGrid } from "./BoardGrid"
 import { BoardLegend } from "./BoardLegend"
@@ -18,6 +19,7 @@ export const BoardCanvas = () => {
         manual,
         planner,
         wants,
+        gameGaps,
     } = useBoard()
     const ariel = useArielSettings(classPreset.id)
 
@@ -40,6 +42,7 @@ export const BoardCanvas = () => {
                 targetCells={isManual ? new Set() : planner.targetCells}
                 neededCells={isManual ? undefined : neededCells}
                 preferredCells={isManual ? undefined : preferredCells}
+                gameGaps={gameGaps ? gapsByCell(gameGaps) : undefined}
                 onSelect={selectCell}
             />
 

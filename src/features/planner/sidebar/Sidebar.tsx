@@ -1,5 +1,6 @@
 import { Box, Tabs, type TabsValueChangeDetails } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
+import { getBoardGaps } from "@planner/game-check/screenshotResults"
 import { useAllBoardsResults } from "@planner/hooks/useAllBoardsResults"
 import { SharedSettingsPanel } from "@planner/share/SharedSettingsPanel"
 import { useSharedSettings } from "@planner/share/sharedSettingsContext"
@@ -13,6 +14,7 @@ import { SidebarMessage } from "./SidebarMessage"
 import { SidebarTabList } from "./SidebarTabList"
 
 export const Sidebar = () => {
+    const board = useBoard()
     const {
         sidebarTab,
         changeSidebarTab,
@@ -20,7 +22,7 @@ export const Sidebar = () => {
         manual,
         planner,
         layoutName,
-    } = useBoard()
+    } = board
     const sharedSettings = useSharedSettings()
     const allBoards = useAllBoardsResults(sidebarTab, changeSidebarTab)
 
@@ -29,10 +31,20 @@ export const Sidebar = () => {
     }
 
     const savedCount = planner.savedPlanners.length + manual.savedBoards.length
+    const gameWarnings = board.gameCheck.unseen.filter((boardId) => {
+        const gaps = getBoardGaps(board, boardId)
+
+        return gaps && (gaps.missing.length > 0 || gaps.extra.length > 0)
+    })
 
     return (
         <SidebarFrame>
-            <BoardSwitcher mx="3" mt="3" flexShrink="0" />
+            <BoardSwitcher
+                mx="3"
+                mt="3"
+                flexShrink="0"
+                warnings={gameWarnings}
+            />
 
             {sharedSettings ? (
                 <SharedSettingsPanel

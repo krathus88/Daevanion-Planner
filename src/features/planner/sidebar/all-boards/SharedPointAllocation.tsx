@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { useBoard } from "@planner/context/boardContext"
+import { GameCheckCard } from "@planner/game-check/GameCheckCard"
 import { useSharedAllocation } from "@planner/hooks/useSharedAllocation"
 import { PointsField } from "@common/PointsField"
 import { StatusText } from "@common/StatusText"
@@ -63,6 +64,8 @@ export const SharedPointAllocation = ({
             {allocation.snapshot.error && (
                 <StatusText>{allocation.snapshot.error}</StatusText>
             )}
+
+            <GameCheckCard scope="all" />
         </Flex>
     )
 }

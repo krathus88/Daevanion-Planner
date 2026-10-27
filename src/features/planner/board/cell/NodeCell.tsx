@@ -1,5 +1,5 @@
 import type { ClassAbility } from "@config/classPresets"
-import { BOARD_STAT_NAMES, type BoardStat } from "@config/stats/stats"
+import type { BoardStat } from "@config/stats/stats"
 import { AbsoluteCenter, Box, Button, Image } from "@chakra-ui/react"
 import { Tooltip } from "@ui/tooltip"
 import { useState } from "react"
@@ -8,11 +8,12 @@ import {
     appearanceCost,
     type BoardNodeAppearance,
 } from "@planner/config/layouts"
-import {
-    SPECIAL_BONUSES,
-    type SpecialBonusType,
-} from "@planner/config/specialNodes"
+import type { SpecialBonusType } from "@planner/config/specialNodes"
+import type { GameGap } from "@planner/logic/gameGaps"
+import { getNodeName } from "@planner/logic/nodeName"
 import { CellLabel } from "./CellLabel"
+import { GameGapMarker } from "./GameGapMarker"
+import { GameGapOutline } from "./GameGapOutline"
 import { CELL_BOX, getNodeStyles } from "./nodeStyles"
 import { NodeTooltip } from "./NodeTooltip"
 import { SpecialGem } from "./SpecialGem"
@@ -34,6 +35,8 @@ export type NodeCellProps = {
     ability?: ClassAbility
     stat?: BoardStat
     specialBonus?: SpecialBonusType
+    // How the node differs in a game screenshot.
+    gameGap?: GameGap
     onSelect: (position: Position) => void
 }
 
@@ -50,6 +53,7 @@ export const NodeCell = ({
     ability,
     stat,
     specialBonus,
+    gameGap,
     onSelect,
 }: NodeCellProps) => {
     const [failedImageSource, setFailedImageSource] = useState<string | null>(
@@ -75,10 +79,7 @@ export const NodeCell = ({
         targeted: targeted,
         canSelect: canSelect,
     })
-    const nodeName =
-        ability?.name ??
-        (stat && BOARD_STAT_NAMES[stat]) ??
-        (specialBonus && SPECIAL_BONUSES[specialBonus].name)
+    const nodeName = getNodeName(ability, stat, specialBonus)
     // Special nodes read by shape and selected stat nodes by fill: no text.
     const label =
         styles.isSpecial || styles.isBasic
@@ -141,6 +142,10 @@ export const NodeCell = ({
                                 ? "preferred if no more costly"
                                 : "",
                             selected ? "selected" : "not selected",
+                            gameGap === "missing" ? "not acquired in game" : "",
+                            gameGap === "extra"
+                                ? "acquired in game but not planned"
+                                : "",
                         ]
                             .filter(Boolean)
                             .join(", ")}
@@ -219,6 +224,10 @@ export const NodeCell = ({
             ) : (
                 preferred && <PreferMarker />
             )}
+
+            {gameGap && <GameGapOutline gap={gameGap} />}
+
+            {gameGap && <GameGapMarker gap={gameGap} />}
 
             <CellLabel hasImage={hasImage} label={label} selected={selected} />
         </Box>
