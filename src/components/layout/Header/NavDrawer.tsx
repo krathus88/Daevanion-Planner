@@ -1,9 +1,12 @@
+import { AccountSection } from "@account/AccountSection"
+import { useAuth } from "@account/hooks/useAuth"
 import {
     chakra,
     Drawer,
     Flex,
     IconButton,
     Portal,
+    useBreakpointValue,
     type HTMLChakraProps,
 } from "@chakra-ui/react"
 import type { PlannerLocation } from "@planner/storage/plannerLocation"
@@ -24,7 +27,19 @@ export const NavDrawer = ({
     plannerLocation,
     ...props
 }: NavDrawerProps) => {
+    const auth = useAuth()
+    const isPhone =
+        useBreakpointValue({ base: true, md: false }, { ssr: false }) ?? false
     const [open, setOpen] = useState(false)
+    const [shownRefusal, setShownRefusal] = useState(false)
+
+    const loginRefused = auth.status === "signedOut" && auth.error !== null
+
+    // Opens by itself on phones to say why a Discord login was refused.
+    if (loginRefused && isPhone && !shownRefusal) {
+        setShownRefusal(true)
+        setOpen(true)
+    }
 
     const handleOpenChange = (details: Drawer.OpenChangeDetails) => {
         setOpen(details.open)
@@ -125,6 +140,14 @@ export const NavDrawer = ({
                                 </NavDrawerLink>
                             </Flex>
                         </Drawer.Body>
+
+                        <Drawer.Footer
+                            pt="4"
+                            borderColor="app.border"
+                            borderTopWidth="1px"
+                        >
+                            <AccountSection />
+                        </Drawer.Footer>
                     </Drawer.Content>
                 </Drawer.Positioner>
             </Portal>

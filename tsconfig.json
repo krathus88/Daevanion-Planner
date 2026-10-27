@@ -24,6 +24,7 @@
         "noUncheckedSideEffectImports": true,
 
         "paths": {
+            "@account/*": ["./src/features/account/*"],
             "@assets/*": ["./src/assets/*"],
             "@config/*": ["./src/config/*"],
             "@layout/*": ["./src/components/layout/*"],

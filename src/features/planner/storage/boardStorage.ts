@@ -1,3 +1,4 @@
+import { setStoredItem } from "@account/sync/syncMeta"
 import { BOARD_IDS, MAIN_BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import type { BoardView } from "@planner/types"
@@ -53,7 +54,7 @@ type StorageRead<T> = {
     error: string | null
 }
 
-const MAX_PLANNER_HISTORY = 25
+export const MAX_PLANNER_HISTORY = 25
 const STORAGE_VERSION = "v1"
 const STORAGE_CHANGE_EVENT = "daevanion-storage-change"
 const PLANS_REPLACED_EVENT = "daevanion-plans-replaced"
@@ -108,7 +109,7 @@ const read = <T>(
 
 const write = (key: string, value: unknown) => {
     try {
-        window.localStorage.setItem(key, JSON.stringify(value))
+        setStoredItem(key, JSON.stringify(value))
         window.dispatchEvent(
             new CustomEvent(STORAGE_CHANGE_EVENT, { detail: { key: key } }),
         )

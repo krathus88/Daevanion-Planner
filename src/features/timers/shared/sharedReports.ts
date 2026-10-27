@@ -1,6 +1,6 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import type { BossReport } from "@timers/storage/timerSettings"
-import { supabase } from "./supabaseClient"
+import { supabase } from "@account/supabaseClient"
 
 type ReportRow = {
     server: string

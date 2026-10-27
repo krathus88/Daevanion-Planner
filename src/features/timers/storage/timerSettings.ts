@@ -1,3 +1,4 @@
+import { setStoredItem } from "@account/sync/syncMeta"
 import { isRecord } from "@planner/storage/isRecord"
 import {
     isTimerColor,
@@ -195,7 +196,7 @@ export const readTimerSettings = () => {
 
 export const writeTimerSettings = (settings: TimerSettings) => {
     try {
-        window.localStorage.setItem(KEY, JSON.stringify(settings))
+        setStoredItem(KEY, JSON.stringify(settings))
     } catch {
         // Nothing to do: the change only lasts until the page reloads.
         cached = { raw: null, settings: settings }
