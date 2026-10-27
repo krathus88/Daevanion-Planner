@@ -3,10 +3,11 @@ import type { Pet } from "@pets/data/petAtlas"
 import {
     buildPetPrint,
     getPortraitSizes,
+    type CardLayout,
     type PetPrint,
 } from "@pets/logic/cardMatching"
 
-let pending: Promise<PetPrint[]> | null = null
+const pending = new Map<CardLayout, Promise<PetPrint[]>>()
 
 // Not Image.decode(): it can wait on the page painting, which stalls in a
 // background tab.
@@ -20,8 +21,8 @@ const loadImage = async (url: string) => {
     return createImageBitmap(await response.blob())
 }
 
-const buildPrints = async (pets: Pet[]) => {
-    const sizes = getPortraitSizes()
+const buildPrints = async (pets: Pet[], layout: CardLayout) => {
+    const sizes = getPortraitSizes(layout)
     const canvas = document.createElement("canvas")
     const context = canvas.getContext("2d", { willReadFrequently: true })
     const prints: PetPrint[] = []
@@ -49,21 +50,24 @@ const buildPrints = async (pets: Pet[]) => {
         })
 
         image.close()
-        prints.push(buildPetPrint(pet.id, portraits))
+        prints.push(buildPetPrint(pet.id, portraits, layout))
     }
 
     return prints
 }
 
-// Every pet's portrait print, built once per visit.
-export const loadPetPrints = (pets: Pet[]) => {
-    if (!pending) {
-        pending = buildPrints(pets).catch((error: unknown) => {
+// Every pet's portrait print for one card layout, built once per visit.
+export const loadPetPrints = (pets: Pet[], layout: CardLayout) => {
+    let prints = pending.get(layout)
+
+    if (!prints) {
+        prints = buildPrints(pets, layout).catch((error: unknown) => {
             // Let the next import try again.
-            pending = null
+            pending.delete(layout)
             throw error
         })
+        pending.set(layout, prints)
     }
 
-    return pending
+    return prints
 }

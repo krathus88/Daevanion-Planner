@@ -1,21 +1,38 @@
 // Reads a detected card: which pet's portrait it shows and its Insight level.
 // Our portraits (src/assets/pets) are the same art as the game's cards, cut to
 // a square, so a card is matched against every portrait placed where it sits
-// on the card. Kept free of path aliases so scripts/ can run it with plain node.
+// on the card. Collection and shop cards place it differently (CardLayout).
+// Kept free of path aliases so scripts/ can run it with plain node.
 import type { CardRect, Pixels } from "./cardDetection.ts"
 
-// Card samples are this many cells wide; the height follows the card's shape.
+// Card samples are this many cells wide; the height follows the layout.
 const GRID_WIDTH = 40
-const GRID_HEIGHT = Math.round(GRID_WIDTH * 1.36)
-// The badge and progress bar cover the bottom of the art.
-const ART_HEIGHT = Math.round(GRID_HEIGHT * 0.78)
 
-// Where a portrait sits, in card widths: [size, left, top]. The selected or
-// equipped card shows its art zoomed in.
-const PLACEMENTS = [
-    [76 / 60, -8 / 60, 3 / 60],
-    [90 / 60, -15 / 60, 1 / 60],
-] as const
+export type CardLayout = {
+    // Card height and the art's bottom, in card widths.
+    height: number
+    artBottom: number
+    // Where a portrait may sit, in card widths: [size, left, top].
+    placements: (readonly [number, number, number])[]
+}
+
+// The Pets grid. The badge and progress bar cover the bottom of the art, and
+// the selected or equipped card shows its art zoomed in.
+export const COLLECTION_LAYOUT: CardLayout = {
+    height: 1.36,
+    artBottom: 1.36 * 0.78,
+    placements: [
+        [76 / 60, -8 / 60, 3 / 60],
+        [90 / 60, -15 / 60, 1 / 60],
+    ],
+}
+
+// The Shop's Pets tab, from the frame's top-left corner.
+export const SHOP_LAYOUT: CardLayout = {
+    height: 1.2,
+    artBottom: 1.2,
+    placements: [[40 / 60, 11 / 60, 28 / 60]],
+}
 
 // Recolored pets share a shape: portraits this close in shape are told apart
 // by color instead.
@@ -37,6 +54,8 @@ export type PetPrint = {
 export type CardSample = {
     rgb: Float32Array
     gray: Float32Array
+    // Rows of cells the art spans.
+    artRows: number
 }
 
 export type CardMatch = {
@@ -63,15 +82,25 @@ const toChroma = (
     return [r / sum, g / sum, b / sum]
 }
 
-// Portrait sizes to draw for buildPetPrint, one per placement.
-export const getPortraitSizes = () => {
-    return PLACEMENTS.map(([size]) => Math.round(size * GRID_WIDTH))
+const getArtRows = (layout: CardLayout) => {
+    return Math.round(GRID_WIDTH * layout.artBottom)
 }
 
-export const buildPetPrint = (id: number, portraits: Pixels[]): PetPrint => {
+// Portrait sizes to draw for buildPetPrint, one per placement.
+export const getPortraitSizes = (layout: CardLayout) => {
+    return layout.placements.map(([size]) => Math.round(size * GRID_WIDTH))
+}
+
+export const buildPetPrint = (
+    id: number,
+    portraits: Pixels[],
+    layout: CardLayout,
+): PetPrint => {
+    const artRows = getArtRows(layout)
+
     return {
         id,
-        placements: PLACEMENTS.map(([, left, top], index) => {
+        placements: layout.placements.map(([, left, top], index) => {
             const portrait = portraits[index]
             const channels = portrait.channels ?? 4
             const offsetX = Math.round(left * GRID_WIDTH)
@@ -87,7 +116,7 @@ export const buildPetPrint = (id: number, portraits: Pixels[]): PetPrint => {
 
                     if (channels === 4 && data[i + 3] < 200) continue
                     if (cardX < 0 || cardX >= GRID_WIDTH) continue
-                    if (cardY < 0 || cardY >= ART_HEIGHT) continue
+                    if (cardY < 0 || cardY >= artRows) continue
 
                     points.push({
                         x: cardX,
@@ -103,14 +132,19 @@ export const buildPetPrint = (id: number, portraits: Pixels[]): PetPrint => {
     }
 }
 
-// Averages the card's pixels into a GRID_WIDTH x GRID_HEIGHT grid.
-export const sampleCard = (pixels: Pixels, rect: CardRect): CardSample => {
+// Averages the card's pixels into a grid GRID_WIDTH cells wide.
+export const sampleCard = (
+    pixels: Pixels,
+    rect: CardRect,
+    layout: CardLayout,
+): CardSample => {
     const channels = pixels.channels ?? 4
-    const rgb = new Float32Array(GRID_WIDTH * GRID_HEIGHT * 3)
-    const gray = new Float32Array(GRID_WIDTH * GRID_HEIGHT)
+    const gridHeight = Math.round(GRID_WIDTH * layout.height)
+    const rgb = new Float32Array(GRID_WIDTH * gridHeight * 3)
+    const gray = new Float32Array(GRID_WIDTH * gridHeight)
     const cell = rect.width / GRID_WIDTH
 
-    for (let gy = 0; gy < GRID_HEIGHT; gy++) {
+    for (let gy = 0; gy < gridHeight; gy++) {
         for (let gx = 0; gx < GRID_WIDTH; gx++) {
             const x0 = Math.floor(rect.x + gx * cell)
             const y0 = Math.floor(rect.y + gy * cell)
@@ -142,7 +176,7 @@ export const sampleCard = (pixels: Pixels, rect: CardRect): CardSample => {
         }
     }
 
-    return { rgb, gray }
+    return { rgb: rgb, gray: gray, artRows: getArtRows(layout) }
 }
 
 const scorePlacement = (
@@ -163,7 +197,7 @@ const scorePlacement = (
         const x = point.x + shiftX
         const y = point.y + shiftY
 
-        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= ART_HEIGHT) continue
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= card.artRows) continue
 
         const cell = y * GRID_WIDTH + x
         const a = point.gray

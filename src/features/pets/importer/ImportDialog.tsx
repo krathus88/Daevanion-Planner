@@ -10,7 +10,8 @@ import {
 } from "@chakra-ui/react"
 import type { PetAtlas } from "@pets/data/petAtlas"
 import { usePetCollection } from "@pets/hooks/usePetCollection"
-import { useScreenshotImport } from "@pets/hooks/useScreenshotImport"
+import { useScreenshotReader } from "@pets/hooks/useScreenshotReader"
+import { COLLECTION_LAYOUT } from "@pets/logic/cardMatching"
 import { summarizeImport } from "@pets/logic/screenshotImport"
 import { Tooltip } from "@ui/tooltip"
 import { useId, useState, type ClipboardEvent } from "react"
@@ -21,6 +22,8 @@ import { ScreenshotDropzone } from "@common/ScreenshotDropzone"
 import { ScreenshotProgress } from "@common/ScreenshotProgress"
 import { ImportReview } from "./ImportReview"
 import { ImportSteps } from "./ImportSteps"
+import { loadPetPrints } from "./loadPetPrints"
+import { readScreenshot } from "./readScreenshot"
 
 type ImportDialogProps = {
     atlas: PetAtlas
@@ -29,8 +32,14 @@ type ImportDialogProps = {
 // Sets pet levels from screenshots of the game's Pets grid, after a review.
 export const ImportDialog = ({ atlas }: ImportDialogProps) => {
     const { levels, changeLevels } = usePetCollection()
+    const readFile = async (file: File) => {
+        const prints = await loadPetPrints(atlas.pets, COLLECTION_LAYOUT)
+
+        return readScreenshot(file, prints)
+    }
+
     const { readings, progress, skippedFiles, readFiles, reset } =
-        useScreenshotImport(atlas.pets)
+        useScreenshotReader(readFile)
 
     // The tooltip and the dialog share one trigger button.
     const triggerId = useId()
