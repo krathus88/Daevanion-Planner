@@ -1,0 +1,205 @@
+import {
+    Button,
+    CloseButton,
+    Dialog,
+    Flex,
+    Icon,
+    IconButton,
+    Portal,
+    Text,
+} from "@chakra-ui/react"
+import type { PetAtlas } from "@pets/data/petAtlas"
+import { usePetCollection } from "@pets/hooks/usePetCollection"
+import { useScreenshotImport } from "@pets/hooks/useScreenshotImport"
+import { summarizeImport } from "@pets/logic/screenshotImport"
+import { Tooltip } from "@ui/tooltip"
+import { useId, useState, type ClipboardEvent } from "react"
+import { LuImageUp } from "react-icons/lu"
+import { AddScreenshotsButton } from "./AddScreenshotsButton"
+import { ImportCardWarning } from "./ImportCardWarning"
+import { ImportDropzone } from "./ImportDropzone"
+import { ImportProgress } from "./ImportProgress"
+import { ImportReview } from "./ImportReview"
+import { ImportSteps } from "./ImportSteps"
+
+type ImportDialogProps = {
+    atlas: PetAtlas
+}
+
+// Sets pet levels from screenshots of the game's Pets grid, after a review.
+export const ImportDialog = ({ atlas }: ImportDialogProps) => {
+    const { levels, changeLevels } = usePetCollection()
+    const { readings, progress, skippedFiles, readFiles, reset } =
+        useScreenshotImport(atlas.pets)
+
+    // The tooltip and the dialog share one trigger button.
+    const triggerId = useId()
+
+    const [open, setOpen] = useState(false)
+    // Pets the user unticked in the review.
+    const [excluded, setExcluded] = useState<number[]>([])
+
+    const close = () => {
+        setOpen(false)
+        setExcluded([])
+        reset()
+    }
+
+    const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
+        if (details.open) {
+            setOpen(true)
+        } else {
+            close()
+        }
+    }
+
+    const handleFiles = (files: File[]) => {
+        void readFiles(files)
+    }
+
+    const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
+        const files = [...event.clipboardData.files].filter((file) => {
+            return file.type.startsWith("image/")
+        })
+
+        if (files.length > 0) {
+            event.preventDefault()
+            void readFiles(files)
+        }
+    }
+
+    const handleCheckedChange = (petId: number, checked: boolean) => {
+        setExcluded((previous) => {
+            return checked
+                ? previous.filter((id) => id !== petId)
+                : [...previous, petId]
+        })
+    }
+
+    const handleApply = () => {
+        changeLevels(
+            selected.map((change) => ({
+                petId: change.pet.id,
+                level: change.level,
+            })),
+        )
+        close()
+    }
+
+    const summary = summarizeImport(readings, atlas.pets, levels)
+    const selected = summary.changes.filter((change) => {
+        return !excluded.includes(change.pet.id)
+    })
+    const hasResults = readings.length > 0 || skippedFiles.length > 0
+
+    return (
+        <Dialog.Root
+            ids={{ trigger: triggerId }}
+            size="lg"
+            open={open}
+            scrollBehavior="inside"
+            onOpenChange={handleOpenChange}
+        >
+            <Tooltip
+                ids={{ trigger: triggerId }}
+                content="Import levels from screenshots"
+                openDelay={300}
+            >
+                <Dialog.Trigger asChild>
+                    <IconButton
+                        minW="6"
+                        h="6"
+                        variant="ghost"
+                        size="xs"
+                        color="app.muted"
+                        aria-label="Import levels from screenshots"
+                    >
+                        <Icon boxSize="4">
+                            <LuImageUp />
+                        </Icon>
+                    </IconButton>
+                </Dialog.Trigger>
+            </Tooltip>
+
+            <Portal>
+                <Dialog.Backdrop />
+
+                <Dialog.Positioner>
+                    <Dialog.Content bg="app.panel" onPaste={handlePaste}>
+                        <Dialog.Header>
+                            <Dialog.Title>
+                                Import levels from screenshots
+                            </Dialog.Title>
+                        </Dialog.Header>
+
+                        <Dialog.Body>
+                            {progress ? (
+                                <ImportProgress
+                                    done={progress.done}
+                                    total={progress.total}
+                                />
+                            ) : hasResults ? (
+                                <ImportReview
+                                    summary={summary}
+                                    excluded={excluded}
+                                    skippedFiles={skippedFiles}
+                                    onCheckedChange={handleCheckedChange}
+                                />
+                            ) : (
+                                <Flex flexDir="column" gap="4">
+                                    <ImportSteps />
+
+                                    <ImportCardWarning />
+
+                                    <ImportDropzone onFiles={handleFiles} />
+
+                                    <Text textStyle="hint">
+                                        You review every change before it's
+                                        saved. Pets missing from every
+                                        screenshot keep their level.
+                                    </Text>
+                                </Flex>
+                            )}
+                        </Dialog.Body>
+
+                        {hasResults && !progress && (
+                            <Dialog.Footer
+                                flexWrap="wrap"
+                                justifyContent="space-between"
+                                gap="2"
+                            >
+                                <AddScreenshotsButton onFiles={handleFiles} />
+
+                                <Flex gap="2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={close}
+                                    >
+                                        Cancel
+                                    </Button>
+
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        disabled={selected.length === 0}
+                                        onClick={handleApply}
+                                    >
+                                        Apply {selected.length}{" "}
+                                        {selected.length === 1
+                                            ? "change"
+                                            : "changes"}
+                                    </Button>
+                                </Flex>
+                            </Dialog.Footer>
+                        )}
+
+                        <Dialog.CloseTrigger asChild>
+                            <CloseButton size="sm" />
+                        </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
+        </Dialog.Root>
+    )
+}

@@ -2,6 +2,7 @@ import { Flex, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
 import type { PetCategoryId } from "@pets/config/petCategories"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
+import { ImportDialog } from "@pets/importer/ImportDialog"
 import { LevelBadgeList } from "@pets/LevelBadgeList"
 import { CategoryFilter } from "./CategoryFilter"
 import { ListOptions } from "./ListOptions"
@@ -44,6 +45,8 @@ export const PetFinder = ({
         >
             <Flex alignItems="center" gap="1">
                 <PetSearchField value={query} onChange={onQueryChange} />
+
+                <ImportDialog atlas={atlas} />
 
                 <ListOptions
                     hiddenLevels={hiddenLevels}
