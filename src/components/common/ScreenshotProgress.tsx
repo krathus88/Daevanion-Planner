@@ -1,12 +1,15 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { ProgressBar } from "@common/ProgressBar"
 
-type ImportProgressProps = {
+type ScreenshotProgressProps = {
     done: number
     total: number
 }
 
-export const ImportProgress = ({ done, total }: ImportProgressProps) => {
+export const ScreenshotProgress = ({
+    done,
+    total,
+}: ScreenshotProgressProps) => {
     return (
         <Flex py="6" flexDir="column" gap="2">
             <Text fontSize="sm">

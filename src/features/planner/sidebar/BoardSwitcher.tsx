@@ -1,11 +1,16 @@
 import { Flex, type FlexProps } from "@chakra-ui/react"
-import { BOARD_IDS } from "@config/boards"
+import { BOARD_IDS, type BoardId } from "@config/boards"
 import { getRouteApi } from "@tanstack/react-router"
 import { BoardSwitcherLink } from "./BoardSwitcherLink"
 
 const route = getRouteApi("/planner/$classId/$layout")
 
-export const BoardSwitcher = ({ ...props }: FlexProps) => {
+type BoardSwitcherProps = FlexProps & {
+    // Boards whose game check found gaps that haven't been looked at yet.
+    warnings?: readonly BoardId[]
+}
+
+export const BoardSwitcher = ({ warnings, ...props }: BoardSwitcherProps) => {
     const { classId, layout } = route.useParams()
 
     return (
@@ -24,6 +29,7 @@ export const BoardSwitcher = ({ ...props }: FlexProps) => {
                     classId={classId}
                     layout={layoutName}
                     isActive={layoutName === layout}
+                    hasWarning={warnings?.includes(layoutName) ?? false}
                 />
             ))}
         </Flex>

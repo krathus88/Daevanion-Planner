@@ -1,11 +1,11 @@
 import { FileUpload, Icon, Text } from "@chakra-ui/react"
 import { LuImageUp } from "react-icons/lu"
 
-type ImportDropzoneProps = {
+type ScreenshotDropzoneProps = {
     onFiles: (files: File[]) => void
 }
 
-export const ImportDropzone = ({ onFiles }: ImportDropzoneProps) => {
+export const ScreenshotDropzone = ({ onFiles }: ScreenshotDropzoneProps) => {
     const handleFileAccept = (details: FileUpload.FileAcceptDetails) => {
         onFiles(details.files)
     }

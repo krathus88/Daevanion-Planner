@@ -54,6 +54,9 @@ export const colors = defineSemanticTokens.colors({
         targetDot: { value: "{colors.yellow.400}" },
         needDot: { value: "{colors.periwinkle.400}" },
         preferRing: { value: "{colors.mint.400}" },
+        // Game screenshot check: planned but not acquired, and the reverse.
+        gameMissing: { value: "{colors.coral.400}" },
+        gameExtra: { value: "{colors.purple.300}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
         ariel: { value: "{colors.bronze.500}" },
         arielActive: { value: "{colors.bronze.400}" },

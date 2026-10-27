@@ -1,12 +1,12 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 
-type ImportStepProps = {
+type NumberedStepProps = {
     children: ReactNode
     step: number
 }
 
-export const ImportStep = ({ children, step }: ImportStepProps) => {
+export const NumberedStep = ({ children, step }: NumberedStepProps) => {
     return (
         <Flex as="li" alignItems="center" gap="2.5">
             <Flex

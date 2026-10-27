@@ -1,5 +1,6 @@
 import { BOARD_IDS, MAIN_BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
+import type { BoardView } from "@planner/types"
 import { isRecord } from "./isRecord"
 import { requestPersistentStorage } from "./persistStorage"
 
@@ -302,6 +303,23 @@ export const subscribeToPlansReplaced = (
 
 export const readBoardProgress = (classId: string, layout: BoardId) => {
     return read(keyFor(classId, "progress", layout), isBoardProgress)
+}
+
+// The nodes a board shows in a view: the planner's route or the Manual picks.
+export const readPlannedCells = (
+    classId: string,
+    layout: BoardId,
+    view: BoardView,
+) => {
+    const progress = readBoardProgress(classId, layout).value
+
+    if (!progress) {
+        return new Set<string>()
+    }
+
+    return new Set(
+        view === "planner" ? progress.plannedPath : progress.selectedCells,
+    )
 }
 
 export const writeBoardProgress = (
