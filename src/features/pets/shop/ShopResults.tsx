@@ -1,6 +1,8 @@
 import { Flex, Text } from "@chakra-ui/react"
-import type { ShopSummary } from "@pets/logic/shopCheck"
+import type { ShopPet, ShopSummary } from "@pets/logic/shopCheck"
+import type { ShopSourceId } from "@pets/logic/shopFilters"
 import { ShopPetGrid } from "./ShopPetGrid"
+import { ShopSourceFilter } from "./ShopSourceFilter"
 
 const getSummaryText = (needed: number, total: number) => {
     const pets = total === 1 ? "pet" : "pets"
@@ -18,10 +20,23 @@ const getSummaryText = (needed: number, total: number) => {
 
 type ShopResultsProps = {
     summary: ShopSummary
+    // The pets worth buying left after the source filter.
+    shownNeeded: ShopPet[]
+    sources: ShopSourceId[]
+    // Pets worth buying per source, before filtering.
+    sourceCounts: Record<ShopSourceId, number>
     skippedFiles: string[]
+    onSourceChange: (source: ShopSourceId, picked: boolean) => void
 }
 
-export const ShopResults = ({ summary, skippedFiles }: ShopResultsProps) => {
+export const ShopResults = ({
+    summary,
+    shownNeeded,
+    sources,
+    sourceCounts,
+    skippedFiles,
+    onSourceChange,
+}: ShopResultsProps) => {
     const neededCount = summary.needed.length
     const total = neededCount + summary.maxed.length
 
@@ -50,8 +65,21 @@ export const ShopResults = ({ summary, skippedFiles }: ShopResultsProps) => {
             </Flex>
 
             {neededCount > 0 && (
-                <ShopPetGrid title="Worth buying" items={summary.needed} />
+                <ShopSourceFilter
+                    value={sources}
+                    counts={sourceCounts}
+                    onChange={onSourceChange}
+                />
             )}
+
+            {neededCount > 0 &&
+                (shownNeeded.length > 0 ? (
+                    <ShopPetGrid title="Worth buying" items={shownNeeded} />
+                ) : (
+                    <Text textStyle="hint">
+                        No pets worth buying match these filters.
+                    </Text>
+                ))}
 
             {summary.maxed.length > 0 && (
                 <ShopPetGrid title="Already Lv3" items={summary.maxed} />

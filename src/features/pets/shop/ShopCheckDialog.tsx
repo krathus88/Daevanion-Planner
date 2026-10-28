@@ -17,6 +17,11 @@ import { useScreenshotReader } from "@pets/hooks/useScreenshotReader"
 import { loadPetPrints, preloadPetPrints } from "@pets/importer/loadPetPrints"
 import { SHOP_LAYOUT } from "@pets/logic/cardMatching"
 import { summarizeShop } from "@pets/logic/shopCheck"
+import {
+    countShopSources,
+    filterShopPets,
+    type ShopSourceId,
+} from "@pets/logic/shopFilters"
 import { Tooltip } from "@ui/tooltip"
 import { useId, useState, type ClipboardEvent } from "react"
 import { LuStore } from "react-icons/lu"
@@ -46,6 +51,8 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
     const triggerId = useId()
 
     const [open, setOpen] = useState(false)
+    // Kept between checks, so the same filters apply to the next shop.
+    const [sources, setSources] = useState<ShopSourceId[]>([])
 
     const close = () => {
         setOpen(false)
@@ -76,7 +83,18 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
         }
     }
 
+    const handleSourceChange = (source: ShopSourceId, picked: boolean) => {
+        setSources((current) => {
+            const others = current.filter((id) => id !== source)
+
+            return picked ? [...others, source] : others
+        })
+    }
+
     const summary = summarizeShop(readings, atlas.pets, levels)
+    // The source chips filter only the pets worth buying.
+    const shownNeeded = filterShopPets(atlas, summary.needed, sources)
+    const sourceCounts = countShopSources(atlas, summary.needed)
     const hasResults = readings.length > 0 || skippedFiles.length > 0
 
     return (
@@ -126,7 +144,11 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
                             ) : hasResults ? (
                                 <ShopResults
                                     summary={summary}
+                                    shownNeeded={shownNeeded}
+                                    sources={sources}
+                                    sourceCounts={sourceCounts}
                                     skippedFiles={skippedFiles}
+                                    onSourceChange={handleSourceChange}
                                 />
                             ) : (
                                 <Flex flexDir="column" gap="4">
