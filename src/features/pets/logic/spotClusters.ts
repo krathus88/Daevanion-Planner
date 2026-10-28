@@ -6,11 +6,14 @@
 // than size / SPOT_WIDTH is split; a spot made of up to SPOT_MAX_BLOBS
 // blobs splits into them when they score SPOT_BLOB_SCORE or more; spots
 // under SPOT_MIN_SPAWNS fold into a neighbour when it stays narrow enough.
+// With `reach`, spots of SPOT_KEEP_SPAWNS or more only fold into a spot within
+// size / SPOT_LINK * reach of them.
 const SPOT_LINK = 136
 const SPOT_WIDTH = 20
 const SPOT_MAX_BLOBS = 4
 const SPOT_BLOB_SCORE = 0.5
 const SPOT_MIN_SPAWNS = 10
+const SPOT_KEEP_SPAWNS = 5
 
 export type SpotSpawn = { x: number; y: number; area: number; key: number }
 
@@ -161,8 +164,25 @@ const splitWide = (spawns: SpotSpawn[], maxWidth: number) => {
     }
 }
 
-// Small spots join the nearest spot while it stays narrow.
-const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
+// Closest distance between any two spawns of two spots.
+const getGap = (a: SpotSpawn[], b: SpotSpawn[]) => {
+    let gap = Infinity
+
+    for (const first of a) {
+        for (const second of b) {
+            gap = Math.min(
+                gap,
+                Math.hypot(first.x - second.x, first.y - second.y),
+            )
+        }
+    }
+
+    return gap
+}
+
+// Small spots join the nearest spot while it stays narrow. Spots of
+// SPOT_KEEP_SPAWNS or more stay apart when no spot is within `maxGap`.
+const foldSmall = (spots: SpotSpawn[][], maxWidth: number, maxGap: number) => {
     const done = new Set<SpotSpawn[]>()
 
     for (;;) {
@@ -190,7 +210,9 @@ const foldSmall = (spots: SpotSpawn[][], maxWidth: number) => {
 
             if (
                 distance < targetDistance &&
-                getWidth([...spot, ...small]) <= maxWidth
+                getWidth([...spot, ...small]) <= maxWidth &&
+                (small.length < SPOT_KEEP_SPAWNS ||
+                    getGap(spot, small) <= maxGap)
             ) {
                 target = spot
                 targetDistance = distance
@@ -273,7 +295,11 @@ const splitBlobs = (spawns: SpotSpawn[]): SpotSpawn[][] => {
     return best ? best.flatMap(splitBlobs) : [spawns]
 }
 
-export const clusterSpawns = (spawns: SpotSpawn[], size: number) => {
+export const clusterSpawns = (
+    spawns: SpotSpawn[],
+    size: number,
+    reach = Infinity,
+) => {
     const maxWidth = size / SPOT_WIDTH
 
     return foldSmall(
@@ -281,6 +307,7 @@ export const clusterSpawns = (spawns: SpotSpawn[], size: number) => {
             .flatMap((group) => splitWide(group, maxWidth))
             .flatMap(splitBlobs),
         maxWidth,
+        (size / SPOT_LINK) * reach,
     )
 }
 
