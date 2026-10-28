@@ -33,6 +33,9 @@ const PATCH_WIDTH = 20
 // other's ground. Patch pairs below PATCH_PAIR_SHARE are never tried.
 const PATCH_SHARE = 0.5
 const PATCH_PAIR_SHARE = 0.2
+// A few pins of a pet off on their own (over twice the link distance away)
+// stay their own patch, so the spot they lie in lists the pet too.
+const PATCH_FOLD_REACH = 2
 
 const buildPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
     const spawns: SpotSpawn[] = []
@@ -64,7 +67,7 @@ const buildPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
         }
     }
 
-    return clusterSpawns(spawns, PET_MAPS[mapId].size).map(
+    return clusterSpawns(spawns, PET_MAPS[mapId].size, PATCH_FOLD_REACH).map(
         (group): PetPatch => {
             const xs = group.map((spawn) => spawn.x)
             const ys = group.map((spawn) => spawn.y)
