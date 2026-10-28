@@ -19,6 +19,8 @@ type CountedName = { name: string; count: number }
 export type SpotCount = CountedName & {
     area: string | null
     monsters: (CountedName & { level: number })[]
+    // Its pins, to find the other pets spawning there.
+    points: { x: number; y: number }[]
 }
 
 export type SourceMonster = {
@@ -123,6 +125,9 @@ const getPetSpots = (
                     }
                 })
                 .sort(byCountThenName),
+            points: group.map((spawn) => {
+                return { x: spawn.x, y: spawn.y }
+            }),
         })
 
         for (const spawn of group) {
@@ -209,7 +214,7 @@ export const getMapCounts = (atlas: PetAtlas, pets: Pet[]) => {
     return counts
 }
 
-// Maps that have the pet, most spawns first.
+// Maps that have the pet, in map order.
 export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
     const sources: PetMapSource[] = []
 
@@ -252,7 +257,20 @@ export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
         })
     }
 
-    return sources.sort((a, b) => b.count - a.count)
+    return sources
+}
+
+// The map with the most of the pet's spawns; the first in map order on a tie.
+export const getMostSpawnsMap = (sources: PetMapSource[]) => {
+    let best: PetMapSource | undefined
+
+    for (const source of sources) {
+        if (!best || source.count > best.count) {
+            best = source
+        }
+    }
+
+    return best?.mapId
 }
 
 // labels: spot names to show instead of the map's own, from an open pet's

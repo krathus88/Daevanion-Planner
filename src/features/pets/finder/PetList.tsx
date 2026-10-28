@@ -8,6 +8,7 @@ type PetListProps = {
     levels: Record<string, number>
     selectedPetId?: number
     onSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
 export const PetList = ({
@@ -16,6 +17,7 @@ export const PetList = ({
     levels,
     selectedPetId,
     onSelect,
+    onLevelChange,
 }: PetListProps) => {
     return pets.map((pet) => (
         <PetListItem
@@ -25,6 +27,7 @@ export const PetList = ({
             level={getPetLevel(levels, pet.id)}
             selected={pet.id === selectedPetId}
             onSelect={onSelect}
+            onLevelChange={onLevelChange}
         />
     ))
 }

@@ -14,9 +14,15 @@ import {
     filterPets,
     getMapCounts,
     getMapPins,
+    getMostSpawnsMap,
     getPetMapCounts,
     getPetMapSources,
 } from "@pets/logic/petFinder"
+import {
+    getNeighborPins,
+    getSpotNeighbors,
+    type SpotNeighbors,
+} from "@pets/logic/spotNeighbors"
 import { getRouteApi } from "@tanstack/react-router"
 import { useDeferredValue, useEffect, useState } from "react"
 import { PetDetails } from "./details/PetDetails"
@@ -61,6 +67,7 @@ export const PetsPage = () => {
     // lives in the URL so a new map and its spot arrive in one update, and
     // the map never zooms for the old map with the new spot.
     const focusedSpot = search.spot ?? null
+    const showOthers = search.others === true
 
     useEffect(() => {
         document.title = "Daevanion - Pets"
@@ -74,6 +81,7 @@ export const PetsPage = () => {
                 pet: previous.pet === petId ? undefined : petId,
                 map: undefined,
                 spot: undefined,
+                others: undefined,
             }),
             replace: true,
             resetScroll: false,
@@ -93,6 +101,7 @@ export const PetsPage = () => {
                 ...previous,
                 pet: undefined,
                 spot: undefined,
+                others: undefined,
             }),
             replace: true,
             resetScroll: false,
@@ -106,6 +115,7 @@ export const PetsPage = () => {
                 ...previous,
                 pet: petId,
                 spot: undefined,
+                others: undefined,
             }),
             replace: true,
             resetScroll: false,
@@ -118,21 +128,31 @@ export const PetsPage = () => {
                 ...previous,
                 map: mapId,
                 spot: undefined,
+                others: undefined,
             }),
             replace: true,
             resetScroll: false,
         })
     }
 
-    // A pet's spot opens its map; clicking the open spot again zooms out.
-    const handlePetSpotSelect = (spotMapId: PetMapId, spot: string) => {
+    // A pet's spot opens its map with just the pet's pins, or with its "Also
+    // here" pets too (`others`). The open spot again zooms out; "Also here"
+    // again goes back to just the pet.
+    const handlePetSpotSelect = (
+        spotMapId: PetMapId,
+        spot: string,
+        others: boolean,
+    ) => {
         const same = spotMapId === mapId && spot === focusedSpot
+        const zoomOut = same && !others && !showOthers
+        const nextOthers = others && !(same && showOthers)
 
         navigate({
             search: (previous) => ({
                 ...previous,
                 map: spotMapId,
-                spot: same ? undefined : spot,
+                spot: zoomOut ? undefined : spot,
+                others: nextOthers ? true : undefined,
             }),
             replace: true,
             resetScroll: false,
@@ -142,7 +162,11 @@ export const PetsPage = () => {
     // A farm spot, or null to zoom back out.
     const handleSpotFocus = (spot: string | null) => {
         navigate({
-            search: (previous) => ({ ...previous, spot: spot ?? undefined }),
+            search: (previous) => ({
+                ...previous,
+                spot: spot ?? undefined,
+                others: undefined,
+            }),
             replace: true,
             resetScroll: false,
         })
@@ -180,7 +204,8 @@ export const PetsPage = () => {
     )
     const selectedPet = atlas.pets.find((pet) => pet.id === search.pet)
     const sources = selectedPet ? getPetMapSources(atlas, selectedPet) : []
-    const mapId = search.map ?? sources[0]?.mapId ?? "verteron"
+    const mostSpawnsMap = getMostSpawnsMap(sources)
+    const mapId = search.map ?? mostSpawnsMap ?? "verteron"
     const mapCounts = selectedPet
         ? getPetMapCounts(atlas, selectedPet)
         : getMapCounts(atlas, pets)
@@ -194,12 +219,36 @@ export const PetsPage = () => {
         selectedPet ? source?.labels : farm.labels,
     )
     const farmSpots = filterFarmSpots(farm.spots, requiredCategories)
-    // A focused spot shows only its pins: the open pet's, or a farm spot's
-    // pets below Lv3.
+    const neighbors: SpotNeighbors = selectedPet
+        ? getSpotNeighbors(
+              atlas,
+              selectedPet,
+              sources,
+              deferredLevels,
+              deferredHiddenLevels,
+          )
+        : new Map()
+    const petSpot = source?.spots.find((spot) => spot.name === focusedSpot)
+    // Under the open pet's own pins, so those stay on top.
+    const neighborPins =
+        petSpot && showOthers
+            ? getNeighborPins(
+                  atlas,
+                  petSpot,
+                  neighbors.get(petSpot) ?? [],
+                  deferredLevels,
+                  mapId,
+              )
+            : []
+    // A focused spot shows only its pins: the open pet's (and with `others`
+    // its "Also here" pets), or a farm spot's pets below Lv3.
     const focusPins = selectedPet
-        ? pins.filter((pin) => {
-              return focusedSpot === null || pin.spot === focusedSpot
-          })
+        ? [
+              ...neighborPins,
+              ...pins.filter((pin) => {
+                  return focusedSpot === null || pin.spot === focusedSpot
+              }),
+          ]
         : pins.filter((pin) => {
               return (
                   pin.spot === focusedSpot &&
@@ -276,6 +325,7 @@ export const PetsPage = () => {
                         onCategoryChange={setCategory}
                         onLevelHiddenChange={changeLevelHidden}
                         onPetSelect={handlePetSelect}
+                        onLevelChange={changeLevel}
                     />
 
                     <Flex minW="0" flexDir="column" gap="4">
@@ -305,11 +355,15 @@ export const PetsPage = () => {
                             <PetDetails
                                 pet={selectedPet}
                                 sources={sources}
+                                neighbors={neighbors}
                                 mapId={mapId}
                                 level={getPetLevel(levels, selectedPet.id)}
                                 focusedSpot={focusedSpot}
+                                showOthers={showOthers}
+                                levels={levels}
                                 onMapChange={handleMapChange}
                                 onSpotSelect={handlePetSpotSelect}
+                                onPetSelect={handleFarmPetSelect}
                                 onLevelChange={changeLevel}
                                 onMinimize={handleMinimize}
                                 onClose={handlePetClear}

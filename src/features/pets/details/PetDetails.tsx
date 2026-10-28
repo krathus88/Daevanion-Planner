@@ -10,6 +10,7 @@ import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
 import { getBossText, getNoSpawnText } from "@pets/logic/petLabels"
+import type { SpotNeighbors } from "@pets/logic/spotNeighbors"
 import { LuX } from "react-icons/lu"
 import { BossSource } from "./BossSource"
 import { MapSourceList } from "./MapSourceList"
@@ -18,12 +19,18 @@ import { LevelPicker } from "./LevelPicker"
 type PetDetailsProps = {
     pet: Pet
     sources: PetMapSource[]
+    // Other pets below Lv3 in each of its spots.
+    neighbors: SpotNeighbors
     mapId: PetMapId
     // 0 is locked; 1-3 are Pet Insight levels.
     level: number
     focusedSpot: string | null
+    // The focused spot also shows its "Also here" pets' pins.
+    showOthers: boolean
+    levels: Record<string, number>
     onMapChange: (mapId: PetMapId) => void
-    onSpotSelect: (mapId: PetMapId, spot: string) => void
+    onSpotSelect: (mapId: PetMapId, spot: string, others: boolean) => void
+    onPetSelect: (petId: number) => void
     onLevelChange: (petId: number, level: number) => void
     onMinimize: () => void
     onClose: () => void
@@ -32,11 +39,15 @@ type PetDetailsProps = {
 export const PetDetails = ({
     pet,
     sources,
+    neighbors,
     mapId,
     level,
     focusedSpot,
+    showOthers,
+    levels,
     onMapChange,
     onSpotSelect,
+    onPetSelect,
     onLevelChange,
     onMinimize,
     onClose,
@@ -51,7 +62,7 @@ export const PetDetails = ({
             ? [
                   sources.length === 1
                       ? "Spawns on 1 map"
-                      : `Spawns on ${sources.length} maps, most first`,
+                      : `Spawns on ${sources.length} maps`,
                   bossText,
               ]
                   .filter(Boolean)
@@ -103,10 +114,15 @@ export const PetDetails = ({
                 >
                     <MapSourceList
                         sources={sources}
+                        neighbors={neighbors}
                         mapId={mapId}
                         focusedSpot={focusedSpot}
+                        showOthers={showOthers}
+                        levels={levels}
                         onSelect={onMapChange}
                         onSpotSelect={onSpotSelect}
+                        onPetSelect={onPetSelect}
+                        onLevelChange={onLevelChange}
                     />
                 </Grid>
             ) : (

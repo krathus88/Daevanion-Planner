@@ -1,29 +1,34 @@
 import { Flex, HoverCard, Portal, Text } from "@chakra-ui/react"
+import type { Pet } from "@pets/data/petAtlas"
 import { LevelPicker } from "@pets/details/LevelPicker"
-import type { FarmSpotPet } from "@pets/logic/farmSpots"
 import { type MouseEvent, type ReactElement, useState } from "react"
 
 // What hovering the pet shows: the level picker (a focused spot), just the
-// pet's name and spawns, or nothing. Right-click always shows the picker.
+// pet's name and caption, or nothing. Right-click always shows the picker.
 export type FarmPetHover = "picker" | "info" | "none"
 
 type FarmPetLevelCardProps = {
     // The pet's button; it keeps opening the pet on click.
     children: ReactElement
-    entry: FarmSpotPet
+    pet: Pet
+    // Shown under the name, like a spot's spawns.
+    caption: string
     // 0 is locked; 1-3 are Pet Insight levels.
     level: number
     hover: FarmPetHover
+    placement?: "top" | "right"
     onLevelChange: (petId: number, level: number) => void
 }
 
-// Sets a spot's pet level on hover or right-click, without opening the pet.
-// A pet set to Lv3 leaves the spot, and this card with it.
+// Sets a pet's level on hover or right-click, without opening the pet.
+// A pet set to Lv3 leaves a spot, and this card with it.
 export const FarmPetLevelCard = ({
     children,
-    entry,
+    pet,
+    caption,
     level,
     hover,
+    placement = "top",
     onLevelChange,
 }: FarmPetLevelCardProps) => {
     const [open, setOpen] = useState(false)
@@ -48,7 +53,7 @@ export const FarmPetLevelCard = ({
     }
 
     const handleLevelChange = (value: number) => {
-        onLevelChange(entry.pet.id, value)
+        onLevelChange(pet.id, value)
     }
 
     const pickerShown = hover === "picker" || fromMenu
@@ -56,9 +61,11 @@ export const FarmPetLevelCard = ({
     return (
         <HoverCard.Root
             open={open}
-            positioning={{ placement: "top" }}
+            positioning={{ placement }}
             openDelay={hover === "info" ? 100 : 600}
             closeDelay={150}
+            lazyMount
+            unmountOnExit
             onOpenChange={handleOpenChange}
         >
             <HoverCard.Trigger asChild onContextMenu={handleContextMenu}>
@@ -75,12 +82,10 @@ export const FarmPetLevelCard = ({
                         <Flex flexDir="column" gap="2">
                             <Flex flexDir="column">
                                 <Text fontSize="sm" fontWeight="semibold">
-                                    {entry.pet.name}
+                                    {pet.name}
                                 </Text>
 
-                                <Text textStyle="caption">
-                                    {entry.spawns} spawns in this spot
-                                </Text>
+                                <Text textStyle="caption">{caption}</Text>
                             </Flex>
 
                             {pickerShown && (

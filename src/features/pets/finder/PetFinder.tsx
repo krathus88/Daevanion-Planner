@@ -22,6 +22,7 @@ type PetFinderProps = {
     onCategoryChange: (category: PetCategoryId | null) => void
     onLevelHiddenChange: (level: number, hidden: boolean) => void
     onPetSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
 export const PetFinder = ({
@@ -36,6 +37,7 @@ export const PetFinder = ({
     onCategoryChange,
     onLevelHiddenChange,
     onPetSelect,
+    onLevelChange,
 }: PetFinderProps) => {
     return (
         <Card
@@ -89,6 +91,7 @@ export const PetFinder = ({
                         levels={levels}
                         selectedPetId={selectedPetId}
                         onSelect={onPetSelect}
+                        onLevelChange={onLevelChange}
                     />
                 ) : (
                     <Text py="4" color="app.muted" fontSize="sm">

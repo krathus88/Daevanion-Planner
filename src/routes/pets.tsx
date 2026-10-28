@@ -8,6 +8,8 @@ type PetsSearch = {
     map?: PetMapId
     // Spot the map is zoomed to; in the URL so it changes with the map.
     spot?: string
+    // With a pet open: the focused spot also shows its "Also here" pets.
+    others?: boolean
 }
 
 export const Route = createFileRoute("/pets")({
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/pets")({
                 typeof search.spot === "string" && search.spot
                     ? search.spot
                     : undefined,
+            others: search.others === true ? true : undefined,
         }
     },
     loader: () => loadPetAtlas(),
