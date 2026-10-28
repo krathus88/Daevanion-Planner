@@ -13,6 +13,8 @@ import { FarmSpotList } from "./FarmSpotList"
 import { RequiredCategoryFilter } from "./RequiredCategoryFilter"
 
 const SHORT_LIST = 4
+// Three more rows of the two-column grid per click.
+const MORE_STEP = 6
 
 type FarmSpotsPanelProps = {
     spots: FarmSpot[]
@@ -40,15 +42,21 @@ export const FarmSpotsPanel = ({
     onLevelChange,
     onMinimize,
 }: FarmSpotsPanelProps) => {
-    const [expanded, setExpanded] = useState(false)
+    const [limit, setLimit] = useState(SHORT_LIST)
 
-    const handleExpandToggle = () => {
-        setExpanded(!expanded)
+    const handleShowMore = () => {
+        setLimit(limit + MORE_STEP)
+    }
+
+    const handleShowFewer = () => {
+        setLimit(SHORT_LIST)
     }
 
     const mapName = PET_MAPS[mapId].name
     const hasSpotNames = spots.length > 0 || mapId !== "reshanta"
-    const shown = expanded ? spots : spots.slice(0, SHORT_LIST)
+    const shown = spots.slice(0, limit)
+    const remaining = spots.length - limit
+    const moreCount = Math.min(MORE_STEP, remaining)
     const requiredNames = requiredCategories
         .map((category) => PET_CATEGORY_NAMES[category])
         .join(", ")
@@ -110,14 +118,27 @@ export const FarmSpotsPanel = ({
             )}
 
             {spots.length > SHORT_LIST && (
-                <Button
-                    variant="ghost"
-                    size="xs"
-                    alignSelf="flex-start"
-                    onClick={handleExpandToggle}
-                >
-                    {expanded ? "Show fewer" : `Show all ${spots.length} spots`}
-                </Button>
+                <Flex gap="1">
+                    {moreCount > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={handleShowMore}
+                        >
+                            Show {moreCount} more ({remaining} left)
+                        </Button>
+                    )}
+
+                    {limit > SHORT_LIST && (
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={handleShowFewer}
+                        >
+                            Show fewer
+                        </Button>
+                    )}
+                </Flex>
             )}
         </Card>
     )
