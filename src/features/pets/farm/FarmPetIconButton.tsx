@@ -1,27 +1,36 @@
 import { chakra } from "@chakra-ui/react"
 import { PetIcon } from "@pets/PetIcon"
 import type { FarmSpotPet } from "@pets/logic/farmSpots"
-import { Tooltip } from "@ui/tooltip"
+import { FarmPetLevelCard } from "./FarmPetLevelCard"
 
 type FarmPetIconButtonProps = {
     entry: FarmSpotPet
+    level: number
+    // A focused spot's pets show the level picker on hover too.
+    focused: boolean
     onSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
-// A spot's pet as just its portrait, for the minimized panel.
+// A spot's pet as just its portrait, for the minimized panel. Hovering an
+// unfocused spot's pet names it, like a tooltip.
 export const FarmPetIconButton = ({
     entry,
+    level,
+    focused,
     onSelect,
+    onLevelChange,
 }: FarmPetIconButtonProps) => {
     const handleClick = () => {
         onSelect(entry.pet.id)
     }
 
     return (
-        <Tooltip
-            content={`${entry.pet.name} · ${entry.spawns} spawns`}
-            openDelay={100}
-            showArrow
+        <FarmPetLevelCard
+            entry={entry}
+            level={level}
+            hover={focused ? "picker" : "info"}
+            onLevelChange={onLevelChange}
         >
             <chakra.button
                 flexShrink="0"
@@ -34,6 +43,6 @@ export const FarmPetIconButton = ({
             >
                 <PetIcon pet={entry.pet} size="8" />
             </chakra.button>
-        </Tooltip>
+        </FarmPetLevelCard>
     )
 }

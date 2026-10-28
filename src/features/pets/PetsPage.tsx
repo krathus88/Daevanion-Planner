@@ -189,6 +189,7 @@ export const PetsPage = () => {
     const pins = getMapPins(
         atlas,
         selectedPet ? [selectedPet] : pets,
+        deferredLevels,
         mapId,
         selectedPet ? source?.labels : farm.labels,
     )
@@ -294,8 +295,10 @@ export const PetsPage = () => {
                                     spots={farmSpots}
                                     mapId={mapId}
                                     focusedSpot={focusedSpot}
+                                    levels={levels}
                                     onExpand={handleExpand}
                                     onPetSelect={handleFarmPetSelect}
+                                    onLevelChange={changeLevel}
                                 />
                             )
                         ) : selectedPet ? (
@@ -316,10 +319,12 @@ export const PetsPage = () => {
                                 spots={farmSpots}
                                 mapId={mapId}
                                 focusedSpot={focusedSpot}
+                                levels={levels}
                                 requiredCategories={requiredCategories}
                                 onSpotFocus={handleSpotFocus}
                                 onRequiredChange={handleRequiredChange}
                                 onPetSelect={handleFarmPetSelect}
+                                onLevelChange={changeLevel}
                                 onMinimize={handleMinimize}
                             />
                         )}

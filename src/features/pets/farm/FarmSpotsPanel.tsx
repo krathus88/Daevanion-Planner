@@ -18,11 +18,13 @@ type FarmSpotsPanelProps = {
     spots: FarmSpot[]
     mapId: PetMapId
     focusedSpot: string | null
+    levels: Record<string, number>
     // Types every listed spot must still have a pet of.
     requiredCategories: PetCategoryId[]
     onSpotFocus: (spot: string | null) => void
     onRequiredChange: (category: PetCategoryId, required: boolean) => void
     onPetSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
     onMinimize: () => void
 }
 
@@ -30,10 +32,12 @@ export const FarmSpotsPanel = ({
     spots,
     mapId,
     focusedSpot,
+    levels,
     requiredCategories,
     onSpotFocus,
     onRequiredChange,
     onPetSelect,
+    onLevelChange,
     onMinimize,
 }: FarmSpotsPanelProps) => {
     const [expanded, setExpanded] = useState(false)
@@ -69,8 +73,9 @@ export const FarmSpotsPanel = ({
                 <Text textStyle="hint">
                     Ranked by how many pets from your list, not yet at{" "}
                     <Term>Lv3</Term>, spawn in each spot. Click a spot to show
-                    only its pins on the map, or a pet to open it. Switch maps
-                    with the <Term>map tabs</Term> below.
+                    only its pins on the map, or a pet to open it. In a picked
+                    spot, hover or right-click a pet to set its level. Switch
+                    maps with the <Term>map tabs</Term> below.
                 </Text>
             </Flex>
 
@@ -91,9 +96,11 @@ export const FarmSpotsPanel = ({
                     <FarmSpotList
                         spots={shown}
                         focusedSpot={focusedSpot}
+                        levels={levels}
                         requiredCategories={requiredCategories}
                         onSpotFocus={onSpotFocus}
                         onPetSelect={onPetSelect}
+                        onLevelChange={onLevelChange}
                     />
                 </Grid>
             ) : (

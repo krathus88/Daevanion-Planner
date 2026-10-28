@@ -14,20 +14,24 @@ type FarmSpotRowProps = {
     spot: FarmSpot
     rank: number
     selected: boolean
+    levels: Record<string, number>
     // Shown as "2 Cogni" in the caption.
     requiredCategories: PetCategoryId[]
     // Null clears the focus (clicking the focused spot again).
     onFocus: (spot: string | null) => void
     onPetSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
 export const FarmSpotRow = ({
     spot,
     rank,
     selected,
+    levels,
     requiredCategories,
     onFocus,
     onPetSelect,
+    onLevelChange,
 }: FarmSpotRowProps) => {
     const [expanded, setExpanded] = useState(false)
 
@@ -41,7 +45,7 @@ export const FarmSpotRow = ({
 
     const hidden = spot.pets.length - SHORT_LIST
     const shownPets = expanded ? spot.pets : spot.pets.slice(0, SHORT_LIST)
-    const levels =
+    const levelRange =
         spot.minLevel === spot.maxLevel
             ? `Lv${spot.minLevel}`
             : `Lv${spot.minLevel}-${spot.maxLevel}`
@@ -96,13 +100,19 @@ export const FarmSpotRow = ({
 
                 <Text textStyle="caption">
                     {spot.pets.length} {spot.pets.length === 1 ? "pet" : "pets"}{" "}
-                    · {spot.spawns} spawns · {levels}
+                    · {spot.spawns} spawns · {levelRange}
                     {required.join("")}
                 </Text>
             </chakra.button>
 
             <Flex flexWrap="wrap" gap="1">
-                <FarmPetList pets={shownPets} onSelect={onPetSelect} />
+                <FarmPetList
+                    pets={shownPets}
+                    levels={levels}
+                    onSelect={onPetSelect}
+                    focused={selected}
+                    onLevelChange={onLevelChange}
+                />
 
                 {hidden > 0 && (
                     <Button

@@ -44,6 +44,8 @@ export type PetPin = {
     monster: PetMonster
     spot: string | null
     area: string | null
+    // The pet's Insight level; 0 is locked.
+    level: number
 }
 
 const SPAWN_STRIDE = 3
@@ -258,6 +260,7 @@ export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
 export const getMapPins = (
     atlas: PetAtlas,
     pets: Pet[],
+    levels: Record<string, number>,
     mapId: PetMapId,
     labels?: SpotLabels,
 ) => {
@@ -284,6 +287,7 @@ export const getMapPins = (
                         atlas.spots[mapId][monster.spawns[i + 2]]?.name ??
                         null,
                     area: getSpotArea(atlas, mapId, monster.spawns[i + 2]),
+                    level: getPetLevel(levels, pet.id),
                 })
             }
         }

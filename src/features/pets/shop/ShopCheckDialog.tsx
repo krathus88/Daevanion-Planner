@@ -14,7 +14,7 @@ import { ScreenshotProgress } from "@common/ScreenshotProgress"
 import type { PetAtlas } from "@pets/data/petAtlas"
 import { usePetCollection } from "@pets/hooks/usePetCollection"
 import { useScreenshotReader } from "@pets/hooks/useScreenshotReader"
-import { loadPetPrints } from "@pets/importer/loadPetPrints"
+import { loadPetPrints, preloadPetPrints } from "@pets/importer/loadPetPrints"
 import { SHOP_LAYOUT } from "@pets/logic/cardMatching"
 import { summarizeShop } from "@pets/logic/shopCheck"
 import { Tooltip } from "@ui/tooltip"
@@ -55,6 +55,7 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
     const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
         if (details.open) {
             setOpen(true)
+            preloadPetPrints(atlas.pets, SHOP_LAYOUT)
         } else {
             close()
         }

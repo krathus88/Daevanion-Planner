@@ -8,8 +8,10 @@ type FarmSpotsMinimizedProps = {
     spots: FarmSpot[]
     mapId: PetMapId
     focusedSpot: string | null
+    levels: Record<string, number>
     onExpand: () => void
     onPetSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
 // A focused spot shows itself and its pets; otherwise the best spot.
@@ -17,8 +19,10 @@ export const FarmSpotsMinimized = ({
     spots,
     mapId,
     focusedSpot,
+    levels,
     onExpand,
     onPetSelect,
+    onLevelChange,
 }: FarmSpotsMinimizedProps) => {
     const focusedIndex = spots.findIndex((spot) => spot.name === focusedSpot)
     const index = Math.max(focusedIndex, 0)
@@ -34,7 +38,7 @@ export const FarmSpotsMinimized = ({
         )
     }
 
-    const levels =
+    const levelRange =
         spot.minLevel === spot.maxLevel
             ? `Lv${spot.minLevel}`
             : `Lv${spot.minLevel}-${spot.maxLevel}`
@@ -42,14 +46,20 @@ export const FarmSpotsMinimized = ({
         spot.area ?? PET_MAPS[mapId].name,
         `${spot.pets.length} ${spot.pets.length === 1 ? "pet" : "pets"}`,
         `${spot.spawns} spawns`,
-        levels,
+        levelRange,
     ].join(" · ")
 
     return (
         <MinimizedBar
             footer={
                 <Flex flexWrap="wrap" gap="1">
-                    <FarmPetIconList pets={spot.pets} onSelect={onPetSelect} />
+                    <FarmPetIconList
+                        pets={spot.pets}
+                        levels={levels}
+                        focused={focusedIndex >= 0}
+                        onSelect={onPetSelect}
+                        onLevelChange={onLevelChange}
+                    />
                 </Flex>
             }
             onExpand={onExpand}
