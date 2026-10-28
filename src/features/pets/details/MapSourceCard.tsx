@@ -2,6 +2,7 @@ import { Badge, Box, chakra, Flex, Text } from "@chakra-ui/react"
 import { Section } from "@common/Section"
 import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { PetMapSource } from "@pets/logic/petFinder"
+import type { SpotNeighbors } from "@pets/logic/spotNeighbors"
 import type { MouseEvent } from "react"
 import { SourceSpotList } from "./SourceSpotList"
 import { SourceMonsterRows } from "./SourceMonsterRows"
@@ -10,28 +11,38 @@ const TOP_SPOTS = 3
 
 type MapSourceCardProps = {
     source: PetMapSource
+    neighbors: SpotNeighbors
     best: boolean
     selected: boolean
     // Spot the map is zoomed to, when this card's map is open.
     focusedSpot: string | null
+    showOthers: boolean
+    levels: Record<string, number>
     onSelect: (mapId: PetMapId) => void
-    onSpotSelect: (mapId: PetMapId, spot: string) => void
+    onSpotSelect: (mapId: PetMapId, spot: string, others: boolean) => void
+    onPetSelect: (petId: number) => void
+    onLevelChange: (petId: number, level: number) => void
 }
 
 export const MapSourceCard = ({
     source,
+    neighbors,
     best,
     selected,
     focusedSpot,
+    showOthers,
+    levels,
     onSelect,
     onSpotSelect,
+    onPetSelect,
+    onLevelChange,
 }: MapSourceCardProps) => {
     const handleClick = () => {
         onSelect(source.mapId)
     }
 
-    const handleSpotSelect = (spot: string) => {
-        onSpotSelect(source.mapId, spot)
+    const handleSpotSelect = (spot: string, others: boolean) => {
+        onSpotSelect(source.mapId, spot, others)
     }
 
     // Opening the monster list shouldn't also switch the map.
@@ -79,15 +90,18 @@ export const MapSourceCard = ({
             </chakra.button>
 
             {source.spots.length > 0 && (
-                <Flex flexDir="column" gap="0.5">
-                    <Text mb="0.5" textStyle="label">
-                        Best spots
-                    </Text>
+                <Flex flexDir="column" gap="1.5">
+                    <Text textStyle="label">Best spots</Text>
 
                     <SourceSpotList
                         spots={source.spots.slice(0, TOP_SPOTS)}
+                        neighbors={neighbors}
                         focusedSpot={selected ? focusedSpot : null}
+                        showOthers={showOthers}
+                        levels={levels}
                         onSelect={handleSpotSelect}
+                        onPetSelect={onPetSelect}
+                        onLevelChange={onLevelChange}
                     />
                 </Flex>
             )}

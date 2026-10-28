@@ -11,9 +11,16 @@ type SourceMonsterRowsProps = {
     monsters: SourceMonster[]
 }
 
+// Monsters can share a name, even at the same level and rank, so the key
+// takes the row's place too.
 export const SourceMonsterRows = ({ monsters }: SourceMonsterRowsProps) => {
-    return monsters.map((monster) => (
-        <Flex key={monster.name} alignItems="baseline" gap="2" fontSize="sm">
+    return monsters.map((monster, index) => (
+        <Flex
+            key={`${index}:${monster.name}`}
+            alignItems="baseline"
+            gap="2"
+            fontSize="sm"
+        >
             <Text flex="1" truncate>
                 {monster.name}{" "}
                 <Text as="span" color="app.subtle" fontSize="xs">

@@ -1,6 +1,7 @@
 // Maps with tracked pet spawns. Coordinates are map pixels at full size,
 // matching the AION2 Interactive Map's tiles (`code` is its map name).
-export const PET_MAP_IDS = ["verteron", "altgard", "reshanta"] as const
+// Maps always show in this order.
+export const PET_MAP_IDS = ["verteron", "reshanta", "altgard"] as const
 
 export type PetMapId = (typeof PET_MAP_IDS)[number]
 

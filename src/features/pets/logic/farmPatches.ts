@@ -12,14 +12,14 @@ type PatchSpawn = {
     spot: number
 }
 
+type Point = { x: number; y: number }
+
+type Box = { left: number; top: number; right: number; bottom: number }
+
 // One pet's own cluster of pins and the box around them.
-export type PetPatch = {
+export type PetPatch = Box & {
     pet: Pet
     spawns: PatchSpawn[]
-    left: number
-    top: number
-    right: number
-    bottom: number
 }
 
 const SPAWN_STRIDE = 3
@@ -69,19 +69,25 @@ const buildPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
 
     return clusterSpawns(spawns, PET_MAPS[mapId].size, PATCH_FOLD_REACH).map(
         (group): PetPatch => {
-            const xs = group.map((spawn) => spawn.x)
-            const ys = group.map((spawn) => spawn.y)
-
             return {
+                ...getBox(group),
                 pet: pet,
                 spawns: group.map((spawn) => owners[spawn.key]),
-                left: Math.min(...xs),
-                top: Math.min(...ys),
-                right: Math.max(...xs),
-                bottom: Math.max(...ys),
             }
         },
     )
+}
+
+export const getBox = (points: Point[]): Box => {
+    const xs = points.map((point) => point.x)
+    const ys = points.map((point) => point.y)
+
+    return {
+        left: Math.min(...xs),
+        top: Math.min(...ys),
+        right: Math.max(...xs),
+        bottom: Math.max(...ys),
+    }
 }
 
 // The data never changes while the page is open, so each pet and map is
@@ -100,47 +106,60 @@ export const getPetPatches = (atlas: PetAtlas, pet: Pet, mapId: PetMapId) => {
     return patches
 }
 
-// Share of the smaller list's pins that have a pin of the other within
-// `gap`: near 1 when two pets spawn on the same ground, near 0 when they
-// only touch at an edge.
-const getNearShare = (a: PatchSpawn[], b: PatchSpawn[], gap: number) => {
-    const [small, large] = a.length <= b.length ? [a, b] : [b, a]
-    const cells = new Map<string, PatchSpawn[]>()
+// The distance pins count as the same ground at.
+export const getPatchGap = (mapId: PetMapId) => {
+    return PET_MAPS[mapId].size / PATCH_GAP
+}
+
+// The points that have one of `others` within `gap`.
+export const getNearPoints = <T extends Point>(
+    points: T[],
+    others: Point[],
+    gap: number,
+) => {
+    const cells = new Map<string, Point[]>()
     const getCell = (x: number, y: number) => {
         return `${Math.floor(x / gap)},${Math.floor(y / gap)}`
     }
 
-    for (const spawn of large) {
-        const cell = getCell(spawn.x, spawn.y)
+    for (const other of others) {
+        const cell = getCell(other.x, other.y)
 
-        cells.set(cell, [...(cells.get(cell) ?? []), spawn])
+        cells.set(cell, [...(cells.get(cell) ?? []), other])
     }
 
-    let near = 0
-
-    for (const spawn of small) {
-        const found = [-gap, 0, gap].some((dx) => {
+    return points.filter((point) => {
+        return [-gap, 0, gap].some((dx) => {
             return [-gap, 0, gap].some((dy) => {
                 return (
-                    cells.get(getCell(spawn.x + dx, spawn.y + dy)) ?? []
+                    cells.get(getCell(point.x + dx, point.y + dy)) ?? []
                 ).some((other) => {
                     return (
-                        Math.hypot(spawn.x - other.x, spawn.y - other.y) <= gap
+                        Math.hypot(point.x - other.x, point.y - other.y) <= gap
                     )
                 })
             })
         })
-
-        if (found) {
-            near++
-        }
-    }
-
-    return near / small.length
+    })
 }
 
-// Whether two patches' boxes, grown by `gap`, touch.
-const isTouching = (a: PetPatch, b: PetPatch, gap: number) => {
+// Share of the smaller list's pins that have a pin of the other within
+// `gap`: near 1 when two pets spawn on the same ground, near 0 when they
+// only touch at an edge.
+const getNearShare = (a: Point[], b: Point[], gap: number) => {
+    const [small, large] = a.length <= b.length ? [a, b] : [b, a]
+
+    return getNearPoints(small, large, gap).length / small.length
+}
+
+// Whether two lists of pins spawn on the same ground, the way Best spots
+// merge.
+export const sharesGround = (a: Point[], b: Point[], gap: number) => {
+    return getNearShare(a, b, gap) >= PATCH_SHARE
+}
+
+// Whether two boxes, grown by `gap`, touch.
+export const isTouching = (a: Box, b: Box, gap: number) => {
     return (
         a.left - gap <= b.right + gap &&
         b.left - gap <= a.right + gap &&
@@ -167,7 +186,7 @@ const getWidth = (spawns: PatchSpawn[]) => {
 // each other.
 export const mergePatches = (patches: PetPatch[], mapId: PetMapId) => {
     const size = PET_MAPS[mapId].size
-    const gap = size / PATCH_GAP
+    const gap = getPatchGap(mapId)
     const pairs: { a: number; b: number; share: number }[] = []
 
     for (let a = 0; a < patches.length; a++) {
@@ -205,7 +224,7 @@ export const mergePatches = (patches: PetPatch[], mapId: PetMapId) => {
         const secondSpawns = groups[second].flatMap((patch) => patch.spawns)
         const fits =
             getWidth([...firstSpawns, ...secondSpawns]) <= size / PATCH_WIDTH &&
-            getNearShare(firstSpawns, secondSpawns, gap) >= PATCH_SHARE
+            sharesGround(firstSpawns, secondSpawns, gap)
 
         if (!fits) {
             continue

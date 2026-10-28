@@ -26,7 +26,8 @@ export const FarmPetButton = ({
     // The level card shows the spawns itself, so no title over it.
     return (
         <FarmPetLevelCard
-            entry={entry}
+            pet={entry.pet}
+            caption={`${entry.spawns} spawns in this spot`}
             level={level}
             hover={focused ? "picker" : "none"}
             onLevelChange={onLevelChange}
