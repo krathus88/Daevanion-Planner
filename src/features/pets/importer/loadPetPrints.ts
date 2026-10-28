@@ -35,13 +35,19 @@ const buildPrints = async (pets: Pet[], layout: CardLayout) => {
     canvas.height = canvas.width
     context.imageSmoothingQuality = "high"
 
-    for (const pet of pets) {
+    // A pet without a portrait can't be recognized.
+    const portraitPets = pets.flatMap((pet) => {
         const url = getPetIconUrl(pet.icon)
 
-        // A pet without a portrait can't be recognized.
-        if (!url) continue
+        return url ? [{ pet, url }] : []
+    })
+    // All at once: one by one waits ~200 round trips when the cache is stale.
+    const images = await Promise.all(
+        portraitPets.map(({ url }) => loadImage(url)),
+    )
 
-        const image = await loadImage(url)
+    for (const [index, { pet }] of portraitPets.entries()) {
+        const image = images[index]
         const portraits = sizes.map((size) => {
             context.clearRect(0, 0, canvas.width, canvas.height)
             context.drawImage(image, 0, 0, size, size)
@@ -54,6 +60,12 @@ const buildPrints = async (pets: Pet[], layout: CardLayout) => {
     }
 
     return prints
+}
+
+// Starts building the prints early (when a dialog opens) so the first
+// screenshot doesn't wait on them. A failure is retried by the import.
+export const preloadPetPrints = (pets: Pet[], layout: CardLayout) => {
+    loadPetPrints(pets, layout).catch(() => undefined)
 }
 
 // Every pet's portrait print for one card layout, built once per visit.

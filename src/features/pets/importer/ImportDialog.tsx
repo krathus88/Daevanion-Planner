@@ -22,7 +22,7 @@ import { ScreenshotDropzone } from "@common/ScreenshotDropzone"
 import { ScreenshotProgress } from "@common/ScreenshotProgress"
 import { ImportReview } from "./ImportReview"
 import { ImportSteps } from "./ImportSteps"
-import { loadPetPrints } from "./loadPetPrints"
+import { loadPetPrints, preloadPetPrints } from "./loadPetPrints"
 import { readScreenshot } from "./readScreenshot"
 
 type ImportDialogProps = {
@@ -57,6 +57,7 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
     const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
         if (details.open) {
             setOpen(true)
+            preloadPetPrints(atlas.pets, COLLECTION_LAYOUT)
         } else {
             close()
         }

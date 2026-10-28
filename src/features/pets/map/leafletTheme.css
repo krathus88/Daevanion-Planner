@@ -33,6 +33,33 @@
     object-fit: contain;
 }
 
+.pet-tooltip-level {
+    align-self: flex-start;
+    margin-left: auto;
+    padding: 0 0.375rem;
+    border-radius: 0.125rem;
+    background: var(--chakra-colors-app-inset);
+    color: var(--chakra-colors-app-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pet-tooltip-level[data-level="1"] {
+    background: var(--chakra-colors-pet-level1-muted);
+    color: var(--chakra-colors-pet-level1);
+}
+
+.pet-tooltip-level[data-level="2"] {
+    background: var(--chakra-colors-pet-level2-muted);
+    color: var(--chakra-colors-pet-level2);
+}
+
+.pet-tooltip-level[data-level="3"] {
+    background: var(--chakra-colors-pet-level3-muted);
+    color: var(--chakra-colors-pet-level3);
+}
+
 .leaflet-tooltip-top::before {
     border-top-color: var(--chakra-colors-app-border-strong);
 }
