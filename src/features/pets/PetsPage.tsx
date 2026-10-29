@@ -30,6 +30,7 @@ import { PetMinimized } from "./details/PetMinimized"
 import { FarmSpotsMinimized } from "./farm/FarmSpotsMinimized"
 import { FarmSpotsPanel } from "./farm/FarmSpotsPanel"
 import { PetFinder } from "./finder/PetFinder"
+import { PetFinderMinimized } from "./finder/PetFinderMinimized"
 import { usePetCollection } from "./hooks/usePetCollection"
 import { LevelTip } from "./LevelTip"
 import { PetMapPanel } from "./map/PetMapPanel"
@@ -44,10 +45,12 @@ export const PetsPage = () => {
         levels,
         hiddenLevels,
         minimized,
+        listMinimized,
         tipDismissed,
         changeLevel,
         changeLevelHidden,
         changeMinimized,
+        changeListMinimized,
         dismissTip,
     } = usePetCollection()
 
@@ -193,6 +196,14 @@ export const PetsPage = () => {
         changeMinimized(false)
     }
 
+    const handleListMinimize = () => {
+        changeListMinimized(true)
+    }
+
+    const handleListExpand = () => {
+        changeListMinimized(false)
+    }
+
     const pets = filterPets(
         atlas,
         {
@@ -313,20 +324,28 @@ export const PetsPage = () => {
                     alignItems="start"
                     gap="4"
                 >
-                    <PetFinder
-                        atlas={atlas}
-                        pets={pets}
-                        levels={deferredLevels}
-                        query={query}
-                        category={category}
-                        hiddenLevels={hiddenLevels}
-                        selectedPetId={selectedPet?.id}
-                        onQueryChange={setQuery}
-                        onCategoryChange={setCategory}
-                        onLevelHiddenChange={changeLevelHidden}
-                        onPetSelect={handlePetSelect}
-                        onLevelChange={changeLevel}
-                    />
+                    {listMinimized ? (
+                        <PetFinderMinimized
+                            count={pets.length}
+                            onExpand={handleListExpand}
+                        />
+                    ) : (
+                        <PetFinder
+                            atlas={atlas}
+                            pets={pets}
+                            levels={deferredLevels}
+                            query={query}
+                            category={category}
+                            hiddenLevels={hiddenLevels}
+                            selectedPetId={selectedPet?.id}
+                            onQueryChange={setQuery}
+                            onCategoryChange={setCategory}
+                            onLevelHiddenChange={changeLevelHidden}
+                            onPetSelect={handlePetSelect}
+                            onLevelChange={changeLevel}
+                            onMinimize={handleListMinimize}
+                        />
+                    )}
 
                     <Flex minW="0" flexDir="column" gap="4">
                         {minimized ? (
