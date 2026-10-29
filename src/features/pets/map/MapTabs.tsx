@@ -1,4 +1,4 @@
-import { SegmentGroup } from "@chakra-ui/react"
+import { SegmentGroup, Text } from "@chakra-ui/react"
 import {
     isPetMapId,
     PET_MAP_IDS,
@@ -9,10 +9,12 @@ import {
 type MapTabsProps = {
     value: PetMapId
     counts: Partial<Record<PetMapId, number>>
+    // Shown muted after the open map's count.
+    total?: number
     onChange: (value: PetMapId) => void
 }
 
-export const MapTabs = ({ value, counts, onChange }: MapTabsProps) => {
+export const MapTabs = ({ value, counts, total, onChange }: MapTabsProps) => {
     const handleValueChange = (details: SegmentGroup.ValueChangeDetails) => {
         if (isPetMapId(details.value)) {
             onChange(details.value)
@@ -21,7 +23,23 @@ export const MapTabs = ({ value, counts, onChange }: MapTabsProps) => {
 
     const items = PET_MAP_IDS.map((id) => ({
         value: id,
-        label: `${PET_MAPS[id].name} · ${counts[id] ?? 0}`,
+        label: (
+            <>
+                {`${PET_MAPS[id].name} · ${counts[id] ?? 0}`}
+
+                {id === value && total !== undefined && (
+                    <Text
+                        as="span"
+                        title="Spawns of these pets on the whole map"
+                        ms="1.5"
+                        color="app.muted"
+                        fontSize="xs"
+                    >
+                        {total}
+                    </Text>
+                )}
+            </>
+        ),
     }))
 
     return (

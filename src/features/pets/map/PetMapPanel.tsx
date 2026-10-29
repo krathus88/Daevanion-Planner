@@ -11,6 +11,8 @@ type PetMapPanelProps = {
     focusPins: PetPin[]
     focusKey: string
     counts: Partial<Record<PetMapId, number>>
+    // A focused spot's pets' spawns on the whole open map.
+    total?: number
     selectedPetId?: number
     onMapChange: (mapId: PetMapId) => void
     onPinSelect: (petId: number) => void
@@ -22,6 +24,7 @@ export const PetMapPanel = ({
     focusPins,
     focusKey,
     counts,
+    total,
     selectedPetId,
     onMapChange,
     onPinSelect,
@@ -34,7 +37,12 @@ export const PetMapPanel = ({
                 justifyContent="space-between"
                 gap="3"
             >
-                <MapTabs value={mapId} counts={counts} onChange={onMapChange} />
+                <MapTabs
+                    value={mapId}
+                    counts={counts}
+                    total={total}
+                    onChange={onMapChange}
+                />
 
                 <Text textStyle="caption">
                     {selectedPetId === undefined
