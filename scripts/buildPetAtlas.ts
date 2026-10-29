@@ -45,10 +45,17 @@ const EXTRA_PETS = [
 // Monsters that spawn beside a companion giving no soul point (a tamer, a
 // child). The Atlas pins both under the monster's name, so of two pins this
 // close only one is kept. By Atlas monster id; checked in game for Patrolling
-// Fossa, Hill Coradon and Harsh Pino Worker.
+// Fossa, Hill Coradon, Harsh Pino Worker and Modified Karnif's monsters.
 const HANDLED_MONSTERS = new Set([
     2100163, // Patrolling Fossa Lv25
+    2100070, // Scouting Karnif Lv21
     2100096, // Unruly Karnif Lv19
+    2100130, // Trained Karnif Lv20
+    2100481, // Sensitive Karnif Lv21
+    2100802, // Tamed Karnif Lv40
+    2100805, // Tamed Karnif Lv40
+    2600004, // Abyss Karnif Lv46
+    2600014, // Abyss Search Party Karnif Lv46
     2100821, // Hill Coradon Lv39
     2100828, // Hill Coradon Lv39
     2100955, // Harsh Pino Worker Lv28

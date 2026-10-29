@@ -230,6 +230,12 @@ export const PetsPage = () => {
         selectedPet ? source?.labels : farm.labels,
     )
     const farmSpots = filterFarmSpots(farm.spots, requiredCategories)
+    // A farm spot whose last pet below Lv3 was just leveled is no longer a
+    // spot, so the map zooms back out.
+    const farmSpotGone =
+        !selectedPet &&
+        focusedSpot !== null &&
+        !farm.spots.some((spot) => spot.name === focusedSpot)
     const neighbors: SpotNeighbors = selectedPet
         ? getSpotNeighbors(
               atlas,
@@ -297,11 +303,40 @@ export const PetsPage = () => {
         }
     }
 
+    useEffect(() => {
+        if (farmSpotGone) {
+            navigate({
+                search: (previous) => ({
+                    ...previous,
+                    spot: undefined,
+                    others: undefined,
+                }),
+                replace: true,
+                resetScroll: false,
+            })
+        }
+    }, [farmSpotGone, navigate])
+
     const focusKey = `${mapId}:${selectedPet?.id ?? ""}:${focusedSpot ?? ""}`
-    // With a spot focused, the open map's tab counts the pins it shows.
-    const tabCounts = focusedSpot
-        ? { ...mapCounts, ...spotCounts, [mapId]: focusPins.length }
-        : { ...mapCounts, ...spotCounts }
+    // With a spot focused, the open map's tab counts the pins it shows out of
+    // those pets' spawns on the whole map, and the other tabs their spawns
+    // there.
+    const focusCounts: Partial<Record<PetMapId, number>> = {}
+    let focusTotal: number | undefined
+
+    if (focusedSpot) {
+        const focusPets = [...new Set(focusPins.map((pin) => pin.pet))]
+        const counts = getMapCounts(atlas, focusPets)
+
+        for (const id of PET_MAP_IDS) {
+            focusCounts[id] =
+                id === mapId ? focusPins.length : (counts[id] ?? 0)
+        }
+
+        focusTotal = counts[mapId] ?? 0
+    }
+
+    const tabCounts = { ...mapCounts, ...spotCounts, ...focusCounts }
 
     return (
         <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
@@ -408,6 +443,7 @@ export const PetsPage = () => {
                             focusPins={focusPins}
                             focusKey={focusKey}
                             counts={tabCounts}
+                            total={focusTotal}
                             selectedPetId={selectedPet?.id}
                             onMapChange={handleMapChange}
                             onPinSelect={handlePinSelect}
