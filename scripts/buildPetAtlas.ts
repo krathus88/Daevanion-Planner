@@ -59,6 +59,7 @@ const HANDLED_MONSTERS = new Set([
     2100821, // Hill Coradon Lv39
     2100828, // Hill Coradon Lv39
     2100955, // Harsh Pino Worker Lv28
+    2100566, // Marauders Zaif Lv27
     2400359, // Tamed Tayga Lv32
     2400564, // Search Party Tayga Lv40
     2400583, // Guard Troopers Tayga Lv40
