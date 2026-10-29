@@ -42,6 +42,22 @@ const EXTRA_PETS = [
     { id: -2001, name: "Little Ghost", icon: "littleghost-01" },
     { id: -2002, name: "Pumpkin Carriage", icon: "pumpkincarriage-01" },
 ]
+// Monsters that spawn beside a companion giving no soul point (a tamer, a
+// child). The Atlas pins both under the monster's name, so of two pins this
+// close only one is kept. By Atlas monster id; checked in game for Patrolling
+// Fossa, Hill Coradon and Harsh Pino Worker.
+const HANDLED_MONSTERS = new Set([
+    2100163, // Patrolling Fossa Lv25
+    2100096, // Unruly Karnif Lv19
+    2100821, // Hill Coradon Lv39
+    2100828, // Hill Coradon Lv39
+    2100955, // Harsh Pino Worker Lv28
+    2400359, // Tamed Tayga Lv32
+    2400564, // Search Party Tayga Lv40
+    2400583, // Guard Troopers Tayga Lv40
+    2400587, // Drakan Patrol Armed Beast Lv40
+])
+const HANDLER_DISTANCE = 5
 const COMPASS = [
     "east",
     "southeast",
@@ -62,6 +78,7 @@ type AtlasPet = {
 }
 
 type AtlasMonster = {
+    id: number
     zone: number
     name: string
     level: number
@@ -487,8 +504,57 @@ const SOURCE_IDS: Record<AtlasPet["sourceKind"], string> = {
     special: "special",
 }
 
+// Drops the companion's pin of each monster + companion pair: the later of two
+// HANDLED_MONSTERS pins that are each other's nearest within HANDLER_DISTANCE.
+const dropHandlers = (atlas: Atlas): Atlas => {
+    const handled = new Map<number, number[]>()
+
+    for (const [key, spawn] of atlas.spawns.entries()) {
+        if (HANDLED_MONSTERS.has(atlas.monsters[spawn[4]].id)) {
+            handled.set(spawn[4], [...(handled.get(spawn[4]) ?? []), key])
+        }
+    }
+
+    const dropped = new Set<number>()
+
+    for (const keys of handled.values()) {
+        const nearest = keys.map((key) => {
+            const [, , x, y] = atlas.spawns[key]
+            let best: number | undefined
+            let bestDistance = HANDLER_DISTANCE
+
+            for (const other of keys) {
+                const [, , otherX, otherY] = atlas.spawns[other]
+                const distance = Math.hypot(x - otherX, y - otherY)
+
+                if (other !== key && distance <= bestDistance) {
+                    best = other
+                    bestDistance = distance
+                }
+            }
+
+            return best
+        })
+
+        for (const [index, key] of keys.entries()) {
+            const pair = nearest[index]
+
+            if (pair !== undefined && pair < key) {
+                if (nearest[keys.indexOf(pair)] === key) {
+                    dropped.add(key)
+                }
+            }
+        }
+    }
+
+    return {
+        ...atlas,
+        spawns: atlas.spawns.filter((_, key) => !dropped.has(key)),
+    }
+}
+
 const main = async () => {
-    const atlas = readAtlas(await fetchText(ATLAS_URL))
+    const atlas = dropHandlers(readAtlas(await fetchText(ATLAS_URL)))
     const zoneMaps = atlas.meta.zones.map((zone) => {
         const id = PET_MAP_IDS.find((mapId) => {
             return PET_MAPS[mapId].code === zone.mapCode
