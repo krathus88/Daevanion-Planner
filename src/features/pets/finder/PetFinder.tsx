@@ -7,6 +7,7 @@ import { LevelBadgeList } from "@pets/LevelBadgeList"
 import { ShopCheckDialog } from "@pets/shop/ShopCheckDialog"
 import { CategoryFilter } from "./CategoryFilter"
 import { ListOptions } from "./ListOptions"
+import { MinimizeListButton } from "./MinimizeListButton"
 import { PetList } from "./PetList"
 import { PetSearchField } from "./PetSearchField"
 
@@ -23,6 +24,7 @@ type PetFinderProps = {
     onLevelHiddenChange: (level: number, hidden: boolean) => void
     onPetSelect: (petId: number) => void
     onLevelChange: (petId: number, level: number) => void
+    onMinimize: () => void
 }
 
 export const PetFinder = ({
@@ -38,6 +40,7 @@ export const PetFinder = ({
     onLevelHiddenChange,
     onPetSelect,
     onLevelChange,
+    onMinimize,
 }: PetFinderProps) => {
     return (
         <Card
@@ -46,6 +49,16 @@ export const PetFinder = ({
             w={{ base: "full", lg: "petList" }}
             maxH={{ base: "lg", lg: "sidebarMaxH" }}
         >
+            {/* The button may stick into the card's padding, so the row is
+                only as tall as its title. */}
+            <Flex my="-1" alignItems="center" gap="2">
+                <Text flex="1" textStyle="label">
+                    Pet list
+                </Text>
+
+                <MinimizeListButton onClick={onMinimize} />
+            </Flex>
+
             <Flex alignItems="center" gap="1">
                 <PetSearchField value={query} onChange={onQueryChange} />
 

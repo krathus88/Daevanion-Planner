@@ -62,6 +62,13 @@ export const usePetCollection = () => {
         writePetCollection({ ...readPetCollection(), minimized: minimized })
     }
 
+    const changeListMinimized = (listMinimized: boolean) => {
+        writePetCollection({
+            ...readPetCollection(),
+            listMinimized: listMinimized,
+        })
+    }
+
     const dismissTip = () => {
         writePetCollection({ ...readPetCollection(), tipDismissed: true })
     }
@@ -70,11 +77,13 @@ export const usePetCollection = () => {
         levels: collection.levels,
         hiddenLevels: collection.hiddenLevels,
         minimized: collection.minimized,
+        listMinimized: collection.listMinimized,
         tipDismissed: collection.tipDismissed,
         changeLevel: changeLevel,
         changeLevels: changeLevels,
         changeLevelHidden: changeLevelHidden,
         changeMinimized: changeMinimized,
+        changeListMinimized: changeListMinimized,
         dismissTip: dismissTip,
     }
 }

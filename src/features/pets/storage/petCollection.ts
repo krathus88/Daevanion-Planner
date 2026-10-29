@@ -9,6 +9,8 @@ export type PetCollection = {
     hiddenLevels: number[]
     // The panel above the map is shrunk to one line.
     minimized: boolean
+    // The pet list is folded away beside the map.
+    listMinimized: boolean
     // The "set your levels" tip was closed.
     tipDismissed: boolean
 }
@@ -20,6 +22,7 @@ const DEFAULT_COLLECTION: PetCollection = {
     levels: {},
     hiddenLevels: [],
     minimized: false,
+    listMinimized: false,
     tipDismissed: false,
 }
 
@@ -78,6 +81,7 @@ const parse = (raw: string | null): PetCollection => {
             levels: pickLevels(value),
             hiddenLevels: pickHiddenLevels(value),
             minimized: value.minimized === true,
+            listMinimized: value.listMinimized === true,
             tipDismissed: value.tipDismissed === true,
         }
     } catch {
