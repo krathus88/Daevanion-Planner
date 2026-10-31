@@ -4,6 +4,7 @@ import { SPECIAL_BONUSES } from "@planner/config/specialNodes"
 import type { BoardWant, Want } from "@planner/logic/boardWants"
 import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 import { Tooltip } from "@ui/tooltip"
+import { memo } from "react"
 import { PLANNED_COLUMN_WIDTH } from "../priorities/abilityColumns"
 import { WantPicker } from "./WantPicker"
 
@@ -19,12 +20,14 @@ const KIND_LABELS = {
     passive: "Passive",
 } as const
 
-export const BoardWantRow = ({
+// memo: each row holds a segment group and a click on the board re-maps them
+// all, and the compiler can't skip rows inside that map.
+export const BoardWantRow = memo(function BoardWantRow({
     want,
     value,
     taken,
     onChange,
-}: BoardWantRowProps) => {
+}: BoardWantRowProps) {
     const name =
         want.kind === "special"
             ? SPECIAL_BONUSES[want.bonus].name
@@ -85,4 +88,4 @@ export const BoardWantRow = ({
             </Text>
         </Flex>
     )
-}
+})

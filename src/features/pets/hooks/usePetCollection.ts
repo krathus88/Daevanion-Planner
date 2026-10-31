@@ -1,4 +1,4 @@
-import { PET_LEVELS } from "@pets/logic/petLevels"
+import { levelFromSouls, PET_LEVELS } from "@pets/logic/petLevels"
 import {
     readPetCollection,
     subscribeToPetCollection,
@@ -13,10 +13,13 @@ export const usePetCollection = () => {
         readPetCollection,
     )
 
-    // 0 marks the pet as locked again.
+    // 0 marks the pet as locked again. Its souls restart at the level's start.
     const changeLevel = (petId: number, level: number) => {
         const current = readPetCollection()
         const nextLevels = { ...current.levels }
+        const nextSouls = { ...current.souls }
+
+        delete nextSouls[petId]
 
         if (level > 0) {
             nextLevels[petId] = level
@@ -24,24 +27,37 @@ export const usePetCollection = () => {
             delete nextLevels[petId]
         }
 
-        writePetCollection({ ...current, levels: nextLevels })
+        writePetCollection({
+            ...current,
+            levels: nextLevels,
+            souls: nextSouls,
+        })
         requestPersistentStorage()
     }
 
-    // Many pets in one save, e.g. levels read from screenshots.
-    const changeLevels = (updates: { petId: number; level: number }[]) => {
+    // Total souls for many pets in one save; their levels follow.
+    const changeSouls = (updates: { petId: number; souls: number }[]) => {
         const current = readPetCollection()
         const nextLevels = { ...current.levels }
+        const nextSouls = { ...current.souls }
 
         for (const update of updates) {
-            if (update.level > 0) {
-                nextLevels[update.petId] = update.level
+            const level = levelFromSouls(update.souls)
+
+            nextSouls[update.petId] = update.souls
+
+            if (level > 0) {
+                nextLevels[update.petId] = level
             } else {
                 delete nextLevels[update.petId]
             }
         }
 
-        writePetCollection({ ...current, levels: nextLevels })
+        writePetCollection({
+            ...current,
+            levels: nextLevels,
+            souls: nextSouls,
+        })
         requestPersistentStorage()
     }
 
@@ -75,12 +91,13 @@ export const usePetCollection = () => {
 
     return {
         levels: collection.levels,
+        souls: collection.souls,
         hiddenLevels: collection.hiddenLevels,
         minimized: collection.minimized,
         listMinimized: collection.listMinimized,
         tipDismissed: collection.tipDismissed,
         changeLevel: changeLevel,
-        changeLevels: changeLevels,
+        changeSouls: changeSouls,
         changeLevelHidden: changeLevelHidden,
         changeMinimized: changeMinimized,
         changeListMinimized: changeListMinimized,

@@ -1,6 +1,6 @@
 import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas, PetMonster } from "@pets/data/petAtlas"
-import { clusterSpawns, type SpotSpawn } from "./spotClusters"
+import { clusterSpawns, getDistance, type SpotSpawn } from "./spotClusters"
 
 // One spawn of a pet: where it is, its monster, its index in the monster's
 // spawns, and the map spot it lies in.
@@ -124,23 +124,32 @@ export const getNearPoints = <T extends Point>(
 
     for (const other of others) {
         const cell = getCell(other.x, other.y)
+        const members = cells.get(cell)
 
-        cells.set(cell, [...(cells.get(cell) ?? []), other])
+        if (members) {
+            members.push(other)
+        } else {
+            cells.set(cell, [other])
+        }
     }
 
-    return points.filter((point) => {
-        return [-gap, 0, gap].some((dx) => {
-            return [-gap, 0, gap].some((dy) => {
-                return (
-                    cells.get(getCell(point.x + dx, point.y + dy)) ?? []
-                ).some((other) => {
-                    return (
-                        Math.hypot(point.x - other.x, point.y - other.y) <= gap
-                    )
-                })
-            })
-        })
-    })
+    const hasNear = (point: Point) => {
+        for (const dx of [-gap, 0, gap]) {
+            for (const dy of [-gap, 0, gap]) {
+                for (const other of cells.get(
+                    getCell(point.x + dx, point.y + dy),
+                ) ?? []) {
+                    if (getDistance(point, other) <= gap) {
+                        return true
+                    }
+                }
+            }
+        }
+
+        return false
+    }
+
+    return points.filter(hasNear)
 }
 
 // Share of the smaller list's pins that have a pin of the other within
@@ -150,6 +159,28 @@ const getNearShare = (a: Point[], b: Point[], gap: number) => {
     const [small, large] = a.length <= b.length ? [a, b] : [b, a]
 
     return getNearPoints(small, large, gap).length / small.length
+}
+
+const pairShares = new WeakMap<PetPatch, Map<PetPatch, number>>()
+
+// Patches never change, so a pair's share is worked out once; filtering the
+// list only changes which pairs are asked for.
+const getPairShare = (a: PetPatch, b: PetPatch, gap: number) => {
+    let shares = pairShares.get(a)
+
+    if (!shares) {
+        shares = new Map()
+        pairShares.set(a, shares)
+    }
+
+    let share = shares.get(b)
+
+    if (share === undefined) {
+        share = getNearShare(a.spawns, b.spawns, gap)
+        shares.set(b, share)
+    }
+
+    return share
 }
 
 // Whether two lists of pins spawn on the same ground, the way Best spots
@@ -195,11 +226,7 @@ export const mergePatches = (patches: PetPatch[], mapId: PetMapId) => {
                 continue
             }
 
-            const share = getNearShare(
-                patches[a].spawns,
-                patches[b].spawns,
-                gap,
-            )
+            const share = getPairShare(patches[a], patches[b], gap)
 
             if (share >= PATCH_PAIR_SHARE) {
                 pairs.push({ a: a, b: b, share: share })

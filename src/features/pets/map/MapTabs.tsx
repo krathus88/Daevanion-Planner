@@ -25,19 +25,27 @@ export const MapTabs = ({ value, counts, total, onChange }: MapTabsProps) => {
         value: id,
         label: (
             <>
-                {`${PET_MAPS[id].name} · ${counts[id] ?? 0}`}
+                {PET_MAPS[id].name}
 
-                {id === value && total !== undefined && (
-                    <Text
-                        as="span"
-                        title="Spawns of these pets on the whole map"
-                        ms="1.5"
-                        color="app.muted"
-                        fontSize="xs"
-                    >
-                        {total}
-                    </Text>
-                )}
+                <Text as="span" display={{ base: "none", md: "inline" }}>
+                    {" · "}
+                </Text>
+
+                <Text as="span" display={{ base: "block", md: "inline" }}>
+                    {counts[id] ?? 0}
+
+                    {id === value && total !== undefined && (
+                        <Text
+                            as="span"
+                            title="Spawns of these pets on the whole map"
+                            ms="1.5"
+                            color="app.muted"
+                            fontSize="xs"
+                        >
+                            {total}
+                        </Text>
+                    )}
+                </Text>
             </>
         ),
     }))
@@ -46,6 +54,22 @@ export const MapTabs = ({ value, counts, total, onChange }: MapTabsProps) => {
         <SegmentGroup.Root
             size="sm"
             value={value}
+            // Chakra keeps it max-content wide; on phones each map's name sits
+            // over its count, so all three fit.
+            w={{ base: "full", md: "auto" }}
+            minW="0"
+            css={{
+                "& [data-part=item]": {
+                    mdDown: {
+                        px: "1",
+                        py: "1",
+                        h: "auto",
+                        flex: "1",
+                        fontSize: "xs",
+                        lineHeight: "short",
+                    },
+                },
+            }}
             aria-label="Map"
             onValueChange={handleValueChange}
         >

@@ -3,6 +3,7 @@ import { CategoryDot } from "@pets/CategoryDot"
 import { LevelBadge } from "@pets/LevelBadge"
 import { MinimizedBar } from "@pets/MinimizedBar"
 import { PetIcon } from "@pets/PetIcon"
+import { SoulProgress } from "@pets/SoulProgress"
 import { PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
@@ -16,6 +17,8 @@ type PetMinimizedProps = {
     mapId: PetMapId
     // 0 is locked; 1-3 are Pet Insight levels.
     level: number
+    // Total souls.
+    souls: number
     focusedSpot: string | null
     onExpand: () => void
     onClose: () => void
@@ -44,6 +47,7 @@ export const PetMinimized = ({
     source,
     mapId,
     level,
+    souls,
     focusedSpot,
     onExpand,
     onClose,
@@ -89,6 +93,8 @@ export const PetMinimized = ({
                 </Text>
 
                 {level > 0 && <LevelBadge level={level} />}
+
+                <SoulProgress souls={souls} />
 
                 <Text textStyle="caption" truncate>
                     {where}

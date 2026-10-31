@@ -1,10 +1,18 @@
 import { setStoredItem } from "@account/sync/syncMeta"
-import { isPetLevel, levelFromSouls, PET_LEVELS } from "@pets/logic/petLevels"
+import {
+    isPetLevel,
+    isPetSouls,
+    levelFromSouls,
+    PET_LEVELS,
+} from "@pets/logic/petLevels"
 import { isRecord } from "@planner/storage/isRecord"
 
 export type PetCollection = {
     // Pet Insight level (1-3) by pet id; missing means locked.
     levels: Record<string, number>
+    // Total souls by pet id; missing means just reaching its level. Always
+    // agrees with levels: a locked pet can have up to 4.
+    souls: Record<string, number>
     // Pet Insight levels whose pets the list and map leave out.
     hiddenLevels: number[]
     // The panel above the map is shrunk to one line.
@@ -20,6 +28,7 @@ const CHANGE_EVENT = "daevanion-pets-change"
 
 const DEFAULT_COLLECTION: PetCollection = {
     levels: {},
+    souls: {},
     hiddenLevels: [],
     minimized: false,
     listMinimized: false,
@@ -65,6 +74,28 @@ const pickLevels = (value: Record<string, unknown>) => {
     return levels
 }
 
+// A level set where souls aren't known, like on an older version of the site,
+// wins over souls that no longer agree with it.
+const pickSouls = (
+    value: Record<string, unknown>,
+    levels: Record<string, number>,
+) => {
+    const souls: Record<string, number> = {}
+
+    if (isRecord(value.souls)) {
+        for (const [id, count] of Object.entries(value.souls)) {
+            if (
+                isPetSouls(count) &&
+                levelFromSouls(count) === (levels[id] ?? 0)
+            ) {
+                souls[id] = count
+            }
+        }
+    }
+
+    return souls
+}
+
 const parse = (raw: string | null): PetCollection => {
     if (raw === null) {
         return DEFAULT_COLLECTION
@@ -77,8 +108,11 @@ const parse = (raw: string | null): PetCollection => {
             return DEFAULT_COLLECTION
         }
 
+        const levels = pickLevels(value)
+
         return {
-            levels: pickLevels(value),
+            levels: levels,
+            souls: pickSouls(value, levels),
             hiddenLevels: pickHiddenLevels(value),
             minimized: value.minimized === true,
             listMinimized: value.listMinimized === true,

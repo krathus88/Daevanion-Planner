@@ -2,14 +2,22 @@ import { Flex, Image, Text } from "@chakra-ui/react"
 import { ImportLevelLabel } from "@pets/importer/ImportLevelLabel"
 import type { ShopPet } from "@pets/logic/shopCheck"
 import { PetIcon } from "@pets/PetIcon"
+import { ShopBoughtToggle } from "./ShopBoughtToggle"
 
 type ShopPetTileProps = {
     item: ShopPet
+    bought: boolean
+    // Left out for pets that can't take more souls.
+    onBoughtChange?: (petId: number, bought: boolean) => void
 }
 
 // The art as read next to the pet it matched, so a wrong match is easy to
 // spot.
-export const ShopPetTile = ({ item }: ShopPetTileProps) => {
+export const ShopPetTile = ({
+    item,
+    bought,
+    onBoughtChange,
+}: ShopPetTileProps) => {
     return (
         <Flex
             p="2"
@@ -39,8 +47,16 @@ export const ShopPetTile = ({ item }: ShopPetTileProps) => {
                 </Text>
 
                 <Flex>
-                    <ImportLevelLabel level={item.level} />
+                    <ImportLevelLabel level={item.level} souls={item.souls} />
                 </Flex>
+
+                {onBoughtChange && (
+                    <ShopBoughtToggle
+                        petId={item.pet.id}
+                        checked={bought}
+                        onChange={onBoughtChange}
+                    />
+                )}
             </Flex>
         </Flex>
     )

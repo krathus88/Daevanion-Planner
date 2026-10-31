@@ -1,5 +1,6 @@
 import { Box } from "@chakra-ui/react"
 import type { BoardLayout } from "@planner/config/layouts"
+import { memo } from "react"
 import { CELL_BOX } from "./nodeStyles"
 import { NodeCell, type NodeCellProps } from "./NodeCell"
 import { StartCell } from "./StartCell"
@@ -10,7 +11,13 @@ type BoardCellProps = Omit<NodeCellProps, "appearance"> & {
     layout: BoardLayout
 }
 
-export const BoardCell = ({ kind, layout, ...props }: BoardCellProps) => {
+// memo: the grid re-maps every cell on each click, and the compiler can't skip
+// cells inside that map.
+export const BoardCell = memo(function BoardCell({
+    kind,
+    layout,
+    ...props
+}: BoardCellProps) {
     if (kind === ".") {
         return <Box boxSize={CELL_BOX} aria-hidden="true" />
     }
@@ -25,4 +32,4 @@ export const BoardCell = ({ kind, layout, ...props }: BoardCellProps) => {
             {...props}
         />
     )
-}
+})

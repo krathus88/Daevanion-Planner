@@ -15,6 +15,7 @@ import { LuX } from "react-icons/lu"
 import { BossSource } from "./BossSource"
 import { MapSourceList } from "./MapSourceList"
 import { LevelPicker } from "./LevelPicker"
+import { SoulProgressField } from "./SoulProgressField"
 
 type PetDetailsProps = {
     pet: Pet
@@ -24,6 +25,8 @@ type PetDetailsProps = {
     mapId: PetMapId
     // 0 is locked; 1-3 are Pet Insight levels.
     level: number
+    // Total souls.
+    souls: number
     focusedSpot: string | null
     // The focused spot also shows its "Also here" pets' pins.
     showOthers: boolean
@@ -32,6 +35,7 @@ type PetDetailsProps = {
     onSpotSelect: (mapId: PetMapId, spot: string, others: boolean) => void
     onPetSelect: (petId: number) => void
     onLevelChange: (petId: number, level: number) => void
+    onSoulsChange: (petId: number, souls: number) => void
     onMinimize: () => void
     onClose: () => void
 }
@@ -42,6 +46,7 @@ export const PetDetails = ({
     neighbors,
     mapId,
     level,
+    souls,
     focusedSpot,
     showOthers,
     levels,
@@ -49,11 +54,16 @@ export const PetDetails = ({
     onSpotSelect,
     onPetSelect,
     onLevelChange,
+    onSoulsChange,
     onMinimize,
     onClose,
 }: PetDetailsProps) => {
     const handleLevelChange = (value: number) => {
         onLevelChange(pet.id, value)
+    }
+
+    const handleSoulsChange = (value: number) => {
+        onSoulsChange(pet.id, value)
     }
 
     const bossText = getBossText(pet)
@@ -88,7 +98,20 @@ export const PetDetails = ({
                     </Flex>
                 </Flex>
 
-                <LevelPicker value={level} onChange={handleLevelChange} />
+                <Flex
+                    flexWrap="wrap"
+                    alignItems="flex-end"
+                    justifyContent="flex-end"
+                    gap="3"
+                >
+                    <SoulProgressField
+                        key={`${pet.id}:${souls}`}
+                        souls={souls}
+                        onChange={handleSoulsChange}
+                    />
+
+                    <LevelPicker value={level} onChange={handleLevelChange} />
+                </Flex>
 
                 <MinimizeButton onClick={onMinimize} />
 

@@ -6,15 +6,20 @@ type ImportReviewProps = {
     summary: ImportSummary
     // Pets the user unticked.
     excluded: number[]
+    // Total souls the user corrected, by pet id.
+    edits: Record<string, number>
     skippedFiles: string[]
     onCheckedChange: (petId: number, checked: boolean) => void
+    onSoulsChange: (petId: number, souls: number) => void
 }
 
 export const ImportReview = ({
     summary,
     excluded,
+    edits,
     skippedFiles,
     onCheckedChange,
+    onSoulsChange,
 }: ImportReviewProps) => {
     const changeCount = summary.changes.length
     const readCount = changeCount + summary.unchanged
@@ -25,7 +30,7 @@ export const ImportReview = ({
                 <Text fontSize="sm">
                     Read {readCount} {readCount === 1 ? "pet" : "pets"}:{" "}
                     {changeCount} to update, {summary.unchanged} already match.
-                    Pets in no screenshot keep their level.
+                    Pets in no screenshot stay as they are.
                 </Text>
 
                 {summary.unknown > 0 && (
@@ -52,14 +57,16 @@ export const ImportReview = ({
                         <ImportChangeTile
                             key={change.pet.id}
                             change={change}
+                            souls={edits[change.pet.id] ?? change.souls}
                             checked={!excluded.includes(change.pet.id)}
                             onCheckedChange={onCheckedChange}
+                            onSoulsChange={onSoulsChange}
                         />
                     ))}
                 </Grid>
             ) : (
                 <Text py="4" color="app.muted" fontSize="sm">
-                    Every pet read already has this level here.
+                    Every pet read already has these souls here.
                 </Text>
             )}
         </Flex>

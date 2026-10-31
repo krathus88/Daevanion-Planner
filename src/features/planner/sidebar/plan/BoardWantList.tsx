@@ -1,4 +1,5 @@
 import { Flex } from "@chakra-ui/react"
+import { useLatestCallback } from "@planner/hooks/useLatestCallback"
 import type { BoardWant, Want } from "@planner/logic/boardWants"
 import { BoardWantRow } from "./BoardWantRow"
 
@@ -15,6 +16,8 @@ export const BoardWantList = ({
     plannedPath,
     onChange,
 }: BoardWantListProps) => {
+    const handleChange = useLatestCallback(onChange)
+
     return (
         <Flex flexDir="column" gap="2">
             {wants.map((want) => (
@@ -25,7 +28,7 @@ export const BoardWantList = ({
                     taken={
                         want.keys.filter((key) => plannedPath.has(key)).length
                     }
-                    onChange={onChange}
+                    onChange={handleChange}
                 />
             ))}
         </Flex>
