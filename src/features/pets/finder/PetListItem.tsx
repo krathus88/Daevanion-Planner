@@ -6,6 +6,7 @@ import { CategoryDot } from "@pets/CategoryDot"
 import { FarmPetLevelCard } from "@pets/farm/FarmPetLevelCard"
 import { LevelBadge } from "@pets/LevelBadge"
 import { PetIcon } from "@pets/PetIcon"
+import { SoulProgress } from "@pets/SoulProgress"
 import { memo } from "react"
 
 type PetListItemProps = {
@@ -13,6 +14,8 @@ type PetListItemProps = {
     pet: Pet
     // Pet Insight level; 0 is locked.
     level: number
+    // Total souls.
+    souls: number
     selected: boolean
     onSelect: (petId: number) => void
     onLevelChange: (petId: number, level: number) => void
@@ -24,6 +27,7 @@ export const PetListItem = memo(function PetListItem({
     atlas,
     pet,
     level,
+    souls,
     selected,
     onSelect,
     onLevelChange,
@@ -84,9 +88,13 @@ export const PetListItem = memo(function PetListItem({
                         {level > 0 && <LevelBadge level={level} />}
                     </Flex>
 
-                    <Text textStyle="caption" truncate>
-                        {spawns}
-                    </Text>
+                    <Flex alignItems="center" gap="2">
+                        <Text flex="1" textStyle="caption" truncate>
+                            {spawns}
+                        </Text>
+
+                        <SoulProgress souls={souls} />
+                    </Flex>
                 </Flex>
             </chakra.button>
         </FarmPetLevelCard>

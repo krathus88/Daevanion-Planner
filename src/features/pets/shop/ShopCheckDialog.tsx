@@ -16,6 +16,7 @@ import { usePetCollection } from "@pets/hooks/usePetCollection"
 import { useScreenshotReader } from "@pets/hooks/useScreenshotReader"
 import { loadPetPrints, preloadPetPrints } from "@pets/importer/loadPetPrints"
 import { SHOP_LAYOUT } from "@pets/logic/cardMatching"
+import { BOUGHT_SOULS, getPetSouls, MAX_PET_SOULS } from "@pets/logic/petLevels"
 import { summarizeShop } from "@pets/logic/shopCheck"
 import {
     countShopSources,
@@ -36,7 +37,7 @@ type ShopCheckDialogProps = {
 // Reads a screenshot of the game Shop's Pets tab and lists which pets on sale
 // are still below Insight Lv3.
 export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
-    const { levels } = usePetCollection()
+    const { levels, souls, changeSouls } = usePetCollection()
 
     const readFile = async (file: File) => {
         const prints = await loadPetPrints(atlas.pets, SHOP_LAYOUT)
@@ -53,9 +54,13 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
     const [open, setOpen] = useState(false)
     // Kept between checks, so the same filters apply to the next shop.
     const [sources, setSources] = useState<ShopSourceId[]>([])
+    // Pets flagged as bought in this check, with their souls before, so
+    // unflagging restores them even after a cap.
+    const [bought, setBought] = useState<Record<string, number>>({})
 
     const close = () => {
         setOpen(false)
+        setBought({})
         reset()
     }
 
@@ -91,7 +96,28 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
         })
     }
 
-    const summary = summarizeShop(readings, atlas.pets, levels)
+    const handleBoughtChange = (petId: number, flagged: boolean) => {
+        const next = { ...bought }
+
+        if (flagged) {
+            const before = getPetSouls(levels, souls, petId)
+
+            next[petId] = before
+            changeSouls([
+                {
+                    petId: petId,
+                    souls: Math.min(before + BOUGHT_SOULS, MAX_PET_SOULS),
+                },
+            ])
+        } else {
+            changeSouls([{ petId: petId, souls: bought[petId] }])
+            delete next[petId]
+        }
+
+        setBought(next)
+    }
+
+    const summary = summarizeShop(readings, atlas.pets, levels, souls, bought)
     // The source chips filter only the pets worth buying.
     const shownNeeded = filterShopPets(atlas, summary.needed, sources)
     const sourceCounts = countShopSources(atlas, summary.needed)
@@ -147,8 +173,10 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
                                     shownNeeded={shownNeeded}
                                     sources={sources}
                                     sourceCounts={sourceCounts}
+                                    bought={bought}
                                     skippedFiles={skippedFiles}
                                     onSourceChange={handleSourceChange}
+                                    onBoughtChange={handleBoughtChange}
                                 />
                             ) : (
                                 <Flex flexDir="column" gap="4">

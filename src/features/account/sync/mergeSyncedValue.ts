@@ -45,25 +45,25 @@ const mergeLists = (newer: unknown[], older: unknown[], limit: number) => {
     return merged.slice(0, limit)
 }
 
-// Each pet at the higher of its two levels.
-const mergePetLevels = (
+// Each pet at the higher of its two values, for levels and souls.
+const mergePetValues = (
     newer: Record<string, unknown>,
     older: Record<string, unknown>,
 ) => {
-    const levels: Record<string, unknown> = { ...newer }
+    const merged: Record<string, unknown> = { ...newer }
 
-    for (const [id, level] of Object.entries(older)) {
-        const current = levels[id]
+    for (const [id, value] of Object.entries(older)) {
+        const current = merged[id]
 
         if (
-            typeof level === "number" &&
-            (typeof current !== "number" || level > current)
+            typeof value === "number" &&
+            (typeof current !== "number" || value > current)
         ) {
-            levels[id] = level
+            merged[id] = value
         }
     }
 
-    return levels
+    return merged
 }
 
 // Combines what can be combined: saved lists and pet levels. Anything else
@@ -91,7 +91,11 @@ export const mergeSyncedValue = (
     ) {
         return {
             ...newer,
-            levels: mergePetLevels(newer.levels, older.levels),
+            levels: mergePetValues(newer.levels, older.levels),
+            souls: mergePetValues(
+                isRecord(newer.souls) ? newer.souls : {},
+                isRecord(older.souls) ? older.souls : {},
+            ),
         }
     }
 

@@ -1,5 +1,10 @@
 import type { Pet } from "@pets/data/petAtlas"
-import { getPetLevel, MAX_PET_LEVEL } from "@pets/logic/petLevels"
+import {
+    getPetLevel,
+    getPetSouls,
+    levelFromSouls,
+    MAX_PET_LEVEL,
+} from "@pets/logic/petLevels"
 
 // Pets' art matches their portrait at 0.8 or more. Other items share the
 // Special tab, and their art can still reach about 0.6 against some pet.
@@ -16,25 +21,35 @@ export type ShopReading = {
 
 export type ShopPet = {
     pet: Pet
-    // The level saved on this page; 0 is locked.
+    // The level and total souls saved on this page; 0 is locked.
     level: number
+    souls: number
+    // Total souls before this check's purchases, so buying a pet up to Lv3
+    // doesn't move it to the other list.
+    soulsBefore: number
     thumbnail: string
 }
 
 export type ShopSummary = {
-    // Below Insight Lv3, lowest level first.
+    // Below Insight Lv3.
     needed: ShopPet[]
     maxed: ShopPet[]
     // Cards that aren't pets, or no portrait matched.
     unknown: number
 }
 
-// Every pet on sale once, against the levels saved on this page.
+// Every pet on sale once, in screenshot order, against the levels saved on
+// this page.
 export const summarizeShop = (
     readings: ShopReading[],
     pets: Pet[],
     levels: Record<string, number>,
+    souls: Record<string, number>,
+    // Pets flagged as bought in this check, with their souls before.
+    bought: Record<string, number>,
 ): ShopSummary => {
+    const petsById = new Map(pets.map((pet) => [pet.id, pet]))
+    // A Map keeps a pet's first position when its card is replaced.
     const best = new Map<number, ShopReading>()
     let unknown = 0
 
@@ -54,25 +69,26 @@ export const summarizeShop = (
     const needed: ShopPet[] = []
     const maxed: ShopPet[] = []
 
-    for (const pet of pets) {
-        const reading = best.get(pet.id)
+    for (const [petId, reading] of best) {
+        const pet = petsById.get(petId)
 
-        if (!reading) continue
+        if (!pet) continue
 
+        const current = getPetSouls(levels, souls, pet.id)
         const shopPet = {
             pet: pet,
             level: getPetLevel(levels, pet.id),
+            souls: current,
+            soulsBefore: bought[pet.id] ?? current,
             thumbnail: reading.thumbnail,
         }
 
-        if (shopPet.level < MAX_PET_LEVEL) {
+        if (levelFromSouls(shopPet.soulsBefore) < MAX_PET_LEVEL) {
             needed.push(shopPet)
         } else {
             maxed.push(shopPet)
         }
     }
-
-    needed.sort((a, b) => a.level - b.level)
 
     return { needed: needed, maxed: maxed, unknown: unknown }
 }

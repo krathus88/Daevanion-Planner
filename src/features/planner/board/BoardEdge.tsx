@@ -1,4 +1,5 @@
 import { Box } from "@chakra-ui/react"
+import { memo } from "react"
 import { CELL_PITCH, CELL_SIZE } from "./boardMetrics"
 
 type BoardEdgeProps = {
@@ -8,12 +9,13 @@ type BoardEdgeProps = {
     isActive: boolean
 }
 
-export const BoardEdge = ({
+// memo: like BoardCell, a click only changes the edges it connects.
+export const BoardEdge = memo(function BoardEdge({
     row,
     column,
     horizontal,
     isActive,
-}: BoardEdgeProps) => {
+}: BoardEdgeProps) {
     const x = CELL_SIZE / 2 + column * CELL_PITCH
     const y = CELL_SIZE / 2 + row * CELL_PITCH
     const thickness = isActive ? "1" : "1px"
@@ -38,4 +40,4 @@ export const BoardEdge = ({
             aria-hidden="true"
         />
     )
-}
+})

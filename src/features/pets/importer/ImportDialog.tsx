@@ -29,9 +29,9 @@ type ImportDialogProps = {
     atlas: PetAtlas
 }
 
-// Sets pet levels from screenshots of the game's Pets grid, after a review.
+// Sets pet levels and souls from screenshots of the game's Pets grid, after a review.
 export const ImportDialog = ({ atlas }: ImportDialogProps) => {
-    const { levels, changeLevels } = usePetCollection()
+    const { levels, souls, changeSouls } = usePetCollection()
     const readFile = async (file: File) => {
         const prints = await loadPetPrints(atlas.pets, COLLECTION_LAYOUT)
 
@@ -47,10 +47,13 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
     const [open, setOpen] = useState(false)
     // Pets the user unticked in the review.
     const [excluded, setExcluded] = useState<number[]>([])
+    // Total souls the user corrected in the review, by pet id.
+    const [edits, setEdits] = useState<Record<string, number>>({})
 
     const close = () => {
         setOpen(false)
         setExcluded([])
+        setEdits({})
         reset()
     }
 
@@ -86,17 +89,23 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
         })
     }
 
+    const handleSoulsChange = (petId: number, souls: number) => {
+        setEdits((previous) => {
+            return { ...previous, [petId]: souls }
+        })
+    }
+
     const handleApply = () => {
-        changeLevels(
+        changeSouls(
             selected.map((change) => ({
                 petId: change.pet.id,
-                level: change.level,
+                souls: edits[change.pet.id] ?? change.souls,
             })),
         )
         close()
     }
 
-    const summary = summarizeImport(readings, atlas.pets, levels)
+    const summary = summarizeImport(readings, atlas.pets, levels, souls)
     const selected = summary.changes.filter((change) => {
         return !excluded.includes(change.pet.id)
     })
@@ -152,8 +161,10 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
                                 <ImportReview
                                     summary={summary}
                                     excluded={excluded}
+                                    edits={edits}
                                     skippedFiles={skippedFiles}
                                     onCheckedChange={handleCheckedChange}
+                                    onSoulsChange={handleSoulsChange}
                                 />
                             ) : (
                                 <Flex flexDir="column" gap="4">
@@ -166,7 +177,7 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
                                     <Text textStyle="hint">
                                         You review every change before it's
                                         saved. Pets missing from every
-                                        screenshot keep their level.
+                                        screenshot stay as they are.
                                     </Text>
                                 </Flex>
                             )}

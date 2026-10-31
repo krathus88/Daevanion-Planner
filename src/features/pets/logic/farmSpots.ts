@@ -31,7 +31,7 @@ export const isPetNeeded = (pet: Pet, levels: Record<string, number>) => {
 // patches (`mergePatches`), ranked by how many of those pets spawn there,
 // then by how many spawns they have in it. Labels name each spawn's spot
 // for the map pins.
-export const getFarmSpots = (
+const buildFarmSpots = (
     atlas: PetAtlas,
     pets: Pet[],
     levels: Record<string, number>,
@@ -107,6 +107,33 @@ export const getFarmSpots = (
     }
 
     return { spots: spots, labels: labels }
+}
+
+type FarmSpots = ReturnType<typeof buildFarmSpots>
+
+// Each map's last result, so going back to a map's tab is instant.
+const lastResults = new Map<
+    PetMapId,
+    { pets: Pet[]; levels: Record<string, number>; result: FarmSpots }
+>()
+
+export const getFarmSpots = (
+    atlas: PetAtlas,
+    pets: Pet[],
+    levels: Record<string, number>,
+    mapId: PetMapId,
+) => {
+    const last = lastResults.get(mapId)
+
+    if (last?.pets === pets && last.levels === levels) {
+        return last.result
+    }
+
+    const result = buildFarmSpots(atlas, pets, levels, mapId)
+
+    lastResults.set(mapId, { pets: pets, levels: levels, result: result })
+
+    return result
 }
 
 // Spots that still have a pet of every required category, ranked as before.

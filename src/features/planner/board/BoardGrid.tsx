@@ -3,11 +3,30 @@ import { Box, Flex, Grid } from "@chakra-ui/react"
 import { getStart, keyOf, type Position } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import { useFitScale } from "@planner/hooks/useFitScale"
+import { useLatestCallback } from "@planner/hooks/useLatestCallback"
 import { getConnectionCosts, nodeCost } from "@planner/logic/boardLogic"
 import type { GameGap } from "@planner/logic/gameGaps"
 import { BoardEdges } from "./BoardEdges"
 import { gridExtent } from "./boardMetrics"
 import { BoardCell } from "./cell/BoardCell"
+
+const cellPositions = new WeakMap<BoardLayout, Position[][]>()
+
+// The same objects on every render, so memo can skip the cells.
+const getCellPositions = (layout: BoardLayout) => {
+    let positions = cellPositions.get(layout)
+
+    if (!positions) {
+        positions = layout.grid.map((row, rowIndex) => {
+            return [...row].map((_, columnIndex) => {
+                return { row: rowIndex, column: columnIndex }
+            })
+        })
+        cellPositions.set(layout, positions)
+    }
+
+    return positions
+}
 
 type CellStateInput = {
     layout: BoardLayout
@@ -95,7 +114,10 @@ export const BoardGrid = ({
         contentWidth,
         contentHeight,
     )
+    // Stable, so a click re-renders only the cells it changes.
+    const handleSelect = useLatestCallback(onSelect)
 
+    const positions = getCellPositions(layout)
     const start = getStart(layout)
     const connectionCosts = getConnectionCosts(layout, start, selectedCells)
     const connectedCells = new Set(selectedCells)
@@ -142,10 +164,7 @@ export const BoardGrid = ({
 
                     {layout.grid.flatMap((row, rowIndex) =>
                         [...row].map((kind, columnIndex) => {
-                            const position = {
-                                row: rowIndex,
-                                column: columnIndex,
-                            }
+                            const position = positions[rowIndex][columnIndex]
                             const key = `${rowIndex},${columnIndex}`
                             const state = getCellState({
                                 layout: layout,
@@ -178,7 +197,7 @@ export const BoardGrid = ({
                                     gameGap={gameGaps?.get(key)}
                                     position={position}
                                     readOnly={mode === "readonly"}
-                                    onSelect={onSelect}
+                                    onSelect={handleSelect}
                                 />
                             )
                         }),

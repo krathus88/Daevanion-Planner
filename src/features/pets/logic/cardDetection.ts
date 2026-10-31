@@ -134,10 +134,14 @@ const alignRows = (cards: CardRect[]) => {
     })
 }
 
+// In reading order: left to right, top to bottom. Cards in a row share their
+// top after alignRows.
 export const detectCards = (pixels: Pixels): CardRect[] => {
-    return alignRows(
+    const cards = alignRows(
         findColumns(pixels).flatMap((column) =>
             findCardsInColumn(pixels, column),
         ),
     )
+
+    return cards.sort((a, b) => a.y - b.y || a.x - b.x)
 }

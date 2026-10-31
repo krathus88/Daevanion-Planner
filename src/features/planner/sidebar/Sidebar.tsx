@@ -56,6 +56,7 @@ export const Sidebar = () => {
                     variant="line"
                     fitted
                     value={sidebarTab}
+                    lazyMount
                     minH="0"
                     display="flex"
                     flexDir="column"

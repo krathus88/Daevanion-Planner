@@ -36,8 +36,14 @@ export const CategoryFilter = ({ value, onChange }: CategoryFilterProps) => {
             size="xs"
             layout="fill"
             value={value ?? ALL}
-            // Narrower items so all six fit the list's width.
-            css={{ "& [data-part=item]": { px: "2" } }}
+            minW="0"
+            // Narrower items so all six fit the list's width, phones included.
+            css={{
+                "& [data-part=item]": {
+                    px: { base: "0.5", md: "2" },
+                    fontSize: { base: "xs", md: "sm" },
+                },
+            }}
             aria-label="Pet type"
             onValueChange={handleValueChange}
         >

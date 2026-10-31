@@ -1,5 +1,5 @@
 import type { Pet } from "@pets/data/petAtlas"
-import { getPetLevel } from "@pets/logic/petLevels"
+import { getPetLevel, getPetSouls } from "@pets/logic/petLevels"
 
 // Below this a card's best portrait match is too weak to count.
 const MIN_SCORE = 0.4
@@ -12,6 +12,10 @@ export type CardReading = {
     petId: number
     // Pet Insight level; 0 is locked.
     level: number
+    // Total souls.
+    souls: number
+    // The counter on the card didn't read clearly.
+    soulsUnsure: boolean
     score: number
     // Data URL of the card, shown in the review list.
     thumbnail: string
@@ -21,25 +25,36 @@ export type ImportChange = {
     pet: Pet
     level: number
     current: number
+    // Total souls read, and saved now.
+    souls: number
+    currentSouls: number
     thumbnail: string
+    // The portrait matched weakly.
     unsure: boolean
+    // The counter on the card didn't read clearly.
+    soulsUnsure: boolean
 }
 
 export type ImportSummary = {
     changes: ImportChange[]
-    // Pets read at the level they already have.
+    // Pets read at the souls they already have.
     unchanged: number
     // Cards no portrait matched.
     unknown: number
 }
 
-// Pets in several screenshots keep their best-matched card. Pets missing
-// from every screenshot are left alone.
+// Pets in several screenshots keep their best-matched card. The changes list
+// the most souls first, like the game's grid, whatever order the screenshots
+// came in; equal pets stay in screenshot order. Pets missing from every
+// screenshot are left alone.
 export const summarizeImport = (
     readings: CardReading[],
     pets: Pet[],
     levels: Record<string, number>,
+    souls: Record<string, number>,
 ): ImportSummary => {
+    const petsById = new Map(pets.map((pet) => [pet.id, pet]))
+    // A Map keeps a pet's first position when its card is replaced.
     const best = new Map<number, CardReading>()
     let unknown = 0
 
@@ -56,39 +71,39 @@ export const summarizeImport = (
         }
     }
 
-    const sure: ImportChange[] = []
-    const unsure: ImportChange[] = []
+    const changes: ImportChange[] = []
     let unchanged = 0
 
-    for (const pet of pets) {
-        const reading = best.get(pet.id)
+    for (const [petId, reading] of best) {
+        const pet = petsById.get(petId)
 
-        if (!reading) continue
+        if (!pet) continue
 
         const current = getPetLevel(levels, pet.id)
+        const currentSouls = getPetSouls(levels, souls, pet.id)
 
-        if (reading.level === current) {
+        if (reading.souls === currentSouls) {
             unchanged++
             continue
         }
 
-        const change = {
+        changes.push({
             pet: pet,
             level: reading.level,
             current: current,
+            souls: reading.souls,
+            currentSouls: currentSouls,
             thumbnail: reading.thumbnail,
             unsure: reading.score < SURE_SCORE,
-        }
-
-        if (change.unsure) {
-            unsure.push(change)
-        } else {
-            sure.push(change)
-        }
+            soulsUnsure: reading.soulsUnsure,
+        })
     }
 
+    // By what was read, so a correction doesn't move a tile.
+    changes.sort((a, b) => b.souls - a.souls)
+
     return {
-        changes: [...unsure, ...sure],
+        changes: changes,
         unchanged: unchanged,
         unknown: unknown,
     }

@@ -21,6 +21,9 @@ const MAX_SIDE_SHARE = 1.8
 const WIDTH_TOLERANCE = 0.04
 // Share of the frame's width its top edge must show along.
 const MIN_TOP_EDGE = 0.6
+// Cards hang at uneven heights: a card this many card widths below the first
+// of its row starts a new row.
+const ROW_REACH = 0.75
 
 type Line = {
     x: number
@@ -211,6 +214,30 @@ const findCardWidth = (pairs: Pair[]) => {
     return best
 }
 
+// Left to right, top to bottom.
+const sortByRows = (cards: CardRect[]) => {
+    const byTop = [...cards].sort((a, b) => a.y - b.y)
+    const sorted: CardRect[] = []
+    let row: CardRect[] = []
+
+    const closeRow = () => {
+        sorted.push(...row.sort((a, b) => a.x - b.x))
+        row = []
+    }
+
+    for (const card of byTop) {
+        if (row.length > 0 && card.y - row[0].y > card.width * ROW_REACH) {
+            closeRow()
+        }
+
+        row.push(card)
+    }
+
+    closeRow()
+
+    return sorted
+}
+
 // Card rects start at the frame's top-left corner and are as tall as wide;
 // cardMatching's shop layout says where the art sits in them.
 export const detectShopCards = (pixels: Pixels): CardRect[] => {
@@ -245,5 +272,5 @@ export const detectShopCards = (pixels: Pixels): CardRect[] => {
         })
     }
 
-    return cards
+    return sortByRows(cards)
 }

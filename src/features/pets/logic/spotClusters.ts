@@ -17,6 +17,17 @@ const SPOT_KEEP_SPAWNS = 5
 
 export type SpotSpawn = { x: number; y: number; area: number; key: number }
 
+// Math.hypot is far slower, and this runs for every pair of nearby pins.
+export const getDistance = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+) => {
+    const dx = a.x - b.x
+    const dy = a.y - b.y
+
+    return Math.sqrt(dx * dx + dy * dy)
+}
+
 const getWidth = (spawns: SpotSpawn[]) => {
     const xs = spawns.map((spawn) => spawn.x)
     const ys = spawns.map((spawn) => spawn.y)
@@ -56,8 +67,13 @@ const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
 
     for (const [index, spawn] of spawns.entries()) {
         const cell = getCell(spawn.x, spawn.y)
+        const members = cells.get(cell)
 
-        cells.set(cell, [...(cells.get(cell) ?? []), index])
+        if (members) {
+            members.push(index)
+        } else {
+            cells.set(cell, [index])
+        }
     }
 
     for (const [index, spawn] of spawns.entries()) {
@@ -66,13 +82,7 @@ const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
                 for (const other of cells.get(
                     getCell(spawn.x + dx, spawn.y + dy),
                 ) ?? []) {
-                    const near =
-                        Math.hypot(
-                            spawn.x - spawns[other].x,
-                            spawn.y - spawns[other].y,
-                        ) <= distance
-
-                    if (near) {
+                    if (getDistance(spawn, spawns[other]) <= distance) {
                         parents[findRoot(index)] = findRoot(other)
                     }
                 }
@@ -84,8 +94,13 @@ const linkSpawns = (spawns: SpotSpawn[], distance: number) => {
 
     for (const [index, spawn] of spawns.entries()) {
         const root = findRoot(index)
+        const group = groups.get(root)
 
-        groups.set(root, [...(groups.get(root) ?? []), spawn])
+        if (group) {
+            group.push(spawn)
+        } else {
+            groups.set(root, [spawn])
+        }
     }
 
     return [...groups.values()]
@@ -100,11 +115,11 @@ const splitInto = (spawns: SpotSpawn[], count: number) => {
         let farthestDistance = -1
 
         for (const spawn of spawns) {
-            const distance = Math.min(
-                ...seeds.map((seed) => {
-                    return Math.hypot(spawn.x - seed.x, spawn.y - seed.y)
-                }),
-            )
+            let distance = Infinity
+
+            for (const seed of seeds) {
+                distance = Math.min(distance, getDistance(spawn, seed))
+            }
 
             if (distance > farthestDistance) {
                 farthest = spawn
@@ -123,28 +138,35 @@ const splitInto = (spawns: SpotSpawn[], count: number) => {
 
         for (const spawn of spawns) {
             let closest = 0
+            let best = Infinity
 
             for (const [index, center] of centers.entries()) {
-                const distance = Math.hypot(
-                    spawn.x - center.x,
-                    spawn.y - center.y,
-                )
-                const best = Math.hypot(
-                    spawn.x - centers[closest].x,
-                    spawn.y - centers[closest].y,
-                )
+                const distance = getDistance(spawn, center)
 
                 if (distance < best) {
                     closest = index
+                    best = distance
                 }
             }
 
             parts[closest].push(spawn)
         }
 
-        centers = parts.map((part, index) => {
+        const nextCenters = parts.map((part, index) => {
             return part.length > 0 ? getCenter(part) : centers[index]
         })
+        // Centers that stopped moving give the same parts every later round.
+        const settled = nextCenters.every((center, index) => {
+            return (
+                center.x === centers[index].x && center.y === centers[index].y
+            )
+        })
+
+        centers = nextCenters
+
+        if (settled) {
+            break
+        }
     }
 
     return parts.filter((part) => part.length > 0)
@@ -170,10 +192,7 @@ const getGap = (a: SpotSpawn[], b: SpotSpawn[]) => {
 
     for (const first of a) {
         for (const second of b) {
-            gap = Math.min(
-                gap,
-                Math.hypot(first.x - second.x, first.y - second.y),
-            )
+            gap = Math.min(gap, getDistance(first, second))
         }
     }
 
@@ -237,7 +256,7 @@ const getSilhouette = (parts: SpotSpawn[][]) => {
         let total = 0
 
         for (const other of part) {
-            total += Math.hypot(spawn.x - other.x, spawn.y - other.y)
+            total += getDistance(spawn, other)
         }
 
         return total / part.length
@@ -253,11 +272,16 @@ const getSilhouette = (parts: SpotSpawn[][]) => {
                     ? (getMeanDistance(spawn, part) * part.length) /
                       (part.length - 1)
                     : 0
-            const nearest = Math.min(
-                ...parts
-                    .filter((_, other) => other !== index)
-                    .map((other) => getMeanDistance(spawn, other)),
-            )
+            let nearest = Infinity
+
+            for (const [other, otherPart] of parts.entries()) {
+                if (other !== index) {
+                    nearest = Math.min(
+                        nearest,
+                        getMeanDistance(spawn, otherPart),
+                    )
+                }
+            }
 
             total += (nearest - own) / Math.max(own, nearest, 1)
             count++

@@ -15,6 +15,7 @@ type PetFinderProps = {
     atlas: PetAtlas
     pets: Pet[]
     levels: Record<string, number>
+    souls: Record<string, number>
     query: string
     category: PetCategoryId | null
     hiddenLevels: number[]
@@ -31,6 +32,7 @@ export const PetFinder = ({
     atlas,
     pets,
     levels,
+    souls,
     query,
     category,
     hiddenLevels,
@@ -102,6 +104,7 @@ export const PetFinder = ({
                         atlas={atlas}
                         pets={pets}
                         levels={levels}
+                        souls={souls}
                         selectedPetId={selectedPetId}
                         onSelect={onPetSelect}
                         onLevelChange={onLevelChange}

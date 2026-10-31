@@ -9,7 +9,7 @@ import {
     getFarmSpots,
     isPetNeeded,
 } from "@pets/logic/farmSpots"
-import { getPetLevel } from "@pets/logic/petLevels"
+import { getPetLevel, getPetSouls } from "@pets/logic/petLevels"
 import {
     filterPets,
     getMapCounts,
@@ -36,6 +36,10 @@ import { LevelTip } from "./LevelTip"
 import { PetMapPanel } from "./map/PetMapPanel"
 
 const route = getRouteApi("/pets")
+const NO_FARM_SPOTS: ReturnType<typeof getFarmSpots> = {
+    spots: [],
+    labels: new Map(),
+}
 
 export const PetsPage = () => {
     const search = route.useSearch()
@@ -43,11 +47,13 @@ export const PetsPage = () => {
     const atlas = route.useLoaderData()
     const {
         levels,
+        souls,
         hiddenLevels,
         minimized,
         listMinimized,
         tipDismissed,
         changeLevel,
+        changeSouls,
         changeLevelHidden,
         changeMinimized,
         changeListMinimized,
@@ -66,6 +72,7 @@ export const PetsPage = () => {
     const deferredCategory = useDeferredValue(category)
     const deferredHiddenLevels = useDeferredValue(hiddenLevels)
     const deferredLevels = useDeferredValue(levels)
+    const deferredSouls = useDeferredValue(souls)
     // Spot the map is zoomed to: a farm spot, or one of the open pet's. It
     // lives in the URL so a new map and its spot arrive in one update, and
     // the map never zooms for the old map with the new spot.
@@ -75,6 +82,10 @@ export const PetsPage = () => {
     useEffect(() => {
         document.title = "Daevanion - Pets"
     }, [])
+
+    const handleSoulsChange = (petId: number, total: number) => {
+        changeSouls([{ petId: petId, souls: total }])
+    }
 
     // Picking a pet jumps to its best map; picking it again deselects it.
     const handlePetSelect = (petId: number) => {
@@ -221,7 +232,10 @@ export const PetsPage = () => {
         ? getPetMapCounts(atlas, selectedPet)
         : getMapCounts(atlas, pets)
     const source = sources.find((item) => item.mapId === mapId)
-    const farm = getFarmSpots(atlas, pets, deferredLevels, mapId)
+    // An open pet replaces the Best spots panel and labels pins its own way.
+    const farm = selectedPet
+        ? NO_FARM_SPOTS
+        : getFarmSpots(atlas, pets, deferredLevels, mapId)
     const pins = getMapPins(
         atlas,
         selectedPet ? [selectedPet] : pets,
@@ -355,7 +369,7 @@ export const PetsPage = () => {
                 {!tipDismissed && <LevelTip onDismiss={dismissTip} />}
 
                 <Grid
-                    templateColumns={{ base: "1fr", lg: "auto 1fr" }}
+                    templateColumns={{ base: "minmax(0, 1fr)", lg: "auto 1fr" }}
                     alignItems="start"
                     gap="4"
                 >
@@ -369,6 +383,7 @@ export const PetsPage = () => {
                             atlas={atlas}
                             pets={pets}
                             levels={deferredLevels}
+                            souls={deferredSouls}
                             query={query}
                             category={category}
                             hiddenLevels={hiddenLevels}
@@ -390,6 +405,11 @@ export const PetsPage = () => {
                                     source={source}
                                     mapId={mapId}
                                     level={getPetLevel(levels, selectedPet.id)}
+                                    souls={getPetSouls(
+                                        levels,
+                                        souls,
+                                        selectedPet.id,
+                                    )}
                                     focusedSpot={focusedSpot}
                                     onExpand={handleExpand}
                                     onClose={handlePetClear}
@@ -412,6 +432,11 @@ export const PetsPage = () => {
                                 neighbors={neighbors}
                                 mapId={mapId}
                                 level={getPetLevel(levels, selectedPet.id)}
+                                souls={getPetSouls(
+                                    levels,
+                                    souls,
+                                    selectedPet.id,
+                                )}
                                 focusedSpot={focusedSpot}
                                 showOthers={showOthers}
                                 levels={levels}
@@ -419,6 +444,7 @@ export const PetsPage = () => {
                                 onSpotSelect={handlePetSpotSelect}
                                 onPetSelect={handleFarmPetSelect}
                                 onLevelChange={changeLevel}
+                                onSoulsChange={handleSoulsChange}
                                 onMinimize={handleMinimize}
                                 onClose={handlePetClear}
                             />
