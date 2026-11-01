@@ -42,14 +42,17 @@ const parse = (raw: string | null): PlannerLocation => {
     return DEFAULT_LOCATION
 }
 
-export const readPlannerLocation = () => {
-    let raw: string | null = null
-
+const readRaw = () => {
     try {
-        raw = window.localStorage.getItem(KEY)
+        return window.localStorage.getItem(KEY)
     } catch {
         // Storage is blocked; fall back to the default.
+        return null
     }
+}
+
+export const readPlannerLocation = () => {
+    const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
         cached = { raw: raw, location: parse(raw) }
@@ -72,7 +75,7 @@ export const writePlannerLocation = (location: PlannerLocation) => {
         window.localStorage.setItem(KEY, JSON.stringify(location))
     } catch {
         // Only lasts until the page reloads.
-        cached = { raw: null, location: location }
+        cached = { raw: readRaw(), location: location }
     }
 
     window.dispatchEvent(new Event(CHANGE_EVENT))

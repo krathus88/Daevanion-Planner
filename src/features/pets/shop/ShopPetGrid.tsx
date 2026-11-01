@@ -1,4 +1,5 @@
 import { Flex, Grid, Text } from "@chakra-ui/react"
+import { MAX_PET_SOULS } from "@pets/logic/petLevels"
 import type { ShopPet } from "@pets/logic/shopCheck"
 import { ShopPetTile } from "./ShopPetTile"
 
@@ -31,7 +32,11 @@ export const ShopPetGrid = ({
                         key={item.pet.id}
                         item={item}
                         bought={bought[item.pet.id] !== undefined}
-                        onBoughtChange={onBoughtChange}
+                        onBoughtChange={
+                            item.soulsBefore < MAX_PET_SOULS
+                                ? onBoughtChange
+                                : undefined
+                        }
                     />
                 ))}
             </Grid>

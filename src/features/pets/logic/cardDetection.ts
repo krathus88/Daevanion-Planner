@@ -23,6 +23,7 @@ export const CARD_RATIO = 1.36
 const DARK = 16
 const GAP_SHARE = 0.6
 const MIN_CARD_WIDTH = 40
+const MAX_GLOW_WIDTH = 1.2
 
 type Run = { start: number; end: number }
 
@@ -52,21 +53,43 @@ const findRuns = (length: number, isGap: (index: number) => boolean) => {
     return runs
 }
 
+// In a crop only a few rows tall, the selected card's glow can widen its whole
+// column, so a run a little wider than the others is cut to their width,
+// around its center.
+const trimGlow = (runs: Run[]) => {
+    const sizes = runs.map((run) => run.end - run.start).sort((a, b) => a - b)
+    const typical = sizes[Math.floor((sizes.length - 1) / 2)]
+
+    return runs.map((run) => {
+        const size = run.end - run.start
+
+        if (size <= typical || size > typical * MAX_GLOW_WIDTH) {
+            return run
+        }
+
+        const start = run.start + Math.round((size - typical) / 2)
+
+        return { start: start, end: start + typical }
+    })
+}
+
 const findColumns = (pixels: Pixels) => {
     const { width, height } = pixels
     const step = Math.max(1, Math.floor(height / 400))
 
-    const runs = findRuns(width, (x) => {
-        let dark = 0
-        let total = 0
+    const runs = trimGlow(
+        findRuns(width, (x) => {
+            let dark = 0
+            let total = 0
 
-        for (let y = 0; y < height; y += step) {
-            total++
-            if (isDark(pixels, x, y)) dark++
-        }
+            for (let y = 0; y < height; y += step) {
+                total++
+                if (isDark(pixels, x, y)) dark++
+            }
 
-        return dark / total > GAP_SHARE
-    }).filter((run) => run.end - run.start >= MIN_CARD_WIDTH)
+            return dark / total > GAP_SHARE
+        }).filter((run) => run.end - run.start >= MIN_CARD_WIDTH),
+    )
 
     // A grid column has a neighbour of the same width close by; this drops the
     // big pet render and the side panels of a full-screen shot.

@@ -15,6 +15,8 @@ export type ShopReading = {
     // The pet whose portrait matched best.
     petId: number
     score: number
+    // The card's "Sold Out" banner: already bought in this shop.
+    soldOut: boolean
     // Data URL of the card's art, shown in the results.
     thumbnail: string
 }
@@ -34,6 +36,8 @@ export type ShopSummary = {
     // Below Insight Lv3.
     needed: ShopPet[]
     maxed: ShopPet[]
+    // Sold out in this shop, whatever their level.
+    soldOut: ShopPet[]
     // Cards that aren't pets, or no portrait matched.
     unknown: number
 }
@@ -68,6 +72,7 @@ export const summarizeShop = (
 
     const needed: ShopPet[] = []
     const maxed: ShopPet[] = []
+    const soldOut: ShopPet[] = []
 
     for (const [petId, reading] of best) {
         const pet = petsById.get(petId)
@@ -83,12 +88,14 @@ export const summarizeShop = (
             thumbnail: reading.thumbnail,
         }
 
-        if (levelFromSouls(shopPet.soulsBefore) < MAX_PET_LEVEL) {
+        if (reading.soldOut) {
+            soldOut.push(shopPet)
+        } else if (levelFromSouls(shopPet.soulsBefore) < MAX_PET_LEVEL) {
             needed.push(shopPet)
         } else {
             maxed.push(shopPet)
         }
     }
 
-    return { needed: needed, maxed: maxed, unknown: unknown }
+    return { needed: needed, maxed: maxed, soldOut: soldOut, unknown: unknown }
 }

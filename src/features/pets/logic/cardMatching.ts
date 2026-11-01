@@ -17,13 +17,15 @@ export type CardLayout = {
 }
 
 // The Pets grid. The badge and progress bar cover the bottom of the art, and
-// the selected or equipped card shows its art zoomed in.
+// the selected or equipped card shows its art zoomed in. A selected card is
+// measured from where its unselected self would be, so its art starts above it.
 export const COLLECTION_LAYOUT: CardLayout = {
     height: 1.36,
     artBottom: 1.36 * 0.78,
     placements: [
         [76 / 60, -8 / 60, 3 / 60],
         [90 / 60, -15 / 60, 1 / 60],
+        [96 / 60, -18 / 60, -7 / 60],
     ],
 }
 
@@ -56,6 +58,8 @@ export type CardSample = {
     gray: Float32Array
     // Rows of cells the art spans.
     artRows: number
+    // Rows something covers the art in, to leave out when comparing.
+    hiddenRows?: readonly [number, number]
 }
 
 export type CardMatch = {
@@ -198,6 +202,9 @@ const scorePlacement = (
         const y = point.y + shiftY
 
         if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= card.artRows) continue
+        if (card.hiddenRows) {
+            if (y >= card.hiddenRows[0] && y < card.hiddenRows[1]) continue
+        }
 
         const cell = y * GRID_WIDTH + x
         const a = point.gray

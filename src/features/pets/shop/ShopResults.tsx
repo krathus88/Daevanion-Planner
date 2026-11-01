@@ -100,6 +100,15 @@ export const ShopResults = ({
                     bought={bought}
                 />
             )}
+
+            {summary.soldOut.length > 0 && (
+                <ShopPetGrid
+                    title="Already bought"
+                    items={summary.soldOut}
+                    bought={bought}
+                    onBoughtChange={onBoughtChange}
+                />
+            )}
         </Flex>
     )
 }

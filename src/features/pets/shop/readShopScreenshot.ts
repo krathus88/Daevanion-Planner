@@ -2,12 +2,8 @@ import {
     decodeScreenshot,
     getCanvasContext,
 } from "@pets/importer/decodeScreenshot"
-import {
-    matchCard,
-    sampleCard,
-    SHOP_LAYOUT,
-    type PetPrint,
-} from "@pets/logic/cardMatching"
+import { SHOP_LAYOUT, type PetPrint } from "@pets/logic/cardMatching"
+import { readShopCard } from "@pets/logic/shopCardReading"
 import type { ShopReading } from "@pets/logic/shopCheck"
 import { detectShopCards } from "@pets/logic/shopCardDetection"
 
@@ -28,9 +24,7 @@ export const readShopScreenshot = async (file: Blob, prints: PetPrint[]) => {
     thumbnailContext.imageSmoothingQuality = "high"
 
     for (const rect of detectShopCards(pixels)) {
-        const card = sampleCard(pixels, rect, SHOP_LAYOUT)
-        // Shop art is always in color.
-        const [best] = matchCard(card, prints, true)
+        const card = readShopCard(pixels, rect, prints)
 
         // Just the art: the card's name is too small to read here.
         thumbnailContext.drawImage(
@@ -46,8 +40,9 @@ export const readShopScreenshot = async (file: Blob, prints: PetPrint[]) => {
         )
 
         readings.push({
-            petId: best.id,
-            score: best.score,
+            petId: card.petId,
+            score: card.score,
+            soldOut: card.soldOut,
             thumbnail: thumbnail.toDataURL("image/webp", 0.8),
         })
     }

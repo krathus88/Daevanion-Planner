@@ -13,12 +13,8 @@ export const ProgressBar = ({
     tone = "accent",
 }: ProgressBarProps) => {
     return (
-        <Progress.Root
-            size="xs"
-            value={Math.min(100, value)}
-            aria-label={label}
-        >
-            <Progress.Track>
+        <Progress.Root size="xs" value={Math.min(100, value)}>
+            <Progress.Track aria-label={label}>
                 <Progress.Range
                     bg={tone === "danger" ? "app.danger" : "app.accent"}
                 />

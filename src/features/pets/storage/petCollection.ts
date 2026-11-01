@@ -126,14 +126,17 @@ const parse = (raw: string | null): PetCollection => {
 // useSyncExternalStore needs the same object back until the data changes.
 let cached: { raw: string | null; collection: PetCollection } | null = null
 
-export const readPetCollection = () => {
-    let raw: string | null = null
-
+const readRaw = () => {
     try {
-        raw = window.localStorage.getItem(KEY)
+        return window.localStorage.getItem(KEY)
     } catch {
         // Storage is blocked; fall back to the defaults.
+        return null
     }
+}
+
+export const readPetCollection = () => {
+    const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
         cached = { raw: raw, collection: parse(raw) }
@@ -147,7 +150,7 @@ export const writePetCollection = (collection: PetCollection) => {
         setStoredItem(KEY, JSON.stringify(collection))
     } catch {
         // Nothing to do: the change only lasts until the page reloads.
-        cached = { raw: null, collection: collection }
+        cached = { raw: readRaw(), collection: collection }
     }
 
     window.dispatchEvent(new Event(CHANGE_EVENT))

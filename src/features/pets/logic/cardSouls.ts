@@ -51,6 +51,11 @@ const CLOSE_CALL = 0.04
 const LEVEL_MARGIN = 0.1
 // A digit this clear in the tens' place rules out a one-digit number.
 const TENS_SCORE = 0.75
+// With the bar hidden behind the badge the value is 11 at most, so only a "1"
+// can lead it, and art behind it can pull it far down: it scored 0.52 on a real
+// card, against 0.43 at most for an empty place. This close is worth a look.
+const TENS_ONE_SCORE = 0.48
+const TENS_ONE_MARGIN = 0.1
 // Cards narrower than this, in pixels, blur their digits together.
 const MIN_CARD_WIDTH = 80
 
@@ -246,24 +251,31 @@ const scoreDigit = (
 }
 
 // Whether the tens' place shows a digit; a 0 can't lead the number.
-const hasTensDigit = (
+const readTensPlace = (
     pixels: Pixels,
     rect: CardRect,
     anchor: { x: number; y: number },
 ) => {
-    for (let digit = 1; digit <= 7; digit++) {
-        const score = scoreDigit(
+    const scoreAt = (digit: number) => {
+        return scoreDigit(
             pixels,
             rect,
             digit,
             TENS_LEFT + anchor.x,
             TEXT_TOP + anchor.y,
         )
+    }
+    const one = scoreAt(1)
+    let found = one >= TENS_ONE_SCORE
 
-        if (score > TENS_SCORE) return true
+    for (let digit = 2; digit <= 7 && !found; digit++) {
+        found = scoreAt(digit) > TENS_SCORE
     }
 
-    return false
+    return {
+        found: found,
+        unclear: Math.abs(one - TENS_ONE_SCORE) < TENS_ONE_MARGIN,
+    }
 }
 
 const scoreNumber = (
@@ -392,10 +404,15 @@ export const readProgress = (
             ? Math.ceil((BADGE_RIGHT - BAR_LEFT) * perCell) + 1
             : Math.min(barValue + reach, needed - 1)
     // With the bar hidden, 3 and 13 are told apart by the tens' place.
-    const twoDigits = barValue === null && hasTensDigit(pixels, rect, anchor)
+    const tens = barValue === null ? readTensPlace(pixels, rect, anchor) : null
+    const twoDigits = tens?.found === true
     const start = twoDigits ? 10 : lowest
-    const stop =
-        barValue === null && !twoDigits ? Math.min(highest, 9) : highest
+    // Two digits with no bar to go by can be any value up to the level's end.
+    const stop = twoDigits
+        ? needed - 1
+        : barValue === null
+          ? Math.min(highest, 9)
+          : highest
     let best = start
     let bestScore = -Infinity
     let nextScore = -Infinity
@@ -419,7 +436,8 @@ export const readProgress = (
         rect.width < MIN_CARD_WIDTH ||
         anchor.score < MIN_ANCHOR_SCORE ||
         bestScore < MIN_DIGIT_SCORE ||
-        bestScore - nextScore < CLOSE_CALL
+        bestScore - nextScore < CLOSE_CALL ||
+        tens?.unclear === true
 
     return {
         progress: unsure && barValue !== null ? barValue : best,

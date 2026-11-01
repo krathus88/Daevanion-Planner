@@ -33,8 +33,16 @@
             "@planner/*": ["./src/features/planner/*"],
             "@timers/*": ["./src/features/timers/*"],
             "@pets/*": ["./src/features/pets/*"],
-            "@theme/*": ["./src/theme/*"]
+            "@theme/*": ["./src/theme/*"],
+            "@test/*": ["./src/test/*"]
         }
     },
-    "include": ["src", "scripts", "vite.config.ts"]
+    "include": [
+        "src",
+        "scripts",
+        "e2e",
+        "vite.config.ts",
+        "vitest.config.ts",
+        "playwright.config.ts"
+    ]
 }

@@ -178,14 +178,17 @@ const parse = (raw: string | null): TimerSettings => {
 // useSyncExternalStore needs the same object back until the data changes.
 let cached: { raw: string | null; settings: TimerSettings } | null = null
 
-export const readTimerSettings = () => {
-    let raw: string | null = null
-
+const readRaw = () => {
     try {
-        raw = window.localStorage.getItem(KEY)
+        return window.localStorage.getItem(KEY)
     } catch {
         // Storage is blocked; fall back to the defaults.
+        return null
     }
+}
+
+export const readTimerSettings = () => {
+    const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
         cached = { raw: raw, settings: parse(raw) }
@@ -199,7 +202,7 @@ export const writeTimerSettings = (settings: TimerSettings) => {
         setStoredItem(KEY, JSON.stringify(settings))
     } catch {
         // Nothing to do: the change only lasts until the page reloads.
-        cached = { raw: null, settings: settings }
+        cached = { raw: readRaw(), settings: settings }
     }
 
     window.dispatchEvent(new Event(CHANGE_EVENT))
