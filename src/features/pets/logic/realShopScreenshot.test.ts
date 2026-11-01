@@ -1,9 +1,12 @@
 import { beforeAll, describe, expect, it } from "vitest"
 import type { PetAtlas } from "@pets/data/petAtlas"
+import { detectCards } from "@pets/logic/cardDetection"
 import { SHOP_LAYOUT, type PetPrint } from "@pets/logic/cardMatching"
+import { detectShopCards } from "@pets/logic/shopCardDetection"
 import { summarizeShop, type ShopReading } from "@pets/logic/shopCheck"
 import {
     buildPrints,
+    loadScreenshot,
     readAtlas,
     readShopScreenshot,
 } from "@test/readPetScreenshot"
@@ -28,6 +31,23 @@ beforeAll(async () => {
     prints = await buildPrints(atlas, SHOP_LAYOUT)
     readings = await readShopScreenshot("shop.jpg", prints)
 }, 120_000)
+
+describe("telling the Pets grid and the Shop apart", () => {
+    it.each(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])(
+        "finds no shop cards in Pets grid screenshot %s",
+        async (name) => {
+            const pixels = await loadScreenshot(`${name}.jpg`)
+
+            expect(detectShopCards(pixels)).toEqual([])
+        },
+    )
+
+    it("finds no Pets grid cards in the Shop screenshot", async () => {
+        const pixels = await loadScreenshot("shop.jpg")
+
+        expect(detectCards(pixels)).toEqual([])
+    })
+})
 
 describe("a real Shop screenshot", () => {
     it("finds every card, row by row", () => {

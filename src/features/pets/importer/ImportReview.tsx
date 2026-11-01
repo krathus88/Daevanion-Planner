@@ -1,4 +1,5 @@
 import { Flex, Grid, Text } from "@chakra-ui/react"
+import { WrongScreenshotNotice } from "@common/WrongScreenshotNotice"
 import type { ImportSummary } from "@pets/logic/screenshotImport"
 import { ImportChangeTile } from "./ImportChangeTile"
 
@@ -23,9 +24,24 @@ export const ImportReview = ({
 }: ImportReviewProps) => {
     const changeCount = summary.changes.length
     const readCount = changeCount + summary.unchanged
+    const wrongNotice = skippedFiles.length > 0 && (
+        <WrongScreenshotNotice
+            title="Not a Pets grid screenshot"
+            files={skippedFiles}
+        >
+            Take it from Pets, on the ALL tab. Shop screenshots go in Check the
+            pet shop.
+        </WrongScreenshotNotice>
+    )
+
+    if (readCount === 0 && summary.unknown === 0) {
+        return wrongNotice
+    }
 
     return (
         <Flex flexDir="column" gap="3">
+            {wrongNotice}
+
             <Flex flexDir="column" gap="1">
                 <Text fontSize="sm">
                     Read {readCount} {readCount === 1 ? "pet" : "pets"}:{" "}
@@ -38,12 +54,6 @@ export const ImportReview = ({
                         {summary.unknown}{" "}
                         {summary.unknown === 1 ? "card" : "cards"} didn't match
                         any pet and were skipped.
-                    </Text>
-                )}
-
-                {skippedFiles.length > 0 && (
-                    <Text textStyle="hint">
-                        No pet cards found in {skippedFiles.join(", ")}.
                     </Text>
                 )}
             </Flex>

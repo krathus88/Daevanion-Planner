@@ -2,8 +2,10 @@
 // hang at uneven heights over a busy backdrop, so they're found by their
 // frames instead: every card is outlined by two thin light vertical lines.
 // Kept free of path aliases so scripts/ can run it with plain node.
-import type { CardRect, Pixels } from "./cardDetection.ts"
+import { detectCards, type CardRect, type Pixels } from "./cardDetection.ts"
 
+// This many Pets grid cards mean a screenshot isn't of the Shop.
+const MIN_GRID_CARDS = 2
 // A frame line is this much brighter than the pixels a few columns away.
 const LINE_CONTRAST = 20
 // Rows a line may skip before it counts as broken.
@@ -241,6 +243,9 @@ const sortByRows = (cards: CardRect[]) => {
 // Card rects start at the frame's top-left corner and are as tall as wide;
 // cardMatching's shop layout says where the art sits in them.
 export const detectShopCards = (pixels: Pixels): CardRect[] => {
+    // The Pets grid's cards have frames too, which would read as shop cards.
+    if (detectCards(pixels).length >= MIN_GRID_CARDS) return []
+
     const found: Line[] = []
 
     for (let x = 3; x < pixels.width - 4; x++) {

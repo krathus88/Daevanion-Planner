@@ -1,4 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
+import { WrongScreenshotNotice } from "@common/WrongScreenshotNotice"
 import { BOUGHT_SOULS } from "@pets/logic/petLevels"
 import type { ShopPet, ShopSummary } from "@pets/logic/shopCheck"
 import type { ShopSourceId } from "@pets/logic/shopFilters"
@@ -45,9 +46,24 @@ export const ShopResults = ({
 }: ShopResultsProps) => {
     const neededCount = summary.needed.length
     const total = neededCount + summary.maxed.length
+    const wrongNotice = skippedFiles.length > 0 && (
+        <WrongScreenshotNotice
+            title="Not a Shop screenshot"
+            files={skippedFiles}
+        >
+            Take it from the Shop's Pets tab. Pets grid screenshots go in Import
+            levels from screenshots.
+        </WrongScreenshotNotice>
+    )
+
+    if (total === 0 && summary.soldOut.length === 0 && summary.unknown === 0) {
+        return wrongNotice
+    }
 
     return (
         <Flex flexDir="column" gap="4">
+            {wrongNotice}
+
             <Flex flexDir="column" gap="1">
                 <Text fontSize="sm">{getSummaryText(neededCount, total)}</Text>
 
@@ -61,12 +77,6 @@ export const ShopResults = ({
                         {summary.unknown} other{" "}
                         {summary.unknown === 1 ? "item was" : "items were"} left
                         out.
-                    </Text>
-                )}
-
-                {skippedFiles.length > 0 && (
-                    <Text textStyle="hint">
-                        No shop cards found in {skippedFiles.join(", ")}.
                     </Text>
                 )}
             </Flex>

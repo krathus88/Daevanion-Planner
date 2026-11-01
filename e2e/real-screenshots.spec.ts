@@ -58,6 +58,22 @@ test.describe("the shop check", () => {
             })
             .toEqual([5])
     })
+
+    test("refuses a Pets grid screenshot", async ({ page }) => {
+        await page.goto("/pets")
+        await page.getByRole("button", { name: "Check the pet shop" }).click()
+
+        const dialog = page.getByRole("dialog")
+
+        await dialog.locator('input[type="file"]').setInputFiles(shot("4.jpg"))
+
+        await expect(dialog.getByRole("alert")).toContainText(
+            "Not a Shop screenshot",
+            { timeout: 30_000 },
+        )
+        await expect(dialog.getByRole("alert")).toContainText("4.jpg")
+        await expect(dialog.getByText("No pets found on sale.")).toBeHidden()
+    })
 })
 
 test.describe("the pet importer", () => {
@@ -94,6 +110,49 @@ test.describe("the pet importer", () => {
         })
         await expect(dialog.getByText("Krall Laborer")).toBeVisible()
         await expect(dialog.getByText("Varg Berserker")).toBeVisible()
+    })
+
+    test("refuses a Shop screenshot", async ({ page }) => {
+        await page.goto("/pets")
+        await page
+            .getByRole("button", { name: "Import levels from screenshots" })
+            .click()
+
+        const dialog = page.getByRole("dialog")
+
+        await dialog
+            .locator('input[type="file"]')
+            .setInputFiles(shot("shop.jpg"))
+
+        await expect(dialog.getByRole("alert")).toContainText(
+            "Not a Pets grid screenshot",
+            { timeout: 30_000 },
+        )
+        await expect(dialog.getByRole("alert")).toContainText("shop.jpg")
+        await expect(dialog.getByText(/^Read 0 pets/)).toBeHidden()
+        await expect(
+            dialog.getByRole("button", { name: "Apply 0 changes" }),
+        ).toBeDisabled()
+    })
+
+    test("still reads the grid when a Shop screenshot comes with it", async ({
+        page,
+    }) => {
+        await page.goto("/pets")
+        await page
+            .getByRole("button", { name: "Import levels from screenshots" })
+            .click()
+
+        const dialog = page.getByRole("dialog")
+
+        await dialog
+            .locator('input[type="file"]')
+            .setInputFiles([shot("shop.jpg"), shot("4.jpg")])
+
+        await expect(dialog.getByText("Swift Lugi")).toBeVisible({
+            timeout: 30_000,
+        })
+        await expect(dialog.getByRole("alert")).toContainText("shop.jpg")
     })
 })
 
