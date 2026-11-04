@@ -1,11 +1,9 @@
 import { NativeSelect } from "@chakra-ui/react"
 import type { ChangeEvent } from "react"
-import {
-    formatSearchTime,
-    SEARCH_TIME_OPTIONS,
-} from "@planner/config/searchTime"
+import { formatSearchTime, STALL_OPTIONS } from "@planner/config/searchTime"
 
 type SearchTimeSelectProps = {
+    // Seconds without a better result before the search stops.
     value: number
     size?: "sm" | "md"
     onChange: (seconds: number) => void
@@ -24,11 +22,11 @@ export const SearchTimeSelect = ({
         <NativeSelect.Root size={size} w="searchTimeSelect" flexShrink="0">
             <NativeSelect.Field
                 value={value}
-                title="How long to search for better routes"
-                aria-label="Search time"
+                title="The search stops once this long passes without finding anything better"
+                aria-label="Stop after no improvement for"
                 onChange={handleChange}
             >
-                {SEARCH_TIME_OPTIONS.map((seconds) => (
+                {STALL_OPTIONS.map((seconds) => (
                     <option key={seconds} value={seconds}>
                         {formatSearchTime(seconds)}
                     </option>

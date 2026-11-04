@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
     formatOptionsChecked,
+    idleStatus,
     improvementStatus,
     joinParagraphs,
     NO_FINDS,
     planPhaseStatus,
+    planSearchHeadline,
     searchSummary,
 } from "./improvementStatus"
 
@@ -75,12 +77,67 @@ describe("improvementStatus", () => {
 
 describe("planPhaseStatus", () => {
     it("names the step the all-boards search is on", () => {
-        expect(planPhaseStatus({ ...NO_FINDS, optionsChecked: 1240 })).toBe(
-            "Step 1 of 2: building the plan · 1,240 options checked",
+        expect(
+            planPhaseStatus({
+                finds: { ...NO_FINDS, optionsChecked: 1240 },
+                phase: "build",
+                spendsLeftover: false,
+            }),
+        ).toBe("Step 1 of 2: building the plan · 1,240 options checked")
+        expect(
+            planPhaseStatus({
+                finds: improved,
+                phase: "refine",
+                spendsLeftover: false,
+            }),
+        ).toBe("Step 2 of 2: refining it · 4,820 options checked")
+    })
+
+    it("counts a third step when leftover points go to stats", () => {
+        expect(
+            planPhaseStatus({
+                finds: improved,
+                phase: "refine",
+                spendsLeftover: true,
+            }),
+        ).toBe("Step 2 of 3: refining it · 4,820 options checked")
+        expect(
+            planPhaseStatus({
+                finds: improved,
+                phase: "stats",
+                spendsLeftover: true,
+            }),
+        ).toBe(
+            "Step 3 of 3: spending leftover points on stats · 4,820 options checked",
         )
-        expect(planPhaseStatus(improved)).toBe(
-            "Step 2 of 2: refining it · 4,820 options checked",
+    })
+})
+
+describe("idleStatus", () => {
+    it("says how long it's gone without a better result", () => {
+        expect(idleStatus(42_000, 60_000, "plan")).toBe(
+            "No better plan for 42s · stops at 1m",
         )
+        expect(idleStatus(0, 300_000, "route")).toBe(
+            "No better route for 0s · stops at 5m",
+        )
+    })
+})
+
+describe("planSearchHeadline", () => {
+    it("shows time and points while searching", () => {
+        expect(
+            planSearchHeadline({ elapsedMs: 297_000, pointsUsed: 401 }, false),
+        ).toBe("Searching… 4m 57s · 401 points used")
+    })
+
+    it("says when it's preparing or stopping", () => {
+        expect(planSearchHeadline(null, false)).toBe(
+            "Preparing all-board optimization…",
+        )
+        expect(
+            planSearchHeadline({ elapsedMs: 1000, pointsUsed: 10 }, true),
+        ).toBe("Stopping… finishing the best plan so far")
     })
 })
 

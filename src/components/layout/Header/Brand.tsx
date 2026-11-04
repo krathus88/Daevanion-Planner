@@ -1,33 +1,32 @@
-import { Flex, Text, type FlexProps } from "@chakra-ui/react"
+import { Flex, Link, type FlexProps } from "@chakra-ui/react"
+import type { PlannerLocation } from "@planner/storage/plannerLocation"
+import { Link as RouterLink } from "@tanstack/react-router"
+import { BrandMark } from "./BrandMark"
 
-export const Brand = ({ ...props }: FlexProps) => {
+type BrandProps = FlexProps & {
+    plannerLocation: PlannerLocation
+    // The planner is the page open now.
+    isCurrent: boolean
+}
+
+// The logo is the way to the planner; it has no tab of its own.
+export const Brand = ({ plannerLocation, isCurrent, ...props }: BrandProps) => {
     return (
-        <Flex
-            flexShrink="0"
-            flexDir="column"
-            alignItems="flex-start"
-            lineHeight="shorter"
-            userSelect="none"
-            {...props}
-        >
-            <Text
-                color="app.accent"
-                fontSize="lg"
-                fontWeight="bold"
-                letterSpacing="tight"
+        <Flex flexShrink="0" {...props}>
+            <Link
+                asChild
+                textDecoration="none"
+                _hover={{ textDecoration: "none" }}
             >
-                Daevanion
-            </Text>
-
-            <Text
-                color="app.muted"
-                fontSize="xs"
-                fontWeight="semibold"
-                letterSpacing="widest"
-                textTransform="uppercase"
-            >
-                Planner
-            </Text>
+                <RouterLink
+                    params={plannerLocation}
+                    to="/planner/$classId/$layout"
+                    aria-label="Daevanion Planner"
+                    aria-current={isCurrent ? "page" : undefined}
+                >
+                    <BrandMark isCurrent={isCurrent} />
+                </RouterLink>
+            </Link>
         </Flex>
     )
 }

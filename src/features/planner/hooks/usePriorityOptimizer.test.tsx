@@ -86,7 +86,7 @@ const setup = () => {
 }
 
 describe("usePriorityOptimizer", () => {
-    it("sends the budget, time and saved settings to the worker", () => {
+    it("sends the budget, stall time and saved settings to the worker", () => {
         const { result } = setup()
 
         act(() => {
@@ -95,8 +95,9 @@ describe("usePriorityOptimizer", () => {
 
         expect(result.current.isOptimizing).toBe(true)
         expect(lastWorker().posted[0]).toMatchObject({
+            type: "start",
             pointBudget: 225,
-            timeBudgetMs: 10_000,
+            stallMs: 10_000,
         })
     })
 
@@ -125,7 +126,10 @@ describe("usePriorityOptimizer", () => {
             type: "progress",
             progress: {
                 elapsedMs: 1,
-                timeBudgetMs: 2,
+                idleMs: 0,
+                stallMs: 2,
+                phase: "refine",
+                spendsLeftover: false,
                 pointsUsed: 3,
                 finds: {
                     optionsChecked: 10,
@@ -137,6 +141,29 @@ describe("usePriorityOptimizer", () => {
         })
 
         expect(result.current.progress?.pointsUsed).toBe(3)
+    })
+
+    it("asks the worker to stop, then records the plan it kept", () => {
+        const { result } = setup()
+
+        act(() => {
+            result.current.optimize(10)
+        })
+        const worker = lastWorker()
+
+        act(() => {
+            result.current.stop()
+        })
+
+        expect(worker.posted.at(-1)).toEqual({ type: "stop" })
+        expect(worker.terminated).toBe(false)
+        expect(result.current.isStopping).toBe(true)
+
+        worker.emit(done())
+
+        expect(result.current.isStopping).toBe(false)
+        expect(result.current.isOptimizing).toBe(false)
+        expect(readPlannerHistory(CLASS, "triniel").value).toHaveLength(1)
     })
 
     it("records every main board and reports what it spent", () => {

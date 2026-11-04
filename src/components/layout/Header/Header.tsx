@@ -62,11 +62,14 @@ export const Header = () => {
                         hideFrom="md"
                     />
 
-                    <Brand hideBelow="md" />
+                    <Brand
+                        plannerLocation={plannerParams ?? plannerLocation}
+                        isCurrent={currentPage === "planner"}
+                        hideBelow="md"
+                    />
 
                     <PageNav
                         currentPage={currentPage}
-                        plannerLocation={plannerParams ?? plannerLocation}
                         mr={{ xl: "auto" }}
                         hideBelow="md"
                     />

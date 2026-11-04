@@ -122,8 +122,8 @@ test.describe("planner mode", () => {
         await page.goto(BOARD)
         await cell(page, SKILL).click()
         await page
-            .getByRole("combobox", { name: "Search time" })
-            .selectOption({ label: "10s" })
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "30s" })
         await page.getByRole("button", { name: "Find a good path" }).click()
 
         await expect(
@@ -151,13 +151,14 @@ test.describe("all boards", () => {
         const panel = page.getByRole("tabpanel", { name: "All boards" })
 
         await panel
-            .getByRole("combobox", { name: "Search time" })
-            .selectOption({ label: "10s" })
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "30s" })
         await panel.getByRole("button", { name: "Optimize all boards" }).click()
 
         await expect(
             panel.getByText(/First plan ready at|Best plan so far found at/),
         ).toBeVisible({ timeout: 15_000 })
+        await panel.getByRole("button", { name: "Stop & keep" }).click()
         await expect(
             panel.getByRole("button", { name: "Optimize all boards" }),
         ).toBeEnabled({ timeout: 60_000 })

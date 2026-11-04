@@ -13,7 +13,7 @@ import type { PlannerLocation } from "@planner/storage/plannerLocation"
 import { Link as RouterLink } from "@tanstack/react-router"
 import { useState } from "react"
 import { LuMenu, LuX } from "react-icons/lu"
-import { Brand } from "./Brand"
+import { BrandMark } from "./BrandMark"
 import { NavDrawerLink } from "./NavDrawerLink"
 import type { SitePage } from "./sitePage"
 
@@ -80,7 +80,7 @@ export const NavDrawer = ({
                         <LuMenu />
                     </Flex>
 
-                    <Brand />
+                    <BrandMark />
                 </chakra.button>
             </Drawer.Trigger>
 
@@ -93,7 +93,7 @@ export const NavDrawer = ({
                             alignItems="center"
                             justifyContent="space-between"
                         >
-                            <Brand />
+                            <BrandMark />
 
                             <Drawer.CloseTrigger asChild pos="static">
                                 <IconButton
@@ -121,15 +121,8 @@ export const NavDrawer = ({
                                         params={plannerLocation}
                                         to="/planner/$classId/$layout"
                                     >
-                                        Planner
+                                        Daevanion Planner
                                     </RouterLink>
-                                </NavDrawerLink>
-
-                                <NavDrawerLink
-                                    isActive={currentPage === "timers"}
-                                    onNavigate={handleNavigate}
-                                >
-                                    <RouterLink to="/timers">Timers</RouterLink>
                                 </NavDrawerLink>
 
                                 <NavDrawerLink
@@ -146,6 +139,13 @@ export const NavDrawer = ({
                                     <RouterLink to="/tracker">
                                         Tracker
                                     </RouterLink>
+                                </NavDrawerLink>
+
+                                <NavDrawerLink
+                                    isActive={currentPage === "timers"}
+                                    onNavigate={handleNavigate}
+                                >
+                                    <RouterLink to="/timers">Timers</RouterLink>
                                 </NavDrawerLink>
                             </Flex>
                         </Drawer.Body>

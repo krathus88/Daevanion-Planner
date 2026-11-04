@@ -15,6 +15,7 @@ import {
 } from "@config/classPresets"
 import { STAT_TYPES } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
+import { MAX_SEARCH_MS } from "@planner/config/searchTime"
 import { layouts } from "@planner/config/layouts"
 import {
     defaultAbilityPriorities,
@@ -27,7 +28,10 @@ import {
     type StatSettings,
 } from "@planner/storage/statPriorities"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
-import { optimizePriorityPlans } from "./priorityPlanner"
+import {
+    optimizePriorityPlans,
+    type PriorityPlannerProgress,
+} from "./priorityPlanner"
 
 let preset: ClassPreset
 
@@ -57,10 +61,11 @@ type Options = {
     minimums?: Record<string, number>
     maximums?: Record<string, number>
     priorities?: Record<string, number>
-    timeBudgetMs?: number
+    stallMs?: number
+    shouldStop?: () => boolean
     statSettings?: StatSettings
     boards?: readonly MainBoardId[]
-    onProgress?: () => void
+    onProgress?: (progress: PriorityPlannerProgress) => void
     classPreset?: ClassPreset
 }
 
@@ -69,7 +74,8 @@ const optimize = ({
     minimums = {},
     maximums = {},
     priorities,
-    timeBudgetMs = 1,
+    stallMs = 1,
+    shouldStop,
     statSettings = DEFAULT_STAT_SETTINGS,
     boards,
     onProgress = () => {},
@@ -85,7 +91,7 @@ const optimize = ({
         DEFAULT_SPECIAL_PRIORITIES,
         DEFAULT_RANK_ORDER,
         points,
-        timeBudgetMs,
+        { stallMs: stallMs, shouldStop: shouldStop },
         statSettings,
         onProgress,
         boards,
@@ -284,7 +290,7 @@ describe("optimizePriorityPlans", () => {
             maximums: Object.fromEntries(
                 preset.abilities.map((ability) => [ability.id, 0]),
             ),
-            timeBudgetMs: 200_000,
+            stallMs: 200_000,
             statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
             boards: ["zikel"],
             onProgress: onProgress,
@@ -302,7 +308,7 @@ describe("optimizePriorityPlans", () => {
         expect(reports[firstReady].improvements).toBe(0)
         expect(last.improvements).toBeGreaterThan(0)
         expect(last.lastImprovedMs).toBeGreaterThanOrEqual(last.firstFoundMs)
-        expect(last.lastImprovedMs).toBeLessThanOrEqual(200_000)
+        expect(last.lastImprovedMs).toBeLessThanOrEqual(MAX_SEARCH_MS)
         expect(result.finds).toEqual(last)
         expect(reports[0].optionsChecked).toBe(0)
         expect(last.optionsChecked).toBeGreaterThan(
@@ -315,6 +321,72 @@ describe("optimizePriorityPlans", () => {
                 reports[index - 1].improvements,
             )
         }
+    })
+
+    it("refines until a stall passes without a better plan", async () => {
+        const onProgress = vi.fn()
+        await optimize({
+            points: 100,
+            stallMs: 20_000,
+            boards: ["zikel"],
+            onProgress: onProgress,
+        })
+        const reports = onProgress.mock.calls.map(([progress]) => progress)
+        const last = reports.at(-1)
+
+        expect(reports[0].phase).toBe("build")
+        expect(last.phase).toBe("refine")
+        expect(last.stallMs).toBe(20_000)
+        expect(last.idleMs).toBeGreaterThanOrEqual(20_000)
+        expect(last.elapsedMs).toBeLessThan(MAX_SEARCH_MS)
+    })
+
+    it("caps refining, counted from when it starts", async () => {
+        const onProgress = vi.fn()
+        await optimize({
+            points: 100,
+            stallMs: 10 * MAX_SEARCH_MS,
+            boards: ["zikel"],
+            onProgress: onProgress,
+        })
+        const last = onProgress.mock.lastCall?.[0]
+        const refining = last.elapsedMs - last.finds.firstFoundMs
+
+        expect(last.finds.firstFoundMs).toBeGreaterThan(0)
+        expect(refining).toBeGreaterThanOrEqual(MAX_SEARCH_MS)
+        expect(refining).toBeLessThan(MAX_SEARCH_MS + 60_000)
+    })
+
+    it("stops when asked, keeping the plan and one stats pass", async () => {
+        let ready = false
+        const onProgress = vi.fn((progress: PriorityPlannerProgress) => {
+            ready = progress.finds.firstFoundMs !== null
+        })
+        const base = {
+            points: 150,
+            stallMs: 10 * MAX_SEARCH_MS,
+            boards: ["nezekan"] as const,
+        }
+        const plainPlan = await optimize({
+            ...base,
+            shouldStop: () => ready,
+            onProgress: onProgress,
+        })
+        const elapsed = onProgress.mock.lastCall?.[0].elapsedMs
+        ready = false
+        const withStats = await optimize({
+            ...base,
+            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
+            shouldStop: () => ready,
+            onProgress: onProgress,
+        })
+
+        expect(plainPlan.plans.nezekan.plannedCost).toBeGreaterThan(0)
+        expect(elapsed).toBeLessThan(MAX_SEARCH_MS)
+        expect(onProgress.mock.lastCall?.[0].phase).toBe("stats")
+        expect(withStats.plans.nezekan.plannedCost).toBeGreaterThan(
+            plainPlan.plans.nezekan.plannedCost,
+        )
     })
 
     it("throws on an ability assigned to the wrong node type", async () => {
@@ -350,7 +422,7 @@ describe("optimizePriorityPlans", () => {
         const base = {
             points: 150,
             boards: ["nezekan"] as const,
-            timeBudgetMs: 3_000_000,
+            stallMs: 3_000_000,
         }
         const without = await optimize(base)
         const withStats = await optimize({
@@ -368,7 +440,7 @@ describe("optimizePriorityPlans", () => {
         const result = await optimize({
             points: 150,
             boards: ["nezekan"],
-            timeBudgetMs: 3_000_000,
+            stallMs: 3_000_000,
             statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
         })
 
@@ -459,7 +531,7 @@ describe("optimizePriorityPlans", () => {
                 piv: 2,
             },
             maximums: { hl: 4, cot: 2, dm: 2, lor: 4, jt: 4, d: 2, lss: 0 },
-            timeBudgetMs: 100_000,
+            stallMs: 100_000,
         })
         let taken = 0
 
@@ -493,7 +565,7 @@ describe("optimizePriorityPlans", () => {
                 priorities: priorities,
                 minimums: resolveAbilityMinimums(classPreset, priorities, {}),
                 points: 300,
-                timeBudgetMs: 100_000,
+                stallMs: 100_000,
             })
 
             expect(result.shortfalls).toEqual([])

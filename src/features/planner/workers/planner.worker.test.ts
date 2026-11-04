@@ -29,10 +29,11 @@ const layout = makeLayout(undefined, {
 const start = { row: 0, column: 0 }
 
 const baseMessage = {
+    type: "start",
     layout: layout,
     start: start,
     targets: ["0,2"],
-    timeBudgetMs: 5,
+    stallMs: 5,
     statTiers: { attack: "best" },
     spendLeftover: false,
     availablePoints: 50,
@@ -81,7 +82,10 @@ describe("planner worker", () => {
         const messages = await run({})
 
         expect(lastCandidate(messages)).toMatchObject({ ok: true, cost: 4 })
-        expect(messages.at(-1)).toEqual({ type: "done", result: { ok: true } })
+        expect(messages.at(-1)).toMatchObject({
+            type: "done",
+            result: { ok: true },
+        })
     })
 
     it("sends paths as lists, which survive postMessage", async () => {
@@ -93,7 +97,7 @@ describe("planner worker", () => {
     it("passes on why it failed", async () => {
         const messages = await run({ targets: [] })
 
-        expect(messages.at(-1)).toEqual({
+        expect(messages.at(-1)).toMatchObject({
             type: "done",
             result: {
                 ok: false,
@@ -105,7 +109,7 @@ describe("planner worker", () => {
     it("spends leftover points on stat nodes when asked", async () => {
         const messages = await run({
             spendLeftover: true,
-            timeBudgetMs: 200,
+            stallMs: 200,
         })
         const candidate = lastCandidate(messages)
 
@@ -165,5 +169,28 @@ describe("planner worker", () => {
         })
 
         expect(messages.at(-1)?.result?.reason).toContain("No stat node fits")
+    })
+
+    it("ends the route search on a stop, still spending leftovers", async () => {
+        posted.length = 0
+        window.dispatchEvent(
+            new MessageEvent("message", {
+                data: { ...baseMessage, stallMs: 600_000, spendLeftover: true },
+            }),
+        )
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        window.dispatchEvent(
+            new MessageEvent("message", { data: { type: "stop" } }),
+        )
+        await vi.waitFor(
+            () => {
+                expect(posted.at(-1)?.type).toBe("done")
+            },
+            { timeout: 2000 },
+        )
+        const candidate = lastCandidate(posted)
+
+        expect(candidate?.extended).toBe(true)
+        expect(candidate?.path).toContain("1,1")
     })
 })

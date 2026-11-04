@@ -17,7 +17,6 @@ export const addStatNodes = async ({
     budget,
     stats,
     weights,
-    until,
     onImproved,
 }: {
     layout: BoardLayout
@@ -27,7 +26,6 @@ export const addStatNodes = async ({
     budget: number
     stats: ReadonlyMap<string, number>
     weights: ReadonlyMap<string, number>
-    until: number
     onImproved: (route: FoundRoute) => void
 }) => {
     let current = route
@@ -37,7 +35,7 @@ export const addStatNodes = async ({
         .map(([key]) => key)
 
     for (const key of candidates) {
-        if (performance.now() >= until || current.cost >= budget) {
+        if (current.cost >= budget) {
             break
         }
         if (current.path.has(key)) {
@@ -48,7 +46,7 @@ export const addStatNodes = async ({
             layout,
             start,
             new Set([...targets, ...extras, key]),
-            STEP_MS,
+            { maxMs: STEP_MS },
             noProgress,
             weights,
         )

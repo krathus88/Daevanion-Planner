@@ -159,7 +159,7 @@ test.describe("clear and undo", () => {
         await openWith(page, { [`${PREFIX}:progress`]: ROUTE })
 
         await page
-            .getByRole("combobox", { name: "Search time" })
+            .getByRole("combobox", { name: "Stop after no improvement for" })
             .selectOption({ label: "5m" })
         await page.getByRole("button", { name: "Find a good path" }).click()
         await page.getByRole("button", { name: "Cancel" }).click()
@@ -167,6 +167,26 @@ test.describe("clear and undo", () => {
         await expect(
             page.getByRole("button", { name: "Find a good path" }),
         ).toBeEnabled()
+    })
+
+    test("a running search can stop early and keep its route", async ({
+        page,
+    }) => {
+        await openWith(page, { [`${PREFIX}:progress`]: ROUTE })
+
+        await page
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "5m" })
+        await page.getByRole("button", { name: "Find a good path" }).click()
+        await expect(page.getByText(/No better route for/)).toBeVisible()
+        await page.getByRole("button", { name: "Stop & keep" }).click()
+
+        await expect(
+            page.getByRole("button", { name: "Find a good path" }),
+        ).toBeEnabled()
+        await expect(
+            page.getByText(/saved to optimization history|kept the previous/),
+        ).toBeVisible()
     })
 })
 

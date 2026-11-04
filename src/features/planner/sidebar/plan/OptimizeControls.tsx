@@ -1,10 +1,11 @@
 import { Button, Flex } from "@chakra-ui/react"
 import { isMainBoard } from "@config/boards"
 import { useState } from "react"
-import { DEFAULT_SEARCH_SECONDS } from "@planner/config/searchTime"
+import { DEFAULT_STALL_SECONDS } from "@planner/config/searchTime"
 import { useBoard } from "@planner/context/boardContext"
 import {
     formatOptionsChecked,
+    idleStatus,
     improvementStatus,
 } from "@planner/logic/improvementStatus"
 import { formatPlannerDuration } from "@planner/logic/plannerLogic"
@@ -14,19 +15,23 @@ import { StatusText } from "@common/StatusText"
 export const OptimizeControls = () => {
     const { layoutName, planner, wants } = useBoard()
 
-    const [searchSeconds, setSearchSeconds] = useState(DEFAULT_SEARCH_SECONDS)
+    const [stallSeconds, setStallSeconds] = useState(DEFAULT_STALL_SECONDS)
 
     const optimize = () => {
-        planner.optimizePlanner(searchSeconds * 1000)
+        planner.optimizePlanner(stallSeconds * 1000)
     }
+
+    const progress = planner.optimizationProgress
 
     if (planner.isOptimizing) {
         return (
             <Flex flexDir="column" gap="2">
                 <StatusText tone="muted">
-                    {planner.optimizationProgress == null
-                        ? "Starting the route search…"
-                        : `Checking routes · ${formatOptionsChecked(planner.optimizationProgress.attempts)} · ${formatPlannerDuration(planner.optimizationProgress.elapsedMs)}`}
+                    {planner.isStopping
+                        ? "Stopping… finishing the best route so far"
+                        : progress == null
+                          ? "Starting the route search…"
+                          : `Checking routes · ${formatOptionsChecked(progress.attempts)} · ${formatPlannerDuration(progress.elapsedMs)}`}
                 </StatusText>
 
                 <StatusText tone="muted">
@@ -37,13 +42,38 @@ export const OptimizeControls = () => {
                     })}
                 </StatusText>
 
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={planner.cancelOptimization}
-                >
-                    Cancel
-                </Button>
+                {progress != null && (
+                    <StatusText tone="muted">
+                        {idleStatus(
+                            progress.idleMs,
+                            stallSeconds * 1000,
+                            "route",
+                        )}
+                    </StatusText>
+                )}
+
+                <Flex gap="2">
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        flex="1"
+                        loading={planner.isStopping}
+                        loadingText="Stopping"
+                        title="Stop now and keep the best route so far"
+                        onClick={planner.stopOptimization}
+                    >
+                        Stop & keep
+                    </Button>
+
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        flex="1"
+                        onClick={planner.cancelOptimization}
+                    >
+                        Cancel
+                    </Button>
+                </Flex>
             </Flex>
         )
     }
@@ -72,8 +102,8 @@ export const OptimizeControls = () => {
 
             <SearchTimeSelect
                 size="sm"
-                value={searchSeconds}
-                onChange={setSearchSeconds}
+                value={stallSeconds}
+                onChange={setStallSeconds}
             />
         </Flex>
     )

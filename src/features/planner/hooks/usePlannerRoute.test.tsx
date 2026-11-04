@@ -134,7 +134,7 @@ const candidate = (cost: number, overrides: object = {}) => {
     }
 }
 
-const DONE = { type: "done", result: { ok: true } }
+const DONE = { type: "done", result: { ok: true }, elapsedMs: 1500 }
 
 describe("targets", () => {
     it("adds and removes a target, dropping the old route", () => {
@@ -187,6 +187,44 @@ describe("targets", () => {
 })
 
 describe("optimizing", () => {
+    it("stops after a minute without a better route by default", () => {
+        const { result } = setup()
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+
+        expect(lastWorker().posted[0]).toMatchObject({ stallMs: 60_000 })
+    })
+
+    it("asks the worker to stop, then keeps what it found", () => {
+        const { result, setMessage } = setup()
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+        const worker = lastWorker()
+        worker.emit({ ...candidate(9), elapsedMs: 300 })
+
+        act(() => {
+            result.current.stopOptimization()
+        })
+
+        expect(worker.posted.at(-1)).toEqual({ type: "stop" })
+        expect(worker.terminated).toBe(false)
+        expect(result.current.isStopping).toBe(true)
+        expect(result.current.isOptimizing).toBe(true)
+
+        worker.emit({ ...DONE, elapsedMs: 75_000 })
+
+        expect(result.current.isStopping).toBe(false)
+        expect(result.current.isOptimizing).toBe(false)
+        expect(result.current.plannerHistory).toHaveLength(1)
+        expect(setMessage).toHaveBeenLastCalledWith(
+            "Best route found after 1m 15s and saved to optimization history.\n\nNo better route turned up after the first at 0.3s.",
+        )
+    })
+
     it("sends targets and needed nodes to the worker", () => {
         const { result } = setup({
             initial: withRoute,
@@ -200,7 +238,8 @@ describe("optimizing", () => {
         expect(result.current.isOptimizing).toBe(true)
         expect(lastWorker().posted[0]).toMatchObject({
             targets: ["0,2", "2,2"],
-            timeBudgetMs: 5000,
+            type: "start",
+            stallMs: 5000,
             availablePoints: 50,
             growStats: false,
         })
@@ -291,7 +330,7 @@ describe("optimizing", () => {
         })
         lastWorker().emit({
             type: "progress",
-            progress: { attempts: 3, elapsedMs: 10 },
+            progress: { attempts: 3, elapsedMs: 10, idleMs: 5 },
         })
         expect(result.current.optimizationProgress?.attempts).toBe(3)
 
@@ -381,7 +420,7 @@ describe("optimizing", () => {
         lastWorker().emit(candidate(4))
         lastWorker().emit({
             type: "progress",
-            progress: { attempts: 2400, elapsedMs: 1500 },
+            progress: { attempts: 2400, elapsedMs: 1500, idleMs: 900 },
         })
         expect(result.current.routeFinds.optionsChecked).toBe(2400)
         lastWorker().emit(DONE)

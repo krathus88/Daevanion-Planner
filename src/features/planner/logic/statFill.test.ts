@@ -79,10 +79,16 @@ describe("growByStatValue", () => {
 
 describe("addStatNodes", () => {
     const findRoute = async (targets: Set<string>) => {
-        const result = await findPlannerPath(layout, start, targets, 0, {
-            onBest: () => {},
-            onProgress: () => {},
-        })
+        const result = await findPlannerPath(
+            layout,
+            start,
+            targets,
+            { maxMs: 0 },
+            {
+                onBest: () => {},
+                onProgress: () => {},
+            },
+        )
 
         if (!result.ok) {
             throw new Error(result.reason)
@@ -102,7 +108,6 @@ describe("addStatNodes", () => {
             budget: 5,
             stats: new Map([["1,1", 1]]),
             weights: new Map([["1,1", 1]]),
-            until: Number.POSITIVE_INFINITY,
             onImproved: onImproved,
         })
 
@@ -123,25 +128,6 @@ describe("addStatNodes", () => {
             budget: 4,
             stats: new Map([["1,1", 1]]),
             weights: new Map(),
-            until: Number.POSITIVE_INFINITY,
-            onImproved: () => {},
-        })
-
-        expect(result).toBe(route)
-    })
-
-    it("stops at the time limit", async () => {
-        const targets = new Set(["0,2"])
-        const route = await findRoute(targets)
-        const result = await addStatNodes({
-            layout: layout,
-            start: start,
-            targets: targets,
-            route: route,
-            budget: 99,
-            stats: new Map([["1,1", 1]]),
-            weights: new Map(),
-            until: 0,
             onImproved: () => {},
         })
 

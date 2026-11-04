@@ -1,5 +1,6 @@
 import { isNode, keyOf, type Position } from "@planner/config/boardConfig"
 import { appearanceCost, type BoardLayout } from "@planner/config/layouts"
+import { formatSearchTime } from "@planner/config/searchTime"
 
 const positionOf = (index: number, width: number): Position => {
     return {
@@ -25,6 +26,17 @@ export type PlannerResult =
 export type PlannerProgress = {
     attempts: number
     elapsedMs: number
+    // Time since the last better route, or since the start.
+    idleMs: number
+}
+
+export type SearchLimit = {
+    // The longest the search may run.
+    maxMs: number
+    // Ends the search once this long passes without a better route.
+    stallMs?: number
+    // Checked between attempts: true ends the search with what it has.
+    shouldStop?: () => boolean
 }
 
 export type PlannerSearchCallbacks = {
@@ -230,11 +242,16 @@ const createRoute = (
     return tree
 }
 
+// Shared by every search, so a run of short searches still lets the worker
+// read a stop message.
+const YIELD_EVERY_MS = 25
+let lastYieldAt = Number.NEGATIVE_INFINITY
+
 export const findPlannerPath = async (
     layout: BoardLayout,
     start: Position,
     targets: Set<string>,
-    timeBudgetMs: number,
+    limit: SearchLimit,
     callbacks: PlannerSearchCallbacks,
     statWeights: ReadonlyMap<string, number> = new Map(),
 ): Promise<PlannerResult> => {
@@ -299,9 +316,11 @@ export const findPlannerPath = async (
     let bestScore = Number.NEGATIVE_INFINITY
     let attempts = 0
     const startedAt = performance.now()
-    const deadline = startedAt + Math.max(0, timeBudgetMs)
-    let lastYieldAt = startedAt
-    let lastProgressAt = startedAt
+    const maxMs = Math.max(0, limit.maxMs)
+    const stallMs = limit.stallMs ?? Number.POSITIVE_INFINITY
+    // Both are ms since the start.
+    let lastProgressAt = 0
+    let lastImprovedAt = 0
 
     do {
         const order = attempts === 0 ? components : shuffled(components)
@@ -319,6 +338,7 @@ export const findPlannerPath = async (
                 bestRoute = route
                 bestCost = cost
                 bestScore = score
+                lastImprovedAt = performance.now() - startedAt
                 callbacks.onBest({
                     ok: true,
                     path: new Set(
@@ -332,23 +352,32 @@ export const findPlannerPath = async (
             }
         }
 
+        // Before the checks, so a search that ends after one attempt still
+        // gives a stop message its turn.
+        if (performance.now() - lastYieldAt >= YIELD_EVERY_MS) {
+            lastYieldAt = performance.now()
+            await new Promise<void>((resolve) => setTimeout(resolve, 0))
+        }
+
         const elapsedMs = performance.now() - startedAt
-        if (elapsedMs >= timeBudgetMs) {
+        if (elapsedMs >= maxMs || elapsedMs - lastImprovedAt >= stallMs) {
             break
         }
         if (elapsedMs - lastProgressAt >= 500) {
-            callbacks.onProgress({ attempts: attempts, elapsedMs: elapsedMs })
+            callbacks.onProgress({
+                attempts: attempts,
+                elapsedMs: elapsedMs,
+                idleMs: elapsedMs - lastImprovedAt,
+            })
             lastProgressAt = elapsedMs
         }
-        if (elapsedMs - lastYieldAt >= 25) {
-            lastYieldAt = elapsedMs
-            await new Promise<void>((resolve) => setTimeout(resolve, 0))
-        }
-    } while (performance.now() < deadline)
+    } while (!limit.shouldStop?.())
 
+    const elapsedMs = performance.now() - startedAt
     callbacks.onProgress({
         attempts: attempts,
-        elapsedMs: performance.now() - startedAt,
+        elapsedMs: elapsedMs,
+        idleMs: elapsedMs - lastImprovedAt,
     })
     if (!bestRoute) {
         return {
@@ -367,5 +396,8 @@ export const formatPlannerDuration = (milliseconds: number) => {
     if (milliseconds < 1000) {
         return `${Math.max(1, Math.ceil(milliseconds))} ms`
     }
-    return `${(milliseconds / 1000).toFixed(1)} sec`
+    if (milliseconds < 60_000) {
+        return `${(milliseconds / 1000).toFixed(1)} sec`
+    }
+    return formatSearchTime(milliseconds / 1000)
 }

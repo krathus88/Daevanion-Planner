@@ -13,6 +13,7 @@ import {
     formatPlannerDuration,
     type PlannerProgress,
 } from "@planner/logic/plannerLogic"
+import { DEFAULT_STALL_SECONDS } from "@planner/config/searchTime"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
 import {
     joinParagraphs,
@@ -56,7 +57,11 @@ type PlannerWorkerMessage =
           result: Extract<SerializedPlannerResult, { ok: true }>
           elapsedMs?: number
       }
-    | { type: "done"; result: { ok: true } | { ok: false; reason: string } }
+    | {
+          type: "done"
+          result: { ok: true } | { ok: false; reason: string }
+          elapsedMs?: number
+      }
     | { type: "error"; message: string }
 
 type UsePlannerOptimizationProps = {
@@ -105,6 +110,8 @@ export const usePlannerOptimization = ({
     const [routeFinds, setRouteFinds] = useState(NO_FINDS)
     // Improve starts from the route already shown.
     const [improvesCurrent, setImprovesCurrent] = useState(false)
+    // Stop was pressed; the worker is wrapping up its route.
+    const [isStopping, setIsStopping] = useState(false)
     const plannerWorker = useRef<Worker | null>(null)
     const bestPlannerResult = useRef<Extract<
         SerializedPlannerResult,
@@ -160,7 +167,8 @@ export const usePlannerOptimization = ({
         }
     }
 
-    const optimizePlanner = (timeBudgetMs = 1500) => {
+    // The search ends once stallMs pass without a better route.
+    const optimizePlanner = (stallMs = DEFAULT_STALL_SECONDS * 1000) => {
         const { statTiers, spendLeftover, priorities } = readPriorities()
         const weights = new Map(priorities.weights)
         const requiredCells = new Set([...targetCells, ...needCells])
@@ -221,10 +229,7 @@ export const usePlannerOptimization = ({
                     if (!isBetter) {
                         return
                     }
-                    const foundAt = Math.min(
-                        timeBudgetMs,
-                        resultMessage.elapsedMs ?? 0,
-                    )
+                    const foundAt = resultMessage.elapsedMs ?? 0
                     finds = best
                         ? {
                               ...finds,
@@ -251,7 +256,13 @@ export const usePlannerOptimization = ({
                 worker.terminate()
                 plannerWorker.current = null
                 setIsOptimizing(false)
+                setIsStopping(false)
                 setOptimizationProgress(null)
+                const searchedFor = formatPlannerDuration(
+                    resultMessage.type === "done"
+                        ? (resultMessage.elapsedMs ?? 0)
+                        : 0,
+                )
 
                 if (resultMessage.type === "error") {
                     setMessage(resultMessage.message)
@@ -275,7 +286,7 @@ export const usePlannerOptimization = ({
                 if (previousBest && bestResult === previousBest) {
                     setMessage(
                         joinParagraphs(
-                            `No better route found after ${formatPlannerDuration(timeBudgetMs)}; kept the previous ${previousBest.cost}-point route.`,
+                            `No better route found after ${searchedFor}; kept the previous ${previousBest.cost}-point route.`,
                             searchSummary({
                                 finds: finds,
                                 noun: "route",
@@ -331,7 +342,7 @@ export const usePlannerOptimization = ({
                 } else {
                     setMessage(
                         joinParagraphs(
-                            `Best route found after ${formatPlannerDuration(timeBudgetMs)} and saved to optimization history.`,
+                            `Best route found after ${searchedFor} and saved to optimization history.`,
                             searchSummary({
                                 finds: finds,
                                 noun: "route",
@@ -364,10 +375,11 @@ export const usePlannerOptimization = ({
             }
 
             worker.postMessage({
+                type: "start",
                 layout: layout,
                 start: start,
                 targets: [...requiredCells],
-                timeBudgetMs: timeBudgetMs,
+                stallMs: stallMs,
                 statTiers: statTiers,
                 spendLeftover: spendLeftover,
                 availablePoints: availablePoints,
@@ -387,10 +399,17 @@ export const usePlannerOptimization = ({
         }
     }
 
+    // Ends the search early and keeps the best route so far.
+    const stopOptimization = () => {
+        plannerWorker.current?.postMessage({ type: "stop" })
+        setIsStopping(true)
+    }
+
     const cancelOptimization = () => {
         plannerWorker.current?.terminate()
         plannerWorker.current = null
         setIsOptimizing(false)
+        setIsStopping(false)
         setOptimizationProgress(null)
         setRouteFinds(NO_FINDS)
         bestPlannerResult.current = null
@@ -398,10 +417,12 @@ export const usePlannerOptimization = ({
 
     return {
         isOptimizing: isOptimizing,
+        isStopping: isStopping,
         optimizationProgress: optimizationProgress,
         routeFinds: routeFinds,
         improvesCurrent: improvesCurrent,
         optimizePlanner: optimizePlanner,
+        stopOptimization: stopOptimization,
         cancelOptimization: cancelOptimization,
     }
 }

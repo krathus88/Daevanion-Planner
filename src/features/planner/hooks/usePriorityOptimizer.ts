@@ -75,6 +75,8 @@ export const usePriorityOptimizer = ({
     const [message, setMessage] = useState("")
     const [shortfall, setShortfall] = useState<OptimizeShortfall | null>(null)
     const [isOptimizing, setIsOptimizing] = useState(false)
+    // Stop was pressed; the worker is wrapping up its plan.
+    const [isStopping, setIsStopping] = useState(false)
     const workerRef = useRef<Worker | null>(null)
 
     useEffect(() => () => workerRef.current?.terminate(), [])
@@ -86,6 +88,7 @@ export const usePriorityOptimizer = ({
         }
 
         setIsOptimizing(false)
+        setIsStopping(false)
     }
 
     const recordPlans = (
@@ -234,7 +237,8 @@ export const usePriorityOptimizer = ({
         }
     }
 
-    const optimize = (searchSeconds: number) => {
+    // The search ends once stallSeconds pass without a better plan.
+    const optimize = (stallSeconds: number) => {
         setMessage("")
         setShortfall(null)
         setProgress(null)
@@ -285,10 +289,11 @@ export const usePriorityOptimizer = ({
                 setMessage("The all-board optimizer returned unreadable data.")
             }
             worker.postMessage({
+                type: "start",
                 classPreset: classPreset,
                 ...settings,
                 pointBudget: totalPoints,
-                timeBudgetMs: searchSeconds * 1000,
+                stallMs: stallSeconds * 1000,
             })
         } catch (error) {
             workerRef.current?.terminate()
@@ -303,10 +308,17 @@ export const usePriorityOptimizer = ({
         }
     }
 
+    // Ends the search early and keeps the best plan so far.
+    const stop = () => {
+        workerRef.current?.postMessage({ type: "stop" })
+        setIsStopping(true)
+    }
+
     const cancel = () => {
         workerRef.current?.terminate()
         workerRef.current = null
         setIsOptimizing(false)
+        setIsStopping(false)
         setProgress(null)
         setShortfall(null)
         setMessage("All-board optimization cancelled.")
@@ -314,10 +326,12 @@ export const usePriorityOptimizer = ({
 
     return {
         isOptimizing: isOptimizing,
+        isStopping: isStopping,
         progress: progress,
         message: message,
         shortfall: shortfall,
         optimize: optimize,
+        stop: stop,
         cancel: cancel,
     }
 }

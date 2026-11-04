@@ -71,13 +71,38 @@ export const searchSummary = ({
     return [checked, found].filter((part) => part !== "").join(" ")
 }
 
-// The all-boards step line under the search bar.
-export const planPhaseStatus = (finds: SearchFinds) => {
-    const checked = formatOptionsChecked(finds.optionsChecked)
+// Building the first plan, refining it, then spending leftover stats.
+export type PlanPhase = "build" | "refine" | "stats"
 
-    return finds.firstFoundMs === null
-        ? `Step 1 of 2: building the plan · ${checked}`
-        : `Step 2 of 2: refining it · ${checked}`
+const PLAN_PHASES: Record<PlanPhase, { number: number; label: string }> = {
+    build: { number: 1, label: "building the plan" },
+    refine: { number: 2, label: "refining it" },
+    stats: { number: 3, label: "spending leftover points on stats" },
+}
+
+type PlanPhaseStatusOptions = {
+    finds: SearchFinds
+    phase: PlanPhase
+    // Leftover points go to stats as a last step.
+    spendsLeftover: boolean
+}
+
+// The all-boards step line under the search bar.
+export const planPhaseStatus = ({
+    finds,
+    phase,
+    spendsLeftover,
+}: PlanPhaseStatusOptions) => {
+    const checked = formatOptionsChecked(finds.optionsChecked)
+    const steps = spendsLeftover ? 3 : 2
+    const step = PLAN_PHASES[phase]
+
+    return `Step ${step.number} of ${steps}: ${step.label} · ${checked}`
+}
+
+// 42s idle of 60 -> "No better plan for 42s · stops at 1m"
+export const idleStatus = (idleMs: number, stallMs: number, noun: Noun) => {
+    return `No better ${noun} for ${formatSearchTime(idleMs / 1000)} · stops at ${formatSearchTime(stallMs / 1000)}`
 }
 
 type ImprovementStatusOptions = {
@@ -104,4 +129,24 @@ export const improvementStatus = ({
     }
 
     return `First ${noun} ready at ${formatFoundAt(firstFoundMs)} · looking for a better one`
+}
+
+type HeadlineProgress = {
+    elapsedMs: number
+    pointsUsed: number
+}
+
+// The all-boards line beside Stop and Cancel.
+export const planSearchHeadline = (
+    progress: HeadlineProgress | null,
+    isStopping: boolean,
+) => {
+    if (isStopping) {
+        return "Stopping… finishing the best plan so far"
+    }
+    if (!progress) {
+        return "Preparing all-board optimization…"
+    }
+
+    return `Searching… ${formatSearchTime(progress.elapsedMs / 1000)} · ${progress.pointsUsed} points used`
 }

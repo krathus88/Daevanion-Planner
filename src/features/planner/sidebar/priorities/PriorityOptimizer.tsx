@@ -1,14 +1,13 @@
 import type { ClassPreset } from "@config/classPresets"
 import { Button, Flex } from "@chakra-ui/react"
 import { useState } from "react"
-import {
-    DEFAULT_ALL_BOARDS_SEARCH_SECONDS,
-    formatSearchTime,
-} from "@planner/config/searchTime"
+import { DEFAULT_STALL_SECONDS } from "@planner/config/searchTime"
 import { usePriorityOptimizer } from "@planner/hooks/usePriorityOptimizer"
 import {
+    idleStatus,
     improvementStatus,
     planPhaseStatus,
+    planSearchHeadline,
 } from "@planner/logic/improvementStatus"
 import { ProgressBar } from "@common/ProgressBar"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
@@ -26,33 +25,56 @@ export const PriorityOptimizer = ({
     totalPoints,
     onComplete,
 }: PriorityOptimizerProps) => {
-    const { isOptimizing, progress, message, shortfall, optimize, cancel } =
-        usePriorityOptimizer({
-            classPreset: classPreset,
-            totalPoints: totalPoints,
-            onComplete: onComplete,
-        })
+    const {
+        isOptimizing,
+        isStopping,
+        progress,
+        message,
+        shortfall,
+        optimize,
+        stop,
+        cancel,
+    } = usePriorityOptimizer({
+        classPreset: classPreset,
+        totalPoints: totalPoints,
+        onComplete: onComplete,
+    })
 
-    const [searchSeconds, setSearchSeconds] = useState(
-        DEFAULT_ALL_BOARDS_SEARCH_SECONDS,
-    )
+    const [stallSeconds, setStallSeconds] = useState(DEFAULT_STALL_SECONDS)
 
     const handleOptimize = () => {
-        optimize(searchSeconds)
+        optimize(stallSeconds)
     }
+
+    // The first plan has to finish before there's one to keep.
+    const isBuilding = !progress || progress.phase === "build"
 
     return (
         <Flex flexDir="column" gap="2">
             {isOptimizing ? (
                 <Flex flexDir="column" gap="2">
-                    <Flex alignItems="center" gap="3">
+                    <Flex alignItems="center" gap="2">
                         <Flex flex="1">
                             <StatusText tone="muted">
-                                {progress
-                                    ? `Searching… ${formatSearchTime(progress.elapsedMs / 1000)} of ${formatSearchTime(progress.timeBudgetMs / 1000)} · ${progress.pointsUsed} points used`
-                                    : "Preparing all-board optimization…"}
+                                {planSearchHeadline(progress, isStopping)}
                             </StatusText>
                         </Flex>
+
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            loading={isStopping}
+                            loadingText="Stopping"
+                            disabled={isBuilding}
+                            title={
+                                isBuilding
+                                    ? "Available once the first plan is ready"
+                                    : "Stop now and keep the best plan so far"
+                            }
+                            onClick={stop}
+                        >
+                            Stop & keep
+                        </Button>
 
                         <Button variant="secondary" size="sm" onClick={cancel}>
                             Cancel
@@ -60,18 +82,31 @@ export const PriorityOptimizer = ({
                     </Flex>
 
                     <ProgressBar
-                        label="Search time used"
+                        label="Time without a better plan"
                         value={
-                            progress
-                                ? (progress.elapsedMs / progress.timeBudgetMs) *
-                                  100
+                            progress && !isBuilding
+                                ? (progress.idleMs / progress.stallMs) * 100
                                 : 0
                         }
                     />
 
                     {progress && (
                         <StatusText tone="muted">
-                            {planPhaseStatus(progress.finds)}
+                            {planPhaseStatus({
+                                finds: progress.finds,
+                                phase: progress.phase,
+                                spendsLeftover: progress.spendsLeftover,
+                            })}
+                        </StatusText>
+                    )}
+
+                    {progress && !isBuilding && (
+                        <StatusText tone="muted">
+                            {idleStatus(
+                                progress.idleMs,
+                                progress.stallMs,
+                                "plan",
+                            )}
                         </StatusText>
                     )}
 
@@ -96,8 +131,8 @@ export const PriorityOptimizer = ({
                     </Button>
 
                     <SearchTimeSelect
-                        value={searchSeconds}
-                        onChange={setSearchSeconds}
+                        value={stallSeconds}
+                        onChange={setStallSeconds}
                     />
                 </Flex>
             )}

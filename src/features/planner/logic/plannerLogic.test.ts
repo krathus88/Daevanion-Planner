@@ -19,7 +19,7 @@ describe("findPlannerPath", () => {
             layout,
             start,
             new Set(),
-            0,
+            { maxMs: 0 },
             makeCallbacks(),
         )
 
@@ -34,7 +34,7 @@ describe("findPlannerPath", () => {
             layout,
             start,
             new Set(["0,0"]),
-            0,
+            { maxMs: 0 },
             makeCallbacks(),
         )
 
@@ -49,7 +49,7 @@ describe("findPlannerPath", () => {
             layout,
             start,
             new Set(["4,0"]),
-            0,
+            { maxMs: 0 },
             makeCallbacks(),
         )
 
@@ -61,7 +61,7 @@ describe("findPlannerPath", () => {
             layout,
             start,
             new Set(["2,2"]),
-            0,
+            { maxMs: 0 },
             makeCallbacks(),
         )
 
@@ -79,7 +79,7 @@ describe("findPlannerPath", () => {
             layout,
             start,
             new Set(["2,0", "2,2"]),
-            20,
+            { maxMs: 20 },
             makeCallbacks(),
         )
 
@@ -98,7 +98,7 @@ describe("findPlannerPath", () => {
             ring,
             start,
             new Set(["2,2"]),
-            20,
+            { maxMs: 20 },
             makeCallbacks(),
             statWeights,
         )
@@ -109,10 +109,73 @@ describe("findPlannerPath", () => {
     it("reports every improvement and the final progress", async () => {
         const callbacks = makeCallbacks()
 
-        await findPlannerPath(layout, start, new Set(["0,2"]), 0, callbacks)
+        await findPlannerPath(
+            layout,
+            start,
+            new Set(["0,2"]),
+            { maxMs: 0 },
+            callbacks,
+        )
 
         expect(callbacks.onBest).toHaveBeenCalled()
         expect(callbacks.onProgress).toHaveBeenCalled()
+    })
+
+    it("stops once a stall passes without a better route", async () => {
+        const callbacks = makeCallbacks()
+
+        const result = await findPlannerPath(
+            layout,
+            start,
+            new Set(["2,0", "2,2"]),
+            { maxMs: 60_000, stallMs: 0 },
+            callbacks,
+        )
+
+        expect(result.ok).toBe(true)
+        expect(callbacks.onProgress).toHaveBeenLastCalledWith(
+            expect.objectContaining({ attempts: 1 }),
+        )
+    })
+
+    it("stops when asked to and keeps what it found", async () => {
+        const callbacks = makeCallbacks()
+
+        const result = await findPlannerPath(
+            layout,
+            start,
+            new Set(["2,2"]),
+            { maxMs: 60_000, shouldStop: () => true },
+            callbacks,
+        )
+
+        expect(result).toMatchObject({ ok: true, cost: 7 })
+        expect(callbacks.onProgress).toHaveBeenLastCalledWith(
+            expect.objectContaining({ attempts: 1 }),
+        )
+    })
+
+    it("reports how long it has gone without a better route", async () => {
+        let now = 0
+        vi.spyOn(performance, "now").mockImplementation(() => {
+            now += 100
+
+            return now
+        })
+        const callbacks = makeCallbacks()
+
+        await findPlannerPath(
+            layout,
+            start,
+            new Set(["2,2"]),
+            { maxMs: 2000 },
+            callbacks,
+        )
+        vi.restoreAllMocks()
+        const last = callbacks.onProgress.mock.lastCall?.[0]
+
+        expect(last.idleMs).toBeGreaterThan(0)
+        expect(last.idleMs).toBeLessThan(last.elapsedMs)
     })
 
     it.each(BOARD_IDS)(
@@ -146,7 +209,7 @@ describe("findPlannerPath", () => {
                 board,
                 boardStart,
                 targets,
-                0,
+                { maxMs: 0 },
                 makeCallbacks(),
             )
 
@@ -191,6 +254,9 @@ describe("formatPlannerDuration", () => {
         [999, "999 ms"],
         [1000, "1.0 sec"],
         [2540, "2.5 sec"],
+        [59_900, "59.9 sec"],
+        [60_000, "1m"],
+        [312_000, "5m 12s"],
     ])("formats %d ms", (milliseconds, text) => {
         expect(formatPlannerDuration(milliseconds)).toBe(text)
     })

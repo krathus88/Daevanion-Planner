@@ -33,13 +33,27 @@ import {
     type RouteState,
     type SearchRoute,
 } from "./minimumRepair"
-import { NO_FINDS, type SearchFinds } from "./improvementStatus"
+import { NO_FINDS, type PlanPhase, type SearchFinds } from "./improvementStatus"
+import { MAX_SEARCH_MS } from "@planner/config/searchTime"
 import { findPlannerPath } from "./plannerLogic"
 import { findStatSteps, type StatStep } from "./statFocus"
 
+export type PriorityPlannerLimit = {
+    // Each phase ends once this long passes without a better plan.
+    stallMs: number
+    // Checked between steps: true ends the search with the plan it has,
+    // after one pass of leftover stats if those are on.
+    shouldStop?: () => boolean
+}
+
 export type PriorityPlannerProgress = {
     elapsedMs: number
-    timeBudgetMs: number
+    // Time since the last better plan, or since the phase began.
+    idleMs: number
+    stallMs: number
+    phase: PlanPhase
+    // Leftover points go to stats as a last phase.
+    spendsLeftover: boolean
     pointsUsed: number
     // Anything committed after the first full plan improves it.
     finds: SearchFinds
@@ -71,12 +85,15 @@ type StatBlock = {
 // None wins over another just for coming first.
 type RankStep = { targets: PriorityTarget[] } | { block: StatBlock }
 
+// The first plan's steps share this much of the stall window.
 const GREEDY_SHARE = 0.4
 const MIN_STEP_MS = 12
 const MAX_STEP_MS = 250
+// Refining starts shallow and searches each board longer after every
+// round that finds nothing, up to the max.
+const FIRST_REFINE_SLICE_MS = 250
 const MAX_REFINE_SLICE_MS = 1500
 const PROGRESS_INTERVAL_MS = 250
-const STAT_FILL_SHARE = 0.15
 const STAT_STEP_MS = 30
 
 export const optimizePriorityPlans = async (
@@ -87,13 +104,18 @@ export const optimizePriorityPlans = async (
     specialPriorities: SpecialPriorities,
     rankOrder: RankOrder,
     pointBudget: number,
-    timeBudgetMs: number,
+    limit: PriorityPlannerLimit,
     statSettings: StatSettings,
     onProgress: (progress: PriorityPlannerProgress) => void,
     boards: readonly MainBoardId[] = MAIN_BOARD_IDS,
 ): Promise<PriorityPlannerResult> => {
     const startedAt = performance.now()
-    const deadline = startedAt + timeBudgetMs
+    // Set once refining starts: only that phase is capped.
+    let capAt = Number.POSITIVE_INFINITY
+    const stallMs = limit.stallMs
+    let phase: PlanPhase = "build"
+    // When the current phase began or last found a better plan.
+    let idleSince = startedAt
     const targets: PriorityTarget[] = []
     const abilitiesById = new Map(
         classPreset.abilities.map((ability, index) => [
@@ -287,7 +309,23 @@ export const optimizePriorityPlans = async (
 
     let finds = NO_FINDS
     const elapsed = () => {
-        return Math.min(timeBudgetMs, performance.now() - startedAt)
+        return performance.now() - startedAt
+    }
+
+    const isStopped = () => {
+        return limit.shouldStop?.() === true
+    }
+
+    // Refining and stats end on a stop or once they go idle too long; the
+    // cap only limits refining.
+    const isOver = () => {
+        const now = performance.now()
+
+        return isStopped() || now - idleSince >= stallMs || now >= capAt
+    }
+
+    const never = () => {
+        return false
     }
 
     let lastProgressAt = Number.NEGATIVE_INFINITY
@@ -298,11 +336,24 @@ export const optimizePriorityPlans = async (
         }
         lastProgressAt = now
         onProgress({
-            elapsedMs: Math.min(timeBudgetMs, now - startedAt),
-            timeBudgetMs: timeBudgetMs,
+            elapsedMs: now - startedAt,
+            idleMs: Math.max(0, now - idleSince),
+            stallMs: stallMs,
+            phase: phase,
+            spendsLeftover: statSettings.spendLeftover,
             pointsUsed: totalCost,
             finds: finds,
         })
+    }
+
+    const startPhase = (next: PlanPhase) => {
+        phase = next
+        idleSince = performance.now()
+        capAt =
+            next === "refine"
+                ? idleSince + MAX_SEARCH_MS
+                : Number.POSITIVE_INFINITY
+        reportProgress(true)
     }
 
     // Anything committed once the first plan is built makes it better.
@@ -311,6 +362,7 @@ export const optimizePriorityPlans = async (
             return
         }
 
+        idleSince = performance.now()
         finds = {
             ...finds,
             improvements: finds.improvements + 1,
@@ -331,7 +383,7 @@ export const optimizePriorityPlans = async (
             layout,
             getStart(layout),
             keys,
-            ms,
+            { maxMs: ms },
             {
                 onBest: () => {},
                 onProgress: ({ attempts }) => {
@@ -464,10 +516,10 @@ export const optimizePriorityPlans = async (
         noteImprovement()
     }
 
-    const swapMinimums = async (until: number) => {
+    const swapMinimums = async (isDone: () => boolean) => {
         for (const layoutName of boards) {
             for (const key of [...minimumPins[layoutName]]) {
-                if (performance.now() >= until) {
+                if (isDone()) {
                     return
                 }
                 if (!minimumPins[layoutName].has(key)) {
@@ -519,9 +571,9 @@ export const optimizePriorityPlans = async (
 
     const specialTargets = targets.filter((target) => target.isSpecial)
 
-    const fillMinimums = async (stepMs: number, until: number) => {
+    const fillMinimums = async (stepMs: number, isDone: () => boolean) => {
         for (const ability of minimumAbilities) {
-            if (performance.now() >= until) {
+            if (isDone()) {
                 return
             }
             const required = requiredOf(ability.id)
@@ -681,9 +733,9 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    const fillByRank = async (stepMs: number, until: number) => {
+    const fillByRank = async (stepMs: number, isDone: () => boolean) => {
         for (const step of rankSteps) {
-            if (performance.now() >= until) {
+            if (isDone()) {
                 return
             }
             if ("block" in step) {
@@ -693,7 +745,7 @@ export const optimizePriorityPlans = async (
 
             // Something that doesn't fit now won't fit later in this pass.
             let remaining = step.targets
-            while (performance.now() < until) {
+            while (!isDone()) {
                 remaining = remaining.filter(
                     (target) =>
                         !plans[target.layout].targetCells.includes(
@@ -736,9 +788,9 @@ export const optimizePriorityPlans = async (
         .sort((left, right) => right.weight - left.weight)
         .map(({ target }) => target)
 
-    const fillStats = async (until: number) => {
+    const fillStats = async (isDone: () => boolean) => {
         for (const target of statCandidates) {
-            if (performance.now() >= until || totalCost >= pointBudget) {
+            if (isDone() || totalCost >= pointBudget) {
                 return
             }
             if (isOnRoute(target)) {
@@ -751,22 +803,22 @@ export const optimizePriorityPlans = async (
         }
     }
 
-    const refineRoutes = async () => {
+    // Each board's search fits in what's left before the phase goes idle.
+    const refineRoutes = async (sliceMs: number) => {
         const boards = (Object.keys(plans) as MainBoardId[]).filter(
             (layoutName) => plans[layoutName].targetCells.length > 0,
         )
         for (const layoutName of boards) {
-            const remainingMs = deadline - performance.now()
-            if (remainingMs <= 0) {
+            if (isOver()) {
                 return
             }
+            const remainingMs =
+                Math.min(capAt, idleSince + stallMs) - performance.now()
             const changes = await searchChange(
                 new Map(),
                 layoutName,
                 new Set(plans[layoutName].targetCells),
-                searchWith(
-                    Math.min(MAX_REFINE_SLICE_MS, remainingMs / boards.length),
-                ),
+                searchWith(Math.min(sliceMs, remainingMs / boards.length)),
             )
             const refined = changes
                 ? await keepMinimums(
@@ -801,41 +853,53 @@ export const optimizePriorityPlans = async (
         MAX_STEP_MS,
         Math.max(
             MIN_STEP_MS,
-            (timeBudgetMs * GREEDY_SHARE) /
-                Math.max(1, minimumCalls + rankCalls),
+            (stallMs * GREEDY_SHARE) / Math.max(1, minimumCalls + rankCalls),
         ),
     )
+    let refineSliceMs = FIRST_REFINE_SLICE_MS
+
+    // Searches each board longer after a round that found nothing.
+    const refineRound = async (round: () => Promise<void>) => {
+        const before = finds.improvements
+        await round()
+        if (finds.improvements === before) {
+            refineSliceMs = Math.min(MAX_REFINE_SLICE_MS, refineSliceMs * 2)
+        }
+    }
 
     reportProgress(true)
-    const mainDeadline = statSettings.spendLeftover
-        ? startedAt + timeBudgetMs * (1 - STAT_FILL_SHARE)
-        : deadline
 
     // The first pass always completes so every run returns a full plan.
     // Swaps go first so minimums don't fight lower ranks for the points
     // they free.
-    await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
-    await swapMinimums(mainDeadline)
-    await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
-    await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
+    await fillMinimums(greedyStepMs, never)
+    await swapMinimums(isStopped)
+    await fillMinimums(greedyStepMs, never)
+    await fillByRank(greedyStepMs, never)
     finds = { ...finds, firstFoundMs: elapsed() }
-    reportProgress(true)
+    startPhase("refine")
 
-    while (performance.now() < mainDeadline) {
-        await refineRoutes()
-        await swapMinimums(mainDeadline)
-        if (performance.now() >= mainDeadline) {
-            break
-        }
-        await fillMinimums(MIN_STEP_MS, mainDeadline)
-        await fillByRank(MIN_STEP_MS, mainDeadline)
+    while (!isOver()) {
+        await refineRound(async () => {
+            await refineRoutes(refineSliceMs)
+            await swapMinimums(isOver)
+            if (isOver()) {
+                return
+            }
+            await fillMinimums(MIN_STEP_MS, isOver)
+            await fillByRank(MIN_STEP_MS, isOver)
+        })
     }
 
+    // One pass of stats always runs, even after a stop.
     if (statSettings.spendLeftover) {
-        await fillStats(deadline)
-        while (performance.now() < deadline) {
-            await refineRoutes()
-            await fillStats(deadline)
+        startPhase("stats")
+        await fillStats(never)
+        while (!isOver()) {
+            await refineRound(async () => {
+                await refineRoutes(refineSliceMs)
+                await fillStats(isOver)
+            })
         }
     }
 

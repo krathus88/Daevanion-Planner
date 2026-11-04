@@ -54,8 +54,39 @@ test.describe("site navigation", () => {
             page.getByRole("heading", { name: "Tracker" }),
         ).toBeVisible()
 
-        await nav.getByRole("link", { name: "Planner" }).click()
+        await page
+            .getByRole("banner")
+            .getByRole("link", { name: "Daevanion Planner" })
+            .click()
         await expect(page).toHaveURL(/\/planner\//)
+    })
+
+    test("the header tabs are Pets, Tracker, Timers, after the logo", async ({
+        page,
+    }) => {
+        await page.goto("/")
+
+        await expect(
+            page
+                .getByRole("banner")
+                .getByRole("link", { name: "Daevanion Planner" }),
+        ).toHaveAttribute("aria-current", "page")
+        await expect(
+            page.getByRole("navigation", { name: "Site" }).getByRole("link"),
+        ).toHaveText(["Pets", "Tracker", "Timers"])
+    })
+
+    test("the phone menu lists the planner first", async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto("/timers")
+        await page.getByRole("button", { name: "Open menu" }).click()
+
+        await expect(
+            page
+                .getByRole("dialog")
+                .getByRole("navigation", { name: "Site" })
+                .getByRole("link"),
+        ).toHaveText(["Daevanion Planner", "Pets", "Tracker", "Timers"])
     })
 
     test("phones get a menu instead", async ({ page }) => {
