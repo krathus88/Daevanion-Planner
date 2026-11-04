@@ -8,11 +8,18 @@ import {
     vi,
 } from "vitest"
 import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
-import { loadClassPreset, type ClassPreset } from "@config/classPresets"
+import {
+    CLASS_IDS,
+    loadClassPreset,
+    type ClassPreset,
+} from "@config/classPresets"
 import { STAT_TYPES } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { layouts } from "@planner/config/layouts"
-import { defaultAbilityPriorities } from "@planner/storage/abilityPriorities"
+import {
+    defaultAbilityPriorities,
+    resolveAbilityMinimums,
+} from "@planner/storage/abilityPriorities"
 import { DEFAULT_RANK_ORDER } from "@planner/storage/rankOrder"
 import { DEFAULT_SPECIAL_PRIORITIES } from "@planner/storage/specialPriorities"
 import {
@@ -361,4 +368,95 @@ describe("optimizePriorityPlans", () => {
         )
         expect(focused.plans.nezekan.plannedCost).toBeLessThanOrEqual(40)
     })
+
+    // A minimum met by a node a route only passed through used to be lost
+    // when a later search found a cheaper route without it.
+    it("keeps a minimum met by a node it only passed through", async () => {
+        const cleric = await loadClassPreset("cleric")
+        const result = await optimize({
+            classPreset: cleric,
+            priorities: {
+                c: 1,
+                b: 1,
+                er: 2,
+                da: 2,
+                rr: 3,
+                hl: 3,
+                cot: 4,
+                dm: 4,
+                lor: 4,
+                jt: 5,
+                d: 5,
+                lss: 99,
+                pelg: 1,
+                phe: 2,
+                peg: 2,
+                prb: 3,
+                pwb: 4,
+                piv: 4,
+                psw: 5,
+                ppoc: 97,
+                phb: 98,
+                pelb: 99,
+            },
+            minimums: {
+                c: 4,
+                b: 4,
+                er: 4,
+                da: 4,
+                rr: 4,
+                hl: 4,
+                cot: 2,
+                dm: 2,
+                lor: 4,
+                jt: 2,
+                d: 2,
+                pelg: 4,
+                phe: 2,
+                peg: 2,
+                prb: 2,
+                pwb: 2,
+                piv: 2,
+            },
+            maximums: { hl: 4, cot: 2, dm: 2, lor: 4, jt: 4, d: 2, lss: 0 },
+            timeBudgetMs: 100_000,
+        })
+        let taken = 0
+
+        for (const board of MAIN_BOARD_IDS) {
+            const route = new Set(result.plans[board].plannedPath)
+
+            for (const [key, id] of Object.entries(
+                cleric.assignments[board] ?? {},
+            )) {
+                if (id === "dm" && route.has(key)) {
+                    taken += 1
+                }
+            }
+        }
+
+        expect(taken).toBe(2)
+        expect(
+            result.shortfalls.map((shortfall) => shortfall.abilityId),
+        ).not.toContain("dm")
+    })
+
+    // Lower ranks and later searches spend the points left, so a minimum
+    // lost along the way can't be put back.
+    it.each(CLASS_IDS)(
+        "meets every default minimum for %s with points to spare",
+        async (classId) => {
+            const classPreset = await loadClassPreset(classId)
+            const priorities = defaultAbilityPriorities(classPreset)
+            const result = await optimize({
+                classPreset: classPreset,
+                priorities: priorities,
+                minimums: resolveAbilityMinimums(classPreset, priorities, {}),
+                points: 300,
+                timeBudgetMs: 100_000,
+            })
+
+            expect(result.shortfalls).toEqual([])
+        },
+    )
 })

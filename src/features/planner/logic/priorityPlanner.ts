@@ -21,6 +21,18 @@ import {
     type RankOrder,
 } from "@planner/storage/rankOrder"
 import type { StatSettings } from "@planner/storage/statPriorities"
+import {
+    improves,
+    isCheaper,
+    keepMinimums,
+    searchChange,
+    swapMinimum,
+    upgradesIn,
+    type AbilityMinimum,
+    type PlanChange,
+    type RouteState,
+    type SearchRoute,
+} from "./minimumRepair"
 import { findPlannerPath } from "./plannerLogic"
 import { findStatSteps, type StatStep } from "./statFocus"
 
@@ -299,94 +311,13 @@ export const optimizePriorityPlans = async (
         )
     }
 
-    const tryAddTarget = async (target: PriorityTarget, stepMs: number) => {
-        const currentPlan = plans[target.layout]
-        const candidateTargets = new Set([
-            ...currentPlan.targetCells,
-            target.key,
-        ])
-        const result = await searchRoute(
-            target.layout,
-            candidateTargets,
-            stepMs,
-        )
-        reportProgress()
-        if (!result.ok) {
-            return null
+    const targetsByAbility = new Map<string, PriorityTarget[]>()
+    for (const target of targets) {
+        if (target.abilityId !== undefined) {
+            const abilityTargets = targetsByAbility.get(target.abilityId) ?? []
+            abilityTargets.push(target)
+            targetsByAbility.set(target.abilityId, abilityTargets)
         }
-
-        const nextTotal = totalCost - currentPlan.plannedCost + result.cost
-        if (nextTotal > pointBudget) {
-            return null
-        }
-
-        return {
-            target: target,
-            nextTotal: nextTotal,
-            nextScore: totalScore - scores[target.layout] + result.statScore,
-            statScore: result.statScore,
-            plan: {
-                targetCells: [...candidateTargets],
-                plannedPath: [...result.path],
-                plannedCost: result.cost,
-            },
-        }
-    }
-
-    const commit = (
-        added: NonNullable<Awaited<ReturnType<typeof tryAddTarget>>>,
-    ) => {
-        plans[added.target.layout] = added.plan
-        totalCost = added.nextTotal
-        scores[added.target.layout] = added.statScore
-        totalScore = added.nextScore
-        if (added.target.isStat) {
-            statTargetKeys[added.target.layout].add(added.target.key)
-        }
-    }
-
-    type Candidate = NonNullable<Awaited<ReturnType<typeof tryAddTarget>>>
-    const isBetter = (candidate: Candidate, best: Candidate | null) => {
-        return (
-            best === null ||
-            candidate.nextTotal < best.nextTotal ||
-            (candidate.nextTotal === best.nextTotal &&
-                candidate.nextScore > best.nextScore)
-        )
-    }
-
-    // Excludes the node's own cost so skills, passives and specials compete
-    // fairly.
-    const isBetterPath = (candidate: Candidate, best: Candidate | null) => {
-        if (best === null) {
-            return true
-        }
-
-        const pathCost = candidate.nextTotal - candidate.target.cost
-        const bestPathCost = best.nextTotal - best.target.cost
-
-        return (
-            pathCost < bestPathCost ||
-            (pathCost === bestPathCost && candidate.nextScore > best.nextScore)
-        )
-    }
-
-    // A node counts as an upgrade once any route passes through it.
-    const isOnRoute = (target: PriorityTarget) => {
-        return plans[target.layout].plannedPath.includes(target.key)
-    }
-    const upgradesFor = (abilityId: string) => {
-        return targets.filter(
-            (target) => target.abilityId === abilityId && isOnRoute(target),
-        ).length
-    }
-    // Max only limits choices; a cheaper route may still pass extra nodes.
-    const isAtMaximum = (abilityId: string | undefined) => {
-        return (
-            abilityId !== undefined &&
-            maximums[abilityId] !== undefined &&
-            upgradesFor(abilityId) >= maximums[abilityId]
-        )
     }
 
     const requiredUpgrades = new Map(
@@ -394,8 +325,7 @@ export const optimizePriorityPlans = async (
             ability.id,
             Math.min(
                 minimums[ability.id] ?? 0,
-                targets.filter((target) => target.abilityId === ability.id)
-                    .length,
+                targetsByAbility.get(ability.id)?.length ?? 0,
             ),
         ]),
     )
@@ -407,6 +337,149 @@ export const optimizePriorityPlans = async (
         .filter((ability) => requiredOf(ability.id) > 0)
         .sort((left, right) => priorityOf(left.id) - priorityOf(right.id))
 
+    const abilityMinimums: AbilityMinimum<MainBoardId>[] = minimumAbilities.map(
+        (ability) => ({
+            abilityId: ability.id,
+            required: requiredOf(ability.id),
+            nodes: targetsByAbility.get(ability.id) ?? [],
+        }),
+    )
+
+    // Nodes pinned to meet a minimum, which a swap may move elsewhere.
+    const minimumPins: Record<MainBoardId, Set<string>> = {
+        nezekan: new Set(),
+        zikel: new Set(),
+        vaizel: new Set(),
+        triniel: new Set(),
+    }
+
+    type Candidate = PlanChange<MainBoardId> & {
+        target: PriorityTarget | null
+    }
+
+    const routeState = (): RouteState<MainBoardId> => {
+        return {
+            plans: plans,
+            scores: scores,
+            totalCost: totalCost,
+            totalScore: totalScore,
+            pointBudget: pointBudget,
+        }
+    }
+
+    const searchWith = (ms: number): SearchRoute<MainBoardId> => {
+        return async (layoutName, keys) => {
+            const result = await searchRoute(layoutName, keys, ms)
+            reportProgress()
+            if (!result.ok) {
+                return null
+            }
+
+            return {
+                plan: {
+                    targetCells: [...keys],
+                    plannedPath: [...result.path],
+                    plannedCost: result.cost,
+                },
+                statScore: result.statScore,
+            }
+        }
+    }
+
+    const upgradesFor = (abilityId: string) => {
+        return upgradesIn(
+            routeState(),
+            new Map(),
+            targetsByAbility.get(abilityId) ?? [],
+        )
+    }
+
+    const tryAddTarget = async (
+        target: PriorityTarget,
+        stepMs: number,
+    ): Promise<Candidate | null> => {
+        const search = searchWith(stepMs)
+        const changes = await searchChange(
+            new Map(),
+            target.layout,
+            new Set([...plans[target.layout].targetCells, target.key]),
+            search,
+        )
+        const kept = changes
+            ? await keepMinimums(routeState(), abilityMinimums, changes, search)
+            : null
+
+        return kept ? { ...kept, target: target } : null
+    }
+
+    const commit = (added: Candidate) => {
+        for (const [layoutName, change] of added.changes) {
+            plans[layoutName] = change.plan
+            scores[layoutName] = change.statScore
+        }
+        totalCost = added.nextTotal
+        totalScore = added.nextScore
+        for (const node of added.pinned) {
+            minimumPins[node.layout].add(node.key)
+        }
+        if (added.target?.isStat) {
+            statTargetKeys[added.target.layout].add(added.target.key)
+        }
+    }
+
+    const swapMinimums = async (until: number) => {
+        for (const layoutName of boards) {
+            for (const key of [...minimumPins[layoutName]]) {
+                if (performance.now() >= until) {
+                    return
+                }
+                if (!minimumPins[layoutName].has(key)) {
+                    continue
+                }
+
+                const swapped = await swapMinimum(
+                    routeState(),
+                    abilityMinimums,
+                    { layout: layoutName, key: key },
+                    searchWith(MIN_STEP_MS),
+                )
+                if (swapped) {
+                    minimumPins[layoutName].delete(key)
+                    commit({ ...swapped, target: null })
+                }
+            }
+        }
+    }
+
+    // Excludes the node's own cost so skills, passives and specials compete
+    // fairly.
+    const isBetterPath = (candidate: Candidate, best: Candidate | null) => {
+        if (best === null) {
+            return true
+        }
+
+        const pathCost = candidate.nextTotal - (candidate.target?.cost ?? 0)
+        const bestPathCost = best.nextTotal - (best.target?.cost ?? 0)
+
+        return (
+            pathCost < bestPathCost ||
+            (pathCost === bestPathCost && candidate.nextScore > best.nextScore)
+        )
+    }
+
+    const isOnRoute = (target: PriorityTarget) => {
+        return plans[target.layout].plannedPath.includes(target.key)
+    }
+
+    // Max only limits choices; a cheaper route may still pass extra nodes.
+    const isAtMaximum = (abilityId: string | undefined) => {
+        return (
+            abilityId !== undefined &&
+            maximums[abilityId] !== undefined &&
+            upgradesFor(abilityId) >= maximums[abilityId]
+        )
+    }
+
     const specialTargets = targets.filter((target) => target.isSpecial)
 
     const fillMinimums = async (stepMs: number, until: number) => {
@@ -417,13 +490,16 @@ export const optimizePriorityPlans = async (
             const required = requiredOf(ability.id)
             while (upgradesFor(ability.id) < required) {
                 let best: Candidate | null = null
-                for (const target of targets) {
-                    if (target.abilityId !== ability.id || isOnRoute(target)) {
+                for (const target of targetsByAbility.get(ability.id) ?? []) {
+                    if (isOnRoute(target)) {
                         continue
                     }
                     const candidate = await tryAddTarget(target, stepMs)
-                    if (candidate && isBetter(candidate, best)) {
-                        best = candidate
+                    if (candidate && isCheaper(candidate, best)) {
+                        best = {
+                            ...candidate,
+                            pinned: [...candidate.pinned, target],
+                        }
                     }
                 }
                 if (!best) {
@@ -646,27 +722,24 @@ export const optimizePriorityPlans = async (
             if (remainingMs <= 0) {
                 return
             }
-            const plan = plans[layoutName]
-            const result = await searchRoute(
+            const changes = await searchChange(
+                new Map(),
                 layoutName,
-                new Set(plan.targetCells),
-                Math.min(MAX_REFINE_SLICE_MS, remainingMs / boards.length),
+                new Set(plans[layoutName].targetCells),
+                searchWith(
+                    Math.min(MAX_REFINE_SLICE_MS, remainingMs / boards.length),
+                ),
             )
-            reportProgress()
-            if (
-                result.ok &&
-                (result.cost < plan.plannedCost ||
-                    (result.cost === plan.plannedCost &&
-                        result.statScore > scores[layoutName]))
-            ) {
-                totalCost += result.cost - plan.plannedCost
-                totalScore += result.statScore - scores[layoutName]
-                scores[layoutName] = result.statScore
-                plans[layoutName] = {
-                    ...plan,
-                    plannedPath: [...result.path],
-                    plannedCost: result.cost,
-                }
+            const refined = changes
+                ? await keepMinimums(
+                      routeState(),
+                      abilityMinimums,
+                      changes,
+                      searchWith(MIN_STEP_MS),
+                  )
+                : null
+            if (refined && improves(routeState(), refined)) {
+                commit({ ...refined, target: null })
             }
         }
     }
@@ -696,15 +769,21 @@ export const optimizePriorityPlans = async (
     )
 
     reportProgress(true)
-    // The first pass always completes so every run returns a full plan.
-    await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
-    await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
-
     const mainDeadline = statSettings.spendLeftover
         ? startedAt + timeBudgetMs * (1 - STAT_FILL_SHARE)
         : deadline
+
+    // The first pass always completes so every run returns a full plan.
+    // Swaps go first so minimums don't fight lower ranks for the points
+    // they free.
+    await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
+    await swapMinimums(mainDeadline)
+    await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
+    await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
+
     while (performance.now() < mainDeadline) {
         await refineRoutes()
+        await swapMinimums(mainDeadline)
         if (performance.now() >= mainDeadline) {
             break
         }
