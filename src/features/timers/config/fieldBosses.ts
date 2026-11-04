@@ -2,10 +2,13 @@ import { AbyssBoss, FieldBoss as FieldBossIcon } from "@assets/timers"
 import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
 
 // No official global respawns: these are half of NCSOFT's Korean notice
-// (Dec 2025), matching global kill reports on aion2atlas.app. Abyss bosses
-// keep a fixed schedule from the client.
+// (Dec 2025), matching global kill reports on aion2atlas.app, except Lagta and
+// Gartua (11 h, global patch notes of 4 Nov 2026). Abyss bosses keep a fixed
+// schedule from the client and the patch notes.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
+// Lagta and Gartua die within seconds of spawning.
+const QUICK_KILL_ALIVE_FOR = 10_000
 
 export type FieldBossRegion = "verteron" | "altgard" | "abyss"
 
@@ -62,11 +65,11 @@ const ABYSS_ZONE = "Chaotic Lower Reshanta"
 // EU server time (Central European, with daylight saving).
 const EXECUTORS_SCHEDULE: ServerSchedule = {
     times: [21 * 60 + 30],
-    // Mon, Thu, Sat
-    days: [1, 4, 6],
+    // Thu, Sat (Monday dropped in the 4 Nov 2026 patch)
+    days: [4, 6],
     openFor: 30 * MINUTE,
 }
-const EXECUTORS_NOTE = "Mon, Thu, Sat 21:30"
+const EXECUTORS_NOTE = "Thu, Sat 21:30"
 
 export const FIELD_BOSSES = [
     // Verteron (Elyos)
@@ -275,7 +278,9 @@ export const FIELD_BOSSES = [
         shortName: "Lagta",
         zone: "Red Forest",
         level: 48,
-        respawn: 12 * HOUR,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         // "gartua" from before there were other bosses; saved timers use it.
@@ -285,9 +290,9 @@ export const FIELD_BOSSES = [
         shortName: "Gartua",
         zone: "Isle of Eternity",
         level: 51,
-        respawn: 12 * HOUR,
-        // Usually dies within 30 seconds.
-        aliveFor: MINUTE / 2,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
 
     // Altgard (Asmodians)
@@ -496,7 +501,9 @@ export const FIELD_BOSSES = [
         shortName: "Lagta",
         zone: "Ragta Fortress",
         level: 48,
-        respawn: 12 * HOUR,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         id: "immortal-gartua",
@@ -505,21 +512,23 @@ export const FIELD_BOSSES = [
         shortName: "Gartua",
         zone: "Isle of Immortality",
         level: 51,
-        respawn: 12 * HOUR,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
 
     // Chaotic Lower Reshanta (Abyss), in the order the tab lists them.
     {
-        // No schedule: a kill timer, halved from the same KR notice.
         id: "argo-spirit-king",
         region: "abyss",
         name: "Argo, the Spirit King",
         shortName: "Spirit King",
         zone: ABYSS_ZONE,
         level: 65,
-        respawn: 12 * HOUR,
+        respawn: null,
         // Usually dies about 8m30s after spawning.
-        aliveFor: 8 * MINUTE + MINUTE / 2,
+        schedule: { times: [10 * 60 + 30, 22 * 60 + 30], openFor: 10 * MINUTE },
+        note: "10:30, 22:30",
     },
     {
         // "siege-boss" from before it had a name; saved timers use it.

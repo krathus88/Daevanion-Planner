@@ -162,8 +162,8 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         icon: ArtifactSiege,
         color: { hue: "cyan", tone: "strong" },
         soonMinutes: 30,
-        description: "Monday, Thursday and Saturday at 21:00 server time.",
-        schedule: { times: [21 * 60], days: [1, 4, 6], openFor: 0 },
+        description: "Thursday and Saturday at 21:00 server time.",
+        schedule: { times: [21 * 60], days: [4, 6], openFor: 0 },
     },
     {
         id: "daily",
