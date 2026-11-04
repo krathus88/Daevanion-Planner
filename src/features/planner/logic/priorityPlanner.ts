@@ -33,6 +33,7 @@ import {
     type RouteState,
     type SearchRoute,
 } from "./minimumRepair"
+import { NO_FINDS, type SearchFinds } from "./improvementStatus"
 import { findPlannerPath } from "./plannerLogic"
 import { findStatSteps, type StatStep } from "./statFocus"
 
@@ -40,12 +41,15 @@ export type PriorityPlannerProgress = {
     elapsedMs: number
     timeBudgetMs: number
     pointsUsed: number
+    // Anything committed after the first full plan improves it.
+    finds: SearchFinds
 }
 
 export type PriorityPlannerResult = {
     plans: PriorityPlans
     shortfalls: MinimumShortfall[]
     specialNodes: { taken: number; total: number }
+    finds: SearchFinds
 }
 
 type PriorityTarget = {
@@ -281,6 +285,11 @@ export const optimizePriorityPlans = async (
         triniel: new Set(),
     }
 
+    let finds = NO_FINDS
+    const elapsed = () => {
+        return Math.min(timeBudgetMs, performance.now() - startedAt)
+    }
+
     let lastProgressAt = Number.NEGATIVE_INFINITY
     const reportProgress = (force = false) => {
         const now = performance.now()
@@ -292,7 +301,22 @@ export const optimizePriorityPlans = async (
             elapsedMs: Math.min(timeBudgetMs, now - startedAt),
             timeBudgetMs: timeBudgetMs,
             pointsUsed: totalCost,
+            finds: finds,
         })
+    }
+
+    // Anything committed once the first plan is built makes it better.
+    const noteImprovement = () => {
+        if (finds.firstFoundMs === null) {
+            return
+        }
+
+        finds = {
+            ...finds,
+            improvements: finds.improvements + 1,
+            lastImprovedMs: elapsed(),
+        }
+        reportProgress(true)
     }
 
     const searchRoute = (
@@ -301,12 +325,24 @@ export const optimizePriorityPlans = async (
         ms: number,
     ) => {
         const layout = layouts[layoutName]
+        // Attempts are counted per search; add only the new ones.
+        let counted = 0
         return findPlannerPath(
             layout,
             getStart(layout),
             keys,
             ms,
-            { onBest: () => {}, onProgress: () => {} },
+            {
+                onBest: () => {},
+                onProgress: ({ attempts }) => {
+                    finds = {
+                        ...finds,
+                        optionsChecked:
+                            finds.optionsChecked + attempts - counted,
+                    }
+                    counted = attempts
+                },
+            },
             weightsByBoard[layoutName],
         )
     }
@@ -425,6 +461,7 @@ export const optimizePriorityPlans = async (
         if (added.target?.isStat) {
             statTargetKeys[added.target.layout].add(added.target.key)
         }
+        noteImprovement()
     }
 
     const swapMinimums = async (until: number) => {
@@ -547,6 +584,7 @@ export const optimizePriorityPlans = async (
         totalScore += statScore - scores[layoutName]
         scores[layoutName] = statScore
         pinStatNodes(layoutName, step.connector.filter(isFree))
+        noteImprovement()
     }
 
     // Ties go to nodes near a waiting ability, so its route can reuse the
@@ -780,6 +818,8 @@ export const optimizePriorityPlans = async (
     await swapMinimums(mainDeadline)
     await fillMinimums(greedyStepMs, Number.POSITIVE_INFINITY)
     await fillByRank(greedyStepMs, Number.POSITIVE_INFINITY)
+    finds = { ...finds, firstFoundMs: elapsed() }
+    reportProgress(true)
 
     while (performance.now() < mainDeadline) {
         await refineRoutes()
@@ -829,5 +869,6 @@ export const optimizePriorityPlans = async (
             taken: specialTargets.filter(isOnRoute).length,
             total: specialTargets.length,
         },
+        finds: finds,
     }
 }

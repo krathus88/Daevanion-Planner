@@ -277,6 +277,46 @@ describe("optimizePriorityPlans", () => {
         )
     })
 
+    it("reports when the first plan is ready, then counts improvements", async () => {
+        const onProgress = vi.fn()
+        // Abilities capped at 0 leave points for the stat fill to improve on.
+        const result = await optimize({
+            maximums: Object.fromEntries(
+                preset.abilities.map((ability) => [ability.id, 0]),
+            ),
+            timeBudgetMs: 200_000,
+            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
+            boards: ["zikel"],
+            onProgress: onProgress,
+        })
+        const reports = onProgress.mock.calls.map(
+            ([progress]) => progress.finds,
+        )
+        const firstReady = reports.findIndex(
+            (finds) => finds.firstFoundMs !== null,
+        )
+        const last = reports.at(-1)
+
+        expect(reports[0].firstFoundMs).toBeNull()
+        expect(firstReady).toBeGreaterThan(0)
+        expect(reports[firstReady].improvements).toBe(0)
+        expect(last.improvements).toBeGreaterThan(0)
+        expect(last.lastImprovedMs).toBeGreaterThanOrEqual(last.firstFoundMs)
+        expect(last.lastImprovedMs).toBeLessThanOrEqual(200_000)
+        expect(result.finds).toEqual(last)
+        expect(reports[0].optionsChecked).toBe(0)
+        expect(last.optionsChecked).toBeGreaterThan(
+            reports[firstReady].optionsChecked,
+        )
+
+        // The count only goes up.
+        for (let index = 1; index < reports.length; index += 1) {
+            expect(reports[index].improvements).toBeGreaterThanOrEqual(
+                reports[index - 1].improvements,
+            )
+        }
+    })
+
     it("throws on an ability assigned to the wrong node type", async () => {
         const passive = preset.abilities.find(
             (ability) => ability.type === "passive",

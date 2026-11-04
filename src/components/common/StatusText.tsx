@@ -19,7 +19,12 @@ export const StatusText = ({
     tone = "danger",
 }: StatusTextProps) => {
     return (
-        <Text color={toneColors[tone]} fontSize="sm" role={role}>
+        <Text
+            color={toneColors[tone]}
+            fontSize="sm"
+            whiteSpace="pre-line"
+            role={role}
+        >
             {children}
         </Text>
     )

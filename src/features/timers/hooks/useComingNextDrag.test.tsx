@@ -107,6 +107,21 @@ describe("useComingNextDrag", () => {
         })
     })
 
+    it("drags by its left, not the handle's slide", () => {
+        const { strip, onDrop } = setup()
+
+        // An unfolded handle slides the strip 20px left of its `left`.
+        strip.style.marginLeft = "-20px"
+        fireEvent.pointerDown(strip, { button: 0, clientX: 0, clientY: 0 })
+        fireEvent.pointerMove(strip, { clientX: 200, clientY: 300 })
+        expect(strip).toHaveAttribute("data-left", "220")
+
+        fireEvent.pointerUp(strip, { clientX: 200, clientY: 300 })
+        expect(onDrop).toHaveBeenCalledWith(
+            expect.objectContaining({ fx: 220 / WIDTH }),
+        )
+    })
+
     it("ignores other mouse buttons", () => {
         const { strip, onDrop } = setup()
 

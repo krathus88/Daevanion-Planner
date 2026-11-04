@@ -6,6 +6,10 @@ import {
     formatSearchTime,
 } from "@planner/config/searchTime"
 import { usePriorityOptimizer } from "@planner/hooks/usePriorityOptimizer"
+import {
+    improvementStatus,
+    planPhaseStatus,
+} from "@planner/logic/improvementStatus"
 import { ProgressBar } from "@common/ProgressBar"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
@@ -64,6 +68,21 @@ export const PriorityOptimizer = ({
                                 : 0
                         }
                     />
+
+                    {progress && (
+                        <StatusText tone="muted">
+                            {planPhaseStatus(progress.finds)}
+                        </StatusText>
+                    )}
+
+                    {progress?.finds.firstFoundMs != null && (
+                        <StatusText tone="muted">
+                            {improvementStatus({
+                                finds: progress.finds,
+                                noun: "plan",
+                            })}
+                        </StatusText>
+                    )}
                 </Flex>
             ) : (
                 <Flex gap="2">

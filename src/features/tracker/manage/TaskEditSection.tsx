@@ -1,40 +1,27 @@
 import { Flex, Text } from "@chakra-ui/react"
-import type { TaskSection } from "@tracker/logic/taskSections"
+import type { TaskEditResetList } from "@tracker/logic/taskEditGroups"
 import type { TaskFields } from "@tracker/logic/trackerEdits"
 import { TaskEditList } from "./TaskEditList"
 
 type TaskEditSectionProps = {
-    section: TaskSection
+    list: TaskEditResetList
     onChange: (id: string, fields: TaskFields) => void
     onDelete: (id: string) => void
     onMove: (id: string, offset: -1 | 1) => void
 }
 
 export const TaskEditSection = ({
-    section,
+    list,
     onChange,
     onDelete,
     onMove,
 }: TaskEditSectionProps) => {
     return (
         <Flex flexDir="column" gap="2">
-            <Text textStyle="label">{section.label}</Text>
+            <Text textStyle="label">{list.label}</Text>
 
             <TaskEditList
-                tasks={section.tasks}
-                onChange={onChange}
-                onDelete={onDelete}
-                onMove={onMove}
-            />
-
-            {section.sharedTasks.length > 0 && (
-                <Text color="app.muted" fontSize="xs" fontWeight="semibold">
-                    Shared by server
-                </Text>
-            )}
-
-            <TaskEditList
-                tasks={section.sharedTasks}
+                tasks={list.tasks}
                 onChange={onChange}
                 onDelete={onDelete}
                 onMove={onMove}

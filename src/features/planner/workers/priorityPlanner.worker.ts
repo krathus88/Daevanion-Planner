@@ -56,12 +56,13 @@ globalThis.addEventListener(
             },
             boards,
         )
-            .then(({ plans, shortfalls, specialNodes }) =>
+            .then(({ plans, shortfalls, specialNodes, finds }) =>
                 globalThis.postMessage({
                     type: "done",
                     plans: plans,
                     shortfalls: shortfalls,
                     specialNodes: specialNodes,
+                    finds: finds,
                 }),
             )
             .catch((error: unknown) => {

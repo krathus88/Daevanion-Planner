@@ -126,6 +126,10 @@ test.describe("planner mode", () => {
             .selectOption({ label: "10s" })
         await page.getByRole("button", { name: "Find a good path" }).click()
 
+        await expect(
+            page.getByText(/First route ready at|Best route so far found at/),
+        ).toBeVisible({ timeout: 15_000 })
+
         const routeCost = page
             .getByText("Route cost", { exact: true })
             .locator("..")
@@ -151,6 +155,9 @@ test.describe("all boards", () => {
             .selectOption({ label: "10s" })
         await panel.getByRole("button", { name: "Optimize all boards" }).click()
 
+        await expect(
+            panel.getByText(/First plan ready at|Best plan so far found at/),
+        ).toBeVisible({ timeout: 15_000 })
         await expect(
             panel.getByRole("button", { name: "Optimize all boards" }),
         ).toBeEnabled({ timeout: 60_000 })

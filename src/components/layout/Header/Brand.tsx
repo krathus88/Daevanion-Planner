@@ -4,10 +4,10 @@ export const Brand = ({ ...props }: FlexProps) => {
     return (
         <Flex
             flexShrink="0"
-            flexDir={{ base: "column", md: "row" }}
-            alignItems={{ base: "flex-start", md: "baseline" }}
-            columnGap="2"
-            lineHeight={{ base: "tight", md: "normal" }}
+            flexDir="column"
+            alignItems="flex-start"
+            lineHeight="shorter"
+            userSelect="none"
             {...props}
         >
             <Text
@@ -19,7 +19,13 @@ export const Brand = ({ ...props }: FlexProps) => {
                 Daevanion
             </Text>
 
-            <Text color="app.muted" fontSize="lg">
+            <Text
+                color="app.muted"
+                fontSize="xs"
+                fontWeight="semibold"
+                letterSpacing="widest"
+                textTransform="uppercase"
+            >
                 Planner
             </Text>
         </Flex>

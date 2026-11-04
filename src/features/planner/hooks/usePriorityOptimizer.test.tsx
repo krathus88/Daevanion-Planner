@@ -58,6 +58,12 @@ const done = (overrides: object = {}) => {
         },
         shortfalls: [],
         specialNodes: { taken: 2, total: 2 },
+        finds: {
+            optionsChecked: 4820,
+            firstFoundMs: 4200,
+            improvements: 3,
+            lastImprovedMs: 42_000,
+        },
         ...overrides,
     }
 }
@@ -117,7 +123,17 @@ describe("usePriorityOptimizer", () => {
         })
         lastWorker().emit({
             type: "progress",
-            progress: { elapsedMs: 1, timeBudgetMs: 2, pointsUsed: 3 },
+            progress: {
+                elapsedMs: 1,
+                timeBudgetMs: 2,
+                pointsUsed: 3,
+                finds: {
+                    optionsChecked: 10,
+                    firstFoundMs: 1,
+                    improvements: 0,
+                    lastImprovedMs: null,
+                },
+            },
         })
 
         expect(result.current.progress?.pointsUsed).toBe(3)
@@ -141,9 +157,31 @@ describe("usePriorityOptimizer", () => {
         })
         expect(readPlannerHistory(CLASS, "ariel").value).toBeNull()
         expect(result.current.message).toBe(
-            "Optimized all four boards using 100 of 225 shared points. Ariel has no points, so its route was left as is.",
+            "Optimized all four boards using 100 of 225 shared points. Ariel has no points, so its route was left as is.\n\nChecked 4,820 options. Found 3 better plans after the first, the last at 42s.",
         )
         expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+
+    it("says when no better plan turned up", () => {
+        const { result } = setup()
+
+        act(() => {
+            result.current.optimize(10)
+        })
+        lastWorker().emit(
+            done({
+                finds: {
+                    optionsChecked: 4820,
+                    firstFoundMs: 4200,
+                    improvements: 0,
+                    lastImprovedMs: null,
+                },
+            }),
+        )
+
+        expect(result.current.message).toContain(
+            "points. Ariel has no points, so its route was left as is.\n\nChecked 4,820 options. No better plan turned up after the first at 4.2s.",
+        )
     })
 
     it("plans Ariel too once it has points", () => {

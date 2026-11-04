@@ -31,6 +31,7 @@ const STAT_FILL_SHARE = 0.2
 
 const postCandidate = (
     result: Extract<PlannerResult, { ok: true }>,
+    startedAt: number,
     extended = false,
 ) => {
     globalThis.postMessage({
@@ -42,6 +43,7 @@ const postCandidate = (
             statScore: result.statScore,
             extended: extended,
         },
+        elapsedMs: performance.now() - startedAt,
     })
 }
 
@@ -80,7 +82,7 @@ globalThis.addEventListener(
                                       progress: progress,
                                   })
                               },
-                              onBest: (best) => postCandidate(best),
+                              onBest: (best) => postCandidate(best, startedAt),
                           },
                           weights,
                       )
@@ -115,7 +117,7 @@ globalThis.addEventListener(
                 }
             }
 
-            postCandidate(result, true)
+            postCandidate(result, startedAt, true)
             return result
         }
 
@@ -138,14 +140,14 @@ globalThis.addEventListener(
                             progress: progress,
                         })
                     },
-                    onBest: (best) => postCandidate(best),
+                    onBest: (best) => postCandidate(best, startedAt),
                 },
                 weights,
             )
             if (!result.ok) {
                 return result
             }
-            postCandidate(result)
+            postCandidate(result, startedAt)
 
             let current = result
             const kept = new Set(targetSet)
@@ -171,7 +173,7 @@ globalThis.addEventListener(
                         cost: grown.cost,
                         statScore: routeStatScore(grown.path, weights),
                     }
-                    postCandidate(current, true)
+                    postCandidate(current, startedAt, true)
                 }
             }
 
@@ -187,7 +189,7 @@ globalThis.addEventListener(
                 stats: stats,
                 weights: weights,
                 until: startedAt + timeBudgetMs,
-                onImproved: (route) => postCandidate(route, true),
+                onImproved: (route) => postCandidate(route, startedAt, true),
             })
         }
 

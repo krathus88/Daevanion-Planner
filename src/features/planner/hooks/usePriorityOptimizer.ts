@@ -9,6 +9,11 @@ import {
 import { planArielRoute } from "@planner/logic/arielRoute"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
+import {
+    joinParagraphs,
+    searchSummary,
+    type SearchFinds,
+} from "@planner/logic/improvementStatus"
 import type { PriorityPlannerProgress } from "@planner/logic/priorityPlanner"
 import {
     readAbilityMaximums,
@@ -42,6 +47,7 @@ type PriorityWorkerMessage =
           plans: PriorityPlans
           shortfalls: MinimumShortfall[]
           specialNodes: { taken: number; total: number }
+          finds: SearchFinds
       }
     | { type: "error"; message: string }
 
@@ -85,6 +91,7 @@ export const usePriorityOptimizer = ({
     const recordPlans = (
         mainPlans: PriorityPlans,
         arielSettings: ArielSettings,
+        finds: SearchFinds,
     ) => {
         const plans = { ...mainPlans, ariel: planArielRoute(arielSettings) }
         // Ariel's route is left as is until it has points to spend.
@@ -133,11 +140,11 @@ export const usePriorityOptimizer = ({
                 (sum, layoutName) => sum + plans[layoutName].plannedCost,
                 0,
             )
-            setMessage(
-                hasArielPoints
-                    ? `Optimized all four boards using ${spent} of ${totalPoints} shared points, and Ariel using ${plans.ariel.plannedCost} of ${arielSettings.points} Ariel points.`
-                    : `Optimized all four boards using ${spent} of ${totalPoints} shared points. Ariel has no points, so its route was left as is.`,
-            )
+            const optimized = hasArielPoints
+                ? `Optimized all four boards using ${spent} of ${totalPoints} shared points, and Ariel using ${plans.ariel.plannedCost} of ${arielSettings.points} Ariel points.`
+                : `Optimized all four boards using ${spent} of ${totalPoints} shared points. Ariel has no points, so its route was left as is.`
+            const summary = searchSummary({ finds: finds, noun: "plan" })
+            setMessage(joinParagraphs(optimized, summary))
         }
 
         return entries
@@ -205,7 +212,7 @@ export const usePriorityOptimizer = ({
         }
 
         try {
-            const entries = recordPlans(data.plans, arielSettings)
+            const entries = recordPlans(data.plans, arielSettings, data.finds)
             onComplete(() => applyPlans(entries))
             const isShort =
                 data.shortfalls.length > 0 ||

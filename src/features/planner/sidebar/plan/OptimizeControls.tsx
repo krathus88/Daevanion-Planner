@@ -3,6 +3,10 @@ import { isMainBoard } from "@config/boards"
 import { useState } from "react"
 import { DEFAULT_SEARCH_SECONDS } from "@planner/config/searchTime"
 import { useBoard } from "@planner/context/boardContext"
+import {
+    formatOptionsChecked,
+    improvementStatus,
+} from "@planner/logic/improvementStatus"
 import { formatPlannerDuration } from "@planner/logic/plannerLogic"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
@@ -22,7 +26,15 @@ export const OptimizeControls = () => {
                 <StatusText tone="muted">
                     {planner.optimizationProgress == null
                         ? "Starting the route search…"
-                        : `Trying variations — ${planner.optimizationProgress.attempts.toLocaleString()} tried · ${formatPlannerDuration(planner.optimizationProgress.elapsedMs)}`}
+                        : `Checking routes · ${formatOptionsChecked(planner.optimizationProgress.attempts)} · ${formatPlannerDuration(planner.optimizationProgress.elapsedMs)}`}
+                </StatusText>
+
+                <StatusText tone="muted">
+                    {improvementStatus({
+                        finds: planner.routeFinds,
+                        noun: "route",
+                        fromCurrent: planner.improvesCurrent,
+                    })}
                 </StatusText>
 
                 <Button

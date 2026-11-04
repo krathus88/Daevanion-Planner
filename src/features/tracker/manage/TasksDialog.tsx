@@ -1,10 +1,11 @@
 import { CloseButton, Dialog, Flex, Portal, Text } from "@chakra-ui/react"
 import { ConfirmButton } from "@common/ConfirmButton"
+import { getTaskEditGroups } from "@tracker/logic/taskEditGroups"
 import type { TaskSection } from "@tracker/logic/taskSections"
 import type { TaskFields } from "@tracker/logic/trackerEdits"
 import { LuRotateCcw } from "react-icons/lu"
 import { AddTaskForm } from "./AddTaskForm"
-import { TaskEditSection } from "./TaskEditSection"
+import { TaskEditGroup } from "./TaskEditGroup"
 
 type TasksDialogProps = {
     sections: TaskSection[]
@@ -33,6 +34,8 @@ export const TasksDialog = ({
         onOpenChange(details.open)
     }
 
+    const groups = getTaskEditGroups(sections)
+
     return (
         <Dialog.Root
             size="lg"
@@ -57,10 +60,10 @@ export const TasksDialog = ({
 
                         <Dialog.Body>
                             <Flex flexDir="column" gap="5">
-                                {sections.map((section) => (
-                                    <TaskEditSection
-                                        key={section.reset}
-                                        section={section}
+                                {groups.map((group) => (
+                                    <TaskEditGroup
+                                        key={group.id}
+                                        group={group}
                                         onChange={onChange}
                                         onDelete={onDelete}
                                         onMove={onMove}

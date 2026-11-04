@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 import { expect, test } from "./fixtures"
 
 const KEY = "daevanion:timers:v1:settings"
@@ -202,10 +202,101 @@ test.describe("Coming next", () => {
             .toBe(4)
     })
 
+    test("shows its drag handle and hide button only on hover", async ({
+        page,
+    }) => {
+        // Mid-screen, so a growth left out of its width would move the timers.
+        await openWith(page, {
+            showComingNext: true,
+            comingNextPosition: { dock: "free", fx: 0.5, fy: 0.3 },
+        })
+
+        const handle = page.getByTitle("Drag to move")
+        const hide = page.getByTitle("Hide coming next")
+
+        const widthOf = async (locator: Locator) => {
+            return (await locator.boundingBox())?.width ?? 0
+        }
+
+        await expect(handle).toHaveCSS("opacity", "0")
+        await expect(hide).toHaveCSS("opacity", "0")
+        // The button's transparent border is all that's left.
+        expect(await widthOf(handle)).toBe(0)
+        expect(await widthOf(hide)).toBeLessThanOrEqual(2)
+
+        const firstTimer = page.locator("#coming-next-list > *").first()
+        const timerLeft = (await firstTimer.boundingBox())?.x
+
+        await strip(page).hover()
+
+        await expect(handle).toHaveCSS("opacity", "1")
+        await expect(hide).toHaveCSS("opacity", "1")
+        // The strip slides left as the handle grows, so the timers stay put.
+        expect((await firstTimer.boundingBox())?.x).toBeCloseTo(
+            timerLeft ?? Number.NaN,
+            0,
+        )
+        await expect.poll(() => widthOf(handle)).toBeGreaterThan(10)
+        await expect.poll(() => widthOf(hide)).toBeGreaterThan(20)
+
+        await page.mouse.move(0, 0)
+
+        await expect(hide).toHaveCSS("opacity", "0")
+        await expect.poll(() => widthOf(hide)).toBeLessThanOrEqual(2)
+    })
+
+    test("keeps its timers still on every frame as it unfolds", async ({
+        page,
+    }) => {
+        await openWith(page, {
+            showComingNext: true,
+            comingNextPosition: { dock: "free", fx: 0.37, fy: 0.3 },
+        })
+
+        // The first timer's left edge on every frame for a second.
+        const sampleTimerLefts = () => {
+            return page.evaluate(async () => {
+                const timer = document.querySelector("#coming-next-list > *")
+                const lefts: number[] = []
+                const start = performance.now()
+
+                while (timer && performance.now() - start < 1000) {
+                    lefts.push(timer.getBoundingClientRect().left)
+                    await new Promise(requestAnimationFrame)
+                }
+
+                return lefts
+            })
+        }
+
+        const unfolding = sampleTimerLefts()
+        await strip(page).hover()
+        const unfoldLefts = await unfolding
+
+        const folding = sampleTimerLefts()
+        await page.mouse.move(0, 0)
+        const lefts = [...unfoldLefts, ...(await folding)]
+
+        expect(lefts.length).toBeGreaterThan(40)
+        expect(Math.max(...lefts) - Math.min(...lefts)).toBeLessThan(0.05)
+    })
+
+    test("keeps its toggle when collapsed", async ({ page }) => {
+        await page.goto("/timers")
+
+        await expect(page.getByTitle("Show coming next")).toHaveCSS(
+            "opacity",
+            "1",
+        )
+    })
+
     test("dragging moves it and saves the place", async ({ page }) => {
         await openWith(page, { showComingNext: true })
 
+        // The handle only unfolds while the strip is hovered.
         const handle = page.getByTitle("Drag to move")
+        await strip(page).hover()
+        await expect(handle).toHaveCSS("opacity", "1")
         const box = await handle.boundingBox()
 
         if (!box) {

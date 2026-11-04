@@ -7,7 +7,9 @@ import { isRecord } from "@planner/storage/isRecord"
 export type ComingNextPosition =
     { dock: "header"; along: number } | { dock: "free"; fx: number; fy: number }
 
-// Everything measured in viewport px.
+// Everything measured in viewport px. `width` is the strip with its hover
+// controls folded away; unfolded, they stick out `startGrowth` to the left and
+// `endGrowth` to the right, and placing keeps that on screen too.
 export type ComingNextLayout = {
     viewportWidth: number
     viewportHeight: number
@@ -15,6 +17,8 @@ export type ComingNextLayout = {
     contentLeft: number
     contentRight: number
     width: number
+    startGrowth: number
+    endGrowth: number
     height: number
 }
 
@@ -51,6 +55,14 @@ const fromFraction = (fraction: number, range: number) => {
     return fraction * Math.max(range, 0)
 }
 
+// The furthest left the strip can sit and still show whole, and right.
+const getLeftBounds = (layout: ComingNextLayout) => {
+    return {
+        min: layout.startGrowth,
+        max: layout.viewportWidth - layout.width - layout.endGrowth,
+    }
+}
+
 const getHeaderRange = (layout: ComingNextLayout) => {
     return layout.contentRight - layout.contentLeft - layout.width
 }
@@ -82,7 +94,8 @@ export const snapComingNext = (
     const snappedLeft = snapTo(x, [0, layout.contentLeft])
     const snappedRight = snapTo(x + layout.width, rightEdges) - layout.width
     const snappedX = snappedLeft !== x ? snappedLeft : snappedRight
-    const left = clamp(snappedX, 0, layout.viewportWidth - layout.width)
+    const bounds = getLeftBounds(layout)
+    const left = clamp(snappedX, bounds.min, bounds.max)
 
     if (Math.abs(y - layout.headerBottom) <= SNAP_DISTANCE) {
         return {
@@ -110,20 +123,24 @@ export const placeComingNext = (
     position: ComingNextPosition,
     layout: ComingNextLayout,
 ) => {
-    const maxLeft = layout.viewportWidth - layout.width
+    const bounds = getLeftBounds(layout)
     const maxTop = layout.viewportHeight - layout.height
 
     if (position.dock === "header") {
         const offset = fromFraction(position.along, getHeaderRange(layout))
 
         return {
-            x: clamp(layout.contentLeft + offset, 0, maxLeft),
+            x: clamp(layout.contentLeft + offset, bounds.min, bounds.max),
             y: layout.headerBottom,
         }
     }
 
     return {
-        x: clamp(fromFraction(position.fx, maxLeft), 0, maxLeft),
+        x: clamp(
+            fromFraction(position.fx, layout.viewportWidth - layout.width),
+            bounds.min,
+            bounds.max,
+        ),
         y: clamp(fromFraction(position.fy, maxTop), 0, maxTop),
     }
 }

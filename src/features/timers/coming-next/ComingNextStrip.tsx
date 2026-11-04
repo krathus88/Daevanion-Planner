@@ -6,6 +6,7 @@ import { HeaderTimerChip } from "@timers/pinned/HeaderTimerChip"
 import { ComingNextHandle } from "./ComingNextHandle"
 import { ComingNextMenu } from "./ComingNextMenu"
 import { ComingNextToggle } from "./ComingNextToggle"
+import { slideWithHandle } from "./hoverReveal"
 
 type ComingNextStripProps = {
     entries: TimerEntry[]
@@ -51,6 +52,8 @@ export const ComingNextStrip = ({
                 <ComingNextMenu count={count} onCountChange={onCountChange}>
                     <Flex
                         ref={stripRef}
+                        // For the controls that show on hover.
+                        className="group"
                         pos="fixed"
                         zIndex="sticky"
                         px="1"
@@ -67,6 +70,9 @@ export const ComingNextStrip = ({
                         borderBottomRadius="md"
                         boxShadow={isDragging ? "lg" : "md"}
                         visibility={topLeft ? "visible" : "hidden"}
+                        // Dragging captures the pointer, so the strip stays
+                        // hovered and slid.
+                        css={slideWithHandle}
                         aria-label="Coming next"
                     >
                         <ComingNextHandle

@@ -10,7 +10,35 @@ type Point = { x: number; y: number }
 
 const DEFAULT_POSITION: ComingNextPosition = { dock: "header", along: 0 }
 
+const readPx = (value: string) => {
+    return Number.parseFloat(value) || 0
+}
+
+// How far the strip's control marked `data-folds` at that end has grown out
+// of it: its width and margins plus the gap beside it (0 while folded).
+const getGrowth = (strip: HTMLElement, side: "start" | "end") => {
+    const control = strip.querySelector<HTMLElement>(
+        `:scope > [data-folds="${side}"]`,
+    )
+
+    if (!control) {
+        return 0
+    }
+
+    const style = getComputedStyle(control)
+    const gap = readPx(getComputedStyle(strip).columnGap)
+
+    return (
+        control.getBoundingClientRect().width +
+        readPx(style.marginLeft) +
+        readPx(style.marginRight) +
+        gap
+    )
+}
+
 // `anchorRef` sits at the header's bottom edge and spans the content width.
+// Positions are the strip's `left`; its margin slides it further while the
+// handle is unfolded, so they leave that out.
 export const useComingNextDrag = (
     position: ComingNextPosition | null,
     onDrop: (position: ComingNextPosition) => void,
@@ -30,15 +58,31 @@ export const useComingNextDrag = (
             return
         }
 
+        let width = 0
+
         const measure = () => {
             const anchorRect = anchor.getBoundingClientRect()
+            const startGrowth = getGrowth(strip, "start")
+            const endGrowth = getGrowth(strip, "end")
+            const folded =
+                strip.getBoundingClientRect().width - startGrowth - endGrowth
+
+            // While the controls unfold, the parts don't add up to exactly
+            // the same folded width every frame; following that noise would
+            // make the timers wobble, so only a real change counts.
+            if (Math.abs(folded - width) >= 1) {
+                width = folded
+            }
+
             setLayout({
                 viewportWidth: document.documentElement.clientWidth,
                 viewportHeight: window.innerHeight,
                 headerBottom: header.getBoundingClientRect().bottom,
                 contentLeft: anchorRect.left,
                 contentRight: anchorRect.right,
-                width: strip.offsetWidth,
+                width: width,
+                startGrowth: startGrowth,
+                endGrowth: endGrowth,
                 height: strip.offsetHeight,
             })
         }
@@ -67,13 +111,14 @@ export const useComingNextDrag = (
         }
 
         const rect = strip.getBoundingClientRect()
+        const left = rect.left - readPx(getComputedStyle(strip).marginLeft)
 
         grabRef.current = {
-            x: event.clientX - rect.left,
+            x: event.clientX - left,
             y: event.clientY - rect.top,
         }
         event.currentTarget.setPointerCapture(event.pointerId)
-        setDrag({ x: rect.left, y: rect.top })
+        setDrag({ x: left, y: rect.top })
     }
 
     const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -107,9 +152,12 @@ export const useComingNextDrag = (
         }
     }
 
+    const placed = layout
+        ? placeComingNext(position ?? DEFAULT_POSITION, layout)
+        : null
+    // A whole-pixel left keeps the text crisp while the strip slides.
     const topLeft =
-        drag ??
-        (layout ? placeComingNext(position ?? DEFAULT_POSITION, layout) : null)
+        drag ?? (placed ? { x: Math.round(placed.x), y: placed.y } : null)
     const isDocked =
         drag === null && (position === null || position.dock === "header")
 

@@ -12,6 +12,8 @@ const layout = {
     contentLeft: 100,
     contentRight: 900,
     width: 200,
+    startGrowth: 0,
+    endGrowth: 0,
     height: 40,
 }
 
@@ -93,6 +95,26 @@ describe("placeComingNext", () => {
                 { ...layout, viewportWidth: 500, viewportHeight: 400 },
             ),
         ).toEqual({ x: 300, y: 360 })
+    })
+
+    it("keeps its place as its controls unfold", () => {
+        expect(
+            placeComingNext(
+                { dock: "header", along: 0.5 },
+                { ...layout, startGrowth: 20, endGrowth: 30 },
+            ),
+        ).toEqual({ x: 400, y: 60 })
+    })
+
+    it("keeps unfolded controls on screen", () => {
+        const unfolded = { ...layout, startGrowth: 20, endGrowth: 30 }
+
+        expect(
+            placeComingNext({ dock: "free", fx: 0, fy: 0 }, unfolded),
+        ).toMatchObject({ x: 20 })
+        expect(
+            placeComingNext({ dock: "free", fx: 1, fy: 0 }, unfolded),
+        ).toMatchObject({ x: 770 })
     })
 
     it("stays on screen in a window narrower than the strip", () => {

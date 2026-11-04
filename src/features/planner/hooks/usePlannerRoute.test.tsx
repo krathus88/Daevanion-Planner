@@ -232,6 +232,45 @@ describe("optimizing", () => {
         expect(result.current.plannedCost).toBe(7)
     })
 
+    it("counts each better route found after the first", () => {
+        const { result } = setup()
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+        expect(result.current.improvesCurrent).toBe(false)
+        expect(result.current.routeFinds.firstFoundMs).toBeNull()
+
+        lastWorker().emit(candidate(9))
+        expect(result.current.routeFinds.firstFoundMs).not.toBeNull()
+        expect(result.current.routeFinds.improvements).toBe(0)
+
+        lastWorker().emit(candidate(12))
+        expect(result.current.routeFinds.improvements).toBe(0)
+
+        lastWorker().emit(candidate(7))
+        lastWorker().emit(candidate(5))
+        expect(result.current.routeFinds.improvements).toBe(2)
+        expect(result.current.routeFinds.lastImprovedMs).not.toBeNull()
+
+        act(() => {
+            result.current.cancelOptimization()
+        })
+        expect(result.current.routeFinds.improvements).toBe(0)
+    })
+
+    it("counts the first route that beats the current one on Improve", () => {
+        const { result } = setup({ initial: withRoute })
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+        expect(result.current.improvesCurrent).toBe(true)
+
+        lastWorker().emit(candidate(3))
+        expect(result.current.routeFinds.improvements).toBe(1)
+    })
+
     it("always takes a route extended with leftover stats", () => {
         const { result } = setup()
 
@@ -269,7 +308,7 @@ describe("optimizing", () => {
 
         const worker = lastWorker()
 
-        worker.emit(candidate(9))
+        worker.emit({ ...candidate(9), elapsedMs: 300 })
         worker.emit(DONE)
 
         expect(result.current.isOptimizing).toBe(false)
@@ -282,7 +321,40 @@ describe("optimizing", () => {
             activePlanner: { source: "history" },
         })
         expect(setMessage).toHaveBeenLastCalledWith(
-            "Best route found after 1.5 sec and saved to optimization history.",
+            "Best route found after 1.5 sec and saved to optimization history.\n\nNo better route turned up after the first at 0.3s.",
+        )
+    })
+
+    it("says how many better routes it found, and when the last was", () => {
+        const { result, setMessage } = setup()
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+
+        const worker = lastWorker()
+
+        worker.emit({ ...candidate(9), elapsedMs: 100 })
+        worker.emit({ ...candidate(8), elapsedMs: 400 })
+        worker.emit({ ...candidate(7), elapsedMs: 1200 })
+        worker.emit(DONE)
+
+        expect(setMessage).toHaveBeenLastCalledWith(
+            "Best route found after 1.5 sec and saved to optimization history.\n\nFound 2 better routes after the first, the last at 1.2s.",
+        )
+    })
+
+    it("counts better routes than the current one on Improve", () => {
+        const { result, setMessage } = setup({ initial: withRoute })
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+        lastWorker().emit({ ...candidate(3), elapsedMs: 700 })
+        lastWorker().emit(DONE)
+
+        expect(setMessage).toHaveBeenLastCalledWith(
+            "Best route found after 1.5 sec and saved to optimization history.\n\nFound 1 better route than the current one, the last at 0.7s.",
         )
     })
 
@@ -307,12 +379,38 @@ describe("optimizing", () => {
             result.current.optimizePlanner()
         })
         lastWorker().emit(candidate(4))
+        lastWorker().emit({
+            type: "progress",
+            progress: { attempts: 2400, elapsedMs: 1500 },
+        })
+        expect(result.current.routeFinds.optionsChecked).toBe(2400)
         lastWorker().emit(DONE)
 
         expect(result.current.plannedCost).toBe(4)
         expect(result.current.plannerHistory).toEqual([])
         expect(setMessage).toHaveBeenLastCalledWith(
-            "No better route found after 1.5 sec; kept the previous 4-point route.",
+            "No better route found after 1.5 sec; kept the previous 4-point route.\n\nChecked 2,400 options.",
+        )
+    })
+
+    it("records a route that costs the same but has better stats", () => {
+        const { result, setMessage } = setup({ initial: withRoute })
+
+        act(() => {
+            result.current.optimizePlanner()
+        })
+        lastWorker().emit({
+            ...candidate(4, {
+                path: ["0,2"],
+                statScore: Number.MAX_SAFE_INTEGER,
+            }),
+            elapsedMs: 800,
+        })
+        lastWorker().emit(DONE)
+
+        expect(result.current.plannerHistory).toHaveLength(1)
+        expect(setMessage).toHaveBeenLastCalledWith(
+            "Best route found after 1.5 sec and saved to optimization history.\n\nFound 1 better route than the current one, the last at 0.8s.",
         )
     })
 

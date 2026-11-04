@@ -12,6 +12,8 @@ export const SidebarMessage = ({ children }: { children: ReactNode }) => {
             borderTopWidth="1px"
             color="app.accent"
             fontSize="sm"
+            // Paragraphs are split by a blank line.
+            whiteSpace="pre-line"
             role="status"
         >
             {children}
