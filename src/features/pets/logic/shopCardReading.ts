@@ -2,9 +2,11 @@
 // out. Kept free of path aliases so scripts/ can run it with plain node.
 import type { CardRect, Pixels } from "./cardDetection.ts"
 import {
+    GRID_WIDTH,
     matchCard,
     sampleCard,
     SHOP_LAYOUT,
+    type CardMatch,
     type PetPrint,
 } from "./cardMatching.ts"
 
@@ -20,6 +22,10 @@ const MAX_RED_SHARE = 0.15
 const MIN_DARK_SHARE = 0.5
 // Sample rows the band hides, a little past it on each side.
 const BANNER_ROWS = [31, 41] as const
+// Matching nudges the sample a whole cell at a time. Busy art (Ashen Agrint)
+// can score below the cutoff when the frame falls halfway between cells, so
+// the card is also sampled half a cell over, in sample cells.
+const SAMPLE_OFFSETS = [0, 0.5] as const
 
 export const isSoldOut = (pixels: Pixels, rect: CardRect) => {
     const channels = pixels.channels ?? 4
@@ -71,13 +77,27 @@ export const readShopCard = (
     prints: PetPrint[],
 ) => {
     const soldOut = isSoldOut(pixels, rect)
-    const card = sampleCard(pixels, rect, SHOP_LAYOUT)
-    // Shop art is always in color.
-    const [best] = matchCard(
-        soldOut ? { ...card, hiddenRows: BANNER_ROWS } : card,
-        prints,
-        true,
-    )
+    const cell = rect.width / GRID_WIDTH
+    let best: CardMatch = { id: 0, score: -Infinity }
+
+    for (const offsetY of SAMPLE_OFFSETS) {
+        for (const offsetX of SAMPLE_OFFSETS) {
+            const shifted = {
+                ...rect,
+                x: rect.x + offsetX * cell,
+                y: rect.y + offsetY * cell,
+            }
+            const card = sampleCard(pixels, shifted, SHOP_LAYOUT)
+            // Shop art is always in color.
+            const [match] = matchCard(
+                soldOut ? { ...card, hiddenRows: BANNER_ROWS } : card,
+                prints,
+                true,
+            )
+
+            if (match.score > best.score) best = match
+        }
+    }
 
     return { petId: best.id, score: best.score, soldOut: soldOut }
 }

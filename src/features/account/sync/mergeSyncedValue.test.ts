@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { MAX_PLANNER_HISTORY } from "@planner/storage/boardStorage"
 import { mergeSyncedValue } from "./mergeSyncedValue"
-import { PETS_KEY, TIMERS_KEY } from "./syncedKeys"
+import { PETS_KEY, TIMERS_KEY, TRACKER_KEY } from "./syncedKeys"
 
 const SAVED = "daevanion:v1:gladiator:nezekan:saved-boards"
 const HISTORY = "daevanion:v1:gladiator:nezekan:planner-history"
@@ -90,6 +90,35 @@ describe("mergeSyncedValue: pets", () => {
                 true,
             ),
         ).toEqual({ levels: { 1: 1 }, souls: { 1: 5 } })
+    })
+})
+
+describe("mergeSyncedValue: tracker", () => {
+    it("keeps both sides' characters and the later counts", () => {
+        expect(
+            mergeSyncedValue(
+                TRACKER_KEY,
+                {
+                    characters: [{ id: "a", name: "A", classId: "cleric" }],
+                    counts: { a: { t: { period: 2, count: 1 } } },
+                },
+                {
+                    characters: [{ id: "b", name: "B", classId: "ranger" }],
+                    counts: { a: { t: { period: 3, count: 0 } } },
+                },
+                true,
+            ),
+        ).toEqual({
+            characters: [
+                { id: "a", name: "A", classId: "cleric", server: "siel" },
+                { id: "b", name: "B", classId: "ranger", server: "siel" },
+            ],
+            tasks: null,
+            counts: { a: { t: { period: 3, count: 0 } } },
+            entries: {},
+            minimized: [],
+            ignored: {},
+        })
     })
 })
 

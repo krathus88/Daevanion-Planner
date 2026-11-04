@@ -138,6 +138,15 @@ export const NavDrawer = ({
                                 >
                                     <RouterLink to="/pets">Pets</RouterLink>
                                 </NavDrawerLink>
+
+                                <NavDrawerLink
+                                    isActive={currentPage === "tracker"}
+                                    onNavigate={handleNavigate}
+                                >
+                                    <RouterLink to="/tracker">
+                                        Tracker
+                                    </RouterLink>
+                                </NavDrawerLink>
                             </Flex>
                         </Drawer.Body>
 

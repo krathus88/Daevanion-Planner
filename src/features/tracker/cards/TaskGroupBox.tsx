@@ -1,0 +1,138 @@
+import { Flex, Grid, Icon, Text } from "@chakra-ui/react"
+import {
+    getGroupProgress,
+    isTaskDone,
+    type TaskGroup,
+} from "@tracker/logic/trackerCards"
+import type { TaskCount, TaskEntries } from "@tracker/types"
+import { LuCheck } from "react-icons/lu"
+import type {
+    CountChangeHandler,
+    EntriesChangeHandler,
+    IgnoredChangeHandler,
+} from "./taskHandlers"
+import { TaskTile } from "./TaskTile"
+
+// How wide a box is: "share" starts a tile wide and takes spare width by its
+// number of tasks; "column" ends where the first Characters column does (see
+// CardGrid); "fill" takes what's left but stays two tiles wide, so it wraps
+// under a "column" box sooner than squeeze to one tile per row.
+export type BoxSizing = "share" | "column" | "fill"
+
+// Ends where the first Characters column ends, at each breakpoint CardGrid
+// uses, so the gap after it lines up with the columns' gap.
+const COLUMN_WIDTH = {
+    base: "full",
+    md: "cardColumn.half",
+    xl: "cardColumn.third",
+} as const
+
+const FLEX_BASIS = {
+    share: "72",
+    column: COLUMN_WIDTH,
+    fill: "0",
+} as const
+
+// Beside a "fill" box, a "column" one gets almost none of the spare width
+// (1 share against 100000), so it keeps its column width; once the fill box
+// wraps below it, it's alone on its row and grows to the full width.
+const FLEX_GROW = {
+    share: (tasks: number) => tasks,
+    column: () => 1,
+    fill: () => 100000,
+} as const
+
+type TaskGroupBoxProps = {
+    group: TaskGroup
+    sizing: BoxSizing
+    owner: string
+    ownerLabel: string
+    period: number
+    counts?: Record<string, TaskCount>
+    entries?: Record<string, TaskEntries>
+    onCountChange: CountChangeHandler
+    onEntriesChange: EntriesChangeHandler
+    onIgnoredChange: IgnoredChangeHandler
+}
+
+// One reset's tasks as tiles. A done tile turns green; once every tile is
+// done, the whole box does instead.
+export const TaskGroupBox = ({
+    group,
+    sizing,
+    owner,
+    ownerLabel,
+    period,
+    counts,
+    entries,
+    onCountChange,
+    onEntriesChange,
+    onIgnoredChange,
+}: TaskGroupBoxProps) => {
+    // The ignored ones are already split off into their own section.
+    const progress = getGroupProgress(group, counts, entries, [], period)
+    const isComplete = progress.done === progress.total
+
+    return (
+        <Flex
+            p="2"
+            minW={sizing === "fill" ? "twoTileBox" : "0"}
+            flexGrow={FLEX_GROW[sizing](group.tasks.length)}
+            flexShrink={sizing === "column" ? 0 : 1}
+            flexBasis={FLEX_BASIS[sizing]}
+            flexDir="column"
+            gap="2"
+            bg={isComplete ? "app.successFill" : "app.subcard"}
+            borderColor={isComplete ? "app.successBorder" : "app.border"}
+            borderWidth="1px"
+            borderRadius="md"
+            role="group"
+            aria-label={group.label}
+        >
+            <Flex px="1" alignItems="center" gap="2">
+                <Text textStyle="label">{group.label}</Text>
+
+                <Text
+                    color={isComplete ? "app.success" : "app.muted"}
+                    fontSize="xs"
+                >
+                    {progress.done}/{progress.total}
+                </Text>
+
+                {isComplete && (
+                    <Icon boxSize="3.5" color="app.success">
+                        <LuCheck />
+                    </Icon>
+                )}
+            </Flex>
+
+            {/* Tiles sharing a row stretch to the row's tallest. */}
+            <Grid
+                templateColumns="repeat(auto-fill, minmax(min(100%, 17rem), 1fr))"
+                gap="2"
+            >
+                {group.tasks.map((task) => (
+                    <TaskTile
+                        key={task.id}
+                        task={task}
+                        owner={owner}
+                        ownerLabel={ownerLabel}
+                        period={period}
+                        count={counts?.[task.id]}
+                        entries={entries?.[task.id]}
+                        done={isTaskDone(
+                            task,
+                            counts?.[task.id],
+                            entries?.[task.id],
+                            period,
+                        )}
+                        boxDone={isComplete}
+                        onCountChange={onCountChange}
+                        onEntriesChange={onEntriesChange}
+                        onIgnoredChange={onIgnoredChange}
+                    />
+                ))}
+            </Grid>
+        </Flex>
+    )
+}

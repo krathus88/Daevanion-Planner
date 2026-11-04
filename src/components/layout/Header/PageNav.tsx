@@ -45,6 +45,17 @@ export const PageNav = ({
                     Pets
                 </RouterLink>
             </NavTab>
+
+            <NavTab isActive={currentPage === "tracker"}>
+                <RouterLink
+                    to="/tracker"
+                    aria-current={
+                        currentPage === "tracker" ? "page" : undefined
+                    }
+                >
+                    Tracker
+                </RouterLink>
+            </NavTab>
         </Flex>
     )
 }

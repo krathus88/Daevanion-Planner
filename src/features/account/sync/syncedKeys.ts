@@ -2,6 +2,7 @@
 // open stay on the device.
 export const PETS_KEY = "daevanion:pets:v1:collection"
 export const TIMERS_KEY = "daevanion:timers:v1:settings"
+export const TRACKER_KEY = "daevanion:tracker:v1:data"
 const PLANNER_PREFIX = "daevanion:v1:"
 const LOCAL_ONLY_SUFFIXES = [":board-undo", ":planner-undo"]
 
@@ -15,7 +16,7 @@ export const getPlannerClassId = (key: string) => {
 }
 
 export const isSyncedKey = (key: string) => {
-    if (key === PETS_KEY || key === TIMERS_KEY) {
+    if (key === PETS_KEY || key === TIMERS_KEY || key === TRACKER_KEY) {
         return true
     }
 

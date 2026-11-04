@@ -1,6 +1,7 @@
 import { MAX_PLANNER_HISTORY } from "@planner/storage/boardStorage"
 import { isRecord } from "@planner/storage/isRecord"
-import { PETS_KEY } from "./syncedKeys"
+import { mergeTrackerData } from "@tracker/logic/mergeTrackerData"
+import { PETS_KEY, TRACKER_KEY } from "./syncedKeys"
 
 // Lists merged by entry id, with how many entries each keeps.
 const LIST_LIMITS: Record<string, number> = {
@@ -66,8 +67,8 @@ const mergePetValues = (
     return merged
 }
 
-// Combines what can be combined: saved lists and pet levels. Anything else
-// comes from the side edited last.
+// Combines what can be combined: saved lists, pet levels and tracker data.
+// Anything else comes from the side edited last.
 export const mergeSyncedValue = (
     key: string,
     device: unknown,
@@ -97,6 +98,10 @@ export const mergeSyncedValue = (
                 isRecord(older.souls) ? older.souls : {},
             ),
         }
+    }
+
+    if (key === TRACKER_KEY) {
+        return mergeTrackerData(newer, older)
     }
 
     return newer

@@ -48,6 +48,12 @@ test.describe("site navigation", () => {
         await expect(page).toHaveURL(/\/pets/)
         await expect(page.getByRole("heading", { name: "Pets" })).toBeVisible()
 
+        await nav.getByRole("link", { name: "Tracker" }).click()
+        await expect(page).toHaveURL(/\/tracker/)
+        await expect(
+            page.getByRole("heading", { name: "Tracker" }),
+        ).toBeVisible()
+
         await nav.getByRole("link", { name: "Planner" }).click()
         await expect(page).toHaveURL(/\/planner\//)
     })
@@ -66,7 +72,12 @@ test.describe("site navigation", () => {
         await expect(page.getByRole("heading", { name: "Pets" })).toBeVisible()
     })
 
-    for (const path of ["/planner/gladiator/nezekan", "/timers", "/pets"]) {
+    for (const path of [
+        "/planner/gladiator/nezekan",
+        "/timers",
+        "/pets",
+        "/tracker",
+    ]) {
         test(`${path} fits a phone without sideways scrolling`, async ({
             page,
         }) => {
@@ -101,6 +112,7 @@ test.describe("link previews", () => {
     for (const [path, title] of [
         ["/timers.html", "Daevanion - Timers"],
         ["/pets.html", "Daevanion - Pets"],
+        ["/tracker.html", "Daevanion - Tracker"],
         ["/planner/cleric/zikel.html", "Daevanion - Cleric · Zikel"],
     ]) {
         test(`${path} has its own Open Graph tags`, async ({ request }) => {

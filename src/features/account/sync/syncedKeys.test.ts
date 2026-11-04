@@ -5,12 +5,14 @@ import {
     isSyncedKey,
     PETS_KEY,
     TIMERS_KEY,
+    TRACKER_KEY,
 } from "./syncedKeys"
 
 describe("isSyncedKey", () => {
     it.each([
         PETS_KEY,
         TIMERS_KEY,
+        TRACKER_KEY,
         "daevanion:v1:gladiator:nezekan:saved-boards",
         "daevanion:v1:gladiator:shared-allocation",
         "daevanion:v1:gladiator:settings",

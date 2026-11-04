@@ -17,6 +17,7 @@ export const Header = () => {
     })
     const timersMatch = useMatch({ from: "/timers", shouldThrow: false })
     const petsMatch = useMatch({ from: "/pets", shouldThrow: false })
+    const trackerMatch = useMatch({ from: "/tracker", shouldThrow: false })
     const plannerLocation = usePlannerLocation()
 
     const plannerParams = plannerMatch?.params
@@ -27,7 +28,9 @@ export const Header = () => {
           ? "timers"
           : petsMatch
             ? "pets"
-            : null
+            : trackerMatch
+              ? "tracker"
+              : null
 
     useClassFavicon(classId)
 

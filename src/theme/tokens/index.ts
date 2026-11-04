@@ -11,6 +11,8 @@ export const tokens = defineTokens({
     sizes: sizes,
     opacity: {
         disabled: { value: 0.4 },
+        // Shown but set aside, still usable (e.g. an ignored task).
+        dimmed: { value: 0.5 },
         hidden: { value: 0 },
         visible: { value: 1 },
     },

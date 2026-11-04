@@ -6,7 +6,7 @@
 import type { CardRect, Pixels } from "./cardDetection.ts"
 
 // Card samples are this many cells wide; the height follows the layout.
-const GRID_WIDTH = 40
+export const GRID_WIDTH = 40
 
 export type CardLayout = {
     // Card height and the art's bottom, in card widths.

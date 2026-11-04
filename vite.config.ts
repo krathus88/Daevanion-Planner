@@ -12,13 +12,15 @@ import {
     SITE_DESCRIPTION,
     SITE_NAME,
     TIMERS_DESCRIPTION,
+    TRACKER_DESCRIPTION,
 } from "./scripts/siteMeta.ts"
 
 // Link previews (Discord, Slack, X...) read Open Graph tags from the raw HTML
 // and don't run JavaScript. This adds the tags to index.html and, after a
 // build, writes planner/<class>/<board>.html for every class and board, and
-// timers.html, each with its own title and banner. GitHub Pages serves
-// /planner/<class>/<board> and /timers from those files.
+// timers.html, pets.html and tracker.html, each with its own title and
+// banner. GitHub Pages serves /planner/<class>/<board>, /timers, /pets and
+// /tracker from those files.
 const sharePreviews = (): Plugin => {
     const start = "<!-- share-preview -->"
     const end = "<!-- /share-preview -->"
@@ -101,6 +103,16 @@ const sharePreviews = (): Plugin => {
                     "og/default.png",
                     "pets",
                     PETS_DESCRIPTION,
+                ),
+            )
+
+            writePage(
+                "tracker",
+                tags(
+                    "Daevanion - Tracker",
+                    "og/default.png",
+                    "tracker",
+                    TRACKER_DESCRIPTION,
                 ),
             )
 

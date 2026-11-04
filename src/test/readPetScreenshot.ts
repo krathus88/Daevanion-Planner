@@ -72,13 +72,20 @@ const screenshotPath = (name: string) => {
     return fileURLToPath(assetUrl(`test/screenshots/${name}`))
 }
 
-export const loadScreenshot = (name: string) => {
-    return toPixels(sharp(screenshotPath(name)))
+// width scales the screenshot, as if taken at another resolution.
+export const loadScreenshot = (name: string, width?: number) => {
+    const image = sharp(screenshotPath(name))
+
+    return toPixels(width ? image.resize(width) : image)
 }
 
 // The steps of shop/readShopScreenshot, which needs a canvas. Keep them in step.
-export const readShopScreenshot = async (name: string, prints: PetPrint[]) => {
-    const pixels = await loadScreenshot(name)
+export const readShopScreenshot = async (
+    name: string,
+    prints: PetPrint[],
+    width?: number,
+) => {
+    const pixels = await loadScreenshot(name, width)
 
     return detectShopCards(pixels).map((rect) => {
         return { ...readShopCard(pixels, rect, prints), thumbnail: "" }

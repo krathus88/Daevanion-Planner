@@ -33,6 +33,7 @@
             "@planner/*": ["./src/features/planner/*"],
             "@timers/*": ["./src/features/timers/*"],
             "@pets/*": ["./src/features/pets/*"],
+            "@tracker/*": ["./src/features/tracker/*"],
             "@theme/*": ["./src/theme/*"],
             "@test/*": ["./src/test/*"]
         }

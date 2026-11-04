@@ -10,6 +10,9 @@ export const colors = defineSemanticTokens.colors({
         // List rows on a raised card: a shade darker than the card.
         row: { value: "{colors.ink.825}" },
         inset: { value: "{colors.ink.900}" },
+        // A box inside a raised card, and a tile inside that: a touch lighter each.
+        subcard: { value: "rgba(255, 255, 255, 0.025)" },
+        tile: { value: "rgba(255, 255, 255, 0.04)" },
         border: { value: "{colors.ink.700}" },
         borderStrong: { value: "{colors.ink.600}" },
         fg: { value: "{colors.ink.50}" },
@@ -20,7 +23,16 @@ export const colors = defineSemanticTokens.colors({
         accentFg: { value: "{colors.gold.975}" },
         accentMuted: { value: "rgba(224, 173, 76, 0.14)" },
         success: { value: "{colors.mint.400}" },
+        successMuted: { value: "rgba(95, 211, 154, 0.1)" },
+        // A done box: bright enough to read as green on a dark card.
+        successFill: { value: "rgba(95, 211, 154, 0.18)" },
+        successBorder: { value: "rgba(95, 211, 154, 0.35)" },
+        // A done tile: solid, so it looks the same in a done box or not.
+        successTile: { value: "#213637" },
+        // Faint text: a hint of the tone, quieter than the full colour.
+        successFaint: { value: "rgba(95, 211, 154, 0.65)" },
         danger: { value: "{colors.coral.400}" },
+        dangerFaint: { value: "rgba(242, 119, 122, 0.65)" },
         dangerMuted: { value: "rgba(242, 119, 122, 0.12)" },
         dangerStrong: { value: "rgba(242, 119, 122, 0.24)" },
         dangerBorder: { value: "rgba(242, 119, 122, 0.45)" },

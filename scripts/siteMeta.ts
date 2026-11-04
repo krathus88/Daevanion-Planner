@@ -12,6 +12,9 @@ export const TIMERS_DESCRIPTION =
 export const PETS_DESCRIPTION =
     "AION 2 pet finder: search any pet and see which maps spawn its soul monsters, how many, and the best areas to farm, on an interactive map."
 
+export const TRACKER_DESCRIPTION =
+    "AION 2 daily and weekly tracker: tick off dungeons, missions and arena runs for each of your characters, cleared at every reset."
+
 export type SiteClass = {
     id: string
     name: string

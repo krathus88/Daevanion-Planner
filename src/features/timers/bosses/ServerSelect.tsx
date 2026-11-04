@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react"
 
 type ServerSelectProps = {
     value: string
+    label?: string
     onChange: (server: string) => void
 }
 
@@ -14,7 +15,11 @@ const SERVER_GROUPS = SERVER_FACTIONS.map((faction) => ({
     ),
 }))
 
-export const ServerSelect = ({ value, onChange }: ServerSelectProps) => {
+export const ServerSelect = ({
+    value,
+    label = "Server",
+    onChange,
+}: ServerSelectProps) => {
     const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
         onChange(event.target.value)
     }
@@ -23,7 +28,7 @@ export const ServerSelect = ({ value, onChange }: ServerSelectProps) => {
         <NativeSelect.Root size="sm" w="serverSelect" flexShrink="0">
             <NativeSelect.Field
                 value={value}
-                aria-label="Server"
+                aria-label={label}
                 onChange={handleChange}
             >
                 {SERVER_GROUPS.map((group) => (

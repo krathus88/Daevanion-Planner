@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as PetsRouteImport } from './routes/pets'
 import { Route as TimersRouteImport } from './routes/timers'
+import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as PlannerClassIdLayoutRouteImport } from './routes/planner/$classId/$layout'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const TimersRoute = TimersRouteImport.update({
   path: '/timers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlannerClassIdLayoutRoute = PlannerClassIdLayoutRouteImport.update({
   id: '/planner/$classId/$layout',
   path: '/planner/$classId/$layout',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/pets': typeof PetsRoute
   '/timers': typeof TimersRoute
+  '/tracker': typeof TrackerRoute
   '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/pets': typeof PetsRoute
   '/timers': typeof TimersRoute
+  '/tracker': typeof TrackerRoute
   '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRoutesById {
@@ -61,15 +69,24 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/pets': typeof PetsRoute
   '/timers': typeof TimersRoute
+  '/tracker': typeof TrackerRoute
   '/planner/$classId/$layout': typeof PlannerClassIdLayoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/pets' | '/timers' | '/planner/$classId/$layout'
+  fullPaths:
+    '/' | '/$' | '/pets' | '/timers' | '/tracker' | '/planner/$classId/$layout'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/pets' | '/timers' | '/planner/$classId/$layout'
+  to:
+    '/' | '/$' | '/pets' | '/timers' | '/tracker' | '/planner/$classId/$layout'
   id:
-    '__root__' | '/' | '/$' | '/pets' | '/timers' | '/planner/$classId/$layout'
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/pets'
+    | '/timers'
+    | '/tracker'
+    | '/planner/$classId/$layout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +94,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   PetsRoute: typeof PetsRoute
   TimersRoute: typeof TimersRoute
+  TrackerRoute: typeof TrackerRoute
   PlannerClassIdLayoutRoute: typeof PlannerClassIdLayoutRoute
 }
 
@@ -110,6 +128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/planner/$classId/$layout': {
       id: '/planner/$classId/$layout'
       path: '/planner/$classId/$layout'
@@ -125,6 +150,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   PetsRoute: PetsRoute,
   TimersRoute: TimersRoute,
+  TrackerRoute: TrackerRoute,
   PlannerClassIdLayoutRoute: PlannerClassIdLayoutRoute,
 }
 export const routeTree = rootRouteImport

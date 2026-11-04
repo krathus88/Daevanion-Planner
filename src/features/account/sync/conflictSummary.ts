@@ -1,7 +1,12 @@
 import { CLASS_NAMES, isClassId } from "@config/classPresets/classInfo"
 import { isRecord } from "@planner/storage/isRecord"
 import type { SyncConflict } from "./cloudSync"
-import { getPlannerClassId, PETS_KEY, TIMERS_KEY } from "./syncedKeys"
+import {
+    getPlannerClassId,
+    PETS_KEY,
+    TIMERS_KEY,
+    TRACKER_KEY,
+} from "./syncedKeys"
 
 export type ConflictSideSummary = {
     detail: string
@@ -18,7 +23,7 @@ export type ConflictSummaryRow = {
 
 type Group = {
     label: string
-    kind: "planner" | "pets" | "timers"
+    kind: "planner" | "pets" | "timers" | "tracker"
     deviceCount: number
     accountCount: number
     deviceTime: number | undefined
@@ -31,6 +36,12 @@ const countItems = (key: string, value: unknown) => {
     if (key === PETS_KEY) {
         return isRecord(value) && isRecord(value.levels)
             ? Object.keys(value.levels).length
+            : 0
+    }
+
+    if (key === TRACKER_KEY) {
+        return isRecord(value) && Array.isArray(value.characters)
+            ? value.characters.length
             : 0
     }
 
@@ -60,6 +71,10 @@ const getGroup = (key: string) => {
         return { id: "timers", label: "Timers", kind: "timers" as const }
     }
 
+    if (key === TRACKER_KEY) {
+        return { id: "tracker", label: "Tracker", kind: "tracker" as const }
+    }
+
     const classId = getPlannerClassId(key)
 
     return {
@@ -78,12 +93,16 @@ const describe = (kind: Group["kind"], count: number) => {
         return "Timer settings"
     }
 
+    if (kind === "tracker") {
+        return `${count} ${count === 1 ? "character" : "characters"}`
+    }
+
     return count > 0
         ? `${count} saved ${count === 1 ? "plan" : "plans"}`
         : "Board plans and settings"
 }
 
-// One row per class, plus pets and timers, comparing what each side has.
+// One row per class, plus pets, timers and the tracker, comparing what each side has.
 export const summarizeConflicts = (conflicts: SyncConflict[]) => {
     const groups = new Map<string, Group>()
 

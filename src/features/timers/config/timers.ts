@@ -97,6 +97,12 @@ export type TimerDefinition = {
 // Wednesday 14 October 2026, 07:00 UTC: a daily and weekly reset.
 const RESET_ANCHOR = Date.UTC(2026, 9, 14, 7)
 
+export const DAILY_RESET: FixedSchedule = {
+    anchor: RESET_ANCHOR,
+    period: DAY,
+    openFor: 0,
+}
+
 export const WEEKLY_RESET: FixedSchedule = {
     anchor: RESET_ANCHOR,
     period: 7 * DAY,
@@ -168,7 +174,7 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         color: { hue: "blue", tone: "strong" },
         soonMinutes: 30,
         description: "Every day at 07:00 UTC.",
-        schedule: { anchor: RESET_ANCHOR, period: DAY, openFor: 0 },
+        schedule: DAILY_RESET,
     },
     {
         id: "weekly",

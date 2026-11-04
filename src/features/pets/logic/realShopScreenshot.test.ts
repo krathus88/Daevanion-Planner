@@ -114,3 +114,23 @@ describe("a real Shop screenshot", () => {
         ])
     })
 })
+
+// src/test/screenshots/shop2.jpg: 8 other items (one sold out) and two pets,
+// Withered Agrint and Ashen Agrint, last in rows of 6 and 4. Ashen Agrint's
+// busy art only matches well once the card is sampled half a cell over.
+describe("a real Shop screenshot with busy pet art", () => {
+    it.each([undefined, 1500, 2560])(
+        "recognizes both pets at width %s",
+        async (width) => {
+            const shop = await readShopScreenshot("shop2.jpg", prints, width)
+            const summary = summarizeShop(shop, atlas.pets, {}, {}, {})
+
+            expect(shop).toHaveLength(10)
+            expect(summary.needed.map((item) => item.pet.name)).toEqual([
+                "Withered Agrint",
+                "Ashen Agrint",
+            ])
+            expect(summary.unknown).toBe(8)
+        },
+    )
+})
