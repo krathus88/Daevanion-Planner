@@ -131,8 +131,15 @@ test.describe("pinning", () => {
             .getByRole("link", { name: "Set the Eternal Gartua timer" })
             .click()
 
-        await expect(page).toHaveURL(/\/timers\?.*timer=gartua/)
-        await expect(page.getByText("Eternal Gartua").first()).toBeVisible()
+        // The page drops `timer` from the URL once it has opened the row, so
+        // check the row it opened rather than the passing URL.
+        await expect(page).toHaveURL(/\/timers\?/)
+        await expect(
+            page.getByRole("button", {
+                name: "Close Eternal Gartua's options",
+            }),
+        ).toHaveAttribute("aria-expanded", "true")
+        await expect(page).not.toHaveURL(/timer=/)
     })
 })
 

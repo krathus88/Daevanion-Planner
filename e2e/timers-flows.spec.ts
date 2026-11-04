@@ -231,11 +231,11 @@ test.describe("Coming next", () => {
 
         await expect(handle).toHaveCSS("opacity", "1")
         await expect(hide).toHaveCSS("opacity", "1")
-        // The strip slides left as the handle grows, so the timers stay put.
-        expect((await firstTimer.boundingBox())?.x).toBeCloseTo(
-            timerLeft ?? Number.NaN,
-            0,
-        )
+        // The strip slides left as the handle grows, so once that settles the
+        // timers are where they were.
+        await expect
+            .poll(async () => (await firstTimer.boundingBox())?.x)
+            .toBeCloseTo(timerLeft ?? Number.NaN, 0)
         await expect.poll(() => widthOf(handle)).toBeGreaterThan(10)
         await expect.poll(() => widthOf(hide)).toBeGreaterThan(20)
 
