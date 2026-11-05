@@ -27,6 +27,19 @@ describe("schedules from the 4 Nov 2026 patch", () => {
         ).toMatchObject({ status: "upcoming", at: Date.UTC(2026, 10, 5, 20) })
     })
 
+    it("keeps the Artifact Siege open for 10 minutes after 21:00", () => {
+        const start = Date.UTC(2026, 10, 5, 20)
+        const timer = getTimer("siege")
+
+        expect(getTimerState(timer, null, start + 5 * MINUTE)).toMatchObject({
+            status: "open",
+            at: start + 10 * MINUTE,
+        })
+        expect(getTimerState(timer, null, start + 11 * MINUTE)).toMatchObject({
+            status: "upcoming",
+        })
+    })
+
     it.each(["argo", "executor-kaira", "tamasa"] as const)(
         "spawns %s on Thursday and Saturday at 21:30",
         (id) => {
