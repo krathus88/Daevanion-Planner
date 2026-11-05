@@ -26,6 +26,7 @@ import {
     DEFAULT_STAT_SETTINGS,
     type StatSettings,
 } from "@planner/storage/statPriorities"
+import { NOTHING_MAXED } from "@test/statSettingsFixture"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
 import {
     optimizePriorityPlans,
@@ -407,14 +408,14 @@ describe("optimizePriorityPlans", () => {
             boards: ["nezekan"] as const,
             stallMs: 3_000_000,
         }
-        const ranked = await optimize(base)
+        const ranked = await optimize({ ...base, statSettings: NOTHING_MAXED })
         const ignored = await optimize({
             ...base,
             statSettings: {
-                ...DEFAULT_STAT_SETTINGS,
+                ...NOTHING_MAXED,
                 order: [],
                 tied: [],
-                ignored: [...DEFAULT_STAT_SETTINGS.order, "max-mp"],
+                ignored: [...NOTHING_MAXED.order, ...NOTHING_MAXED.ignored],
             },
         })
 

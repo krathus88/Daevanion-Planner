@@ -425,7 +425,7 @@ test.describe("all boards panels", () => {
             })
             .toEqual({
                 ranked: ["attack", "critical-hit", "max-mp"],
-                ignored: [],
+                ignored: ["critical-hit-resist"],
             })
         // Ranked now, so it can be maxed.
         await expect(

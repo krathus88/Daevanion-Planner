@@ -28,21 +28,23 @@ export type StatSettings = {
 
 const NO_MAX: StatMax = { enabled: false, skillAfter: null, passiveAfter: null }
 
-const DEFAULT_MAX = Object.fromEntries(
-    STAT_TYPES.map((stat) => [stat, NO_MAX]),
-) as Record<StatType, StatMax>
+const ATTACK_MAX: StatMax = { enabled: true, skillAfter: 5, passiveAfter: 4 }
+
+// Off, but these ranks are ready when Max is turned on.
+const DEFENSE_MAX: StatMax = { enabled: false, skillAfter: 6, passiveAfter: 5 }
 
 export const DEFAULT_STAT_SETTINGS: StatSettings = {
-    order: [
-        "attack",
-        "critical-hit",
-        "max-hp",
-        "defense",
-        "critical-hit-resist",
-    ],
-    tied: ["critical-hit", "defense"],
-    ignored: ["max-mp"],
-    max: DEFAULT_MAX,
+    order: ["attack", "critical-hit", "defense", "max-hp"],
+    tied: ["critical-hit", "max-hp"],
+    ignored: ["critical-hit-resist", "max-mp"],
+    max: {
+        attack: ATTACK_MAX,
+        "critical-hit": ATTACK_MAX,
+        defense: DEFENSE_MAX,
+        "max-hp": DEFENSE_MAX,
+        "critical-hit-resist": NO_MAX,
+        "max-mp": NO_MAX,
+    },
 }
 
 export const isStatType = (value: unknown): value is StatType => {

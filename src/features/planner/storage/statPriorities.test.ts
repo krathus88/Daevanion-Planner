@@ -30,12 +30,28 @@ describe("readStatSettings", () => {
         expect(readStatSettings(CLASS)).toBe(DEFAULT_STAT_SETTINGS)
     })
 
-    it("defaults to nothing maxed, with ties and Max MP ignored", () => {
-        expect(DEFAULT_STAT_SETTINGS.ignored).toEqual(["max-mp"])
-        expect(DEFAULT_STAT_SETTINGS.tied).toEqual(["critical-hit", "defense"])
-        expect(
-            Object.values(DEFAULT_STAT_SETTINGS.max).some((max) => max.enabled),
-        ).toBe(false)
+    it("defaults to Attack = Crit maxed, Defense = Max HP, the rest ignored", () => {
+        const { max } = DEFAULT_STAT_SETTINGS
+        const attack = { enabled: true, skillAfter: 5, passiveAfter: 4 }
+        const defense = { enabled: false, skillAfter: 6, passiveAfter: 5 }
+
+        expect(DEFAULT_STAT_SETTINGS.order).toEqual([
+            "attack",
+            "critical-hit",
+            "defense",
+            "max-hp",
+        ])
+        expect(DEFAULT_STAT_SETTINGS.tied).toEqual(["critical-hit", "max-hp"])
+        expect(DEFAULT_STAT_SETTINGS.ignored).toEqual([
+            "critical-hit-resist",
+            "max-mp",
+        ])
+        expect(max.attack).toEqual(attack)
+        expect(max["critical-hit"]).toEqual(attack)
+        expect(max.defense).toEqual(defense)
+        expect(max["max-hp"]).toEqual(defense)
+        expect(max["critical-hit-resist"]).toEqual(NO_MAX)
+        expect(max["max-mp"]).toEqual(NO_MAX)
     })
 
     it("round-trips", () => {

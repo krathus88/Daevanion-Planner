@@ -6,6 +6,7 @@ import {
     DEFAULT_STAT_SETTINGS,
     type StatSettings,
 } from "@planner/storage/statPriorities"
+import { NOTHING_MAXED } from "@test/statSettingsFixture"
 import { boardWants } from "./boardWants"
 import { pathPriorities } from "./pathPriorities"
 
@@ -17,7 +18,7 @@ beforeAll(async () => {
 
 // The given stats go first, in that order, all maxed.
 const maxed = (stats: StatType[]): StatSettings => {
-    const max = { ...DEFAULT_STAT_SETTINGS.max }
+    const max = { ...NOTHING_MAXED.max }
     for (const stat of stats) {
         max[stat] = { enabled: true, skillAfter: 3, passiveAfter: 3 }
     }
@@ -36,12 +37,12 @@ const maxed = (stats: StatType[]): StatSettings => {
 }
 
 describe("pathPriorities", () => {
-    it("has only stat weights and no focus by default", () => {
+    it("has only stat weights and no focus with nothing maxed", () => {
         const result = pathPriorities({
             classPreset: preset,
             layoutName: "nezekan",
             preferred: new Set(),
-            statSettings: DEFAULT_STAT_SETTINGS,
+            statSettings: NOTHING_MAXED,
         })
 
         expect(result.focusGroups).toEqual([])
@@ -89,6 +90,22 @@ describe("pathPriorities", () => {
 
         expect(group.waiting).toEqual(want.keys)
         expect(group.wanted.sort()).toEqual(attackKeys.sort())
+    })
+
+    it("maxes Attack and Critical Hit by default", () => {
+        const result = pathPriorities({
+            classPreset: preset,
+            layoutName: "nezekan",
+            preferred: new Set(),
+            statSettings: DEFAULT_STAT_SETTINGS,
+        })
+        const stats = new Set(
+            result.focusGroups.flatMap((group) =>
+                group.wanted.map((key) => layouts.nezekan.nodeStats[key]),
+            ),
+        )
+
+        expect(stats).toEqual(new Set(["attack", "critical-hit"]))
     })
 
     it("orders maxed stats best first and frees all their nodes", () => {

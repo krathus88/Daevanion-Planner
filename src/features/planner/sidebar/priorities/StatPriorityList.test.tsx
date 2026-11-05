@@ -33,25 +33,45 @@ const settings = () => {
 }
 
 describe("StatPriorityList", () => {
+    it("starts with Max on for Attack and Critical Hit only", () => {
+        renderWithChakra(<StatPriorityList classPreset={preset} />)
+
+        const max = (stat: string) => {
+            return screen.getByRole("checkbox", { name: `Max ${stat}` })
+        }
+
+        expect(max("Attack")).toBeChecked()
+        expect(max("Critical Hit")).toBeChecked()
+        expect(max("Max HP")).not.toBeChecked()
+        expect(max("Defense")).not.toBeChecked()
+        expect(
+            screen.queryByRole("checkbox", { name: "Max Critical Hit Resist" }),
+        ).toBeNull()
+    })
+
     it("shows Max's ranks only once Max is on, and saves them", async () => {
         renderWithChakra(<StatPriorityList classPreset={preset} />)
 
         expect(
-            screen.queryByLabelText("Max Attack before skills ranked after"),
+            screen.queryByLabelText("Max Defense before skills ranked after"),
         ).toBeNull()
 
         await userEvent.click(
-            screen.getByRole("checkbox", { name: "Max Attack" }),
+            screen.getByRole("checkbox", { name: "Max Defense" }),
         )
 
-        expect(settings().max.attack.enabled).toBe(true)
+        expect(settings().max.defense.enabled).toBe(true)
 
-        await userEvent.type(
-            screen.getByLabelText("Max Attack before passives ranked after"),
-            "3",
+        const passiveAfter = screen.getByLabelText(
+            "Max Defense before passives ranked after",
         )
 
-        expect(settings().max.attack.passiveAfter).toBe(3)
+        expect(passiveAfter).toHaveValue("5")
+
+        await userEvent.clear(passiveAfter)
+        await userEvent.type(passiveAfter, "3")
+
+        expect(settings().max.defense.passiveAfter).toBe(3)
     })
 
     it("has no ability ranks for Max on This board", async () => {
@@ -60,12 +80,12 @@ describe("StatPriorityList", () => {
         )
 
         await userEvent.click(
-            screen.getByRole("checkbox", { name: "Max Attack" }),
+            screen.getByRole("checkbox", { name: "Max Defense" }),
         )
 
-        expect(settings().max.attack.enabled).toBe(true)
+        expect(settings().max.defense.enabled).toBe(true)
         expect(
-            screen.queryByLabelText("Max Attack before skills ranked after"),
+            screen.queryByLabelText("Max Defense before skills ranked after"),
         ).toBeNull()
     })
 
