@@ -153,7 +153,7 @@ export const useAbilityLimits = (
     ) => {
         const writeError =
             writeAbilityMinimums(classPreset.id, nextMinimums) ??
-            writeAbilityMaximums(classPreset.id, nextMaximums)
+            writeAbilityMaximums(classPreset, nextMaximums)
         if (writeError) {
             setError(writeError)
             return

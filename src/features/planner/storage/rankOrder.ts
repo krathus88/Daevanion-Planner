@@ -23,7 +23,7 @@ export const SAME_RANK_ORDER_NAMES: Record<SameRankOrder, string> = {
 }
 
 export const DEFAULT_RANK_ORDER: RankOrder = {
-    skill: "equal",
+    skill: "more",
     passive: "less",
     special: "equal",
 }

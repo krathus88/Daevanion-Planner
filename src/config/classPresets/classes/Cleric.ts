@@ -78,7 +78,9 @@ export default defineClassPreset({
             id: "jt",
             name: "Judgment Thunder",
             type: "skill",
-            priority: 2,
+            priority: 5,
+            min: 4,
+            max: 4,
             icon: JudgmentThunder,
             tooltip:
                 "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target.\n\n2 Stagger Gauge Damage",
@@ -107,6 +109,7 @@ export default defineClassPreset({
             name: "Earth's Retribution",
             type: "skill",
             priority: 2,
+            min: 4,
             icon: EarthsRetribution,
             tooltip:
                 "Deals X Earth damage to a target within 20m and restores 110 MP.",
@@ -129,6 +132,7 @@ export default defineClassPreset({
             name: "Divine Aura",
             type: "skill",
             priority: 2,
+            min: 4,
             icon: DivineAura,
             tooltip:
                 "Summons a Divine Aura near the caster that lasts for 5s. The Aura is stationary and periodically deals X Earth damage to a selected target within 20m.",
@@ -149,6 +153,7 @@ export default defineClassPreset({
             name: "Radiant Recovery",
             type: "skill",
             priority: 3,
+            min: 4,
             icon: RadiantRecovery,
             tooltip:
                 "Restores X HP and removes 1 debuff for the caster and party members within 40m.",
@@ -165,7 +170,7 @@ export default defineClassPreset({
             id: "lss",
             name: "Lightning Strike Scattershot",
             type: "skill",
-            priority: 3,
+            priority: 99,
             icon: LightningStrikeScattershot,
             tooltip:
                 "Deals X damage to a target afflicted with Stagger within 20m.",
@@ -182,6 +187,8 @@ export default defineClassPreset({
             name: "Healing Light",
             type: "skill",
             priority: 3,
+            min: 4,
+            max: 4,
             icon: HealingLight,
             tooltip:
                 "Restores X HP to the caster and the party member with the lowest HP within 40m.",
@@ -202,6 +209,7 @@ export default defineClassPreset({
             name: "Chain of Torment",
             type: "skill",
             priority: 4,
+            max: 2,
             icon: ChainOfTorment,
             tooltip:
                 "Selects a target within 20m and deals X Earth damage to up to 4 enemies within 4m of the target. Reduces enemy PvE Damage Tolerance by 5%, PvP Damage Tolerance by 2.5%, and deals X Damage over Time every 1s for 10s.\n\n10 Stagger Gauge Damage",
@@ -228,6 +236,7 @@ export default defineClassPreset({
             name: "Debilitating Mark",
             type: "skill",
             priority: 4,
+            max: 2,
             icon: DebilitatingMark,
             tooltip:
                 "Selects a target within 20m and deals X Wind damage to up to 4 enemies within 4m of the target. Reduces enemy PvE Damage Boost by 5%, PvP Damage Boost by 2.5%, and deals X Damage over Time every 1s for 10s.\n\n10 Stagger Gauge Damage",
@@ -256,7 +265,8 @@ export default defineClassPreset({
             id: "d",
             name: "Defiance",
             type: "skill",
-            priority: 4,
+            priority: 5,
+            max: 2,
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
@@ -282,7 +292,9 @@ export default defineClassPreset({
             id: "lor",
             name: "Light of Regeneration",
             type: "skill",
-            priority: 5,
+            priority: 4,
+            min: 4,
+            max: 4,
             icon: LightOfRegeneration,
             tooltip:
                 "Restores X HP every 2s for 30s to the caster and party members within 40m.",
@@ -317,6 +329,7 @@ export default defineClassPreset({
             name: "Healing Enhancement",
             type: "passive",
             priority: 2,
+            min: 4,
             icon: HealingEnhancement,
             tooltip: "Increases the caster's Heal Boost by X% of Attack.",
         },
@@ -324,7 +337,7 @@ export default defineClassPreset({
             id: "peg",
             name: "Earth's Grace",
             type: "passive",
-            priority: 2,
+            priority: 1,
             icon: EarthsGrace,
             tooltip:
                 "Increases the caster's Critical Damage Boost by X% and Accuracy by 100.",
@@ -334,6 +347,7 @@ export default defineClassPreset({
             name: "Radiant Benediction",
             type: "passive",
             priority: 3,
+            min: 4,
             icon: RadiantBenediction,
             tooltip:
                 "Restores X HP to the caster and party members within 40m on landing an attack.\n\nCooldown: 5s",
@@ -343,6 +357,7 @@ export default defineClassPreset({
             name: "Warm Benediction",
             type: "passive",
             priority: 4,
+            min: 4,
             icon: WarmBenediction,
             tooltip: "Increases the caster's Max HP by X% and Max MP by X.",
         },
@@ -351,6 +366,7 @@ export default defineClassPreset({
             name: "Immortal Veil",
             type: "passive",
             priority: 4,
+            min: 4,
             icon: ImmortalVeil,
             tooltip:
                 "Increases the caster's Defense by X% and Critical Hit Resist by X.",
@@ -360,6 +376,7 @@ export default defineClassPreset({
             name: "Survival Willpower",
             type: "passive",
             priority: 5,
+            max: 4,
             icon: SurvivalWillpower,
             tooltip:
                 "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",

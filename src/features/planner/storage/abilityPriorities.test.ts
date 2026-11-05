@@ -89,7 +89,7 @@ describe("minimums and maximums", () => {
     it("are stored per field without touching the others", () => {
         writeAbilityPriorities("gladiator", { a: 1 })
         writeAbilityMinimums("gladiator", { a: 2 })
-        writeAbilityMaximums("gladiator", { a: 3 })
+        writeAbilityMaximums(preset, { a: 3 })
 
         expect(readAbilityPriorities(preset).a).toBe(1)
         expect(readAbilityMinimums(preset)).toEqual({ a: 2 })
@@ -97,8 +97,8 @@ describe("minimums and maximums", () => {
     })
 
     it("drop a value when it's left out", () => {
-        writeAbilityMaximums("gladiator", { a: 3 })
-        writeAbilityMaximums("gladiator", {})
+        writeAbilityMaximums(preset, { a: 3 })
+        writeAbilityMaximums(preset, {})
 
         expect(readAbilityMaximums(preset)).toEqual({})
         expect(readAllClassSettings("gladiator")).toEqual({
@@ -116,6 +116,28 @@ describe("minimums and maximums", () => {
         expect(readAbilityMaximums(preset)).toEqual({ a: 0 })
     })
 
+    it("default Max to the preset's and save only changes from it", () => {
+        const limited = {
+            ...preset,
+            abilities: [{ id: "a", max: 2 }, { id: "b" }],
+        } as unknown as ClassPreset
+
+        expect(readAbilityMaximums(limited)).toEqual({ a: 2 })
+
+        writeAbilityMaximums(limited, { a: 2, b: 1 })
+
+        expect(readAllClassSettings("gladiator")).toEqual({
+            abilities: { b: { max: 1 } },
+        })
+
+        writeAbilityMaximums(limited, {})
+
+        expect(readAbilityMaximums(limited)).toEqual({})
+        expect(readAllClassSettings("gladiator")).toEqual({
+            abilities: { a: { max: null }, b: {} },
+        })
+    })
+
     it("replace an unreadable save", () => {
         writeClassSettings("gladiator", "abilities", 5)
 
@@ -126,7 +148,7 @@ describe("minimums and maximums", () => {
 
 describe("skips", () => {
     it("round-trip without touching the other fields", () => {
-        writeAbilityMaximums("gladiator", { a: 3 })
+        writeAbilityMaximums(preset, { a: 3 })
         writeAbilitySkips(preset, { b: true })
 
         expect(readAbilitySkips(preset)).toEqual({ b: true })
@@ -207,6 +229,19 @@ describe("resolveAbilityMinimums", () => {
         expect(
             resolveAbilityMinimums(preset, { a: 1, b: 2, c: 4, d: 5 }, {}),
         ).toEqual({ a: 4, b: 2, c: 1, d: 0, e: 0 })
+    })
+
+    it("prefers the preset's min over the rank default", () => {
+        const limited = {
+            ...preset,
+            abilities: [{ id: "a", min: 1 }, { id: "b" }],
+        } as unknown as ClassPreset
+
+        expect(resolveAbilityMinimums(limited, { a: 1, b: 2 }, {})).toEqual({
+            a: 1,
+            b: 2,
+        })
+        expect(resolveAbilityMinimums(limited, { a: 1 }, { a: 3 }).a).toBe(3)
     })
 
     it("uses stored values, capped at the node count", () => {

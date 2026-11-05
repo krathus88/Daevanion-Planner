@@ -7,6 +7,9 @@ export type ClassAbility = {
     name: string
     type: ClassAbilityType
     priority?: number
+    // Default Min and Max on All boards; saved values win.
+    min?: number
+    max?: number
     icon?: string
     tooltip?: string
     // Seconds, or "X" when it changes with skill level.

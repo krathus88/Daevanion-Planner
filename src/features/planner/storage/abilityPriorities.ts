@@ -54,7 +54,7 @@ const readSavedField = (
 const writeAbilityField = (
     classId: string,
     field: AbilityField,
-    values: Readonly<Record<string, number | boolean>>,
+    values: Readonly<Record<string, number | boolean | null>>,
 ) => {
     let saved: Record<string, unknown>
     try {
@@ -166,6 +166,11 @@ export const readAbilityMinimums = (
     }
 }
 
+const isLimit = (value: unknown): value is number => {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0
+}
+
+// A saved number wins over the preset's `max`; a saved null means no limit.
 export const readAbilityMaximums = (
     classPreset: ClassPreset,
     source?: Record<string, unknown>,
@@ -176,10 +181,12 @@ export const readAbilityMaximums = (
         return Object.fromEntries(
             classPreset.abilities.flatMap((ability) => {
                 const maximum = readSavedField(saved, ability.id, "max")
-                return typeof maximum === "number" &&
-                    Number.isInteger(maximum) &&
-                    maximum >= 0
-                    ? [[ability.id, maximum]]
+                if (isLimit(maximum)) {
+                    return [[ability.id, maximum]]
+                }
+
+                return maximum !== null && ability.max !== undefined
+                    ? [[ability.id, ability.max]]
                     : []
             }),
         )
@@ -193,12 +200,22 @@ export const readAbilityMaximums = (
     }
 }
 
+// Saves only what differs from the preset's `max`, so clearing a preset Max
+// stores null.
 export const writeAbilityMaximums = (
-    classId: string,
+    classPreset: ClassPreset,
     maximums: AbilityMaximums,
 ) => {
+    const values: Record<string, number | null> = {}
+    for (const ability of classPreset.abilities) {
+        const maximum = maximums[ability.id]
+        if (maximum !== ability.max) {
+            values[ability.id] = maximum ?? null
+        }
+    }
+
     try {
-        writeAbilityField(classId, "max", maximums)
+        writeAbilityField(classPreset.id, "max", values)
         return null
     } catch (error) {
         return error instanceof Error
@@ -302,8 +319,8 @@ export const abilityNodeCounts = (
     return counts
 }
 
-// Defaults: rank 1 every node, ranks 2-4 +2, the rest +0; capped at the
-// node count.
+// Defaults: the preset's `min`, else rank 1 every node, ranks 2-4 +2, the
+// rest +0; capped at the node count.
 export const resolveAbilityMinimums = (
     classPreset: ClassPreset,
     priorities: AbilityPriorities,
@@ -325,7 +342,7 @@ export const resolveAbilityMinimums = (
                 ability.id,
                 Math.min(
                     nodeCounts.get(ability.id) ?? 0,
-                    stored[ability.id] ?? fallback,
+                    stored[ability.id] ?? ability.min ?? fallback,
                 ),
             ]
         }),
