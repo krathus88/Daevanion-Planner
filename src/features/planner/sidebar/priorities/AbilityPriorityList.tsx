@@ -22,10 +22,13 @@ export const AbilityPriorityList = ({
         return !layout || (limits.scopedNodeCounts.get(ability.id) ?? 0) > 0
     }
 
+    // Skipped abilities go last, each part by rank.
     const byPriority = (left: ClassAbility, right: ClassAbility) => {
         return (
+            Number(limits.skips[left.id] === true) -
+                Number(limits.skips[right.id] === true) ||
             (limits.priorities[left.id] ?? Number.MAX_SAFE_INTEGER) -
-            (limits.priorities[right.id] ?? Number.MAX_SAFE_INTEGER)
+                (limits.priorities[right.id] ?? Number.MAX_SAFE_INTEGER)
         )
     }
 

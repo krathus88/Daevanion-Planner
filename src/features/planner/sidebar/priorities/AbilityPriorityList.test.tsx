@@ -54,4 +54,36 @@ describe("AbilityPriorityList", () => {
             screen.getByRole("button", { name: `Skip ${late.name}` }),
         ).toHaveAttribute("aria-pressed", "true")
     })
+
+    it("lists skipped abilities after the rest of their group", async () => {
+        renderWithChakra(<AbilityPriorityList classPreset={preset} />)
+
+        const skills = preset.abilities.filter(
+            (ability) => ability.type === "skill",
+        )
+        const skillButtons = () => {
+            return screen
+                .getAllByRole("button", { name: /^Skip / })
+                .filter((button) => {
+                    return skills.some(
+                        (skill) =>
+                            button.getAttribute("aria-label") ===
+                            `Skip ${skill.name}`,
+                    )
+                })
+        }
+        const [top] = skillButtons()
+
+        await userEvent.click(top)
+
+        const after = skillButtons()
+        const pressed = after.map(
+            (button) => button.getAttribute("aria-pressed") === "true",
+        )
+
+        // Every skipped skill comes after every used one.
+        expect(pressed).toEqual([...pressed].sort())
+        expect(after.indexOf(top)).toBeGreaterThanOrEqual(pressed.indexOf(true))
+        expect(after.at(-1)?.getAttribute("aria-pressed")).toBe("true")
+    })
 })
