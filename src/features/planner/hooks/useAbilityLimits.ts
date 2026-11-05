@@ -8,13 +8,16 @@ import {
     readAbilityMaximums,
     readAbilityMinimums,
     readAbilityPriorities,
+    readAbilitySkips,
     readSharedAbilityUpgradeCounts,
     resolveAbilityMinimums,
     writeAbilityMaximums,
     writeAbilityMinimums,
     writeAbilityPriorities,
+    writeAbilitySkips,
     type AbilityMaximums,
     type AbilityMinimums,
+    type AbilitySkips,
 } from "@planner/storage/abilityPriorities"
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
 import { subscribeToClassSettings } from "@planner/storage/classSettings"
@@ -53,6 +56,12 @@ const readLimits = (classPreset: ClassPreset, errors: string[]) => {
             "Could not read ability maximums.",
             errors,
         ),
+        skips: readOr<AbilitySkips>(
+            () => readAbilitySkips(classPreset),
+            {},
+            "Could not read skipped abilities.",
+            errors,
+        ),
     }
 }
 
@@ -83,6 +92,7 @@ export const useAbilityLimits = (
     const [priorities, setPriorities] = useState(initial.priorities)
     const [minimums, setMinimums] = useState(initial.minimums)
     const [maximums, setMaximums] = useState(initial.maximums)
+    const [skips, setSkips] = useState(initial.skips)
     const [upgradeCounts, setUpgradeCounts] = useState(initial.upgradeCounts)
     const [error, setError] = useState<string | null>(initial.error)
 
@@ -116,6 +126,7 @@ export const useAbilityLimits = (
                 setPriorities(next.priorities)
                 setMinimums(next.minimums)
                 setMaximums(next.maximums)
+                setSkips(next.skips)
                 setError(errors.join(" ") || null)
             }),
         [classPreset],
@@ -180,6 +191,24 @@ export const useAbilityLimits = (
         )
     }
 
+    const updateSkip = (abilityId: string, skipped: boolean) => {
+        const nextSkips: Record<string, true> = { ...skips }
+        if (skipped) {
+            nextSkips[abilityId] = true
+        } else {
+            delete nextSkips[abilityId]
+        }
+
+        const writeError = writeAbilitySkips(classPreset, nextSkips)
+        if (writeError) {
+            setError(writeError)
+            return
+        }
+
+        setSkips(nextSkips)
+        setError(null)
+    }
+
     const nodeCounts = abilityNodeCounts(classPreset)
     const scopedNodeCounts = abilityNodeCounts(classPreset, boards)
     const resolvedMinimums = resolveAbilityMinimums(
@@ -192,6 +221,7 @@ export const useAbilityLimits = (
         priorities: priorities,
         minimums: resolvedMinimums,
         maximums: maximums,
+        skips: skips,
         upgradeCounts: upgradeCounts,
         nodeCounts: nodeCounts,
         scopedNodeCounts: scopedNodeCounts,
@@ -199,5 +229,6 @@ export const useAbilityLimits = (
         updatePriority: updatePriority,
         updateMinimum: updateMinimum,
         updateMaximum: updateMaximum,
+        updateSkip: updateSkip,
     }
 }

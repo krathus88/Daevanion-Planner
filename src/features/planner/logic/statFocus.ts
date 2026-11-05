@@ -7,6 +7,7 @@ export type StatStep = {
     key: string
     connector: string[]
     cost: number
+    // Points spent on nodes that aren't free.
     detour: number
     // Infinity when no ability is left waiting.
     toWaiting: number
@@ -45,14 +46,12 @@ export const findStatSteps = ({
     route,
     wanted,
     waiting,
-    maxDetour,
     isFree,
 }: {
     layout: BoardLayout
     route: ReadonlySet<string>
     wanted: ReadonlySet<string>
     waiting: Iterable<string>
-    maxDetour: number
     isFree: (key: string) => boolean
 }) => {
     const distances = new Map<string, number>()
@@ -110,10 +109,6 @@ export const findStatSteps = ({
         }
 
         const detour = Math.floor(distance / (DETOUR_WEIGHT + 1))
-        if (detour > maxDetour) {
-            continue
-        }
-
         const connector: string[] = []
         let current: string | undefined = key
         while (current !== undefined && !route.has(current)) {
@@ -138,6 +133,7 @@ export const findStatSteps = ({
     )
 }
 
+// Takes every wanted node of each group in turn, while the budget lasts.
 export const growWithFocus = ({
     layout,
     route,
@@ -164,7 +160,6 @@ export const growWithFocus = ({
                 route: path,
                 wanted: wanted,
                 waiting: group.waiting.filter((key) => !path.has(key)),
-                maxDetour: group.detour,
                 isFree: (key) => free.has(key),
             })
             const step = steps.find(

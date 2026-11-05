@@ -366,6 +366,73 @@ test.describe("all boards panels", () => {
         }
     })
 
+    test("dragging an ignored stat onto a rank joins it", async ({ page }) => {
+        await page.goto(BOARD)
+
+        const panel = await openAll(page)
+
+        await panel
+            .getByRole("button", { name: "Optimizer priorities" })
+            .click()
+        await panel.getByRole("button", { name: "Stat priorities" }).click()
+
+        const handle = panel.getByRole("button", { name: "Drag Max MP" })
+        const target = panel.getByRole("button", { name: "Drag Attack" })
+        // The sidebar scrolls on its own; the mouse only reaches what's shown,
+        // and both rows fit once the bottom one is in view.
+        await page.setViewportSize({ width: 1280, height: 1000 })
+        await handle.scrollIntoViewIfNeeded()
+        await expect(target).toBeInViewport()
+        // hover() measures the handle when it acts, after the section's
+        // open animation.
+        await handle.hover()
+        await page.mouse.down()
+        const from = await handle.boundingBox()
+        const before = await target.boundingBox()
+
+        if (!from || !before) {
+            throw new Error("No drag handles.")
+        }
+
+        // A first nudge starts the drag, which mustn't shift the list.
+        await page.mouse.move(from.x + from.width / 2, from.y, { steps: 3 })
+        await expect(handle).toHaveAttribute("aria-pressed", "true")
+        const to = await target.boundingBox()
+
+        if (!to) {
+            throw new Error("No drop target.")
+        }
+
+        expect(to.y).toBe(before.y)
+
+        const x = to.x + to.width / 2
+        const y = to.y + to.height / 2
+        await page.mouse.move(x, y, { steps: 15 })
+        // The drop target settles a frame after the last move.
+        await page.mouse.move(x, y + 1)
+        await page.mouse.up()
+
+        await expect
+            .poll(async () => {
+                const settings = await readStored(
+                    page,
+                    "daevanion:v1:gladiator:settings",
+                )
+                return {
+                    ranked: settings?.stats?.order?.slice(0, 3),
+                    ignored: settings?.stats?.ignored,
+                }
+            })
+            .toEqual({
+                ranked: ["attack", "critical-hit", "max-mp"],
+                ignored: [],
+            })
+        // Ranked now, so it can be maxed.
+        await expect(
+            panel.getByRole("checkbox", { name: "Max Max MP" }),
+        ).toBeAttached()
+    })
+
     test("route preferences list this board's nodes", async ({ page }) => {
         await page.goto(BOARD)
 

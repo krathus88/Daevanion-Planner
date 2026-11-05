@@ -1,7 +1,7 @@
-import type { ArielStatType, BoardStat, StatType } from "@config/stats/stats"
+import type { ArielStatType, BoardStat } from "@config/stats/stats"
 
-// Stats only break ties between equal-cost routes, unless "spend leftover
-// points" is on.
+// Ariel's stats are ranked by tier. Stats only break ties between equal-cost
+// routes.
 export const STAT_TIERS = ["best", "good", "okay", "ignore"] as const
 
 export type StatTier = (typeof STAT_TIERS)[number]
@@ -11,15 +11,6 @@ export const STAT_TIER_NAMES: Record<StatTier, string> = {
     good: "Good",
     okay: "Okay",
     ignore: "Ignore",
-}
-
-export const DEFAULT_STAT_TIERS: Record<StatType, StatTier> = {
-    attack: "best",
-    "critical-hit": "best",
-    "max-hp": "good",
-    defense: "good",
-    "critical-hit-resist": "okay",
-    "max-mp": "ignore",
 }
 
 export const DEFAULT_ARIEL_STAT_TIERS: Record<ArielStatType, StatTier> = {
@@ -42,11 +33,6 @@ export const DEFAULT_ARIEL_STAT_TIERS: Record<ArielStatType, StatTier> = {
     "ariel-max-mp": "ignore",
 }
 
-// Legacy: older saves set Stat focus per tier.
-export const FOCUS_TIERS = ["best", "good", "okay"] as const
-
-export type FocusTier = (typeof FOCUS_TIERS)[number]
-
 // Far apart so one higher-tier node outweighs any number of lower ones.
 const TIER_WEIGHTS: Record<StatTier, number> = {
     best: 1_000_000,
@@ -55,14 +41,25 @@ const TIER_WEIGHTS: Record<StatTier, number> = {
     ignore: 0,
 }
 
+export const tierValues = <Stat extends BoardStat>(
+    tiers: Readonly<Partial<Record<Stat, StatTier>>>,
+) => {
+    const values: Partial<Record<Stat, number>> = {}
+    for (const [stat, tier] of Object.entries(tiers) as [Stat, StatTier][]) {
+        values[stat] = TIER_WEIGHTS[tier]
+    }
+
+    return values
+}
+
+// Missing or 0 values add nothing.
 export const statWeights = <Stat extends BoardStat>(
     nodeStats: Readonly<Record<string, Stat>>,
-    tiers: Readonly<Partial<Record<Stat, StatTier>>>,
+    values: Readonly<Partial<Record<Stat, number>>>,
 ) => {
     const weights = new Map<string, number>()
     for (const [key, stat] of Object.entries(nodeStats)) {
-        const tier = tiers[stat]
-        const weight = tier ? TIER_WEIGHTS[tier] : 0
+        const weight = values[stat] ?? 0
         if (weight > 0) {
             weights.set(key, weight)
         }

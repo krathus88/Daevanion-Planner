@@ -1,10 +1,8 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 import { makeLayout } from "@test/boardFixture"
-import { addStatNodes, growByStatValue } from "./statFill"
-import { findPlannerPath } from "./plannerLogic"
+import { growByStatValue } from "./statFill"
 
 const layout = makeLayout()
-const start = { row: 0, column: 0 }
 
 describe("growByStatValue", () => {
     it("adds what the budget allows, connected to the route", () => {
@@ -74,63 +72,5 @@ describe("growByStatValue", () => {
 
         expect(grown.cost).toBe(2)
         expect(route.size).toBe(2)
-    })
-})
-
-describe("addStatNodes", () => {
-    const findRoute = async (targets: Set<string>) => {
-        const result = await findPlannerPath(
-            layout,
-            start,
-            targets,
-            { maxMs: 0 },
-            {
-                onBest: () => {},
-                onProgress: () => {},
-            },
-        )
-
-        if (!result.ok) {
-            throw new Error(result.reason)
-        }
-
-        return result
-    }
-
-    it("adds stat nodes within budget and keeps the targets", async () => {
-        const targets = new Set(["0,2"])
-        const onImproved = vi.fn()
-        const result = await addStatNodes({
-            layout: layout,
-            start: start,
-            targets: targets,
-            route: await findRoute(targets),
-            budget: 5,
-            stats: new Map([["1,1", 1]]),
-            weights: new Map([["1,1", 1]]),
-            onImproved: onImproved,
-        })
-
-        expect(result.path.has("0,2")).toBe(true)
-        expect(result.path.has("1,1")).toBe(true)
-        expect(result.cost).toBe(5)
-        expect(onImproved).toHaveBeenCalledTimes(1)
-    })
-
-    it("leaves out what doesn't fit", async () => {
-        const targets = new Set(["0,2"])
-        const route = await findRoute(targets)
-        const result = await addStatNodes({
-            layout: layout,
-            start: start,
-            targets: targets,
-            route: route,
-            budget: 4,
-            stats: new Map([["1,1", 1]]),
-            weights: new Map(),
-            onImproved: () => {},
-        })
-
-        expect(result).toBe(route)
     })
 })

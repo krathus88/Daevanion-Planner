@@ -20,11 +20,12 @@ import {
     NO_FINDS,
     searchSummary,
 } from "@planner/logic/improvementStatus"
-import { routeStatScore, statWeights } from "@planner/config/stats"
+import { routeStatScore, statWeights, tierValues } from "@planner/config/stats"
 import {
     pathPriorities,
     type PathPriorities,
 } from "@planner/logic/pathPriorities"
+import { statValues } from "@planner/logic/statOrder"
 import {
     DEFAULT_ARIEL_SETTINGS,
     readArielSettings,
@@ -46,7 +47,7 @@ type SerializedPlannerResult =
           path: string[]
           cost: number
           statScore: number
-          // Leftover stat nodes cost more on purpose.
+          // Maxed stat nodes cost more on purpose.
           extended?: boolean
       }
     | { ok: false; reason: string }
@@ -121,8 +122,7 @@ export const usePlannerOptimization = ({
     useEffect(() => () => plannerWorker.current?.terminate(), [])
 
     const readPriorities = (): {
-        statTiers: Parameters<typeof statWeights>[1]
-        spendLeftover: boolean
+        statValues: Parameters<typeof statWeights>[1]
         priorities: PathPriorities
     } => {
         if (!isMainBoard(layoutName)) {
@@ -133,15 +133,12 @@ export const usePlannerOptimization = ({
                 // Use the default Ariel priorities.
             }
 
+            const values = tierValues(arielSettings.tiers)
             return {
-                statTiers: arielSettings.tiers,
-                spendLeftover: false,
+                statValues: values,
                 priorities: {
                     weights: [
-                        ...statWeights(
-                            layout.nodeStats,
-                            arielSettings.tiers,
-                        ).entries(),
+                        ...statWeights(layout.nodeStats, values).entries(),
                     ],
                     focusGroups: [],
                 },
@@ -156,8 +153,7 @@ export const usePlannerOptimization = ({
         }
 
         return {
-            statTiers: statSettings.tiers,
-            spendLeftover: statSettings.spendLeftover,
+            statValues: statValues(statSettings),
             priorities: pathPriorities({
                 classPreset: classPreset,
                 layoutName: layoutName,
@@ -169,7 +165,7 @@ export const usePlannerOptimization = ({
 
     // The search ends once stallMs pass without a better route.
     const optimizePlanner = (stallMs = DEFAULT_STALL_SECONDS * 1000) => {
-        const { statTiers, spendLeftover, priorities } = readPriorities()
+        const { statValues: values, priorities } = readPriorities()
         const weights = new Map(priorities.weights)
         const requiredCells = new Set([...targetCells, ...needCells])
         // A route that misses a newly needed node can't be kept.
@@ -219,7 +215,7 @@ export const usePlannerOptimization = ({
                 if (resultMessage.type === "candidate") {
                     const best = bestPlannerResult.current
                     const candidate = resultMessage.result
-                    // Cheaper wins, then better stats; leftover-stat routes are always taken.
+                    // Cheaper wins, then better stats; routes with maxed stats are always taken.
                     const isBetter =
                         !best ||
                         candidate.extended ||
@@ -380,8 +376,7 @@ export const usePlannerOptimization = ({
                 start: start,
                 targets: [...requiredCells],
                 stallMs: stallMs,
-                statTiers: statTiers,
-                spendLeftover: spendLeftover,
+                statValues: values,
                 availablePoints: availablePoints,
                 priorities: priorities,
                 growStats: !isMainBoard(layoutName),

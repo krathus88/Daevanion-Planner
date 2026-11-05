@@ -11,6 +11,7 @@ import {
 import {
     defaultAbilityPriorities,
     readAbilityPriorities,
+    readAbilitySkips,
 } from "@planner/storage/abilityPriorities"
 import {
     readWantChoices,
@@ -28,12 +29,14 @@ const readRanks = (classPreset: ClassPreset) => {
         return {
             priorities: readAbilityPriorities(classPreset),
             specialPriorities: readSpecialPriorities(classPreset.id),
+            skips: readAbilitySkips(classPreset),
             error: null,
         }
     } catch (error) {
         return {
             priorities: defaultAbilityPriorities(classPreset),
             specialPriorities: DEFAULT_SPECIAL_PRIORITIES,
+            skips: {},
             error: errorMessage(error, "Could not read the class's ranks."),
         }
     }
@@ -64,6 +67,7 @@ export const useBoardWants = (
         choices: choices,
         priorities: ranks.priorities,
         specialPriorities: ranks.specialPriorities,
+        skips: ranks.skips,
     })
 
     const needCells = new Set(

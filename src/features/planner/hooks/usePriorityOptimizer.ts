@@ -16,9 +16,11 @@ import {
 } from "@planner/logic/improvementStatus"
 import type { PriorityPlannerProgress } from "@planner/logic/priorityPlanner"
 import {
+    applyAbilitySkips,
     readAbilityMaximums,
     readAbilityMinimums,
     readAbilityPriorities,
+    readAbilitySkips,
     resolveAbilityMinimums,
     type MinimumShortfall,
     type PriorityPlans,
@@ -246,14 +248,21 @@ export const usePriorityOptimizer = ({
         let settings
         try {
             const priorities = readAbilityPriorities(classPreset)
+            const limits = applyAbilitySkips(
+                {
+                    minimums: resolveAbilityMinimums(
+                        classPreset,
+                        priorities,
+                        readAbilityMinimums(classPreset),
+                    ),
+                    maximums: readAbilityMaximums(classPreset),
+                },
+                readAbilitySkips(classPreset),
+            )
             settings = {
                 priorities: priorities,
-                minimums: resolveAbilityMinimums(
-                    classPreset,
-                    priorities,
-                    readAbilityMinimums(classPreset),
-                ),
-                maximums: readAbilityMaximums(classPreset),
+                minimums: limits.minimums,
+                maximums: limits.maximums,
                 specialPriorities: readSpecialPriorities(classPreset.id),
                 rankOrder: readRankOrder(classPreset.id),
                 statSettings: readStatSettings(classPreset.id),

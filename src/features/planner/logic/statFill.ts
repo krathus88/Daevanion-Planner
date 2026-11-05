@@ -1,64 +1,6 @@
-import { isNode, keyOf, type Position } from "@planner/config/boardConfig"
+import { isNode, keyOf } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
-import { findPlannerPath, type PlannerResult } from "./plannerLogic"
-
-type FoundRoute = Extract<PlannerResult, { ok: true }>
-
-const STEP_MS = 30
-const noProgress = { onBest: () => {}, onProgress: () => {} }
-
-// Required targets are always kept.
-export const addStatNodes = async ({
-    layout,
-    start,
-    targets,
-    route,
-    budget,
-    stats,
-    weights,
-    onImproved,
-}: {
-    layout: BoardLayout
-    start: Position
-    targets: ReadonlySet<string>
-    route: FoundRoute
-    budget: number
-    stats: ReadonlyMap<string, number>
-    weights: ReadonlyMap<string, number>
-    onImproved: (route: FoundRoute) => void
-}) => {
-    let current = route
-    const extras = new Set<string>()
-    const candidates = [...stats.entries()]
-        .sort((left, right) => right[1] - left[1])
-        .map(([key]) => key)
-
-    for (const key of candidates) {
-        if (current.cost >= budget) {
-            break
-        }
-        if (current.path.has(key)) {
-            continue
-        }
-
-        const result = await findPlannerPath(
-            layout,
-            start,
-            new Set([...targets, ...extras, key]),
-            { maxMs: STEP_MS },
-            noProgress,
-            weights,
-        )
-        if (result.ok && result.cost <= budget) {
-            current = result
-            extras.add(key)
-            onImproved(result)
-        }
-    }
-
-    return current
-}
 
 // Weight counts once per point a node costs, so a tier is worth the same
 // per point on every node.

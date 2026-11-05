@@ -54,7 +54,8 @@ export const AbilityPriorityList = ({
             ) : (
                 <Text textStyle="hint">
                     1 is the highest rank. <Term>Min</Term> reserves upgrades;{" "}
-                    <Term>Max</Term> caps how many the optimizer picks.
+                    <Term>Max</Term> caps how many the optimizer picks. Click a
+                    name to skip it.
                 </Text>
             )}
 

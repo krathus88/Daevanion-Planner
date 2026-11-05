@@ -1,14 +1,19 @@
 import type { ClassPreset } from "@config/classPresets"
-import { Flex, Switch, Text } from "@chakra-ui/react"
+import { Flex, Text } from "@chakra-ui/react"
+import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react"
 import type { MainBoardId } from "@config/boards"
-import { STAT_TYPES } from "@config/stats/stats"
+import type { StatType } from "@config/stats/stats"
 import { useStatNodeCounts } from "@planner/hooks/useStatNodeCounts"
 import { useStatSettings } from "@planner/hooks/useStatSettings"
-import type { StatFocus } from "@planner/storage/statPriorities"
+import {
+    dropStat,
+    setStatMax,
+    type StatDrop,
+} from "@planner/logic/statListEdits"
+import { isStatType, type StatMax } from "@planner/storage/statPriorities"
 import { StatusText } from "@common/StatusText"
 import { Term } from "@common/Term"
-import { StatFocusSettings } from "./StatFocusSettings"
-import { StatPriorityRow } from "./StatPriorityRow"
+import { StatRankBoard } from "./StatRankBoard"
 
 type StatPriorityListProps = {
     classPreset: ClassPreset
@@ -22,62 +27,52 @@ export const StatPriorityList = ({
     const { settings, error, update } = useStatSettings(classPreset.id)
     const nodeCounts = useStatNodeCounts(classPreset.id, layout)
 
-    const stats = STAT_TYPES.filter(
-        (stat) =>
-            !layout || !nodeCounts.counts || nodeCounts.counts[stat].total > 0,
-    )
+    const handleDragEnd = (event: DragEndEvent) => {
+        const id = event.operation.source?.id
+        const drop = event.operation.target?.data as StatDrop | undefined
+        if (event.canceled || !isStatType(id) || !drop) {
+            return
+        }
 
-    const handleSpendLeftoverChange = (
-        details: Switch.CheckedChangeDetails,
-    ) => {
-        update({ ...settings, spendLeftover: details.checked })
+        update(dropStat(settings, id, drop))
     }
 
-    const handleFocusChange = (focus: StatFocus) => {
-        update({ ...settings, focus: focus })
+    const handleMaxChange = (stat: StatType, max: StatMax) => {
+        update(setStatMax(settings, stat, max))
     }
 
     return (
         <Flex flexDir="column" gap="2">
             <Text textStyle="hint">
-                Better <Term>stats</Term> win between routes of equal cost.
+                Higher ranks are worth more; <Term>stats</Term> in one box are
+                worth the same. Drag a stat into a box to join it, or between
+                boxes for a new rank.
             </Text>
 
-            {stats.map((stat) => (
-                <StatPriorityRow
-                    key={stat}
-                    stat={stat}
+            <DragDropProvider onDragEnd={handleDragEnd}>
+                <StatRankBoard
                     settings={settings}
-                    count={nodeCounts.counts?.[stat]}
+                    counts={nodeCounts.counts}
                     layout={layout}
-                    onSettingsChange={update}
+                    onMaxChange={handleMaxChange}
                 />
-            ))}
+            </DragDropProvider>
 
-            <Switch.Root
-                size="sm"
-                mt="2"
-                checked={settings.spendLeftover}
-                onCheckedChange={handleSpendLeftoverChange}
-            >
-                <Switch.HiddenInput />
-
-                <Switch.Control />
-
-                <Switch.Label>Spend leftover points on stats</Switch.Label>
-            </Switch.Root>
-
-            <Text textStyle="hint">
-                Spends leftover points on the best <Term>stat</Term> nodes.
-            </Text>
-
-            <StatFocusSettings
-                focus={settings.focus}
-                stats={stats}
-                tiers={settings.tiers}
-                isBoard={layout !== undefined}
-                onChange={handleFocusChange}
-            />
+            {layout ? (
+                <Text textStyle="hint">
+                    <Term>Max</Term> takes every node of the stat on this board,
+                    after the needed nodes. When it goes against ability ranks
+                    is set in <Term>All boards</Term>. Other stats only win
+                    between routes of equal cost.
+                </Text>
+            ) : (
+                <Text textStyle="hint">
+                    <Term>Max</Term> takes every node of the stat before skills
+                    and passives ranked after its numbers, or after every
+                    ability if empty. Other stats only win between routes of
+                    equal cost.
+                </Text>
+            )}
 
             {error && <StatusText>{error}</StatusText>}
 

@@ -5,7 +5,7 @@ import { validateLayoutBonuses } from "@planner/logic/abilityAssignments"
 import { makeLayout } from "@test/boardFixture"
 import { getStart, isNode, keyOf } from "./boardConfig"
 import { appearanceCost, layouts, POINTS_PER_NODE_TYPE } from "./layouts"
-import { routeStatScore, statWeights } from "./stats"
+import { routeStatScore, statWeights, tierValues } from "./stats"
 
 describe("getStart", () => {
     it("finds the start", () => {
@@ -102,7 +102,11 @@ describe("statWeights", () => {
     it("keeps tiers far apart and leaves ignored stats out", () => {
         const weights = statWeights(
             { "0,0": "attack", "0,1": "defense", "0,2": "max-mp" },
-            { attack: "best", defense: "good", "max-mp": "ignore" },
+            tierValues({
+                attack: "best",
+                defense: "good",
+                "max-mp": "ignore",
+            }),
         )
 
         expect(weights.has("0,2")).toBe(false)
@@ -111,7 +115,7 @@ describe("statWeights", () => {
         )
     })
 
-    it("treats a stat with no tier as ignored", () => {
+    it("treats a stat with no value as ignored", () => {
         expect(statWeights({ "0,0": "attack" }, {}).size).toBe(0)
     })
 })

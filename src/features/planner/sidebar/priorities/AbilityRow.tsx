@@ -8,6 +8,7 @@ import { Tooltip } from "@ui/tooltip"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { LimitInput } from "./LimitInput"
 import { PriorityInput } from "./PriorityInput"
+import { AbilitySkipName } from "./AbilitySkipName"
 import { scopeLabel } from "./scopeLabel"
 
 type AbilityRowProps = {
@@ -47,13 +48,18 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
         )
     }
 
+    const handleSkipChange = (skipped: boolean) => {
+        limits.updateSkip(ability.id, skipped)
+    }
+
+    const isSkipped = limits.skips[ability.id] === true
     const upgrades = limits.upgradeCounts.get(ability.id) ?? 0
     const minimum = limits.minimums[ability.id] ?? 0
     const maximum = limits.maximums[ability.id]
     const nodeCount = limits.nodeCounts.get(ability.id) ?? 0
     const scopedNodeCount = limits.scopedNodeCounts.get(ability.id) ?? 0
     const scopedMinimum = Math.min(minimum, scopedNodeCount)
-    const isBelowMinimum = upgrades < scopedMinimum
+    const isBelowMinimum = !isSkipped && upgrades < scopedMinimum
 
     return (
         <Flex minW="0" alignItems="center" gap="2">
@@ -73,18 +79,22 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
                         boxSize="8"
                         flexShrink="0"
                         objectFit="contain"
+                        opacity={isSkipped ? "dimmed" : undefined}
                         alt=""
                         aria-hidden="true"
                     />
                 </Tooltip>
             )}
 
-            <Text minW="0" flex="1" fontSize="sm" truncate title={ability.name}>
-                {ability.name}
-            </Text>
+            <AbilitySkipName
+                name={ability.name}
+                skipped={isSkipped}
+                onChange={handleSkipChange}
+            />
 
             <PriorityInput
                 value={limits.priorities[ability.id] ?? 1}
+                disabled={isSkipped}
                 aria-label={`${ability.name} priority rank`}
                 onCommit={handlePriorityCommit}
             />
@@ -93,6 +103,7 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
                 max={nodeCount}
                 min={0}
                 value={minimum}
+                disabled={isSkipped}
                 title={
                     layout
                         ? `Up to ${nodeCount} across all boards, ${scopedNodeCount} on ${BOARD_NAMES[layout]}`
@@ -107,6 +118,7 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
                 min={0}
                 placeholder="–"
                 value={maximum ?? ""}
+                disabled={isSkipped}
                 title="Leave empty for no limit"
                 aria-label={`${ability.name} maximum upgrades`}
                 onChange={handleMaximumChange}

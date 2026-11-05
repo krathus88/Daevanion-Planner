@@ -1,19 +1,17 @@
 import { Button, Flex, Text } from "@chakra-ui/react"
 import type { BoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
-import { STAT_NAMES, STAT_TYPES } from "@config/stats/stats"
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
 import { Term } from "@common/Term"
 import { useState } from "react"
-import { STAT_TIER_NAMES } from "@planner/config/stats"
 import { useBoard } from "@planner/context/boardContext"
 import { SPECIAL_BONUSES } from "@planner/config/specialNodes"
-import { STAT_TIER_COLORS } from "@planner/sidebar/priorities/tierColors"
 import {
     readAbilityMaximums,
     readAbilityMinimums,
     readAbilityPriorities,
+    readAbilitySkips,
 } from "@planner/storage/abilityPriorities"
 import { readAllClassSettings } from "@planner/storage/classSettings"
 import {
@@ -30,6 +28,7 @@ import { readStatSettings } from "@planner/storage/statPriorities"
 import { bumpStorageRevision } from "@planner/storage/storageRevision"
 import { BackToMyPlansLink } from "./BackToMyPlansLink"
 import { applySharedSettings, type SharedPlan } from "./shareCode"
+import { statSummaryRows } from "./statSummary"
 import { SummaryRow } from "./SummaryRow"
 
 type SharedSettingsPanelProps = {
@@ -52,13 +51,16 @@ const readSummary = (plan: SharedPlan, classPreset: ClassPreset) => {
     const settings = plan.settings ?? {}
 
     try {
+        const stats = readStatSettings(plan.classId, settings)
         return {
             priorities: readAbilityPriorities(classPreset, settings),
             minimums: readAbilityMinimums(classPreset, settings),
             maximums: readAbilityMaximums(classPreset, settings),
+            skips: readAbilitySkips(classPreset, settings),
             special: readSpecialPriorities(plan.classId, settings),
             rankOrder: readRankOrder(plan.classId, settings),
-            stats: readStatSettings(plan.classId, settings),
+            stats: stats,
+            statRows: statSummaryRows(stats),
         }
     } catch {
         return null
@@ -86,6 +88,10 @@ export const SharedSettingsPanel = ({
     const limitsOf = (abilityId: string) => {
         if (!summary) {
             return ""
+        }
+
+        if (summary.skips[abilityId]) {
+            return "Skipped"
         }
 
         const minimum = summary.minimums[abilityId]
@@ -179,28 +185,14 @@ export const SharedSettingsPanel = ({
                     </Section>
 
                     <Section defaultOpen title="Stats">
-                        {STAT_TYPES.map((stat) => (
+                        {summary.statRows.map((row) => (
                             <SummaryRow
-                                key={stat}
-                                label={STAT_NAMES[stat]}
-                                value={
-                                    STAT_TIER_NAMES[summary.stats.tiers[stat]]
-                                }
-                                valueColor={
-                                    STAT_TIER_COLORS[summary.stats.tiers[stat]]
-                                }
+                                key={row.stat}
+                                label={row.label}
+                                value={row.value}
+                                valueColor={row.color}
                             />
                         ))}
-
-                        <SummaryRow
-                            label="Spend leftover points"
-                            value={summary.stats.spendLeftover ? "On" : "Off"}
-                        />
-
-                        <SummaryRow
-                            label="Stat focus"
-                            value={summary.stats.focus.enabled ? "On" : "Off"}
-                        />
                     </Section>
                 </>
             ) : (

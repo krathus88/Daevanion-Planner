@@ -310,7 +310,7 @@ describe("optimizing", () => {
         expect(result.current.routeFinds.improvements).toBe(1)
     })
 
-    it("always takes a route extended with leftover stats", () => {
+    it("always takes a route extended with maxed stats", () => {
         const { result } = setup()
 
         act(() => {

@@ -81,35 +81,14 @@ describe("planPhaseStatus", () => {
             planPhaseStatus({
                 finds: { ...NO_FINDS, optionsChecked: 1240 },
                 phase: "build",
-                spendsLeftover: false,
             }),
         ).toBe("Step 1 of 2: building the plan · 1,240 options checked")
         expect(
             planPhaseStatus({
                 finds: improved,
                 phase: "refine",
-                spendsLeftover: false,
             }),
         ).toBe("Step 2 of 2: refining it · 4,820 options checked")
-    })
-
-    it("counts a third step when leftover points go to stats", () => {
-        expect(
-            planPhaseStatus({
-                finds: improved,
-                phase: "refine",
-                spendsLeftover: true,
-            }),
-        ).toBe("Step 2 of 3: refining it · 4,820 options checked")
-        expect(
-            planPhaseStatus({
-                finds: improved,
-                phase: "stats",
-                spendsLeftover: true,
-            }),
-        ).toBe(
-            "Step 3 of 3: spending leftover points on stats · 4,820 options checked",
-        )
     })
 })
 

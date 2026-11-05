@@ -12,6 +12,10 @@ export type AbilityMinimums = Readonly<Record<string, number>>
 // Missing means no limit.
 export type AbilityMaximums = Readonly<Record<string, number>>
 
+// Skipped abilities are never a target on All boards. Missing means not
+// skipped.
+export type AbilitySkips = Readonly<Record<string, true>>
+
 export type MinimumShortfall = {
     abilityId: string
     name: string
@@ -19,7 +23,7 @@ export type MinimumShortfall = {
     achieved: number
 }
 
-type AbilityField = "priority" | "min" | "max"
+type AbilityField = "priority" | "min" | "max" | "skip"
 
 const readSavedAbilities = (
     classId: string,
@@ -50,7 +54,7 @@ const readSavedField = (
 const writeAbilityField = (
     classId: string,
     field: AbilityField,
-    values: Readonly<Record<string, number>>,
+    values: Readonly<Record<string, number | boolean>>,
 ) => {
     let saved: Record<string, unknown>
     try {
@@ -201,6 +205,83 @@ export const writeAbilityMaximums = (
             ? `Could not save ability maximums: ${error.message}`
             : "Could not save ability maximums."
     }
+}
+
+// Abilities whose preset rank is this or higher (90+) start skipped.
+const DEFAULT_SKIP_RANK = 90
+
+const isSkippedByDefault = (classPreset: ClassPreset, abilityId: string) => {
+    return defaultAbilityPriorities(classPreset)[abilityId] >= DEFAULT_SKIP_RANK
+}
+
+// A saved true/false wins over the default.
+export const readAbilitySkips = (
+    classPreset: ClassPreset,
+    source?: Record<string, unknown>,
+): AbilitySkips => {
+    try {
+        const saved = readSavedAbilities(classPreset.id, source)
+        const skips: Record<string, true> = {}
+        for (const ability of classPreset.abilities) {
+            const skip = readSavedField(saved, ability.id, "skip")
+            const isSkipped =
+                typeof skip === "boolean"
+                    ? skip
+                    : isSkippedByDefault(classPreset, ability.id)
+            if (isSkipped) {
+                skips[ability.id] = true
+            }
+        }
+
+        return skips
+    } catch (error) {
+        throw new Error(
+            error instanceof Error
+                ? `Could not read skipped abilities: ${error.message}`
+                : "Could not read skipped abilities.",
+            { cause: error },
+        )
+    }
+}
+
+// Saves only what differs from the default, so un-skipping a default-skipped
+// ability stores false.
+export const writeAbilitySkips = (
+    classPreset: ClassPreset,
+    skips: AbilitySkips,
+) => {
+    const values: Record<string, boolean> = {}
+    for (const ability of classPreset.abilities) {
+        const isSkipped = skips[ability.id] === true
+        if (isSkipped !== isSkippedByDefault(classPreset, ability.id)) {
+            values[ability.id] = isSkipped
+        }
+    }
+
+    try {
+        writeAbilityField(classPreset.id, "skip", values)
+        return null
+    } catch (error) {
+        return error instanceof Error
+            ? `Could not save skipped abilities: ${error.message}`
+            : "Could not save skipped abilities."
+    }
+}
+
+// What the All boards search uses: a skipped ability needs no upgrades and
+// takes none.
+export const applyAbilitySkips = (
+    limits: { minimums: AbilityMinimums; maximums: AbilityMaximums },
+    skips: AbilitySkips,
+) => {
+    const minimums = { ...limits.minimums }
+    const maximums = { ...limits.maximums }
+    for (const abilityId of Object.keys(skips)) {
+        minimums[abilityId] = 0
+        maximums[abilityId] = 0
+    }
+
+    return { minimums: minimums, maximums: maximums }
 }
 
 const DEFAULT_MINIMUM = 2

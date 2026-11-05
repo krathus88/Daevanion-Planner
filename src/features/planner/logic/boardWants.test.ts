@@ -133,4 +133,17 @@ describe("resolveWants", () => {
 
         expect(resolved.get("a")).toBe("skip")
     })
+
+    it("defaults an ability skipped on All boards to Skip, unless chosen", () => {
+        const resolved = resolveWants({
+            wants: [skill("a"), skill("b")],
+            choices: { b: "need" },
+            priorities: { a: 1, b: 1 },
+            specialPriorities: DEFAULT_SPECIAL_PRIORITIES,
+            skips: { a: true, b: true },
+        })
+
+        expect(resolved.get("a")).toBe("skip")
+        expect(resolved.get("b")).toBe("need")
+    })
 })

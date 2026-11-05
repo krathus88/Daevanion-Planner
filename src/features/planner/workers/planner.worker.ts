@@ -2,11 +2,7 @@ import type { BoardStat } from "@config/stats/stats"
 import { keyOf, type Position } from "@planner/config/boardConfig"
 import type { BoardLayout } from "@planner/config/layouts"
 import { MAX_SEARCH_MS } from "@planner/config/searchTime"
-import {
-    routeStatScore,
-    statWeights,
-    type StatTier,
-} from "@planner/config/stats"
+import { routeStatScore, statWeights } from "@planner/config/stats"
 import type { PathPriorities } from "@planner/logic/pathPriorities"
 import {
     findPlannerPath,
@@ -14,7 +10,7 @@ import {
     type PlannerResult,
     type SearchLimit,
 } from "@planner/logic/plannerLogic"
-import { addStatNodes, growByStatValue } from "@planner/logic/statFill"
+import { growByStatValue } from "@planner/logic/statFill"
 import { growWithFocus } from "@planner/logic/statFocus"
 
 type StartMessage = {
@@ -24,14 +20,13 @@ type StartMessage = {
     targets: string[]
     // The search ends once this long passes without a better route.
     stallMs: number
-    statTiers: Partial<Record<BoardStat, StatTier>>
-    spendLeftover: boolean
+    statValues: Partial<Record<BoardStat, number>>
     availablePoints: number
     priorities: PathPriorities
     growStats: boolean
 }
 
-// Ends the route search early; leftover stats are still spent.
+// Ends the route search early; maxed stats are still added.
 type StopMessage = { type: "stop" }
 
 let stopRequested = false
@@ -64,14 +59,13 @@ const optimize = (message: StartMessage) => {
         start,
         targets,
         stallMs,
-        statTiers,
-        spendLeftover,
+        statValues,
         availablePoints,
         priorities,
         growStats,
     } = message
     const startedAt = performance.now()
-    const stats = statWeights(layout.nodeStats, statTiers)
+    const stats = statWeights(layout.nodeStats, statValues)
     const weights = new Map(priorities.weights)
     const targetSet = new Set(targets)
     const limit: SearchLimit = {
@@ -153,49 +147,33 @@ const optimize = (message: StartMessage) => {
         }
         postCandidate(result, startedAt)
 
-        let current = result
-        const kept = new Set(targetSet)
-        if (priorities.focusGroups.length > 0) {
-            const startKey = keyOf(start)
-            const grown = growWithFocus({
-                layout: layout,
-                route: new Set([startKey, ...result.path]),
-                cost: result.cost,
-                budget: availablePoints,
-                groups: priorities.focusGroups,
-            })
-            if (grown.cost > result.cost) {
-                grown.path.delete(startKey)
-                for (const key of grown.path) {
-                    if (!result.path.has(key)) {
-                        kept.add(key)
-                    }
-                }
-                current = {
-                    ok: true,
-                    path: grown.path,
-                    cost: grown.cost,
-                    statScore: routeStatScore(grown.path, weights),
-                }
-                postCandidate(current, startedAt, true)
-            }
+        if (priorities.focusGroups.length === 0) {
+            return result
         }
 
-        if (!spendLeftover || current.cost >= availablePoints) {
-            return current
-        }
-
-        // One short pass, which a stop doesn't skip.
-        return addStatNodes({
+        // Maxed stats go on after the route, even after a stop.
+        const startKey = keyOf(start)
+        const grown = growWithFocus({
             layout: layout,
-            start: start,
-            targets: kept,
-            route: current,
+            route: new Set([startKey, ...result.path]),
+            cost: result.cost,
             budget: availablePoints,
-            stats: stats,
-            weights: weights,
-            onImproved: (route) => postCandidate(route, startedAt, true),
+            groups: priorities.focusGroups,
         })
+        if (grown.cost <= result.cost) {
+            return result
+        }
+
+        grown.path.delete(startKey)
+        const extended: Extract<PlannerResult, { ok: true }> = {
+            ok: true,
+            path: grown.path,
+            cost: grown.cost,
+            statScore: routeStatScore(grown.path, weights),
+        }
+        postCandidate(extended, startedAt, true)
+
+        return extended
     }
 
     void run()

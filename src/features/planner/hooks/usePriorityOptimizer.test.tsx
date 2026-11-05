@@ -101,6 +101,23 @@ describe("usePriorityOptimizer", () => {
         })
     })
 
+    it("sends a skipped ability with no minimum and a cap of 0", () => {
+        const ability = preset.abilities[0]
+        writeClassSettings(CLASS, "abilities", {
+            [ability.id]: { skip: true, min: 3 },
+        })
+        const { result } = setup()
+
+        act(() => {
+            result.current.optimize(10)
+        })
+
+        expect(lastWorker().posted[0]).toMatchObject({
+            minimums: { [ability.id]: 0 },
+            maximums: { [ability.id]: 0 },
+        })
+    })
+
     it("explains settings it can't read, without starting", () => {
         writeClassSettings(CLASS, "abilities", 5)
 
@@ -129,7 +146,6 @@ describe("usePriorityOptimizer", () => {
                 idleMs: 0,
                 stallMs: 2,
                 phase: "refine",
-                spendsLeftover: false,
                 pointsUsed: 3,
                 finds: {
                     optionsChecked: 10,

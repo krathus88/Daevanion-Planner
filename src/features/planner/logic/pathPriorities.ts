@@ -1,16 +1,16 @@
 import type { ClassPreset } from "@config/classPresets"
 import type { MainBoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
-import { STAT_TYPES, type StatType } from "@config/stats/stats"
-import { STAT_TIERS, statWeights } from "@planner/config/stats"
+import { statWeights } from "@planner/config/stats"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import { boardWants } from "./boardWants"
+import { maxedStats, statValues } from "./statOrder"
 
+// Every wanted node is taken; free nodes don't count as detour.
 export type PathFocusGroup = {
     wanted: string[]
     free: string[]
     waiting: string[]
-    detour: number
 }
 
 export type PathPriorities = {
@@ -35,7 +35,7 @@ export const pathPriorities = ({
         .flatMap((want) => want.keys)
 
     // Outweighs every stat node together, so stats only break remaining ties.
-    const stats = statWeights(layout.nodeStats, statSettings.tiers)
+    const stats = statWeights(layout.nodeStats, statValues(statSettings))
     let statTotal = 0
     for (const weight of stats.values()) {
         statTotal += weight
@@ -45,25 +45,14 @@ export const pathPriorities = ({
         weights.set(key, statTotal + 1)
     }
 
-    const focus = statSettings.focus
-    const detourOf = (stat: StatType) => focus.stats[stat].detour
-    const focusStats = !focus.enabled
-        ? []
-        : STAT_TYPES.filter((stat) => detourOf(stat) > 0).sort(
-              (left, right) =>
-                  STAT_TIERS.indexOf(statSettings.tiers[left]) -
-                  STAT_TIERS.indexOf(statSettings.tiers[right]),
-          )
+    // Maxed stats take every node on the board, best stat first.
+    const maxed = maxedStats(statSettings)
     const statKeys = Object.keys(layout.nodeStats)
-    const free = statKeys.filter((key) =>
-        focusStats.includes(layout.nodeStats[key]),
-    )
-    const focusGroups = focusStats.map((stat) => ({
+    const free = statKeys.filter((key) => maxed.includes(layout.nodeStats[key]))
+    const focusGroups = maxed.map((stat) => ({
         wanted: statKeys.filter((key) => layout.nodeStats[key] === stat),
         free: free,
         waiting: preferredKeys,
-        // Counts the stat node's own point.
-        detour: detourOf(stat) - 1,
     }))
 
     return {

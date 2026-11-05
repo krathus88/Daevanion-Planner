@@ -34,11 +34,15 @@ const baseMessage = {
     start: start,
     targets: ["0,2"],
     stallMs: 5,
-    statTiers: { attack: "best" },
-    spendLeftover: false,
+    statValues: { attack: 1 },
     availablePoints: 50,
     priorities: { weights: [], focusGroups: [] },
     growStats: false,
+}
+
+const maxAttack = {
+    weights: [],
+    focusGroups: [{ wanted: ["1,1"], free: ["1,1"], waiting: [] }],
 }
 
 // Runs the worker's message handler and waits for its last message.
@@ -106,20 +110,16 @@ describe("planner worker", () => {
         })
     })
 
-    it("spends leftover points on stat nodes when asked", async () => {
-        const messages = await run({
-            spendLeftover: true,
-            stallMs: 200,
-        })
-        const candidate = lastCandidate(messages)
+    it("never adds stat nodes that aren't maxed", async () => {
+        const candidate = lastCandidate(await run({ stallMs: 200 }))
 
-        expect(candidate?.extended).toBe(true)
-        expect(candidate?.path).toContain("1,1")
+        expect(candidate?.extended).toBeFalsy()
+        expect(candidate?.path).not.toContain("1,1")
     })
 
-    it("doesn't spend leftovers with no room", async () => {
+    it("doesn't add maxed stats with no room", async () => {
         const messages = await run({
-            spendLeftover: true,
+            priorities: maxAttack,
             availablePoints: 4,
         })
 
@@ -135,7 +135,6 @@ describe("planner worker", () => {
                         wanted: ["1,1"],
                         free: ["1,1"],
                         waiting: [],
-                        detour: 0,
                     },
                 ],
             },
@@ -171,11 +170,15 @@ describe("planner worker", () => {
         expect(messages.at(-1)?.result?.reason).toContain("No stat node fits")
     })
 
-    it("ends the route search on a stop, still spending leftovers", async () => {
+    it("ends the route search on a stop, still adding maxed stats", async () => {
         posted.length = 0
         window.dispatchEvent(
             new MessageEvent("message", {
-                data: { ...baseMessage, stallMs: 600_000, spendLeftover: true },
+                data: {
+                    ...baseMessage,
+                    stallMs: 600_000,
+                    priorities: maxAttack,
+                },
             }),
         )
         await new Promise((resolve) => setTimeout(resolve, 50))

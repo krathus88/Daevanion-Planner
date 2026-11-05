@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 import { loadClassPreset, type ClassPreset } from "@config/classPresets"
-import { STAT_TYPES } from "@config/stats/stats"
+import type { StatType } from "@config/stats/stats"
 import { layouts } from "@planner/config/layouts"
 import {
     DEFAULT_STAT_SETTINGS,
@@ -15,22 +15,23 @@ beforeAll(async () => {
     preset = await loadClassPreset("gladiator")
 })
 
-const focusOn = (detour: number): StatSettings => {
+// The given stats go first, in that order, all maxed.
+const maxed = (stats: StatType[]): StatSettings => {
+    const max = { ...DEFAULT_STAT_SETTINGS.max }
+    for (const stat of stats) {
+        max[stat] = { enabled: true, skillAfter: 3, passiveAfter: 3 }
+    }
+
     return {
         ...DEFAULT_STAT_SETTINGS,
-        focus: {
-            enabled: true,
-            stats: Object.fromEntries(
-                STAT_TYPES.map((stat) => [
-                    stat,
-                    {
-                        passiveAfter: null,
-                        skillAfter: null,
-                        detour: stat === "attack" ? detour : 0,
-                    },
-                ]),
-            ) as StatSettings["focus"]["stats"],
-        },
+        order: [
+            ...stats,
+            ...DEFAULT_STAT_SETTINGS.order.filter(
+                (stat) => !stats.includes(stat),
+            ),
+        ],
+        tied: [],
+        max: max,
     }
 }
 
@@ -70,40 +71,42 @@ describe("pathPriorities", () => {
         expect(weights.get(want.keys[0])).toBeGreaterThan(stats)
     })
 
-    it("builds a group per focused stat, detour not counting the node", () => {
+    it("builds a group with every node of a maxed stat", () => {
         const want = boardWants(preset, "nezekan")[0]
         const result = pathPriorities({
             classPreset: preset,
             layoutName: "nezekan",
             preferred: new Set([want.id]),
-            statSettings: focusOn(2),
+            statSettings: maxed(["attack"]),
         })
 
         expect(result.focusGroups).toHaveLength(1)
 
         const [group] = result.focusGroups
+        const attackKeys = Object.keys(layouts.nezekan.nodeStats).filter(
+            (key) => layouts.nezekan.nodeStats[key] === "attack",
+        )
 
-        expect(group.detour).toBe(1)
         expect(group.waiting).toEqual(want.keys)
-
-        for (const key of group.wanted) {
-            expect(layouts.nezekan.nodeStats[key]).toBe("attack")
-        }
+        expect(group.wanted.sort()).toEqual(attackKeys.sort())
     })
 
-    it("has no groups when focus is turned off", () => {
-        const settings = focusOn(2)
+    it("orders maxed stats best first and frees all their nodes", () => {
+        const result = pathPriorities({
+            classPreset: preset,
+            layoutName: "nezekan",
+            preferred: new Set(),
+            statSettings: maxed(["critical-hit", "attack"]),
+        })
+        const statsOf = (keys: string[]) => {
+            return new Set(keys.map((key) => layouts.nezekan.nodeStats[key]))
+        }
 
         expect(
-            pathPriorities({
-                classPreset: preset,
-                layoutName: "nezekan",
-                preferred: new Set(),
-                statSettings: {
-                    ...settings,
-                    focus: { ...settings.focus, enabled: false },
-                },
-            }).focusGroups,
-        ).toEqual([])
+            result.focusGroups.map((group) => statsOf(group.wanted)),
+        ).toEqual([new Set(["critical-hit"]), new Set(["attack"])])
+        expect(statsOf(result.focusGroups[0].free)).toEqual(
+            new Set(["attack", "critical-hit"]),
+        )
     })
 })

@@ -4,15 +4,18 @@ import type { ClassPreset } from "@config/classPresets"
 import { writeBoardProgress } from "./boardStorage"
 import {
     abilityNodeCounts,
+    applyAbilitySkips,
     defaultAbilityPriorities,
     readAbilityMaximums,
     readAbilityMinimums,
     readAbilityPriorities,
+    readAbilitySkips,
     readSharedAbilityUpgradeCounts,
     resolveAbilityMinimums,
     writeAbilityMaximums,
     writeAbilityMinimums,
     writeAbilityPriorities,
+    writeAbilitySkips,
 } from "./abilityPriorities"
 import { readAllClassSettings, writeClassSettings } from "./classSettings"
 
@@ -118,6 +121,71 @@ describe("minimums and maximums", () => {
 
         expect(writeAbilityMinimums("gladiator", { a: 1 })).toBeNull()
         expect(readAbilityMinimums(preset)).toEqual({ a: 1 })
+    })
+})
+
+describe("skips", () => {
+    it("round-trip without touching the other fields", () => {
+        writeAbilityMaximums("gladiator", { a: 3 })
+        writeAbilitySkips(preset, { b: true })
+
+        expect(readAbilitySkips(preset)).toEqual({ b: true })
+        expect(readAbilityMaximums(preset)).toEqual({ a: 3 })
+
+        writeAbilitySkips(preset, {})
+
+        expect(readAbilitySkips(preset)).toEqual({})
+    })
+
+    it("read only a saved true or false", () => {
+        writeClassSettings("gladiator", "abilities", {
+            a: { skip: true },
+            b: { skip: "yes" },
+        })
+
+        expect(readAbilitySkips(preset)).toEqual({ a: true })
+    })
+
+    it("start skipped for a preset rank of 90 or more", () => {
+        const late = {
+            ...preset,
+            abilities: [
+                { id: "a", priority: 90 },
+                { id: "b", priority: 89 },
+            ],
+        } as unknown as ClassPreset
+
+        expect(readAbilitySkips(late)).toEqual({ a: true })
+    })
+
+    it("keep a default-skipped ability un-skipped once chosen", () => {
+        const late = {
+            ...preset,
+            abilities: [{ id: "a", priority: 99 }, { id: "b" }],
+        } as unknown as ClassPreset
+
+        writeAbilitySkips(late, {})
+
+        expect(readAbilitySkips(late)).toEqual({})
+        expect(readAllClassSettings("gladiator")).toEqual({
+            abilities: { a: { skip: false } },
+        })
+
+        writeAbilitySkips(late, { a: true })
+
+        // Back to the default, so nothing is stored.
+        expect(readAllClassSettings("gladiator")).toEqual({
+            abilities: { a: {} },
+        })
+    })
+
+    it("make a skipped ability need and take no upgrades", () => {
+        expect(
+            applyAbilitySkips(
+                { minimums: { a: 3, b: 2 }, maximums: { b: 4 } },
+                { a: true },
+            ),
+        ).toEqual({ minimums: { a: 0, b: 2 }, maximums: { a: 0, b: 4 } })
     })
 })
 

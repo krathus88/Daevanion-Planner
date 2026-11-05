@@ -71,31 +71,24 @@ export const searchSummary = ({
     return [checked, found].filter((part) => part !== "").join(" ")
 }
 
-// Building the first plan, refining it, then spending leftover stats.
-export type PlanPhase = "build" | "refine" | "stats"
+// Building the first plan, then refining it.
+export type PlanPhase = "build" | "refine"
 
 const PLAN_PHASES: Record<PlanPhase, { number: number; label: string }> = {
     build: { number: 1, label: "building the plan" },
     refine: { number: 2, label: "refining it" },
-    stats: { number: 3, label: "spending leftover points on stats" },
 }
 
 type PlanPhaseStatusOptions = {
     finds: SearchFinds
     phase: PlanPhase
-    // Leftover points go to stats as a last step.
-    spendsLeftover: boolean
 }
 
 // The all-boards step line under the search bar.
-export const planPhaseStatus = ({
-    finds,
-    phase,
-    spendsLeftover,
-}: PlanPhaseStatusOptions) => {
+export const planPhaseStatus = ({ finds, phase }: PlanPhaseStatusOptions) => {
     const checked = formatOptionsChecked(finds.optionsChecked)
-    const steps = spendsLeftover ? 3 : 2
     const step = PLAN_PHASES[phase]
+    const steps = Object.keys(PLAN_PHASES).length
 
     return `Step ${step.number} of ${steps}: ${step.label} · ${checked}`
 }

@@ -13,7 +13,6 @@ import {
     loadClassPreset,
     type ClassPreset,
 } from "@config/classPresets"
-import { STAT_TYPES } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { MAX_SEARCH_MS } from "@planner/config/searchTime"
 import { layouts } from "@planner/config/layouts"
@@ -283,15 +282,13 @@ describe("optimizePriorityPlans", () => {
         )
     })
 
-    it("reports when the first plan is ready, then counts improvements", async () => {
+    // With one attempt per search, refining here never beats the first plan,
+    // so improvements after it aren't covered.
+    it("reports when the first plan is ready, then keeps counting", async () => {
         const onProgress = vi.fn()
-        // Abilities capped at 0 leave points for the stat fill to improve on.
         const result = await optimize({
-            maximums: Object.fromEntries(
-                preset.abilities.map((ability) => [ability.id, 0]),
-            ),
+            points: 100,
             stallMs: 200_000,
-            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
             boards: ["zikel"],
             onProgress: onProgress,
         })
@@ -306,9 +303,6 @@ describe("optimizePriorityPlans", () => {
         expect(reports[0].firstFoundMs).toBeNull()
         expect(firstReady).toBeGreaterThan(0)
         expect(reports[firstReady].improvements).toBe(0)
-        expect(last.improvements).toBeGreaterThan(0)
-        expect(last.lastImprovedMs).toBeGreaterThanOrEqual(last.firstFoundMs)
-        expect(last.lastImprovedMs).toBeLessThanOrEqual(MAX_SEARCH_MS)
         expect(result.finds).toEqual(last)
         expect(reports[0].optionsChecked).toBe(0)
         expect(last.optionsChecked).toBeGreaterThan(
@@ -357,7 +351,7 @@ describe("optimizePriorityPlans", () => {
         expect(refining).toBeLessThan(MAX_SEARCH_MS + 60_000)
     })
 
-    it("stops when asked, keeping the plan and one stats pass", async () => {
+    it("stops when asked, keeping the plan", async () => {
         let ready = false
         const onProgress = vi.fn((progress: PriorityPlannerProgress) => {
             ready = progress.finds.firstFoundMs !== null
@@ -373,20 +367,9 @@ describe("optimizePriorityPlans", () => {
             onProgress: onProgress,
         })
         const elapsed = onProgress.mock.lastCall?.[0].elapsedMs
-        ready = false
-        const withStats = await optimize({
-            ...base,
-            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
-            shouldStop: () => ready,
-            onProgress: onProgress,
-        })
 
         expect(plainPlan.plans.nezekan.plannedCost).toBeGreaterThan(0)
         expect(elapsed).toBeLessThan(MAX_SEARCH_MS)
-        expect(onProgress.mock.lastCall?.[0].phase).toBe("stats")
-        expect(withStats.plans.nezekan.plannedCost).toBeGreaterThan(
-            plainPlan.plans.nezekan.plannedCost,
-        )
     })
 
     it("throws on an ability assigned to the wrong node type", async () => {
@@ -418,30 +401,66 @@ describe("optimizePriorityPlans", () => {
         ).rejects.toThrow("Invalid Gladiator assignment")
     })
 
-    it("spends leftover points on stats when asked", async () => {
+    it("never spends points on stats that aren't maxed", async () => {
         const base = {
             points: 150,
             boards: ["nezekan"] as const,
             stallMs: 3_000_000,
         }
-        const without = await optimize(base)
-        const withStats = await optimize({
+        const ranked = await optimize(base)
+        const ignored = await optimize({
             ...base,
-            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
+            statSettings: {
+                ...DEFAULT_STAT_SETTINGS,
+                order: [],
+                tied: [],
+                ignored: [...DEFAULT_STAT_SETTINGS.order, "max-mp"],
+            },
         })
 
-        expect(withStats.plans.nezekan.plannedCost).toBeGreaterThan(
-            without.plans.nezekan.plannedCost,
+        expect(ranked.plans.nezekan.plannedCost).toBe(
+            ignored.plans.nezekan.plannedCost,
         )
-        expect(withStats.plans.nezekan.plannedCost).toBeLessThanOrEqual(150)
     })
 
-    it("leaves stat nodes out of the targets", async () => {
+    it("never targets an ability capped at 0, as a skip does", async () => {
+        const [first] = [...preset.abilities].sort(
+            (left, right) =>
+                (defaultAbilityPriorities(preset)[left.id] ?? 0) -
+                (defaultAbilityPriorities(preset)[right.id] ?? 0),
+        )
+        const result = await optimize({
+            points: 225,
+            boards: ["nezekan"],
+            stallMs: 3_000_000,
+            minimums: { [first.id]: 0 },
+            maximums: { [first.id]: 0 },
+        })
+        const nodes = abilityNodes(first.id, "nezekan")
+
+        expect(nodes.length).toBeGreaterThan(0)
+        for (const key of nodes) {
+            expect(result.plans.nezekan.targetCells).not.toContain(key)
+        }
+        expect(result.shortfalls).toEqual([])
+    })
+
+    it("leaves maxed stat nodes out of the targets", async () => {
         const result = await optimize({
             points: 150,
             boards: ["nezekan"],
             stallMs: 3_000_000,
-            statSettings: { ...DEFAULT_STAT_SETTINGS, spendLeftover: true },
+            statSettings: {
+                ...DEFAULT_STAT_SETTINGS,
+                max: {
+                    ...DEFAULT_STAT_SETTINGS.max,
+                    attack: {
+                        enabled: true,
+                        skillAfter: null,
+                        passiveAfter: null,
+                    },
+                },
+            },
         })
 
         for (const key of result.plans.nezekan.targetCells) {
@@ -449,21 +468,12 @@ describe("optimizePriorityPlans", () => {
         }
     })
 
-    it("takes focused stats before lower ranks", async () => {
+    it("takes maxed stats before lower ranks", async () => {
         const focus: StatSettings = {
             ...DEFAULT_STAT_SETTINGS,
-            focus: {
-                enabled: true,
-                stats: Object.fromEntries(
-                    STAT_TYPES.map((stat) => [
-                        stat,
-                        {
-                            passiveAfter: stat === "attack" ? 1 : null,
-                            skillAfter: stat === "attack" ? 1 : null,
-                            detour: stat === "attack" ? 2 : 0,
-                        },
-                    ]),
-                ) as StatSettings["focus"]["stats"],
+            max: {
+                ...DEFAULT_STAT_SETTINGS.max,
+                attack: { enabled: true, skillAfter: 1, passiveAfter: 1 },
             },
         }
         const attackNodes = (path: string[]) => {
@@ -479,6 +489,33 @@ describe("optimizePriorityPlans", () => {
             attackNodes(plain.plans.nezekan.plannedPath),
         )
         expect(focused.plans.nezekan.plannedCost).toBeLessThanOrEqual(40)
+    })
+
+    it("takes every node of a maxed stat when the points allow", async () => {
+        const attackTotal = Object.values(layouts.nezekan.nodeStats).filter(
+            (stat) => stat === "attack",
+        ).length
+        const result = await optimize({
+            points: 2000,
+            boards: ["nezekan"],
+            statSettings: {
+                ...DEFAULT_STAT_SETTINGS,
+                // Empty ranks wait for every ability.
+                max: {
+                    ...DEFAULT_STAT_SETTINGS.max,
+                    attack: {
+                        enabled: true,
+                        skillAfter: null,
+                        passiveAfter: null,
+                    },
+                },
+            },
+        })
+        const taken = result.plans.nezekan.plannedPath.filter(
+            (key) => layouts.nezekan.nodeStats[key] === "attack",
+        ).length
+
+        expect(taken).toBe(attackTotal)
     })
 
     // A minimum met by a node a route only passed through used to be lost

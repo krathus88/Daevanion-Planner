@@ -95,7 +95,6 @@ export const PriorityOptimizer = ({
                             {planPhaseStatus({
                                 finds: progress.finds,
                                 phase: progress.phase,
-                                spendsLeftover: progress.spendsLeftover,
                             })}
                         </StatusText>
                     )}

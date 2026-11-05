@@ -1,5 +1,5 @@
 import type { ClassPreset } from "@config/classPresets"
-import { STAT_TYPES, type StatType } from "@config/stats/stats"
+import type { StatType } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { MAIN_BOARD_IDS, type MainBoardId } from "@config/boards"
 import { layouts, POINTS_PER_NODE_TYPE } from "@planner/config/layouts"
@@ -10,7 +10,7 @@ import type {
     MinimumShortfall,
     PriorityPlans,
 } from "@planner/storage/abilityPriorities"
-import { routeStatScore, statWeights, STAT_TIERS } from "@planner/config/stats"
+import { routeStatScore, statWeights } from "@planner/config/stats"
 import {
     DEFAULT_SPECIAL_PRIORITY,
     type SpecialPriorities,
@@ -37,12 +37,12 @@ import { NO_FINDS, type PlanPhase, type SearchFinds } from "./improvementStatus"
 import { MAX_SEARCH_MS } from "@planner/config/searchTime"
 import { findPlannerPath } from "./plannerLogic"
 import { findStatSteps, type StatStep } from "./statFocus"
+import { maxedStats, statValues } from "./statOrder"
 
 export type PriorityPlannerLimit = {
     // Each phase ends once this long passes without a better plan.
     stallMs: number
-    // Checked between steps: true ends the search with the plan it has,
-    // after one pass of leftover stats if those are on.
+    // Checked between steps: true ends the search with the plan it has.
     shouldStop?: () => boolean
 }
 
@@ -52,8 +52,6 @@ export type PriorityPlannerProgress = {
     idleMs: number
     stallMs: number
     phase: PlanPhase
-    // Leftover points go to stats as a last phase.
-    spendsLeftover: boolean
     pointsUsed: number
     // Anything committed after the first full plan improves it.
     finds: SearchFinds
@@ -74,7 +72,6 @@ type PriorityTarget = {
     cost: number
     abilityId?: string
     isSpecial?: boolean
-    isStat?: boolean
 }
 
 type StatBlock = {
@@ -94,7 +91,6 @@ const MAX_STEP_MS = 250
 const FIRST_REFINE_SLICE_MS = 250
 const MAX_REFINE_SLICE_MS = 1500
 const PROGRESS_INTERVAL_MS = 250
-const STAT_STEP_MS = 30
 
 export const optimizePriorityPlans = async (
     classPreset: ClassPreset,
@@ -188,6 +184,11 @@ export const optimizePriorityPlans = async (
                         `Invalid ${classPreset.name} assignment at ${layoutName} ${key}.`,
                     )
                 }
+                // Capped at 0 (or skipped): never a target, so nothing waits
+                // for it. A route may still pass through.
+                if (maximums[abilityId] === 0) {
+                    continue
+                }
 
                 targets.push({
                     layout: layoutName,
@@ -210,9 +211,9 @@ export const optimizePriorityPlans = async (
             left.key.localeCompare(right.key, undefined, { numeric: true }),
     )
 
-    // A stat's nodes go before the first passive/skill ranked after its
-    // thresholds. Detour 0 isn't focused; ties go to the better tier.
-    const focus = statSettings.focus
+    // A maxed stat's nodes all go before the first passive/skill ranked
+    // after its ranks, or after every ability. Ties go to the better stat.
+    const statMax = statSettings.max
     const waitsBehind = (target: PriorityTarget, stat: StatType) => {
         if (target.abilityId === undefined) {
             return false
@@ -221,23 +222,12 @@ export const optimizePriorityPlans = async (
         const type = abilitiesById.get(target.abilityId)?.ability.type
         const afterRank =
             type === "passive"
-                ? focus.stats[stat].passiveAfter
-                : focus.stats[stat].skillAfter
+                ? statMax[stat].passiveAfter
+                : statMax[stat].skillAfter
 
         return afterRank !== null && target.priority > afterRank
     }
-    const focusStats = !focus.enabled
-        ? []
-        : STAT_TYPES.filter(
-              (stat) =>
-                  focus.stats[stat].detour > 0 &&
-                  (focus.stats[stat].passiveAfter !== null ||
-                      focus.stats[stat].skillAfter !== null),
-          ).sort(
-              (left, right) =>
-                  STAT_TIERS.indexOf(statSettings.tiers[left]) -
-                  STAT_TIERS.indexOf(statSettings.tiers[right]),
-          )
+    const focusStats = maxedStats(statSettings)
     const blockIndexes = new Map<StatType, number>()
     for (const stat of focusStats) {
         const index = targets.findIndex((target) => waitsBehind(target, stat))
@@ -287,10 +277,11 @@ export const optimizePriorityPlans = async (
         triniel: emptyPlan(),
     } satisfies PriorityPlans
     let totalCost = 0
+    const values = statValues(statSettings)
     const weightsByBoard = Object.fromEntries(
         MAIN_BOARD_IDS.map((layoutName) => [
             layoutName,
-            statWeights(layouts[layoutName].nodeStats, statSettings.tiers),
+            statWeights(layouts[layoutName].nodeStats, values),
         ]),
     ) as Record<MainBoardId, Map<string, number>>
     const scores: Record<MainBoardId, number> = {
@@ -340,7 +331,6 @@ export const optimizePriorityPlans = async (
             idleMs: Math.max(0, now - idleSince),
             stallMs: stallMs,
             phase: phase,
-            spendsLeftover: statSettings.spendLeftover,
             pointsUsed: totalCost,
             finds: finds,
         })
@@ -510,9 +500,6 @@ export const optimizePriorityPlans = async (
         for (const node of added.pinned) {
             minimumPins[node.layout].add(node.key)
         }
-        if (added.target?.isStat) {
-            statTargetKeys[added.target.layout].add(added.target.key)
-        }
         noteImprovement()
     }
 
@@ -647,7 +634,7 @@ export const optimizePriorityPlans = async (
         const isFreeOn = (layoutName: MainBoardId) => {
             return (key: string) => {
                 const stat = statAt(layoutName, key)
-                return stat !== undefined && focus.stats[stat].detour > 0
+                return stat !== undefined && focusStats.includes(stat)
             }
         }
 
@@ -689,8 +676,6 @@ export const optimizePriorityPlans = async (
                 route: route,
                 wanted: wanted,
                 waiting: waiting,
-                // The detour counts the stat node's own point.
-                maxDetour: focus.stats[block.stat].detour - 1,
                 isFree: isFreeOn(layoutName),
             })
             stepsByBoard.set(layoutName, steps)
@@ -767,38 +752,6 @@ export const optimizePriorityPlans = async (
                 }
                 commit(best)
                 remaining = remaining.filter((target) => !unfit.has(target))
-            }
-        }
-    }
-
-    const statCandidates = boards
-        .flatMap((layoutName) =>
-            [...weightsByBoard[layoutName].entries()].map(([key, weight]) => ({
-                target: {
-                    layout: layoutName,
-                    key: key,
-                    priority: Number.MAX_SAFE_INTEGER,
-                    orderLevel: 0,
-                    cost: POINTS_PER_NODE_TYPE.basic,
-                    isStat: true,
-                } satisfies PriorityTarget,
-                weight: weight,
-            })),
-        )
-        .sort((left, right) => right.weight - left.weight)
-        .map(({ target }) => target)
-
-    const fillStats = async (isDone: () => boolean) => {
-        for (const target of statCandidates) {
-            if (isDone() || totalCost >= pointBudget) {
-                return
-            }
-            if (isOnRoute(target)) {
-                continue
-            }
-            const added = await tryAddTarget(target, STAT_STEP_MS)
-            if (added) {
-                commit(added)
             }
         }
     }
@@ -889,18 +842,6 @@ export const optimizePriorityPlans = async (
             await fillMinimums(MIN_STEP_MS, isOver)
             await fillByRank(MIN_STEP_MS, isOver)
         })
-    }
-
-    // One pass of stats always runs, even after a stop.
-    if (statSettings.spendLeftover) {
-        startPhase("stats")
-        await fillStats(never)
-        while (!isOver()) {
-            await refineRound(async () => {
-                await refineRoutes(refineSliceMs)
-                await fillStats(isOver)
-            })
-        }
     }
 
     reportProgress(true)

@@ -13,7 +13,6 @@ const steps = (overrides: Partial<Parameters<typeof findStatSteps>[0]>) => {
         route: new Set(["0,0"]),
         wanted: new Set(),
         waiting: [],
-        maxDetour: 0,
         isFree: () => {
             return false
         },
@@ -34,11 +33,8 @@ describe("findStatSteps", () => {
         expect(step.connector.sort()).toEqual(["0,1", "0,2"])
     })
 
-    it("counts non-free nodes as detour, up to the limit", () => {
-        const wanted = new Set(["0,2"])
-
-        expect(steps({ wanted: wanted, maxDetour: 1 })).toEqual([])
-        expect(steps({ wanted: wanted, maxDetour: 2 })[0]).toMatchObject({
+    it("counts non-free nodes as detour, however far", () => {
+        expect(steps({ wanted: new Set(["0,2"]) })[0]).toMatchObject({
             cost: 2,
             detour: 2,
         })
@@ -48,7 +44,6 @@ describe("findStatSteps", () => {
         const free = new Set(["1,0", "2,0", "2,1", "2,2", "1,2", "0,2"])
         const [step] = steps({
             wanted: new Set(["0,2"]),
-            maxDetour: 5,
             isFree: (key) => {
                 return free.has(key)
             },
@@ -62,7 +57,6 @@ describe("findStatSteps", () => {
         const result = steps({
             wanted: new Set(["0,1", "1,0"]),
             waiting: ["2,0"],
-            maxDetour: 5,
         })
 
         expect(result.map((step) => step.key)).toEqual(["1,0", "0,1"])
@@ -70,7 +64,7 @@ describe("findStatSteps", () => {
     })
 
     it("reads infinity with nothing waiting", () => {
-        const [step] = steps({ wanted: new Set(["0,1"]), maxDetour: 1 })
+        const [step] = steps({ wanted: new Set(["0,1"]) })
 
         expect(step.toWaiting).toBe(Number.POSITIVE_INFINITY)
     })
@@ -82,14 +76,13 @@ describe("findStatSteps", () => {
             steps({
                 layout: layout,
                 wanted: new Set(["0,0", "4,0"]),
-                maxDetour: 99,
             }),
         ).toEqual([])
     })
 })
 
 describe("growWithFocus", () => {
-    it("takes each group's wanted nodes within its detour", () => {
+    it("takes every wanted node of each group", () => {
         const grown = growWithFocus({
             layout: ring,
             route: new Set(["0,0"]),
@@ -100,7 +93,6 @@ describe("growWithFocus", () => {
                     wanted: ["0,1", "0,2"],
                     free: ["0,1", "0,2"],
                     waiting: [],
-                    detour: 0,
                 },
             ],
         })
@@ -120,7 +112,6 @@ describe("growWithFocus", () => {
                     wanted: ["0,1", "0,2"],
                     free: ["0,1", "0,2"],
                     waiting: [],
-                    detour: 0,
                 },
             ],
         })

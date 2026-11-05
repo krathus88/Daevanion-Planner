@@ -1,6 +1,6 @@
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { layouts } from "@planner/config/layouts"
-import { statWeights } from "@planner/config/stats"
+import { statWeights, tierValues } from "@planner/config/stats"
 import type { ArielSettings } from "@planner/storage/arielSettings"
 import { nodeCost, positionOf } from "./boardLogic"
 import { growByStatValue } from "./statFill"
@@ -13,7 +13,7 @@ export const planArielRoute = (settings: ArielSettings) => {
         route: new Set([startKey]),
         cost: 0,
         budget: settings.points,
-        weights: statWeights(layout.nodeStats, settings.tiers),
+        weights: statWeights(layout.nodeStats, tierValues(settings.tiers)),
     })
     grown.path.delete(startKey)
 

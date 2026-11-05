@@ -24,6 +24,16 @@ export const layerStyles = defineLayerStyles({
             borderWidth: "1px",
         },
     },
+    // A box things are dragged into; lighter than the panel around it and
+    // the inputs inside it.
+    dropZone: {
+        value: {
+            bg: "app.hover",
+            borderColor: "app.borderStrong",
+            borderRadius: "md",
+            borderWidth: "1px",
+        },
+    },
     listItemActive: {
         value: {
             bg: "app.accentMuted",
