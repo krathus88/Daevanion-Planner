@@ -11,6 +11,10 @@ import { TaskGroupBox, type BoxSizing } from "./TaskGroupBox"
 
 type TaskGroupBoxesProps = {
     groups: TaskGroup[]
+    // Which part of the card these are in, so slide ids stay unique.
+    slideScope: string
+    // Done task ids fading out on their way to the Done section.
+    leaving?: readonly string[]
     owner: string
     ownerLabel: string
     periods: ResetPeriods
@@ -29,6 +33,8 @@ type TaskGroupBoxesProps = {
 // until it can't fit two tiles a row there: then it wraps to a row of its own.
 export const TaskGroupBoxes = ({
     groups,
+    slideScope,
+    leaving = [],
     owner,
     ownerLabel,
     periods,
@@ -53,6 +59,8 @@ export const TaskGroupBoxes = ({
                 <TaskGroupBox
                     key={group.reset}
                     group={group}
+                    leaving={leaving}
+                    slideScope={slideScope}
                     sizing={getSizing(index)}
                     owner={owner}
                     ownerLabel={ownerLabel}

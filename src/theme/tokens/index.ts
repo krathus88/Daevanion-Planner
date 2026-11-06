@@ -34,6 +34,8 @@ export const tokens = defineTokens({
             value: "timerFlashStrong 2s ease-in-out infinite",
         },
         timerFlashSoft: { value: "timerFlashSoft 2s ease-in-out infinite" },
+        // Lasts DONE_LEAVE_MS (tracker useDoneStash).
+        taskLeave: { value: "taskLeave 200ms ease-in forwards" },
         none: { value: "none" },
     },
     lineHeights: {

@@ -61,7 +61,7 @@ export const TasksDialog = ({
                             <Text textStyle="hint">
                                 {usesStarterTasks
                                     ? "The starter list, with caps from community guides. Any edit gives you your own copy."
-                                    : "Your own list. A cap of 1 is a checkbox, higher caps are counters."}
+                                    : "Your own list. Caps up to 6 are boxes to tick, higher caps are counters."}
                             </Text>
                         </Dialog.Header>
 

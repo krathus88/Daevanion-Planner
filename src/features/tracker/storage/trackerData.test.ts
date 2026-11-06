@@ -210,6 +210,17 @@ describe("writeTrackerData", () => {
         unsubscribe()
     })
 
+    it("hands back the object it wrote, so unchanged parts keep their identity", () => {
+        writeTrackerData(DATA)
+
+        const next = { ...DATA, counts: { ...DATA.counts, b: {} } }
+
+        writeTrackerData(next)
+
+        expect(readTrackerData()).toBe(next)
+        expect(readTrackerData().counts.a).toBe(DATA.counts.a)
+    })
+
     it("hears other tabs", () => {
         const onChange = vi.fn()
         const unsubscribe = subscribeToTrackerData(onChange)

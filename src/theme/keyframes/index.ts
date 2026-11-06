@@ -32,4 +32,9 @@ export const keyframes = defineKeyframes({
     timerPulseSoft: glowPulse("300", "200"),
     timerFlashStrong: borderFlash("400"),
     timerFlashSoft: borderFlash("200"),
+    // A done tracker task on its way to the Done section.
+    taskLeave: {
+        from: { opacity: 1, transform: "scale(1)" },
+        to: { opacity: 0, transform: "scale(0.94)" },
+    },
 })

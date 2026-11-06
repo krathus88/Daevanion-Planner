@@ -2,7 +2,7 @@ import type { ClassId } from "@config/classPresets/classInfo"
 
 export type TrackerReset = "daily" | "weekly"
 
-// Cap 1 is a checkbox, higher caps are counters. A shared task has one count
+// Caps up to 6 are boxes to tick, higher ones counters. A shared task has one count
 // per server instead of one per character.
 //
 // With `recharge`, the task counts entries left instead of runs done: each

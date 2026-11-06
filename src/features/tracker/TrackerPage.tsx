@@ -1,17 +1,16 @@
 import { Button, Container, Flex, Heading, Text } from "@chakra-ui/react"
-import { useNow } from "@timers/hooks/useNow"
 import { useEffect, useState } from "react"
 import { LuListChecks, LuUsers } from "react-icons/lu"
 import { TrackerBoard } from "./cards/TrackerBoard"
+import { useResetPeriods } from "./hooks/useResetPeriods"
 import { useTrackerData } from "./hooks/useTrackerData"
-import { getResetPeriods } from "./logic/resetPeriods"
 import { getTaskSections } from "./logic/taskSections"
 import { CharactersDialog } from "./manage/CharactersDialog"
 import { TasksDialog } from "./manage/TasksDialog"
 import { NoCharacters } from "./NoCharacters"
 
 export const TrackerPage = () => {
-    const now = useNow()
+    const periods = useResetPeriods()
     const {
         characters,
         tasks,
@@ -53,7 +52,6 @@ export const TrackerPage = () => {
     }
 
     const sections = getTaskSections(tasks)
-    const periods = getResetPeriods(now)
 
     return (
         <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
@@ -106,7 +104,6 @@ export const TrackerPage = () => {
                         minimized={minimized}
                         ignored={ignored}
                         periods={periods}
-                        now={now}
                         onCountChange={changeCount}
                         onEntriesChange={changeEntries}
                         onMinimizedChange={changeMinimized}

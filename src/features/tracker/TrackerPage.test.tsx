@@ -1,4 +1,9 @@
-import { screen, within } from "@testing-library/react"
+import {
+    screen,
+    waitFor,
+    waitForElementToBeRemoved,
+    within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
@@ -156,8 +161,8 @@ describe("TrackerPage", () => {
         expect(within(aria).getByText("0/10 done")).toBeInTheDocument()
 
         await userEvent.click(
-            within(aria).getByRole("checkbox", {
-                name: "Supply Requests, Aria",
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
         )
 
@@ -169,15 +174,21 @@ describe("TrackerPage", () => {
         renderWithChakra(<TrackerPage />)
 
         await userEvent.click(
-            screen.getByRole("checkbox", { name: "Supply Requests, Aria" }),
+            screen.getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
+            }),
         )
 
         expect(
-            screen.getByRole("checkbox", { name: "Supply Requests, Aria" }),
-        ).toBeChecked()
+            screen.getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
+            }),
+        ).toHaveAttribute("aria-pressed", "true")
         expect(
-            screen.getByRole("checkbox", { name: "Supply Requests, Bran" }),
-        ).not.toBeChecked()
+            screen.getByRole("button", {
+                name: "Supply Requests, Bran: 1 of 1",
+            }),
+        ).toHaveAttribute("aria-pressed", "false")
         expect(readTrackerData().counts.a["supply-requests"].count).toBe(1)
     })
 
@@ -189,15 +200,15 @@ describe("TrackerPage", () => {
         const bran = screen.getByRole("article", { name: "Bran" })
 
         await userEvent.click(
-            within(aria).getByRole("checkbox", {
-                name: "Supply Requests, Aria",
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
         )
 
         // It stays put while the pointer is still on the card.
         expect(
-            within(aria).getByRole("checkbox", {
-                name: "Supply Requests, Aria",
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
         ).toBeVisible()
         expect(
@@ -206,33 +217,34 @@ describe("TrackerPage", () => {
 
         await userEvent.unhover(aria)
 
-        expect(
-            within(aria).queryByRole("checkbox", {
-                name: "Supply Requests, Aria",
+        // It fades out first, then moves.
+        await waitForElementToBeRemoved(
+            within(aria).queryByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
-        ).not.toBeInTheDocument()
+        )
 
         // A click outside the card works too, for touch screens.
         await userEvent.click(
-            within(bran).getByRole("checkbox", {
-                name: "Supply Requests, Bran",
+            within(bran).getByRole("button", {
+                name: "Supply Requests, Bran: 1 of 1",
             }),
         )
         await userEvent.click(document.body)
 
-        expect(
-            within(bran).queryByRole("checkbox", {
-                name: "Supply Requests, Bran",
+        await waitForElementToBeRemoved(
+            within(bran).queryByRole("button", {
+                name: "Supply Requests, Bran: 1 of 1",
             }),
-        ).not.toBeInTheDocument()
+        )
 
         // Undone from the Done section, it comes back at once.
         await userEvent.click(
             within(aria).getByRole("button", { name: /^Done · 1/ }),
         )
         await userEvent.click(
-            await within(aria).findByRole("checkbox", {
-                name: "Supply Requests, Aria",
+            await within(aria).findByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
         )
 
@@ -240,10 +252,30 @@ describe("TrackerPage", () => {
             within(aria).queryByRole("button", { name: /^Done/ }),
         ).not.toBeInTheDocument()
         expect(
-            within(aria).getByRole("checkbox", {
-                name: "Supply Requests, Aria",
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
             }),
-        ).not.toBeChecked()
+        ).toHaveAttribute("aria-pressed", "false")
+
+        // Done again, it waits for the next leave like the first time.
+        await userEvent.click(
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
+            }),
+        )
+
+        expect(
+            within(aria).getByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
+            }),
+        ).toHaveAttribute("aria-pressed", "true")
+
+        await userEvent.unhover(aria)
+        await waitForElementToBeRemoved(
+            within(aria).queryByRole("button", {
+                name: "Supply Requests, Aria: 1 of 1",
+            }),
+        )
     })
 
     it("sets a small count with one click on its pip", async () => {
@@ -281,7 +313,11 @@ describe("TrackerPage", () => {
             }),
         )
 
-        expect(readTrackerData().ignored).toEqual({ a: ["arena-wins"] })
+        // It fades out first, then moves.
+        expect(readTrackerData().ignored).toEqual({})
+        await waitFor(() => {
+            expect(readTrackerData().ignored).toEqual({ a: ["arena-wins"] })
+        })
         expect(within(aria).getByText("0/9 done")).toBeInTheDocument()
         // Other characters still count it.
         expect(

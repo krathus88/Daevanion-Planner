@@ -248,8 +248,12 @@ export const writeTrackerData = (data: TrackerData) => {
         setStoredItem(KEY, JSON.stringify(data))
     } catch {
         // Nothing to do: the change only lasts until the page reloads.
-        cached = { raw: readRaw(), data: data }
     }
+
+    // Keep the object written rather than parse it back: edits copy only
+    // what they change, so every other character's counts stay the same
+    // objects and their cards don't re-render.
+    cached = { raw: readRaw(), data: data }
 
     window.dispatchEvent(new Event(CHANGE_EVENT))
 }

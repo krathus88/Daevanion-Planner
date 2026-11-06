@@ -17,6 +17,10 @@ type TaskTileProps = {
     done: boolean
     // The whole box is done and green, so the tile drops its border.
     boxDone: boolean
+    // Fading out on its way to the Done section.
+    leaving: boolean
+    // Its `data-slide-id` (useSlideIntoPlace).
+    slideId: string
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onIgnoredChange: IgnoredChangeHandler
@@ -43,6 +47,8 @@ export const TaskTile = ({
     entries,
     done,
     boxDone,
+    leaving,
+    slideId,
     onCountChange,
     onEntriesChange,
     onIgnoredChange,
@@ -51,7 +57,11 @@ export const TaskTile = ({
 
     return (
         <Flex
+            // Slides into place as done tasks leave (useSlideIntoPlace).
+            data-slide-id={slideId}
             p="1"
+            animation={leaving ? "taskLeave" : undefined}
+            _motionReduce={{ animation: "none" }}
             flexDir="column"
             bg={colors.bg}
             borderColor={colors.border}

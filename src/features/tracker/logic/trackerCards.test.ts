@@ -66,7 +66,7 @@ describe("getTaskGroups", () => {
 
 describe("getTaskControl", () => {
     it("picks a control by cap", () => {
-        expect(getTaskControl(task({ cap: 1 }))).toBe("check")
+        expect(getTaskControl(task({ cap: 1 }))).toBe("pips")
         expect(getTaskControl(task({ cap: 6 }))).toBe("pips")
         expect(getTaskControl(task({ cap: 7 }))).toBe("stepper")
         expect(getTaskControl(task({ cap: 14, recharge: 2 }))).toBe("entries")

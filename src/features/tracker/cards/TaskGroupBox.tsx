@@ -44,6 +44,10 @@ const FLEX_GROW = {
 
 type TaskGroupBoxProps = {
     group: TaskGroup
+    // Done task ids fading out on their way to the Done section.
+    leaving: readonly string[]
+    // Which part of the card this is in, so slide ids stay unique.
+    slideScope: string
     sizing: BoxSizing
     owner: string
     ownerLabel: string
@@ -59,6 +63,8 @@ type TaskGroupBoxProps = {
 // done, the whole box does instead.
 export const TaskGroupBox = ({
     group,
+    leaving,
+    slideScope,
     sizing,
     owner,
     ownerLabel,
@@ -72,10 +78,16 @@ export const TaskGroupBox = ({
     // The ignored ones are already split off into their own section.
     const progress = getGroupProgress(group, counts, entries, [], period)
     const isComplete = progress.done === progress.total
+    // Every task leaving takes the whole box with it, so it fades as one.
+    const isLeaving = group.tasks.every((task) => leaving.includes(task.id))
 
     return (
         <Flex
+            // Slides into place as done tasks leave (useSlideIntoPlace).
+            data-slide-id={`${slideScope}:box:${group.reset}`}
             p="2"
+            animation={isLeaving ? "taskLeave" : undefined}
+            _motionReduce={{ animation: "none" }}
             minW={sizing === "fill" ? "twoTileBox" : "0"}
             flexGrow={FLEX_GROW[sizing](group.tasks.length)}
             flexShrink={sizing === "column" ? 0 : 1}
@@ -127,6 +139,8 @@ export const TaskGroupBox = ({
                             period,
                         )}
                         boxDone={isComplete}
+                        leaving={!isLeaving && leaving.includes(task.id)}
+                        slideId={`${slideScope}:${task.id}`}
                         onCountChange={onCountChange}
                         onEntriesChange={onEntriesChange}
                         onIgnoredChange={onIgnoredChange}

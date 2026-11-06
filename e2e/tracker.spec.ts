@@ -19,7 +19,7 @@ const addCharacter = async (page: Page, name: string) => {
 }
 
 // Adding characters through the dialog is covered once; the rest start with
-// them saved. Chakra draws the checkbox over its input, so checks are forced.
+// them saved.
 const openWithCharacters = async (page: Page, names: string[]) => {
     await page.goto("/tracker")
     await page.evaluate(
@@ -141,8 +141,8 @@ test.describe("tracker", () => {
         await openWithCharacters(page, ["Aria", "Bran"])
 
         await page
-            .getByRole("checkbox", { name: "Supply Requests, Aria" })
-            .check({ force: true })
+            .getByRole("button", { name: "Supply Requests, Aria: 1 of 1" })
+            .click()
 
         // Leaving the card moves the done task into its Done section.
         const aria = page.getByRole("article", { name: "Aria" })
@@ -161,11 +161,11 @@ test.describe("tracker", () => {
         // Done tasks open in the card's collapsed Done section.
         await aria.getByRole("button", { name: /^Done · 1/ }).click()
         await expect(
-            page.getByRole("checkbox", { name: "Supply Requests, Aria" }),
-        ).toBeChecked()
+            page.getByRole("button", { name: "Supply Requests, Aria: 1 of 1" }),
+        ).toHaveAttribute("aria-pressed", "true")
         await expect(
-            page.getByRole("checkbox", { name: "Supply Requests, Bran" }),
-        ).not.toBeChecked()
+            page.getByRole("button", { name: "Supply Requests, Bran: 1 of 1" }),
+        ).toHaveAttribute("aria-pressed", "false")
         await expect(
             page.getByRole("button", {
                 name: "Battlefield (Wins), Bran: 1 of 3",
@@ -182,8 +182,8 @@ test.describe("tracker", () => {
         })
 
         await page
-            .getByRole("checkbox", { name: "Supply Requests, Aria" })
-            .check({ force: true })
+            .getByRole("button", { name: "Supply Requests, Aria: 1 of 1" })
+            .click()
         await firstTrial.click()
         await expect(firstTrial).toHaveAttribute("aria-pressed", "true")
 
@@ -210,8 +210,8 @@ test.describe("tracker", () => {
         await page.clock.fastForward(20 * 60 * 60 * 1000)
 
         await expect(
-            page.getByRole("checkbox", { name: "Supply Requests, Aria" }),
-        ).not.toBeChecked()
+            page.getByRole("button", { name: "Supply Requests, Aria: 1 of 1" }),
+        ).toHaveAttribute("aria-pressed", "false")
         await expect(firstTrial).toHaveAttribute("aria-pressed", "false")
         // Nightmare gains 2 entries a day; the Daily Dungeon refills weekly.
         await expect(nightmare).toHaveValue("13")
@@ -233,7 +233,7 @@ test.describe("tracker", () => {
             aria.getByRole("img", { name: "Arena (Wins) 0/30" }),
         ).toBeVisible()
         await expect(
-            aria.getByRole("checkbox", { name: "Supply Requests, Aria" }),
+            aria.getByRole("button", { name: "Supply Requests, Aria: 1 of 1" }),
         ).toBeHidden()
     })
 

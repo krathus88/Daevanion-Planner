@@ -10,7 +10,6 @@ import type {
     EntriesChangeHandler,
     IgnoredChangeHandler,
 } from "./taskHandlers"
-import { TaskCheckRow } from "./TaskCheckRow"
 import { TaskEntriesCounter } from "./TaskEntriesCounter"
 import { TaskName } from "./TaskName"
 import { TaskPips } from "./TaskPips"
@@ -74,60 +73,49 @@ export const TaskItem = ({
             alignItems="center"
             opacity={ignored ? "dimmed" : undefined}
         >
-            {control === "check" ? (
-                <TaskCheckRow
-                    task={task}
-                    checked={readCount(count, period) >= 1}
-                    done={isDone}
-                    ignored={ignored}
-                    label={label}
-                    onChange={handleCountChange}
-                />
-            ) : (
-                <Flex
-                    px="2"
-                    py="1.5"
-                    minW="0"
-                    minH="10"
-                    flex="1"
-                    flexDir={isStacked ? "column" : "row"}
-                    flexWrap="wrap"
-                    alignItems={isStacked ? "flex-start" : "center"}
-                    justifyContent="space-between"
-                    columnGap="3"
-                    rowGap="1"
-                >
-                    <TaskName task={task} done={isDone} ignored={ignored} />
+            <Flex
+                px="2"
+                py="1.5"
+                minW="0"
+                minH="10"
+                flex="1"
+                flexDir={isStacked ? "column" : "row"}
+                flexWrap="wrap"
+                alignItems={isStacked ? "flex-start" : "center"}
+                justifyContent="space-between"
+                columnGap="3"
+                rowGap="1"
+            >
+                <TaskName task={task} done={isDone} ignored={ignored} />
 
-                    {control === "entries" && (
-                        <TaskEntriesCounter
-                            left={readEntries(task, entries, period)}
-                            cap={task.cap}
-                            bonusCap={task.bonusCap ?? 0}
-                            label={label}
-                            onChange={handleEntriesChange}
-                        />
-                    )}
+                {control === "entries" && (
+                    <TaskEntriesCounter
+                        left={readEntries(task, entries, period)}
+                        cap={task.cap}
+                        bonusCap={task.bonusCap ?? 0}
+                        label={label}
+                        onChange={handleEntriesChange}
+                    />
+                )}
 
-                    {control === "pips" && (
-                        <TaskPips
-                            count={current}
-                            cap={task.cap}
-                            label={label}
-                            onChange={handleCountChange}
-                        />
-                    )}
+                {control === "pips" && (
+                    <TaskPips
+                        count={current}
+                        cap={task.cap}
+                        label={label}
+                        onChange={handleCountChange}
+                    />
+                )}
 
-                    {control === "stepper" && (
-                        <TaskStepper
-                            count={current}
-                            cap={task.cap}
-                            label={label}
-                            onChange={handleCountChange}
-                        />
-                    )}
-                </Flex>
-            )}
+                {control === "stepper" && (
+                    <TaskStepper
+                        count={current}
+                        cap={task.cap}
+                        label={label}
+                        onChange={handleCountChange}
+                    />
+                )}
+            </Flex>
 
             <IgnoreToggle
                 ignored={ignored}

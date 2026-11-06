@@ -14,7 +14,9 @@ const tick = () => {
     timeout = setTimeout(tick, 1000 - ((now - TICK_OFFSET) % 1000))
 }
 
-const subscribe = (onChange: () => void) => {
+// Exported for stores that derive a value from the clock and only change
+// when it does (see the tracker's useResetPeriods).
+export const subscribeToNow = (onChange: () => void) => {
     listeners.add(onChange)
 
     if (!timeout) {
@@ -31,10 +33,10 @@ const subscribe = (onChange: () => void) => {
     }
 }
 
-const getSnapshot = () => {
+export const getNow = () => {
     return now
 }
 
 export const useNow = () => {
-    return useSyncExternalStore(subscribe, getSnapshot)
+    return useSyncExternalStore(subscribeToNow, getNow)
 }

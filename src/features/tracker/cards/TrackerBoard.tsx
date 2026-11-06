@@ -25,7 +25,6 @@ type TrackerBoardProps = {
     minimized: string[]
     ignored: TrackerData["ignored"]
     periods: ResetPeriods
-    now: number
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onMinimizedChange: (owners: readonly string[], minimized: boolean) => void
@@ -42,7 +41,6 @@ export const TrackerBoard = ({
     minimized,
     ignored,
     periods,
-    now,
     onCountChange,
     onEntriesChange,
     onMinimizedChange,
@@ -74,7 +72,7 @@ export const TrackerBoard = ({
                 justifyContent="space-between"
                 gap="3"
             >
-                <ResetCountdowns now={now} />
+                <ResetCountdowns />
 
                 <Button variant="ghost" size="sm" onClick={handleToggleAll}>
                     {allMinimized ? <LuChevronsUpDown /> : <LuChevronsDownUp />}

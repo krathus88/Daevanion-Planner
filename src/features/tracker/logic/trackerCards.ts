@@ -23,7 +23,7 @@ export type TaskGroup = {
     tasks: TrackerTask[]
 }
 
-export type TaskControl = "check" | "pips" | "stepper" | "entries"
+export type TaskControl = "pips" | "stepper" | "entries"
 
 export type CardProgress = {
     done: number
@@ -193,10 +193,6 @@ export const countTasks = (groups: readonly TaskGroup[]) => {
 export const getTaskControl = (task: TrackerTask): TaskControl => {
     if (task.recharge !== undefined) {
         return "entries"
-    }
-
-    if (task.cap === 1) {
-        return "check"
     }
 
     return task.cap <= MAX_PIPS ? "pips" : "stepper"
