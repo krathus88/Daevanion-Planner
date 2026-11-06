@@ -3,11 +3,13 @@ import type { EntriesLeft } from "@tracker/logic/taskEntries"
 import {
     addCharacter,
     addTask,
+    getRemovedPresets,
     getTasks,
     moveCharacter,
     moveTask,
     removeCharacter,
     removeTask,
+    restorePreset,
     restoreStarterTasks,
     setCount,
     setEntries,
@@ -66,8 +68,8 @@ export const useTrackerData = () => {
         writeTrackerData(removeCharacter(readTrackerData(), id))
     }
 
-    const shiftCharacter = (id: string, offset: -1 | 1) => {
-        writeTrackerData(moveCharacter(readTrackerData(), id, offset))
+    const shiftCharacter = (id: string, targetId: string) => {
+        writeTrackerData(moveCharacter(readTrackerData(), id, targetId))
     }
 
     const createTask = (fields: TaskFields) => {
@@ -82,12 +84,16 @@ export const useTrackerData = () => {
         writeTrackerData(removeTask(readTrackerData(), id))
     }
 
-    const shiftTask = (id: string, offset: -1 | 1) => {
-        writeTrackerData(moveTask(readTrackerData(), id, offset))
+    const shiftTask = (id: string, targetId: string) => {
+        writeTrackerData(moveTask(readTrackerData(), id, targetId))
     }
 
     const restoreTasks = () => {
         writeTrackerData(restoreStarterTasks(readTrackerData()))
+    }
+
+    const addPresetBack = (id: string) => {
+        writeTrackerData(restorePreset(readTrackerData(), id))
     }
 
     const changeMinimized = (owners: readonly string[], minimized: boolean) => {
@@ -108,6 +114,7 @@ export const useTrackerData = () => {
         minimized: data.minimized,
         ignored: data.ignored,
         usesStarterTasks: data.tasks === null,
+        removedPresets: getRemovedPresets(data),
         changeMinimized: changeMinimized,
         changeIgnored: changeIgnored,
         changeCount: changeCount,
@@ -121,5 +128,6 @@ export const useTrackerData = () => {
         deleteTask: deleteTask,
         shiftTask: shiftTask,
         restoreTasks: restoreTasks,
+        addPresetBack: addPresetBack,
     }
 }

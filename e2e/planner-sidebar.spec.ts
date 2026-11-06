@@ -326,7 +326,7 @@ test.describe("all boards panels", () => {
             .getByRole("combobox", { name: "Nezekan" })
             .selectOption({ label: "Old · 2 pts" })
 
-        await expect(panel.getByText("223 left")).toBeVisible()
+        await expect(panel.getByText("364 left")).toBeVisible()
         expect(await readStored(page, `${PREFIX}:progress`)).toMatchObject({
             plannedCost: 2,
         })
@@ -425,7 +425,7 @@ test.describe("all boards panels", () => {
             })
             .toEqual({
                 ranked: ["attack", "critical-hit", "max-mp"],
-                ignored: ["critical-hit-resist"],
+                ignored: [],
             })
         // Ranked now, so it can be maxed.
         await expect(
@@ -474,5 +474,32 @@ test.describe("checking against the game", () => {
         await expect(dialog).toContainText("not-a-board.png", {
             timeout: 20_000,
         })
+    })
+})
+
+test.describe("sidebar tabs", () => {
+    test("the open tab stays open across board and class switches", async ({
+        page,
+    }) => {
+        await page.goto(BOARD)
+        await openSaved(page)
+
+        await page
+            .getByRole("navigation", { name: "Select board" })
+            .getByRole("link", { name: /zikel/i })
+            .click()
+        await expect(page).toHaveURL(/\/zikel$/)
+        await expect(page.getByRole("tab", { name: "Saved" })).toHaveAttribute(
+            "aria-selected",
+            "true",
+        )
+
+        await page.getByRole("combobox", { name: "Class" }).click()
+        await page.getByRole("option", { name: "Cleric" }).click()
+        await expect(page).toHaveURL(/\/cleric\/zikel$/)
+        await expect(page.getByRole("tab", { name: "Saved" })).toHaveAttribute(
+            "aria-selected",
+            "true",
+        )
     })
 })

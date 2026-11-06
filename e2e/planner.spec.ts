@@ -179,7 +179,7 @@ test.describe("all boards", () => {
         const total = stored.reduce((sum, cost) => sum + cost, 0)
 
         expect(total).toBeGreaterThan(0)
-        expect(total).toBeLessThanOrEqual(225)
+        expect(total).toBeLessThanOrEqual(366)
     })
 
     test("the point budget carries to This board", async ({ page }) => {

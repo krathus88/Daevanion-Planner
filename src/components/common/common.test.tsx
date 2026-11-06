@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { CardGrid } from "./CardGrid"
 import { ConfirmButton } from "./ConfirmButton"
-import { MoveButtons } from "./MoveButtons"
 import { NumberedStep } from "./NumberedStep"
 import { PointsField } from "./PointsField"
 import { ProgressBar } from "./ProgressBar"
@@ -389,37 +388,5 @@ describe("ConfirmButton", () => {
 
         expect(onConfirm).not.toHaveBeenCalled()
         expect(screen.getByRole("button", { name: "Remove" })).toBeVisible()
-    })
-})
-
-describe("MoveButtons", () => {
-    it("moves up and down, but not off either end", async () => {
-        const onMove = vi.fn()
-        const { rerender } = renderWithChakra(
-            <MoveButtons
-                first={false}
-                last={false}
-                label="Row"
-                onMove={onMove}
-            />,
-        )
-
-        await userEvent.click(
-            screen.getByRole("button", { name: "Move Row up" }),
-        )
-        await userEvent.click(
-            screen.getByRole("button", { name: "Move Row down" }),
-        )
-
-        expect(onMove.mock.calls).toEqual([[-1], [1]])
-
-        rerender(<MoveButtons first last label="Row" onMove={onMove} />)
-
-        expect(
-            screen.getByRole("button", { name: "Move Row up" }),
-        ).toBeDisabled()
-        expect(
-            screen.getByRole("button", { name: "Move Row down" }),
-        ).toBeDisabled()
     })
 })

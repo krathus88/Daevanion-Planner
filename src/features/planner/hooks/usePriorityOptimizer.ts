@@ -55,6 +55,10 @@ type PriorityWorkerMessage =
 
 type RecordedPlans = Partial<Record<BoardId, SavedPlanner>>
 
+// The latest worker progress and when it arrived (Date.now), so the page can
+// keep its clocks running between messages.
+export type ReceivedProgress = PriorityPlannerProgress & { receivedAt: number }
+
 type UsePriorityOptimizerOptions = {
     classPreset: ClassPreset
     totalPoints: number
@@ -71,9 +75,7 @@ export const usePriorityOptimizer = ({
     totalPoints,
     onComplete,
 }: UsePriorityOptimizerOptions) => {
-    const [progress, setProgress] = useState<PriorityPlannerProgress | null>(
-        null,
-    )
+    const [progress, setProgress] = useState<ReceivedProgress | null>(null)
     const [message, setMessage] = useState("")
     const [shortfall, setShortfall] = useState<OptimizeShortfall | null>(null)
     const [isOptimizing, setIsOptimizing] = useState(false)
@@ -206,7 +208,7 @@ export const usePriorityOptimizer = ({
         arielSettings: ArielSettings,
     ) => {
         if (data.type === "progress") {
-            setProgress(data.progress)
+            setProgress({ ...data.progress, receivedAt: Date.now() })
             return
         }
 

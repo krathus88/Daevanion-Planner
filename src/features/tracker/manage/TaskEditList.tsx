@@ -1,12 +1,13 @@
 import type { TaskFields } from "@tracker/logic/trackerEdits"
 import type { TrackerTask } from "@tracker/types"
+import { SortableList } from "./SortableList"
 import { TaskEditRow } from "./TaskEditRow"
 
 type TaskEditListProps = {
     tasks: TrackerTask[]
     onChange: (id: string, fields: TaskFields) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
+    onMove: (id: string, targetId: string) => void
 }
 
 export const TaskEditList = ({
@@ -15,15 +16,17 @@ export const TaskEditList = ({
     onDelete,
     onMove,
 }: TaskEditListProps) => {
-    return tasks.map((task, index) => (
-        <TaskEditRow
-            key={task.id}
-            task={task}
-            first={index === 0}
-            last={index === tasks.length - 1}
-            onChange={onChange}
-            onDelete={onDelete}
-            onMove={onMove}
-        />
-    ))
+    return (
+        <SortableList ids={tasks.map((task) => task.id)} onMove={onMove}>
+            {tasks.map((task, index) => (
+                <TaskEditRow
+                    key={task.id}
+                    task={task}
+                    index={index}
+                    onChange={onChange}
+                    onDelete={onDelete}
+                />
+            ))}
+        </SortableList>
+    )
 }

@@ -1,16 +1,19 @@
 import { Flex } from "@chakra-ui/react"
 import { Card } from "@common/Card"
 import { Section } from "@common/Section"
+import { useDoneStash } from "@tracker/hooks/useDoneStash"
 import type { ResetPeriods } from "@tracker/logic/resetPeriods"
 import {
     countTasks,
     getCardProgress,
+    getDoneTaskIds,
     getPendingTasks,
+    splitDone,
     splitIgnored,
     type TaskGroup,
 } from "@tracker/logic/trackerCards"
 import type { TaskCount, TaskEntries } from "@tracker/types"
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
 import { PendingTasks } from "./PendingTasks"
 import { TaskCardHeader } from "./TaskCardHeader"
 import type {
@@ -73,9 +76,21 @@ export const TaskCard = ({
         periods,
     )
     const split = splitIgnored(taskGroups, ignored)
+    const cardRef = useRef<HTMLDivElement>(null)
+    const stash = useDoneStash(
+        cardRef,
+        getDoneTaskIds(taskGroups, counts, entries, ignored, periods),
+    )
+    const active = splitDone(split.active, stash.stashed)
 
     return (
-        <Card as="article" gap="4" aria-label={title}>
+        <Card
+            ref={cardRef}
+            as="article"
+            gap="4"
+            aria-label={title}
+            onPointerLeave={stash.onPointerLeave}
+        >
             <TaskCardHeader
                 title={title}
                 progress={progress}
@@ -98,7 +113,7 @@ export const TaskCard = ({
             ) : (
                 <Flex flexDir="column" gap="4">
                     <TaskGroupBoxes
-                        groups={split.active}
+                        groups={active.todo}
                         owner={owner}
                         ownerLabel={ownerLabel}
                         periods={periods}
@@ -109,6 +124,28 @@ export const TaskCard = ({
                         onEntriesChange={onEntriesChange}
                         onIgnoredChange={onIgnoredChange}
                     />
+
+                    {active.done.length > 0 && (
+                        <Section
+                            title="Done"
+                            variant="sub"
+                            count={countTasks(active.done)}
+                        >
+                            {/* Same boxes and tiles as above, so they stay green. */}
+                            <TaskGroupBoxes
+                                groups={active.done}
+                                owner={owner}
+                                ownerLabel={ownerLabel}
+                                periods={periods}
+                                wide={wide}
+                                counts={counts}
+                                entries={entries}
+                                onCountChange={onCountChange}
+                                onEntriesChange={onEntriesChange}
+                                onIgnoredChange={onIgnoredChange}
+                            />
+                        </Section>
+                    )}
 
                     {split.ignored.length > 0 && (
                         <Section

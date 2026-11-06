@@ -26,23 +26,24 @@ const clamp = (value: number, min: number, max: number) => {
     return Math.min(max, Math.max(min, value))
 }
 
-// Swaps an item with its neighbour; off either end leaves the list as is.
+// Moves an item to where `targetId` is, shifting those between; an unknown
+// id leaves the list as is.
 const moveItem = <T extends { id: string }>(
     items: readonly T[],
     id: string,
-    offset: -1 | 1,
+    targetId: string,
 ) => {
     const from = items.findIndex((item) => item.id === id)
-    const to = from + offset
+    const to = items.findIndex((item) => item.id === targetId)
 
-    if (from === -1 || to < 0 || to >= items.length) {
+    if (from === -1 || to === -1) {
         return [...items]
     }
 
     const moved = [...items]
+    const [item] = moved.splice(from, 1)
 
-    moved[from] = items[to]
-    moved[to] = items[from]
+    moved.splice(to, 0, item)
 
     return moved
 }
@@ -191,9 +192,9 @@ export const removeCharacter = (data: TrackerData, id: string): TrackerData => {
 export const moveCharacter = (
     data: TrackerData,
     id: string,
-    offset: -1 | 1,
+    targetId: string,
 ): TrackerData => {
-    return { ...data, characters: moveItem(data.characters, id, offset) }
+    return { ...data, characters: moveItem(data.characters, id, targetId) }
 }
 
 // Names aren't trimmed here: edits save on every keystroke, so a trailing
@@ -262,40 +263,55 @@ const isSameGroup = (a: TrackerTask, b: TrackerTask) => {
     return a.reset === b.reset && a.shared === b.shared
 }
 
-// Tasks show grouped by reset, then shared or not, so a task swaps with the
-// next one of its own group, skipping the others.
+// Tasks show grouped by reset, then shared or not, so a task only moves to
+// where another of its own group is.
 export const moveTask = (
     data: TrackerData,
     id: string,
-    offset: -1 | 1,
+    targetId: string,
 ): TrackerData => {
-    const tasks = [...getTasks(data)]
-    const from = tasks.findIndex((task) => task.id === id)
+    const tasks = getTasks(data)
+    const moved = tasks.find((task) => task.id === id)
+    const target = tasks.find((task) => task.id === targetId)
 
-    if (from === -1) {
+    if (!moved || !target || moved === target || !isSameGroup(moved, target)) {
         return data
     }
 
-    let to = from + offset
+    return { ...data, tasks: moveItem(tasks, id, targetId) }
+}
 
-    while (
-        to >= 0 &&
-        to < tasks.length &&
-        !isSameGroup(tasks[to], tasks[from])
-    ) {
-        to += offset
+// Starter tasks the user removed from their own list, in starter order, so
+// they can be added back.
+export const getRemovedPresets = (data: TrackerData) => {
+    if (!data.tasks) {
+        return []
     }
 
-    if (to < 0 || to >= tasks.length) {
+    const ids = new Set(data.tasks.map((task) => task.id))
+
+    return STARTER_TASKS.filter((task) => !ids.has(task.id))
+}
+
+// Adds a removed starter task back, before the next starter task still in the
+// list (or last).
+export const restorePreset = (data: TrackerData, id: string): TrackerData => {
+    const tasks = getTasks(data)
+    const index = STARTER_TASKS.findIndex((task) => task.id === id)
+
+    if (index === -1 || tasks.some((task) => task.id === id)) {
         return data
     }
 
-    const moved = tasks[from]
+    const laterIds = new Set(
+        STARTER_TASKS.slice(index + 1).map((task) => task.id),
+    )
+    const at = tasks.findIndex((task) => laterIds.has(task.id))
+    const next = [...tasks]
 
-    tasks[from] = tasks[to]
-    tasks[to] = moved
+    next.splice(at === -1 ? next.length : at, 0, { ...STARTER_TASKS[index] })
 
-    return { ...data, tasks: tasks }
+    return { ...data, tasks: next }
 }
 
 // Back to the starter list; counts of the user's own tasks stay unread.

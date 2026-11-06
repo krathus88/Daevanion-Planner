@@ -61,12 +61,15 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         cap: 1,
         shared: false,
     },
+    // Entries refill to 3 each week; bonus tickets (cap assumed) pile on top.
     {
         id: "ascension-trial",
         name: "Ascension Trial",
         reset: "weekly",
         cap: 3,
         shared: false,
+        recharge: 3,
+        bonusCap: 30,
     },
     {
         id: "arena-wins",

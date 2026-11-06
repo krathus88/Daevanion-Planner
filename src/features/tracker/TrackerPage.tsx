@@ -20,6 +20,7 @@ export const TrackerPage = () => {
         minimized,
         ignored,
         usesStarterTasks,
+        removedPresets,
         changeCount,
         changeEntries,
         changeMinimized,
@@ -33,6 +34,7 @@ export const TrackerPage = () => {
         deleteTask,
         shiftTask,
         restoreTasks,
+        addPresetBack,
     } = useTrackerData()
 
     const [charactersOpen, setCharactersOpen] = useState(false)
@@ -127,12 +129,14 @@ export const TrackerPage = () => {
                 sections={sections}
                 open={tasksOpen}
                 usesStarterTasks={usesStarterTasks}
+                removedPresets={removedPresets}
                 onOpenChange={setTasksOpen}
                 onCreate={createTask}
                 onChange={changeTask}
                 onDelete={deleteTask}
                 onMove={shiftTask}
                 onRestore={restoreTasks}
+                onPresetRestore={addPresetBack}
             />
         </Container>
     )

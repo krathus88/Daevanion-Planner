@@ -157,6 +157,8 @@ describe("usePriorityOptimizer", () => {
         })
 
         expect(result.current.progress?.pointsUsed).toBe(3)
+        // When it arrived, so the page's clocks can run on from there.
+        expect(result.current.progress?.receivedAt).toBeCloseTo(Date.now(), -3)
     })
 
     it("asks the worker to stop, then records the plan it kept", () => {

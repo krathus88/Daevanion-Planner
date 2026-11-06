@@ -61,6 +61,81 @@ test.describe("tracker", () => {
         ).toBeVisible()
     })
 
+    test("reorders characters and tasks by dragging", async ({ page }) => {
+        await openWithCharacters(page, ["Aria", "Bran"])
+
+        // dnd-kit needs a few moves to start a drag and settle on its target.
+        // Positions are read once the dialog has finished opening; hovering
+        // scrolls the handle into view.
+        const drag = async (from: string, to: string, dialog: string) => {
+            const scope = page.getByRole("dialog", { name: dialog })
+            const source = scope.getByRole("button", { name: `Drag ${from}` })
+
+            await scope.evaluate((element) => {
+                return Promise.all(
+                    element
+                        .getAnimations({ subtree: true })
+                        .map((animation) => animation.finished),
+                )
+            })
+            await source.hover()
+
+            const handle = await source.boundingBox()
+            const target = await scope
+                .getByRole("button", { name: `Drag ${to}` })
+                .boundingBox()
+
+            if (!handle || !target) {
+                throw new Error("Drag handles not found")
+            }
+
+            await page.mouse.move(
+                handle.x + handle.width / 2,
+                handle.y + handle.height / 2,
+            )
+            await page.mouse.down()
+            await page.mouse.move(handle.x + handle.width / 2, handle.y, {
+                steps: 3,
+            })
+            await page.mouse.move(target.x + target.width / 2, target.y, {
+                steps: 15,
+            })
+            await page.mouse.move(target.x + target.width / 2, target.y - 1)
+            await page.mouse.up()
+        }
+
+        await page.getByRole("button", { name: "Characters" }).click()
+        await drag("Bran", "Aria", "Characters")
+
+        await expect
+            .poll(async () => {
+                return page.evaluate((key) => {
+                    const data = JSON.parse(localStorage.getItem(key) ?? "{}")
+
+                    return data.characters.map(
+                        (character: { name: string }) => character.name,
+                    )
+                }, KEY)
+            })
+            .toEqual(["Bran", "Aria"])
+
+        await page.keyboard.press("Escape")
+        await page.getByRole("button", { name: "Tasks" }).click()
+        await drag("Shugo Festival (server)", "Duty Missions (server)", "Tasks")
+
+        await expect
+            .poll(async () => {
+                return page.evaluate((key) => {
+                    const data = JSON.parse(localStorage.getItem(key) ?? "{}")
+
+                    return data.tasks
+                        ?.slice(2, 4)
+                        .map((task: { id: string }) => task.id)
+                }, KEY)
+            })
+            .toEqual(["shugo-festival", "duty-missions"])
+    })
+
     test("ticks tasks per character and keeps them", async ({ page }) => {
         await page.clock.setFixedTime(TUESDAY)
         await openWithCharacters(page, ["Aria", "Bran"])
@@ -68,12 +143,23 @@ test.describe("tracker", () => {
         await page
             .getByRole("checkbox", { name: "Supply Requests, Aria" })
             .check({ force: true })
+
+        // Leaving the card moves the done task into its Done section.
+        const aria = page.getByRole("article", { name: "Aria" })
+
+        await page.mouse.move(0, 0)
+        await expect(
+            aria.getByRole("button", { name: /^Done · 1/ }),
+        ).toBeVisible()
+
         await page
-            .getByRole("button", { name: "Ascension Trial, Bran: 1 of 3" })
+            .getByRole("button", { name: "Battlefield (Wins), Bran: 1 of 3" })
             .click()
 
         await page.reload()
 
+        // Done tasks open in the card's collapsed Done section.
+        await aria.getByRole("button", { name: /^Done · 1/ }).click()
         await expect(
             page.getByRole("checkbox", { name: "Supply Requests, Aria" }),
         ).toBeChecked()
@@ -81,7 +167,9 @@ test.describe("tracker", () => {
             page.getByRole("checkbox", { name: "Supply Requests, Bran" }),
         ).not.toBeChecked()
         await expect(
-            page.getByRole("button", { name: "Ascension Trial, Bran: 1 of 3" }),
+            page.getByRole("button", {
+                name: "Battlefield (Wins), Bran: 1 of 3",
+            }),
         ).toHaveAttribute("aria-pressed", "true")
     })
 
@@ -90,7 +178,7 @@ test.describe("tracker", () => {
         await openWithCharacters(page, ["Aria"])
 
         const firstTrial = page.getByRole("button", {
-            name: "Ascension Trial, Aria: 1 of 3",
+            name: "Battlefield (Wins), Aria: 1 of 3",
         })
 
         await page

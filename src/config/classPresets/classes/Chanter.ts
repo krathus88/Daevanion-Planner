@@ -79,6 +79,7 @@ export default defineClassPreset({
             name: "Rushing Smash",
             type: "skill",
             priority: 3,
+            max: 2,
             icon: RushingSmash,
             tooltip:
                 "Rushes at a target within 20m and deals X damage to up to 4 enemies and restores 100 MP.\n\n10 Stagger Gauge Damage",
@@ -105,6 +106,7 @@ export default defineClassPreset({
             name: "Impactful Crush",
             type: "skill",
             priority: 2,
+            min: 4,
             icon: ImpactfulCrush,
             tooltip:
                 "Deals X damage to a target within 20m. Has a 60% chance to inflict Stun for 3s.\n100% chance to inflict Stun on NPC targets.\n\n[Dark Crush] becomes available for 2s on skill use.\n10 Stagger Gauge Damage",
@@ -141,7 +143,7 @@ export default defineClassPreset({
             id: "gr",
             name: "Gust Rampage",
             type: "skill",
-            priority: 5,
+            priority: 98,
             icon: GustRampage,
             tooltip:
                 "Deals X damage to a target afflicted with Stagger within 4m.",
@@ -157,7 +159,8 @@ export default defineClassPreset({
             id: "hwb",
             name: "Heat Wave Blow",
             type: "skill",
-            priority: 5,
+            priority: 4,
+            max: 4,
             icon: HeatWaveBlow,
             tooltip:
                 "Selects a target within 4m and deals X damage to up to 4 enemies within 4m with a 40% chance to inflict Seal for 3s on Block.\n100% chance to inflict Seal on NPC targets.\n\n10 Stagger Gauge Damage",
@@ -181,6 +184,7 @@ export default defineClassPreset({
             name: "Recuperation",
             type: "skill",
             priority: 2,
+            max: 2,
             icon: Recuperation,
             tooltip:
                 "Restores X HP and removes 1 debuff(s) for the caster and party members within 40m. Restores X HP every 2s for 8s.",
@@ -201,6 +205,7 @@ export default defineClassPreset({
             name: "Tremor Crush",
             type: "skill",
             priority: 3,
+            max: 2,
             icon: TremorCrush,
             tooltip:
                 "Move to a target within 10m and deal X damage with a 50% chance to inflict Stun for 3s after using [Dodge] or while flying.\n100% chance to inflict Stun on NPC targets.\n\n10 Stagger Gauge Damage",
@@ -217,7 +222,7 @@ export default defineClassPreset({
             id: "wb",
             name: "Wave Blow",
             type: "skill",
-            priority: 4,
+            priority: 99,
             icon: WaveBlow,
             tooltip:
                 "Deals X damage to a target afflicted with Stun within 4m and inflicts Knockdown for 3s.\nHas a 7% chance to trigger on attacking a target with Incapacitated Immunity, changing the skill motion.\n\n10 Stagger Gauge Damage",
@@ -257,7 +262,9 @@ export default defineClassPreset({
             id: "def",
             name: "Defiance",
             type: "skill",
-            priority: 4,
+            priority: 5,
+            min: 2,
+            max: 2,
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
@@ -283,6 +290,7 @@ export default defineClassPreset({
             name: "Blessing of Life",
             type: "passive",
             priority: 3,
+            min: 0,
             icon: BlessingOfLife,
             tooltip:
                 "Increases the caster's HP by X. Increases Max HP by an additional X% and Heal Boost by X% of Attack.",
@@ -300,7 +308,8 @@ export default defineClassPreset({
             id: "ppc",
             name: "Protection Circle",
             type: "passive",
-            priority: 3,
+            priority: 4,
+            min: 0,
             icon: ProtectionCircle,
             tooltip:
                 "Grants a Protection Circle that lasts for 5s on landing an attack. Removes the Protection Circle at 10 stacks and grants Divine Barrier to the caster and party members, which blocks damage equaling X% of Max HP for 10s. The Divine Barrier refreshes upon reaching 10 stacks of Protection Circle while Divine Barrier is active.\nGrants a Noble Protective Shield for 5s that blocks X% damage when the caster's HP drops below 50%.\n\nProtection Circle Cooldown: 0.5s\nNoble Protective Shield Cooldown: 60s",
@@ -327,7 +336,7 @@ export default defineClassPreset({
             id: "pih",
             name: "Impact Hit",
             type: "passive",
-            priority: 2,
+            priority: 1,
             icon: ImpactHit,
             tooltip:
                 "Increases the caster's Impact-type Chance by X% and Double Chance by X%.",
@@ -337,6 +346,7 @@ export default defineClassPreset({
             name: "Raging Spell",
             type: "passive",
             priority: 2,
+            min: 4,
             icon: RagingSpell,
             tooltip:
                 "Deals X extra damage to targets afflicted with Stagger or an Impact-type status.\n\nCooldown: 1s",
@@ -345,7 +355,8 @@ export default defineClassPreset({
             id: "pep",
             name: "Earth's Promise",
             type: "passive",
-            priority: 3,
+            priority: 1,
+            min: 0,
             icon: EarthsPromise,
             tooltip:
                 "Reduces the target's PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s each time an attack lands.\n\n[Earth's Promise]'s PvE/PvP Damage Tolerance reduction effect does not apply when used together with the Cleric skill [Chain of Torment].\n\nCooldown: 10s",
@@ -354,7 +365,7 @@ export default defineClassPreset({
             id: "psw",
             name: "Survival Willpower",
             type: "passive",
-            priority: 4,
+            priority: 5,
             icon: SurvivalWillpower,
             tooltip:
                 "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",
@@ -363,7 +374,7 @@ export default defineClassPreset({
             id: "pwp",
             name: "Wind's Promise",
             type: "passive",
-            priority: 2,
+            priority: 1,
             icon: WindsPromise,
             tooltip:
                 "Increases the caster's Critical Damage Boost by X% and has a 50% chance to deal X extra damage to the target on landing a Critical Hit.\n\nExtra Damage Cooldown: 1s",

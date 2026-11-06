@@ -35,7 +35,8 @@ export default defineClassPreset({
             id: "ks",
             name: "Keen Strike",
             type: "skill",
-            priority: 3,
+            priority: 4,
+            max: 2,
             icon: KeenStrike,
             tooltip:
                 "Deals X damage to up to 4 enemies within 4m and increases Enmity. Restores 100 MP.",
@@ -74,6 +75,7 @@ export default defineClassPreset({
             name: "Leaping Slam",
             type: "skill",
             priority: 3,
+            max: 2,
             icon: LeapingSlam,
             tooltip:
                 "Leaps to a target within 20m and deals X damage.\n\n10 Stagger Gauge Damage",
@@ -102,7 +104,9 @@ export default defineClassPreset({
             id: "mb",
             name: "Mocking Blade",
             type: "skill",
-            priority: 3,
+            priority: 5,
+            min: 2,
+            max: 2,
             icon: MockingBlade,
             tooltip:
                 "Deals X damage to a target within 4m and inflicts Knockdown for 3s. Changes skill motion when attacking targets with Incapacitated Immunity.\n\n15 Stagger Gauge Damage",
@@ -143,6 +147,7 @@ export default defineClassPreset({
             name: "Sword Aura Rampage",
             type: "skill",
             priority: 2,
+            min: 4,
             icon: SwordAuraRampage,
             tooltip:
                 "Deals X damage to a target afflicted with Stagger within 4m.",
@@ -158,7 +163,8 @@ export default defineClassPreset({
             id: "ans",
             name: "Ankle Slice",
             type: "skill",
-            priority: 4,
+            priority: 5,
+            max: 2,
             icon: AnkleSlice,
             tooltip:
                 "Selects a target within 4m and deals X damage to up to 4 enemies within 4m with a 50% chance to inflict Root for 3s on Block.\n100% chance to inflict Root on NPC targets.\n\n10 Stagger Gauge Damage",
@@ -208,6 +214,7 @@ export default defineClassPreset({
             name: "Rush Strike",
             type: "skill",
             priority: 3,
+            max: 2,
             icon: RushStrike,
             tooltip:
                 "Moves to a target within 10m and deals X damage with a 30% chance to inflict Knockdown for 3s after using [Dodge] or while flying.\n100% chance to inflict Knockdown on NPC targets.\n\n10 Stagger Gauge Damage",
@@ -227,7 +234,7 @@ export default defineClassPreset({
             id: "aes",
             name: "Aerial Snare",
             type: "skill",
-            priority: 4,
+            priority: 98,
             icon: AerialSnare,
             tooltip:
                 "Deals X damage to a target afflicted with Knockdown within 4m with a 50% chance to inflict Airborne for 3s.\n100% chance to inflict Airborne on NPC targets.\nHas a 5% chance to trigger on attacking a target with Incapacitated Immunity.\n\n20 Stagger Gauge Damage",
@@ -267,7 +274,8 @@ export default defineClassPreset({
             id: "def",
             name: "Defiance",
             type: "skill",
-            priority: 4,
+            priority: 6,
+            max: 2,
             icon: Defiance,
             tooltip:
                 "Removes Stun, Knockdown, Airborne, Grab, Frost, and Fear from the caster and grants Tenacity for 5s.\nTenacity: Grants Status Effect Immunity\n\nUnaffected by cooldown reduction effects.",
@@ -293,6 +301,7 @@ export default defineClassPreset({
             name: "Survival Stance",
             type: "passive",
             priority: 3,
+            min: 0,
             icon: SurvivalStance,
             tooltip:
                 "Increases the caster's HP by X. Increases Max HP by an additional X%, Natural HP Regen by X, PvE Damage Tolerance by X%, and PvP Damage Tolerance by X%.",
@@ -310,7 +319,8 @@ export default defineClassPreset({
             id: "pba",
             name: "Blood Absorption",
             type: "passive",
-            priority: 5,
+            priority: 4,
+            min: 0,
             icon: BloodAbsorption,
             tooltip:
                 "The caster has a 50% chance to restore X HP and X% Max HP on landing an attack.\nImmediately restores X% Max HP when HP drops to 50% or less.\n\nCooldown: 1s\nInstant Healing Cooldown: 60s",
@@ -319,7 +329,7 @@ export default defineClassPreset({
             id: "piw",
             name: "Identify Weakness",
             type: "passive",
-            priority: 3,
+            priority: 1,
             icon: IdentifyWeakness,
             tooltip:
                 "Increases the caster's Critical Hit by X and Perfect Chance by X%.",
@@ -347,6 +357,7 @@ export default defineClassPreset({
             name: "Destructive Impulse",
             type: "passive",
             priority: 2,
+            min: 4,
             icon: DestructiveImpulse,
             tooltip:
                 "Deals X extra damage to targets afflicted with Stagger or an Impact-type status.",
@@ -364,7 +375,7 @@ export default defineClassPreset({
             id: "psw",
             name: "Survival Willpower",
             type: "passive",
-            priority: 4,
+            priority: 5,
             icon: SurvivalWillpower,
             tooltip:
                 "Increases the caster's Status Effect Resist by X%. Increases PvE Damage Tolerance by X% and PvP Damage Tolerance by X% for 5s when afflicted with Stun, Knockdown, Airborne, Frost, or Fear. Increases Status Effect Resist by 10% for 5s when hit while afflicted with Stun, Knockdown, Airborne, Frost, or Fear (up to 10 stacks).\n\nDamage Tolerance Increase Cooldown: 60s\nStatus Effect Resist Increase Cooldown: 1s",

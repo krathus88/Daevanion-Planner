@@ -383,6 +383,9 @@ export const optimizePriorityPlans = async (
                             finds.optionsChecked + attempts - counted,
                     }
                     counted = attempts
+                    // A refining search can run for over a second; report
+                    // during it, not only once it's done.
+                    reportProgress()
                 },
             },
             weightsByBoard[layoutName],

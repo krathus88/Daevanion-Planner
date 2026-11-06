@@ -31,7 +31,7 @@ import {
     readArielSettings,
 } from "@planner/storage/arielSettings"
 import {
-    DEFAULT_STAT_SETTINGS,
+    defaultStatSettings,
     readStatSettings,
 } from "@planner/storage/statPriorities"
 import {
@@ -145,7 +145,7 @@ export const usePlannerOptimization = ({
             }
         }
 
-        let statSettings = DEFAULT_STAT_SETTINGS
+        let statSettings = defaultStatSettings(classId)
         try {
             statSettings = readStatSettings(classId)
         } catch {

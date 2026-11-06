@@ -3,32 +3,39 @@ import { ConfirmButton } from "@common/ConfirmButton"
 import { getTaskEditGroups } from "@tracker/logic/taskEditGroups"
 import type { TaskSection } from "@tracker/logic/taskSections"
 import type { TaskFields } from "@tracker/logic/trackerEdits"
+import type { TrackerTask } from "@tracker/types"
 import { LuRotateCcw } from "react-icons/lu"
 import { AddTaskForm } from "./AddTaskForm"
+import { RemovedPresets } from "./RemovedPresets"
 import { TaskEditGroup } from "./TaskEditGroup"
 
 type TasksDialogProps = {
     sections: TaskSection[]
     open: boolean
     usesStarterTasks: boolean
+    // Starter tasks removed from the user's own list.
+    removedPresets: readonly TrackerTask[]
     onOpenChange: (open: boolean) => void
     onCreate: (fields: TaskFields) => void
     onChange: (id: string, fields: TaskFields) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
+    onMove: (id: string, targetId: string) => void
     onRestore: () => void
+    onPresetRestore: (id: string) => void
 }
 
 export const TasksDialog = ({
     sections,
     open,
     usesStarterTasks,
+    removedPresets,
     onOpenChange,
     onCreate,
     onChange,
     onDelete,
     onMove,
     onRestore,
+    onPresetRestore,
 }: TasksDialogProps) => {
     const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
         onOpenChange(details.open)
@@ -38,7 +45,7 @@ export const TasksDialog = ({
 
     return (
         <Dialog.Root
-            size="lg"
+            size="xl"
             open={open}
             scrollBehavior="inside"
             onOpenChange={handleOpenChange}
@@ -69,6 +76,13 @@ export const TasksDialog = ({
                                         onMove={onMove}
                                     />
                                 ))}
+
+                                {removedPresets.length > 0 && (
+                                    <RemovedPresets
+                                        presets={removedPresets}
+                                        onRestore={onPresetRestore}
+                                    />
+                                )}
 
                                 <AddTaskForm onCreate={onCreate} />
                             </Flex>

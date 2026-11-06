@@ -1,4 +1,5 @@
 import { IconButton } from "@chakra-ui/react"
+import { HOVER_REVEAL } from "@common/hoverReveal"
 import { Tooltip } from "@ui/tooltip"
 import { LuEye, LuEyeOff } from "react-icons/lu"
 
@@ -30,8 +31,12 @@ export const IgnoreToggle = ({
         >
             <IconButton
                 variant="ghost"
-                size="xs"
-                flexShrink="0"
+                size="2xs"
+                pos="absolute"
+                top="0"
+                right="0"
+                // Shown on hover where the device can hover; touch keeps it.
+                _canHover={HOVER_REVEAL}
                 color={ignored ? "app.fg" : "app.subtle"}
                 aria-label={`${action}: ${label}`}
                 aria-pressed={ignored}

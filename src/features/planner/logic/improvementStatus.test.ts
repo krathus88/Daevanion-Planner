@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    advanceSearchClock,
     formatOptionsChecked,
     idleStatus,
     improvementStatus,
@@ -100,6 +101,26 @@ describe("idleStatus", () => {
         expect(idleStatus(0, 300_000, "route")).toBe(
             "No better route for 0s · stops at 5m",
         )
+    })
+})
+
+describe("advanceSearchClock", () => {
+    const progress = { elapsedMs: 2400, idleMs: 900, stallMs: 60_000 }
+
+    it("keeps both clocks running since the progress arrived", () => {
+        expect(advanceSearchClock(progress, 10_000, 11_500)).toEqual({
+            elapsedMs: 3900,
+            idleMs: 2400,
+            stallMs: 60_000,
+        })
+    })
+
+    it("counts a clock reading from before the progress as no time", () => {
+        expect(advanceSearchClock(progress, 10_000, 9_200)).toEqual(progress)
+    })
+
+    it("stops the idle clock at the stall window", () => {
+        expect(advanceSearchClock(progress, 0, 90_000).idleMs).toBe(60_000)
     })
 })
 

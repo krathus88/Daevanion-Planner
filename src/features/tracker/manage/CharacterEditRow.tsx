@@ -1,7 +1,7 @@
-import { Flex, Input } from "@chakra-ui/react"
+import { Input } from "@chakra-ui/react"
+import { HOVER_REVEAL } from "@common/hoverReveal"
 import { ConfirmButton } from "@common/ConfirmButton"
 import { IconImage } from "@common/IconImage"
-import { MoveButtons } from "@common/MoveButtons"
 import { CLASS_ICONS, type ClassId } from "@config/classPresets/classInfo"
 import { ServerSelect } from "@timers/bosses/ServerSelect"
 import { getCharacterName } from "@tracker/logic/characterName"
@@ -10,23 +10,20 @@ import type { TrackerCharacter } from "@tracker/types"
 import type { ChangeEvent } from "react"
 import { LuTrash2 } from "react-icons/lu"
 import { CharacterClassSelect } from "./CharacterClassSelect"
+import { SortableRow } from "./SortableRow"
 
 type CharacterEditRowProps = {
     character: TrackerCharacter
-    first: boolean
-    last: boolean
+    index: number
     onChange: (id: string, changes: Partial<CharacterFields>) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
 }
 
 export const CharacterEditRow = ({
     character,
-    first,
-    last,
+    index,
     onChange,
     onDelete,
-    onMove,
 }: CharacterEditRowProps) => {
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         onChange(character.id, { name: event.target.value })
@@ -40,10 +37,6 @@ export const CharacterEditRow = ({
         onChange(character.id, { server: server })
     }
 
-    const handleMove = (offset: -1 | 1) => {
-        onMove(character.id, offset)
-    }
-
     const handleDelete = () => {
         onDelete(character.id)
     }
@@ -51,7 +44,7 @@ export const CharacterEditRow = ({
     const name = getCharacterName(character)
 
     return (
-        <Flex flexWrap="wrap" alignItems="center" gap="2">
+        <SortableRow id={character.id} index={index} label={name}>
             <IconImage icon={CLASS_ICONS[character.classId]} />
 
             <Input
@@ -76,22 +69,18 @@ export const CharacterEditRow = ({
                 onChange={handleServerChange}
             />
 
-            <MoveButtons
-                first={first}
-                last={last}
-                label={name}
-                onMove={handleMove}
-            />
-
             <ConfirmButton
                 variant="dangerGhost"
                 size="xs"
+                // Shown on the row's hover where the device can hover; its
+                // Remove / Cancel step stays visible.
+                _canHover={HOVER_REVEAL}
                 aria-label={`Remove ${name}`}
                 confirmLabel="Remove"
                 onConfirm={handleDelete}
             >
                 <LuTrash2 />
             </ConfirmButton>
-        </Flex>
+        </SortableRow>
     )
 }

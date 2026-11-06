@@ -1,31 +1,30 @@
-import { Flex, Input } from "@chakra-ui/react"
+import { Box, Input } from "@chakra-ui/react"
+import { HOVER_REVEAL } from "@common/hoverReveal"
 import { ConfirmButton } from "@common/ConfirmButton"
-import { MoveButtons } from "@common/MoveButtons"
+import { IconImage } from "@common/IconImage"
 import { WholeNumberInput } from "@common/WholeNumberInput"
+import { getTaskIcon } from "@tracker/config/taskIcons"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
 import type { TaskFields } from "@tracker/logic/trackerEdits"
 import type { TrackerReset, TrackerTask } from "@tracker/types"
 import type { ChangeEvent } from "react"
 import { LuTrash2 } from "react-icons/lu"
+import { SortableRow } from "./SortableRow"
 import { TaskResetSelect } from "./TaskResetSelect"
 import { TaskSharedToggle } from "./TaskSharedToggle"
 
 type TaskEditRowProps = {
     task: TrackerTask
-    first: boolean
-    last: boolean
+    index: number
     onChange: (id: string, fields: TaskFields) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
 }
 
 export const TaskEditRow = ({
     task,
-    first,
-    last,
+    index,
     onChange,
     onDelete,
-    onMove,
 }: TaskEditRowProps) => {
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         onChange(task.id, { ...task, name: event.target.value })
@@ -47,19 +46,23 @@ export const TaskEditRow = ({
         onChange(task.id, { ...task, shared: shared })
     }
 
-    const handleMove = (offset: -1 | 1) => {
-        onMove(task.id, offset)
-    }
-
     const handleDelete = () => {
         onDelete(task.id)
     }
 
+    const icon = getTaskIcon(task.id)
     // Shared and own copies of a task can share a name.
     const label = `${getTaskTitle(task)}${task.shared ? " (server)" : ""}`
 
     return (
-        <Flex flexWrap="wrap" alignItems="center" gap="2">
+        <SortableRow id={task.id} index={index} label={label}>
+            {icon ? (
+                <IconImage icon={icon} />
+            ) : (
+                // Keeps names lined up with the presets' beside an icon.
+                <Box boxSize="5" flexShrink="0" />
+            )}
+
             <Input
                 size="sm"
                 value={task.name}
@@ -102,22 +105,18 @@ export const TaskEditRow = ({
                 onChange={handleSharedChange}
             />
 
-            <MoveButtons
-                first={first}
-                last={last}
-                label={label}
-                onMove={handleMove}
-            />
-
             <ConfirmButton
                 variant="dangerGhost"
                 size="xs"
+                // Shown on the row's hover where the device can hover; its
+                // Remove / Cancel step stays visible.
+                _canHover={HOVER_REVEAL}
                 aria-label={`Remove ${label}`}
                 confirmLabel="Remove"
                 onConfirm={handleDelete}
             >
                 <LuTrash2 />
             </ConfirmButton>
-        </Flex>
+        </SortableRow>
     )
 }

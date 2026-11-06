@@ -336,6 +336,36 @@ describe("optimizePriorityPlans", () => {
         expect(last.elapsedMs).toBeLessThan(MAX_SEARCH_MS)
     })
 
+    it("reports progress while a long route search runs", async () => {
+        // A slower clock lets each refining search run long enough to report
+        // from inside it.
+        let now = 0
+        vi.spyOn(performance, "now").mockImplementation(() => {
+            now += 20
+
+            return now
+        })
+        const onProgress = vi.fn()
+        await optimize({
+            points: 100,
+            stallMs: 6000,
+            boards: ["zikel"],
+            onProgress: onProgress,
+        })
+        const refining = onProgress.mock.calls
+            .map(([progress]) => progress)
+            .filter((progress) => progress.phase === "refine")
+        let longestGap = 0
+        for (let index = 1; index < refining.length; index++) {
+            const gap =
+                refining[index].elapsedMs - refining[index - 1].elapsedMs
+            longestGap = Math.max(longestGap, gap)
+        }
+
+        expect(refining.length).toBeGreaterThan(1)
+        expect(longestGap).toBeLessThan(1000)
+    })
+
     it("caps refining, counted from when it starts", async () => {
         const onProgress = vi.fn()
         await optimize({
@@ -482,14 +512,23 @@ describe("optimizePriorityPlans", () => {
                 (key) => layouts.nezekan.nodeStats[key] === "attack",
             ).length
         }
-        const base = { points: 40, boards: ["nezekan"] as const }
-        const plain = await optimize(base)
+        const base = { points: 60, boards: ["nezekan"] as const }
+        const plain = await optimize({
+            ...base,
+            statSettings: {
+                ...DEFAULT_STAT_SETTINGS,
+                max: {
+                    ...DEFAULT_STAT_SETTINGS.max,
+                    attack: { ...focus.max.attack, enabled: false },
+                },
+            },
+        })
         const focused = await optimize({ ...base, statSettings: focus })
 
         expect(attackNodes(focused.plans.nezekan.plannedPath)).toBeGreaterThan(
             attackNodes(plain.plans.nezekan.plannedPath),
         )
-        expect(focused.plans.nezekan.plannedCost).toBeLessThanOrEqual(40)
+        expect(focused.plans.nezekan.plannedCost).toBeLessThanOrEqual(60)
     })
 
     it("takes every node of a maxed stat when the points allow", async () => {

@@ -2,6 +2,7 @@ import { setStoredItem } from "@account/sync/syncMeta"
 import { isClassId } from "@config/classPresets/classInfo"
 import { isRecord } from "@planner/storage/isRecord"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
+import { STARTER_TASKS } from "@tracker/config/starterTasks"
 import { isTrackerReset } from "@tracker/config/trackerResets"
 import type {
     TaskCount,
@@ -80,6 +81,17 @@ const parseTask = (value: unknown): TrackerTask | null => {
     if (isTaskCap(value.recharge)) {
         task.recharge = value.recharge
         task.bonusCap = isWholeNumber(value.bonusCap, 0) ? value.bonusCap : 0
+
+        return task
+    }
+
+    // The task dialogs can't set entries, so an own copy saved before a starter
+    // task counted entries takes them from the starter task.
+    const starter = STARTER_TASKS.find((item) => item.id === task.id)
+
+    if (starter?.recharge !== undefined) {
+        task.recharge = starter.recharge
+        task.bonusCap = starter.bonusCap ?? 0
     }
 
     return task

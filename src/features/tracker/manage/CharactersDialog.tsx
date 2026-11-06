@@ -3,6 +3,7 @@ import type { CharacterFields } from "@tracker/logic/trackerEdits"
 import type { TrackerCharacter } from "@tracker/types"
 import { AddCharacterForm } from "./AddCharacterForm"
 import { CharacterEditRow } from "./CharacterEditRow"
+import { SortableList } from "./SortableList"
 
 type CharactersDialogProps = {
     characters: TrackerCharacter[]
@@ -11,7 +12,7 @@ type CharactersDialogProps = {
     onCreate: (fields: CharacterFields) => void
     onChange: (id: string, changes: Partial<CharacterFields>) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
+    onMove: (id: string, targetId: string) => void
 }
 
 export const CharactersDialog = ({
@@ -47,20 +48,24 @@ export const CharactersDialog = ({
                             <Flex flexDir="column" gap="4">
                                 {characters.length > 0 ? (
                                     <Flex flexDir="column" gap="2">
-                                        {characters.map((character, index) => (
-                                            <CharacterEditRow
-                                                key={character.id}
-                                                character={character}
-                                                first={index === 0}
-                                                last={
-                                                    index ===
-                                                    characters.length - 1
-                                                }
-                                                onChange={onChange}
-                                                onDelete={onDelete}
-                                                onMove={onMove}
-                                            />
-                                        ))}
+                                        <SortableList
+                                            ids={characters.map(
+                                                (character) => character.id,
+                                            )}
+                                            onMove={onMove}
+                                        >
+                                            {characters.map(
+                                                (character, index) => (
+                                                    <CharacterEditRow
+                                                        key={character.id}
+                                                        character={character}
+                                                        index={index}
+                                                        onChange={onChange}
+                                                        onDelete={onDelete}
+                                                    />
+                                                ),
+                                            )}
+                                        </SortableList>
                                     </Flex>
                                 ) : (
                                     <Text textStyle="hint">

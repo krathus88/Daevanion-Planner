@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { subscribeToClassSettings } from "@planner/storage/classSettings"
 import {
-    DEFAULT_STAT_SETTINGS,
+    defaultStatSettings,
     readStatSettings,
     writeStatSettings,
     type StatSettings,
@@ -13,7 +13,7 @@ const readSettings = (classId: string) => {
         return { settings: readStatSettings(classId), error: null }
     } catch (error) {
         return {
-            settings: DEFAULT_STAT_SETTINGS,
+            settings: defaultStatSettings(classId),
             error: errorMessage(error, "Could not read stat priorities."),
         }
     }

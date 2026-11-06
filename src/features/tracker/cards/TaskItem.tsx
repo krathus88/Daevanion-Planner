@@ -31,7 +31,7 @@ type TaskItemProps = {
 }
 
 // One task in a card: its name, the control that fits its cap, and a
-// toggle to ignore it.
+// toggle to ignore it in the top right corner.
 export const TaskItem = ({
     task,
     owner,
@@ -66,8 +66,12 @@ export const TaskItem = ({
 
     return (
         <Flex
+            // For the ignore toggle, top right, shown on hover.
+            className="group"
+            pos="relative"
+            // One-line rows keep their right-hand control clear of it.
+            pe={isStacked ? undefined : "6"}
             alignItems="center"
-            gap="1"
             opacity={ignored ? "dimmed" : undefined}
         >
             {control === "check" ? (

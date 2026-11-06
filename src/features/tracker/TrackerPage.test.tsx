@@ -1,11 +1,23 @@
 import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { STARTER_TASKS } from "./config/starterTasks"
 import { getTaskTitle } from "./logic/taskTitle"
 import { readTrackerData, writeTrackerData } from "./storage/trackerData"
 import { TrackerPage } from "./TrackerPage"
+
+// dnd-kit reads ResizeObserver as it loads, which jsdom lacks.
+vi.hoisted(() => {
+    vi.stubGlobal(
+        "ResizeObserver",
+        class {
+            observe() {}
+            unobserve() {}
+            disconnect() {}
+        },
+    )
+})
 
 // Aria and Bran share Siel; Cael is on Zikel.
 const withCharacters = () => {
@@ -97,7 +109,7 @@ describe("TrackerPage", () => {
 
         await userEvent.click(
             screen.getByRole("button", {
-                name: "Ascension Trial, Aria: 3 of 3",
+                name: "Battlefield (Wins), Aria: 3 of 3",
             }),
         )
         await userEvent.click(
@@ -108,14 +120,14 @@ describe("TrackerPage", () => {
 
         expect(
             within(aria).queryByRole("button", {
-                name: "Ascension Trial, Aria: 1 of 3",
+                name: "Battlefield (Wins), Aria: 1 of 3",
             }),
         ).not.toBeInTheDocument()
         expect(
             within(aria).getByRole("img", { name: "Arena (Wins) 0/30" }),
         ).toBeInTheDocument()
         expect(
-            within(aria).queryByRole("img", { name: /Ascension Trial/ }),
+            within(aria).queryByRole("img", { name: /Battlefield \(Wins\)/ }),
         ).not.toBeInTheDocument()
         expect(readTrackerData().minimized).toEqual(["a"])
 
@@ -169,17 +181,82 @@ describe("TrackerPage", () => {
         expect(readTrackerData().counts.a["supply-requests"].count).toBe(1)
     })
 
+    it("moves done tasks into a Done section once the card is left", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const aria = screen.getByRole("article", { name: "Aria" })
+        const bran = screen.getByRole("article", { name: "Bran" })
+
+        await userEvent.click(
+            within(aria).getByRole("checkbox", {
+                name: "Supply Requests, Aria",
+            }),
+        )
+
+        // It stays put while the pointer is still on the card.
+        expect(
+            within(aria).getByRole("checkbox", {
+                name: "Supply Requests, Aria",
+            }),
+        ).toBeVisible()
+        expect(
+            within(aria).queryByRole("button", { name: /^Done/ }),
+        ).not.toBeInTheDocument()
+
+        await userEvent.unhover(aria)
+
+        expect(
+            within(aria).queryByRole("checkbox", {
+                name: "Supply Requests, Aria",
+            }),
+        ).not.toBeInTheDocument()
+
+        // A click outside the card works too, for touch screens.
+        await userEvent.click(
+            within(bran).getByRole("checkbox", {
+                name: "Supply Requests, Bran",
+            }),
+        )
+        await userEvent.click(document.body)
+
+        expect(
+            within(bran).queryByRole("checkbox", {
+                name: "Supply Requests, Bran",
+            }),
+        ).not.toBeInTheDocument()
+
+        // Undone from the Done section, it comes back at once.
+        await userEvent.click(
+            within(aria).getByRole("button", { name: /^Done · 1/ }),
+        )
+        await userEvent.click(
+            await within(aria).findByRole("checkbox", {
+                name: "Supply Requests, Aria",
+            }),
+        )
+
+        expect(
+            within(aria).queryByRole("button", { name: /^Done/ }),
+        ).not.toBeInTheDocument()
+        expect(
+            within(aria).getByRole("checkbox", {
+                name: "Supply Requests, Aria",
+            }),
+        ).not.toBeChecked()
+    })
+
     it("sets a small count with one click on its pip", async () => {
         withCharacters()
         renderWithChakra(<TrackerPage />)
 
-        const label = "Ascension Trial, Aria"
+        const label = "Battlefield (Wins), Aria"
 
         await userEvent.click(
             screen.getByRole("button", { name: `${label}: 3 of 3` }),
         )
 
-        expect(readTrackerData().counts.a["ascension-trial"].count).toBe(3)
+        expect(readTrackerData().counts.a["battlefield-wins"].count).toBe(3)
         expect(
             screen.getByRole("button", { name: `${label}: 2 of 3` }),
         ).toHaveAttribute("aria-pressed", "true")
@@ -189,7 +266,7 @@ describe("TrackerPage", () => {
             screen.getByRole("button", { name: `${label}: 3 of 3` }),
         )
 
-        expect(readTrackerData().counts.a["ascension-trial"].count).toBe(0)
+        expect(readTrackerData().counts.a["battlefield-wins"].count).toBe(0)
     })
 
     it("ignores a task for good, out of the progress", async () => {
@@ -427,6 +504,26 @@ describe("TrackerPage", () => {
                 (task) => task.id === "duty-missions",
             ),
         ).toBe(false)
+
+        // A removed preset waits in its own list to be added back.
+        const presets = within(dialog).getByRole("region", {
+            name: "Removed presets",
+        })
+
+        await userEvent.click(
+            within(presets).getByRole("button", {
+                name: "Add back Duty Missions (server)",
+            }),
+        )
+
+        expect(
+            readTrackerData().tasks?.some(
+                (task) => task.id === "duty-missions",
+            ),
+        ).toBe(true)
+        expect(
+            within(dialog).queryByRole("region", { name: "Removed presets" }),
+        ).not.toBeInTheDocument()
 
         await userEvent.click(
             within(dialog).getByRole("button", {

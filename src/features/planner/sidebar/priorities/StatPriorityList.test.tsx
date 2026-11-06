@@ -44,8 +44,9 @@ describe("StatPriorityList", () => {
         expect(max("Critical Hit")).toBeChecked()
         expect(max("Max HP")).not.toBeChecked()
         expect(max("Defense")).not.toBeChecked()
+        expect(max("Critical Hit Resist")).not.toBeChecked()
         expect(
-            screen.queryByRole("checkbox", { name: "Max Critical Hit Resist" }),
+            screen.queryByRole("checkbox", { name: "Max Max MP" }),
         ).toBeNull()
     })
 

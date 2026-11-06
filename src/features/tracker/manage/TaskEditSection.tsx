@@ -7,7 +7,7 @@ type TaskEditSectionProps = {
     list: TaskEditResetList
     onChange: (id: string, fields: TaskFields) => void
     onDelete: (id: string) => void
-    onMove: (id: string, offset: -1 | 1) => void
+    onMove: (id: string, targetId: string) => void
 }
 
 export const TaskEditSection = ({

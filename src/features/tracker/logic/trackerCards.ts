@@ -101,37 +101,83 @@ export const getTaskGroups = (
     return groups
 }
 
-// A card's groups without the ignored tasks, and the ignored ones apart,
-// both by reset. Groups left empty are dropped.
+// The tasks in `ids` apart from the rest, both by reset. Groups left empty
+// are dropped.
+const splitTasks = (groups: readonly TaskGroup[], ids: readonly string[]) => {
+    const kept: TaskGroup[] = []
+    const moved: TaskGroup[] = []
+
+    for (const group of groups) {
+        const keptTasks: TrackerTask[] = []
+        const movedTasks: TrackerTask[] = []
+
+        for (const task of group.tasks) {
+            if (ids.includes(task.id)) {
+                movedTasks.push(task)
+            } else {
+                keptTasks.push(task)
+            }
+        }
+
+        if (keptTasks.length > 0) {
+            kept.push({ ...group, tasks: keptTasks })
+        }
+
+        if (movedTasks.length > 0) {
+            moved.push({ ...group, tasks: movedTasks })
+        }
+    }
+
+    return { kept: kept, moved: moved }
+}
+
+// A card's groups without the ignored tasks, and the ignored ones apart.
 export const splitIgnored = (
     groups: readonly TaskGroup[],
     ignored: readonly string[],
 ) => {
-    const active: TaskGroup[] = []
-    const skipped: TaskGroup[] = []
+    const split = splitTasks(groups, ignored)
+
+    return { active: split.kept, ignored: split.moved }
+}
+
+// Active groups without the stashed done tasks, and those apart.
+export const splitDone = (
+    groups: readonly TaskGroup[],
+    stashed: readonly string[],
+) => {
+    const split = splitTasks(groups, stashed)
+
+    return { todo: split.kept, done: split.moved }
+}
+
+// Ids of the tasks done in their reset period, ignored ones left out.
+export const getDoneTaskIds = (
+    groups: readonly TaskGroup[],
+    counts: Record<string, TaskCount> | undefined,
+    entries: Record<string, TaskEntries> | undefined,
+    ignored: readonly string[],
+    periods: ResetPeriods,
+) => {
+    const done: string[] = []
 
     for (const group of groups) {
-        const activeTasks: TrackerTask[] = []
-        const skippedTasks: TrackerTask[] = []
-
         for (const task of group.tasks) {
-            if (ignored.includes(task.id)) {
-                skippedTasks.push(task)
-            } else {
-                activeTasks.push(task)
+            if (
+                !ignored.includes(task.id) &&
+                isTaskDone(
+                    task,
+                    counts?.[task.id],
+                    entries?.[task.id],
+                    periods[group.reset],
+                )
+            ) {
+                done.push(task.id)
             }
-        }
-
-        if (activeTasks.length > 0) {
-            active.push({ ...group, tasks: activeTasks })
-        }
-
-        if (skippedTasks.length > 0) {
-            skipped.push({ ...group, tasks: skippedTasks })
         }
     }
 
-    return { active: active, ignored: skipped }
+    return done
 }
 
 export const countTasks = (groups: readonly TaskGroup[]) => {

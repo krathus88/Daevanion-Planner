@@ -6,10 +6,12 @@ import {
     addCharacter,
     addTask,
     getTasks,
+    getRemovedPresets,
     moveCharacter,
     moveTask,
     removeCharacter,
     removeTask,
+    restorePreset,
     restoreStarterTasks,
     setCount,
     setEntries,
@@ -140,12 +142,12 @@ describe("characters", () => {
         expect(next.entries).toEqual({})
     })
 
-    it("moves one, but not off either end", () => {
+    it("moves one to where another is", () => {
         expect(
-            moveCharacter(data(), "b", -1).characters.map((c) => c.id),
+            moveCharacter(data(), "b", "a").characters.map((c) => c.id),
         ).toEqual(["b", "a"])
         expect(
-            moveCharacter(data(), "a", -1).characters.map((c) => c.id),
+            moveCharacter(data(), "a", "x").characters.map((c) => c.id),
         ).toEqual(["a", "b"])
     })
 })
@@ -224,23 +226,44 @@ describe("tasks", () => {
             task("d1", "daily", false),
             task("w2", "weekly", false),
         ]
-        const next = moveTask(data({ tasks: tasks }), "w2", -1)
+        const next = moveTask(data({ tasks: tasks }), "w2", "w1")
 
         expect(next.tasks?.map((item) => item.id)).toEqual([
             "w2",
+            "w1",
             "ws",
             "d1",
-            "w1",
         ])
     })
 
-    it("doesn't move the first or last of its group", () => {
+    it("doesn't move a task into another group", () => {
         const start = data({
             tasks: [task("a", "weekly", false), task("b", "weekly", true)],
         })
 
-        expect(moveTask(start, "a", 1)).toBe(start)
-        expect(moveTask(start, "b", -1)).toBe(start)
+        expect(moveTask(start, "a", "b")).toBe(start)
+        expect(moveTask(start, "a", "a")).toBe(start)
+    })
+
+    it("keeps removed starter tasks to add back where they were", () => {
+        const start = data({ tasks: null })
+        const removed = removeTask(removeTask(start, "nightmare"), "ludra")
+
+        expect(getRemovedPresets(start)).toEqual([])
+        expect(getRemovedPresets(removed).map((item) => item.id)).toEqual([
+            "nightmare",
+            "ludra",
+        ])
+
+        const back = restorePreset(removed, "nightmare")
+
+        expect(back.tasks?.map((item) => item.id)).toEqual(
+            getTasks(start)
+                .map((item) => item.id)
+                .filter((id) => id !== "ludra"),
+        )
+        expect(restorePreset(back, "nightmare")).toBe(back)
+        expect(restorePreset(back, "unknown")).toBe(back)
     })
 
     it("goes back to the starter list", () => {

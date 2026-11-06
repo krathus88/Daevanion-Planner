@@ -3,15 +3,9 @@ import { Button, Flex } from "@chakra-ui/react"
 import { useState } from "react"
 import { DEFAULT_STALL_SECONDS } from "@planner/config/searchTime"
 import { usePriorityOptimizer } from "@planner/hooks/usePriorityOptimizer"
-import {
-    idleStatus,
-    improvementStatus,
-    planPhaseStatus,
-    planSearchHeadline,
-} from "@planner/logic/improvementStatus"
-import { ProgressBar } from "@common/ProgressBar"
 import { SearchTimeSelect } from "@planner/shared/SearchTimeSelect"
 import { StatusText } from "@common/StatusText"
+import { PrioritySearchStatus } from "./PrioritySearchStatus"
 import { ShortfallWarning } from "./ShortfallWarning"
 
 type PriorityOptimizerProps = {
@@ -46,78 +40,15 @@ export const PriorityOptimizer = ({
         optimize(stallSeconds)
     }
 
-    // The first plan has to finish before there's one to keep.
-    const isBuilding = !progress || progress.phase === "build"
-
     return (
         <Flex flexDir="column" gap="2">
             {isOptimizing ? (
-                <Flex flexDir="column" gap="2">
-                    <Flex alignItems="center" gap="2">
-                        <Flex flex="1">
-                            <StatusText tone="muted">
-                                {planSearchHeadline(progress, isStopping)}
-                            </StatusText>
-                        </Flex>
-
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            loading={isStopping}
-                            loadingText="Stopping"
-                            disabled={isBuilding}
-                            title={
-                                isBuilding
-                                    ? "Available once the first plan is ready"
-                                    : "Stop now and keep the best plan so far"
-                            }
-                            onClick={stop}
-                        >
-                            Stop & keep
-                        </Button>
-
-                        <Button variant="secondary" size="sm" onClick={cancel}>
-                            Cancel
-                        </Button>
-                    </Flex>
-
-                    <ProgressBar
-                        label="Time without a better plan"
-                        value={
-                            progress && !isBuilding
-                                ? (progress.idleMs / progress.stallMs) * 100
-                                : 0
-                        }
-                    />
-
-                    {progress && (
-                        <StatusText tone="muted">
-                            {planPhaseStatus({
-                                finds: progress.finds,
-                                phase: progress.phase,
-                            })}
-                        </StatusText>
-                    )}
-
-                    {progress && !isBuilding && (
-                        <StatusText tone="muted">
-                            {idleStatus(
-                                progress.idleMs,
-                                progress.stallMs,
-                                "plan",
-                            )}
-                        </StatusText>
-                    )}
-
-                    {progress?.finds.firstFoundMs != null && (
-                        <StatusText tone="muted">
-                            {improvementStatus({
-                                finds: progress.finds,
-                                noun: "plan",
-                            })}
-                        </StatusText>
-                    )}
-                </Flex>
+                <PrioritySearchStatus
+                    progress={progress}
+                    isStopping={isStopping}
+                    onStop={stop}
+                    onCancel={cancel}
+                />
             ) : (
                 <Flex gap="2">
                     <Button

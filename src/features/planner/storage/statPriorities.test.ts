@@ -5,13 +5,14 @@ import { writeBoardProgress } from "./boardStorage"
 import { writeClassSettings } from "./classSettings"
 import {
     DEFAULT_STAT_SETTINGS,
+    defaultStatSettings,
     readSharedStatNodeCounts,
     readStatSettings,
     writeStatSettings,
     type StatSettings,
 } from "./statPriorities"
 
-const CLASS = "gladiator"
+const CLASS = "templar"
 
 const readStored = (stats: unknown) => {
     writeClassSettings(CLASS, "stats", stats)
@@ -30,7 +31,7 @@ describe("readStatSettings", () => {
         expect(readStatSettings(CLASS)).toBe(DEFAULT_STAT_SETTINGS)
     })
 
-    it("defaults to Attack = Crit maxed, Defense = Max HP, the rest ignored", () => {
+    it("defaults to Attack = Crit maxed, Max HP = Defense, then Crit Resist, Max MP ignored", () => {
         const { max } = DEFAULT_STAT_SETTINGS
         const attack = { enabled: true, skillAfter: 5, passiveAfter: 4 }
         const defense = { enabled: false, skillAfter: 6, passiveAfter: 5 }
@@ -38,21 +39,39 @@ describe("readStatSettings", () => {
         expect(DEFAULT_STAT_SETTINGS.order).toEqual([
             "attack",
             "critical-hit",
-            "defense",
             "max-hp",
-        ])
-        expect(DEFAULT_STAT_SETTINGS.tied).toEqual(["critical-hit", "max-hp"])
-        expect(DEFAULT_STAT_SETTINGS.ignored).toEqual([
+            "defense",
             "critical-hit-resist",
-            "max-mp",
         ])
+        expect(DEFAULT_STAT_SETTINGS.tied).toEqual(["critical-hit", "defense"])
+        expect(DEFAULT_STAT_SETTINGS.ignored).toEqual(["max-mp"])
         expect(max.attack).toEqual(attack)
         expect(max["critical-hit"]).toEqual(attack)
-        expect(max.defense).toEqual(defense)
         expect(max["max-hp"]).toEqual(defense)
+        expect(max.defense).toEqual(defense)
         expect(max["critical-hit-resist"]).toEqual(NO_MAX)
         expect(max["max-mp"]).toEqual(NO_MAX)
     })
+
+    it.each([
+        ["chanter", 3, 2],
+        ["gladiator", 4, 2],
+    ])(
+        "gives %s the same order with its own Max ranks",
+        (classId, skillAfter, passiveAfter) => {
+            const attack = { enabled: true, skillAfter, passiveAfter }
+            const settings = readStatSettings(classId)
+
+            expect(settings).toBe(defaultStatSettings(classId))
+            expect(settings.order).toEqual(DEFAULT_STAT_SETTINGS.order)
+            expect(settings.tied).toEqual(DEFAULT_STAT_SETTINGS.tied)
+            expect(settings.ignored).toEqual(DEFAULT_STAT_SETTINGS.ignored)
+            expect(settings.max.attack).toEqual(attack)
+            expect(settings.max["critical-hit"]).toEqual(attack)
+            expect(settings.max["max-hp"].enabled).toBe(false)
+            expect(settings.max.defense.enabled).toBe(false)
+        },
+    )
 
     it("round-trips", () => {
         const settings: StatSettings = {

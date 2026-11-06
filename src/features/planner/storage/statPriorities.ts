@@ -34,17 +34,56 @@ const ATTACK_MAX: StatMax = { enabled: true, skillAfter: 5, passiveAfter: 4 }
 const DEFENSE_MAX: StatMax = { enabled: false, skillAfter: 6, passiveAfter: 5 }
 
 export const DEFAULT_STAT_SETTINGS: StatSettings = {
-    order: ["attack", "critical-hit", "defense", "max-hp"],
-    tied: ["critical-hit", "max-hp"],
-    ignored: ["critical-hit-resist", "max-mp"],
+    order: [
+        "attack",
+        "critical-hit",
+        "max-hp",
+        "defense",
+        "critical-hit-resist",
+    ],
+    tied: ["critical-hit", "defense"],
+    ignored: ["max-mp"],
     max: {
         attack: ATTACK_MAX,
         "critical-hit": ATTACK_MAX,
-        defense: DEFENSE_MAX,
         "max-hp": DEFENSE_MAX,
+        defense: DEFENSE_MAX,
         "critical-hit-resist": NO_MAX,
         "max-mp": NO_MAX,
     },
+}
+
+// Classes whose defaults differ from DEFAULT_STAT_SETTINGS.
+const CHANTER_ATTACK_MAX: StatMax = {
+    enabled: true,
+    skillAfter: 3,
+    passiveAfter: 2,
+}
+
+const GLADIATOR_ATTACK_MAX: StatMax = {
+    enabled: true,
+    skillAfter: 4,
+    passiveAfter: 2,
+}
+
+const withAttackMax = (attackMax: StatMax): StatSettings => {
+    return {
+        ...DEFAULT_STAT_SETTINGS,
+        max: {
+            ...DEFAULT_STAT_SETTINGS.max,
+            attack: attackMax,
+            "critical-hit": attackMax,
+        },
+    }
+}
+
+const CLASS_STAT_SETTINGS: Partial<Record<string, StatSettings>> = {
+    chanter: withAttackMax(CHANTER_ATTACK_MAX),
+    gladiator: withAttackMax(GLADIATOR_ATTACK_MAX),
+}
+
+export const defaultStatSettings = (classId: string) => {
+    return CLASS_STAT_SETTINGS[classId] ?? DEFAULT_STAT_SETTINGS
 }
 
 export const isStatType = (value: unknown): value is StatType => {
@@ -390,7 +429,7 @@ export const readStatSettings = (
     try {
         const value = readClassSettings(classId, "stats", source)
         if (value === undefined) {
-            return DEFAULT_STAT_SETTINGS
+            return defaultStatSettings(classId)
         }
 
         if (!isRecord(value)) {

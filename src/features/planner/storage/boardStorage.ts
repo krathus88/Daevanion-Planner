@@ -231,7 +231,7 @@ export const writeSharedAllocation = (
     return write(sharedAllocationKey(classId), allocation)
 }
 
-export const DEFAULT_TOTAL_POINTS = 225
+export const DEFAULT_TOTAL_POINTS = 366
 
 export const readSharedTotalPoints = (classId: string) => {
     return (

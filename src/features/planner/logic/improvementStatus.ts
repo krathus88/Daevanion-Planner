@@ -124,6 +124,29 @@ export const improvementStatus = ({
     return `First ${noun} ready at ${formatFoundAt(firstFoundMs)} · looking for a better one`
 }
 
+type SearchClock = {
+    elapsedMs: number
+    idleMs: number
+    stallMs: number
+}
+
+// Worker progress comes in bursts; between messages its clocks keep running
+// from when the last one arrived. `now` can be older than `receivedAt` (a
+// clock snapshot from before the message), which counts as no time passed.
+export const advanceSearchClock = <Progress extends SearchClock>(
+    progress: Progress,
+    receivedAt: number,
+    now: number,
+): Progress => {
+    const passedMs = Math.max(0, now - receivedAt)
+
+    return {
+        ...progress,
+        elapsedMs: progress.elapsedMs + passedMs,
+        idleMs: Math.min(progress.stallMs, progress.idleMs + passedMs),
+    }
+}
+
 type HeadlineProgress = {
     elapsedMs: number
     pointsUsed: number

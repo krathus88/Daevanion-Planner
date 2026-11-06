@@ -51,6 +51,18 @@ describe("STARTER_TASKS", () => {
         ).toMatchObject({ shared: false, cap: 14, recharge: 2, bonusCap: 30 })
     })
 
+    it("tracks Ascension Trial per character as entries left, refilled weekly", () => {
+        expect(
+            STARTER_TASKS.find((task) => task.id === "ascension-trial"),
+        ).toMatchObject({
+            reset: "weekly",
+            shared: false,
+            cap: 3,
+            recharge: 3,
+            bonusCap: 30,
+        })
+    })
+
     it("tracks Shugo Festival keys per server, piling up to 21", () => {
         expect(
             STARTER_TASKS.find((task) => task.id === "shugo-festival"),

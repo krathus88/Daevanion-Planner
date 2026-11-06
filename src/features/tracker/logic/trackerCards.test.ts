@@ -4,6 +4,7 @@ import {
     countTasks,
     getCardOwners,
     getCardProgress,
+    getDoneTaskIds,
     getGroupProgress,
     getPendingTasks,
     getPipCount,
@@ -11,6 +12,7 @@ import {
     getServerGroups,
     getTaskControl,
     getTaskGroups,
+    splitDone,
     splitIgnored,
 } from "./trackerCards"
 
@@ -163,6 +165,44 @@ describe("splitIgnored", () => {
             "weekly",
         ])
         expect(countTasks(split.ignored)).toBe(2)
+    })
+})
+
+describe("done tasks", () => {
+    const groups = getTaskGroups(
+        [
+            task({ id: "a", cap: 2 }),
+            task({ id: "b", cap: 2 }),
+            task({ id: "c", cap: 1 }),
+            task({ id: "w", reset: "weekly" }),
+        ],
+        false,
+    )
+    const periods = { daily: 5, weekly: 1 }
+
+    it("lists the tasks done in their period, ignored ones left out", () => {
+        const counts = {
+            a: { period: 5, count: 2 },
+            b: { period: 5, count: 1 },
+            c: { period: 5, count: 1 },
+            // Done last week only.
+            w: { period: 0, count: 1 },
+        }
+
+        expect(
+            getDoneTaskIds(groups, counts, undefined, ["c"], periods),
+        ).toEqual(["a"])
+    })
+
+    it("moves stashed tasks apart, by reset, dropping empty groups", () => {
+        const split = splitDone(groups, ["a", "w"])
+
+        expect(
+            split.todo.map((group) => group.tasks.map((item) => item.id)),
+        ).toEqual([["b", "c"]])
+        expect(
+            split.done.map((group) => group.tasks.map((item) => item.id)),
+        ).toEqual([["a"], ["w"]])
     })
 })
 

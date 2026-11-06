@@ -115,6 +115,57 @@ describe("parseTrackerData", () => {
         ])
     })
 
+    it("gives an own copy of a starter task its entries, keeping the rest", () => {
+        const parsed = parseTrackerData({
+            tasks: [
+                {
+                    id: "ascension-trial",
+                    name: "Trial",
+                    reset: "weekly",
+                    cap: 3,
+                },
+                // Its own entries setup stays.
+                {
+                    id: "nightmare",
+                    name: "Nightmare",
+                    reset: "daily",
+                    cap: 10,
+                    recharge: 1,
+                    bonusCap: 5,
+                },
+                { id: "duty-missions", name: "Duty", reset: "daily", cap: 5 },
+            ],
+        })
+
+        expect(parsed.tasks).toEqual([
+            {
+                id: "ascension-trial",
+                name: "Trial",
+                reset: "weekly",
+                cap: 3,
+                shared: false,
+                recharge: 3,
+                bonusCap: 30,
+            },
+            {
+                id: "nightmare",
+                name: "Nightmare",
+                reset: "daily",
+                cap: 10,
+                shared: false,
+                recharge: 1,
+                bonusCap: 5,
+            },
+            {
+                id: "duty-missions",
+                name: "Duty",
+                reset: "daily",
+                cap: 5,
+                shared: false,
+            },
+        ])
+    })
+
     it("keeps an empty own list apart from the starter list", () => {
         expect(parseTrackerData({ tasks: [] }).tasks).toEqual([])
         expect(parseTrackerData({}).tasks).toBeNull()
