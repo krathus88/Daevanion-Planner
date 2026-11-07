@@ -95,6 +95,8 @@ export const mergeTrackerData = (newer: unknown, older: unknown) => {
     return {
         characters: mergeById(newerData.characters, olderData.characters),
         tasks: tasks,
+        // Both sides already took in the starter tasks they lacked.
+        presets: newerData.presets,
         counts: mergeCounts(newerData.counts, olderData.counts),
         entries: mergeEntries(newerData.entries, olderData.entries),
         // Choices about the view and the list: the side edited last.

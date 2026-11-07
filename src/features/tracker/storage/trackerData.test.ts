@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { readSyncMeta } from "@account/sync/syncMeta"
+import { STARTER_IDS } from "@tracker/logic/presetTasks"
 import type { TrackerData } from "@tracker/types"
 import {
     parseTrackerData,
@@ -25,6 +26,7 @@ const DATA: TrackerData = {
             bonusCap: 30,
         },
     ],
+    presets: STARTER_IDS,
     counts: { a: { t: { period: 4, count: 2 } } },
     entries: { "server:zikel": { d: { period: 4, base: 6, bonus: 1 } } },
     minimized: ["a"],
@@ -58,6 +60,7 @@ describe("parseTrackerData", () => {
                 { id: "z", name: "Zero cap", reset: "daily", cap: 0 },
                 { id: "m", name: "Monthly", reset: "monthly", cap: 1 },
             ],
+            presets: STARTER_IDS,
             counts: {
                 a: {
                     t: { period: 4, count: 2 },
@@ -93,9 +96,32 @@ describe("parseTrackerData", () => {
             cap: 3,
             shared: false,
         })
+        // Starter tasks that came out later join the user's own list.
+        expect(parsed.tasks?.map((task) => task.id)).toEqual(["t", "corridors"])
+        expect(parsed.presets).toEqual(STARTER_IDS)
         expect(parsed.entries).toEqual({})
         expect(parsed.minimized).toEqual([])
         expect(parsed.ignored).toEqual({})
+    })
+
+    it("adds starter tasks newer than the save to the user's own list, once", () => {
+        const task = { id: "t", name: "Task", reset: "daily", cap: 3 }
+        const known = STARTER_IDS.filter((id) => id !== "nightmare")
+        const parsed = parseTrackerData({
+            tasks: [task, { ...task, id: "duty-missions" }],
+            presets: known,
+        })
+
+        expect(parsed.tasks?.map((item) => item.id)).toEqual([
+            "t",
+            "nightmare",
+            "duty-missions",
+        ])
+
+        // Removed after that, it stays removed.
+        expect(
+            parseTrackerData({ tasks: [task], presets: parsed.presets }).tasks,
+        ).toHaveLength(1)
     })
 
     it("keeps a task's subtitle, but not an empty or odd one", () => {
@@ -106,6 +132,7 @@ describe("parseTrackerData", () => {
                 { ...task, id: "e", subtitle: "" },
                 { ...task, id: "n", subtitle: 3 },
             ],
+            presets: STARTER_IDS,
         })
 
         expect(parsed.tasks?.map((item) => item.subtitle)).toEqual([
@@ -135,6 +162,7 @@ describe("parseTrackerData", () => {
                 },
                 { id: "duty-missions", name: "Duty", reset: "daily", cap: 5 },
             ],
+            presets: STARTER_IDS,
         })
 
         expect(parsed.tasks).toEqual([
@@ -167,7 +195,9 @@ describe("parseTrackerData", () => {
     })
 
     it("keeps an empty own list apart from the starter list", () => {
-        expect(parseTrackerData({ tasks: [] }).tasks).toEqual([])
+        expect(
+            parseTrackerData({ tasks: [], presets: STARTER_IDS }).tasks,
+        ).toEqual([])
         expect(parseTrackerData({}).tasks).toBeNull()
     })
 })
@@ -177,6 +207,7 @@ describe("readTrackerData", () => {
         expect(readTrackerData()).toEqual({
             characters: [],
             tasks: null,
+            presets: STARTER_IDS,
             counts: {},
             entries: {},
             minimized: [],

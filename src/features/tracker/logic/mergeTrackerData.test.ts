@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { STARTER_IDS } from "./presetTasks"
 import { mergeTrackerData } from "./mergeTrackerData"
 
 const aria = { id: "a", name: "Aria", classId: "cleric", server: "siel" }
@@ -17,18 +18,24 @@ describe("mergeTrackerData", () => {
 
     it("uses whichever side has its own task list", () => {
         expect(
-            mergeTrackerData({ tasks: null }, { tasks: [task] }).tasks,
+            mergeTrackerData(
+                { tasks: null, presets: STARTER_IDS },
+                { tasks: [task], presets: STARTER_IDS },
+            ).tasks,
         ).toEqual([task])
-        expect(mergeTrackerData({ tasks: null }, { tasks: null }).tasks).toBe(
-            null,
-        )
+        expect(
+            mergeTrackerData(
+                { tasks: null, presets: STARTER_IDS },
+                { tasks: null, presets: STARTER_IDS },
+            ).tasks,
+        ).toBe(null)
     })
 
     it("merges two task lists by id", () => {
         const other = { ...task, id: "u", name: "Other" }
         const merged = mergeTrackerData(
-            { tasks: [{ ...task, cap: 3 }] },
-            { tasks: [task, other] },
+            { tasks: [{ ...task, cap: 3 }], presets: STARTER_IDS },
+            { tasks: [task, other], presets: STARTER_IDS },
         )
 
         expect(merged.tasks).toEqual([{ ...task, cap: 3 }, other])
@@ -103,6 +110,7 @@ describe("mergeTrackerData", () => {
         expect(mergeTrackerData("broken", null)).toEqual({
             characters: [],
             tasks: null,
+            presets: STARTER_IDS,
             counts: {},
             entries: {},
             minimized: [],

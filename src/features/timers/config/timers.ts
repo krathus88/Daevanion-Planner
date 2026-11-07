@@ -109,6 +109,13 @@ export const WEEKLY_RESET: FixedSchedule = {
     openFor: 0,
 }
 
+// The game lists 21:00, but the fighting begins around 21:10.
+export const ARTIFACT_SIEGE: ServerSchedule = {
+    times: [21 * 60],
+    days: [4, 6],
+    openFor: 10 * MINUTE,
+}
+
 const EVENT_TIMERS: readonly TimerDefinition[] = [
     {
         id: "rift",
@@ -164,8 +171,7 @@ const EVENT_TIMERS: readonly TimerDefinition[] = [
         soonMinutes: 30,
         description:
             "Thursday and Saturday at 21:00 server time. Starts about 10 minutes later.",
-        // The game lists 21:00, but the fighting begins around 21:10.
-        schedule: { times: [21 * 60], days: [4, 6], openFor: 10 * MINUTE },
+        schedule: ARTIFACT_SIEGE,
     },
     {
         id: "daily",

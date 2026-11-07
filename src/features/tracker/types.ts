@@ -1,6 +1,6 @@
 import type { ClassId } from "@config/classPresets/classInfo"
 
-export type TrackerReset = "daily" | "weekly"
+export type TrackerReset = "daily" | "weekly" | "siege"
 
 // Caps up to 6 are boxes to tick, higher ones counters. A shared task has one count
 // per server instead of one per character.
@@ -44,6 +44,9 @@ export type TrackerData = {
     characters: TrackerCharacter[]
     // Null until the user edits the list; the starter list is used instead.
     tasks: TrackerTask[] | null
+    // Starter task ids known when the data was saved: newer ones join the
+    // user's own list on read. Missing in saves from before it existed.
+    presets?: string[]
     // By owner (see taskOwners), then task id.
     counts: Record<string, Record<string, TaskCount>>
     entries: Record<string, Record<string, TaskEntries>>

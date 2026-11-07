@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { MAX_PLANNER_HISTORY } from "@planner/storage/boardStorage"
+import { STARTER_IDS } from "@tracker/logic/presetTasks"
 import { mergeSyncedValue } from "./mergeSyncedValue"
 import { PETS_KEY, TIMERS_KEY, TRACKER_KEY } from "./syncedKeys"
 
@@ -114,6 +115,7 @@ describe("mergeSyncedValue: tracker", () => {
                 { id: "b", name: "B", classId: "ranger", server: "siel" },
             ],
             tasks: null,
+            presets: STARTER_IDS,
             counts: { a: { t: { period: 3, count: 0 } } },
             entries: {},
             minimized: [],

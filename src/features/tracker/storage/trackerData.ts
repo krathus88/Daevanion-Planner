@@ -2,8 +2,9 @@ import { setStoredItem } from "@account/sync/syncMeta"
 import { isClassId } from "@config/classPresets/classInfo"
 import { isRecord } from "@planner/storage/isRecord"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
-import { STARTER_TASKS } from "@tracker/config/starterTasks"
+import { FIRST_PRESETS, STARTER_TASKS } from "@tracker/config/starterTasks"
 import { isTrackerReset } from "@tracker/config/trackerResets"
+import { addNewPresets, STARTER_IDS } from "@tracker/logic/presetTasks"
 import type {
     TaskCount,
     TaskEntries,
@@ -20,6 +21,7 @@ export const MAX_TASK_CAP = 999
 const EMPTY_DATA: TrackerData = {
     characters: [],
     tasks: null,
+    presets: STARTER_IDS,
     counts: {},
     entries: {},
     minimized: [],
@@ -192,6 +194,19 @@ const pickIgnored = (value: unknown) => {
     return ignored
 }
 
+// The user's own list, with starter tasks it didn't know of yet added.
+const pickTasks = (value: Record<string, unknown>) => {
+    if (!Array.isArray(value.tasks)) {
+        return null
+    }
+
+    const known = Array.isArray(value.presets)
+        ? pickStrings(value.presets)
+        : FIRST_PRESETS
+
+    return [...addNewPresets(pickById(value.tasks, parseTask), known)]
+}
+
 export const parseTrackerData = (value: unknown): TrackerData => {
     if (!isRecord(value)) {
         return EMPTY_DATA
@@ -199,9 +214,8 @@ export const parseTrackerData = (value: unknown): TrackerData => {
 
     return {
         characters: pickById(value.characters, parseCharacter),
-        tasks: Array.isArray(value.tasks)
-            ? pickById(value.tasks, parseTask)
-            : null,
+        tasks: pickTasks(value),
+        presets: STARTER_IDS,
         counts: pickPerOwner(value.counts, isTaskCount),
         entries: pickPerOwner(value.entries, isTaskEntries),
         minimized: pickStrings(value.minimized),

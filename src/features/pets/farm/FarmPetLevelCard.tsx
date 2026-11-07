@@ -5,7 +5,7 @@ import { type MouseEvent, type ReactElement, useState } from "react"
 
 // What hovering the pet shows: the level picker (a focused spot), just the
 // pet's name and caption, or nothing. Right-click always shows the picker.
-export type FarmPetHover = "picker" | "info" | "none"
+type FarmPetHover = "picker" | "info" | "none"
 
 type FarmPetLevelCardProps = {
     // The pet's button; it keeps opening the pet on click.

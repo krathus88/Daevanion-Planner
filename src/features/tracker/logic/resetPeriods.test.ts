@@ -39,6 +39,41 @@ describe("getNextReset", () => {
     })
 })
 
+// Artifact Siege: Thursday and Saturday 21:00 server time (UTC+1 in
+// November), so 20:00 UTC.
+const THURSDAY_SIEGE = Date.UTC(2026, 10, 5, 20)
+const SATURDAY_SIEGE = Date.UTC(2026, 10, 7, 20)
+const NEXT_THURSDAY_SIEGE = Date.UTC(2026, 10, 12, 20)
+// Summer time (UTC+2): 19:00 UTC.
+const SUMMER_SIEGE = Date.UTC(2026, 6, 2, 19)
+
+describe("siege reset", () => {
+    it("moves on at each Artifact Siege only", () => {
+        const before = getResetPeriods(THURSDAY_SIEGE - 1)
+        const thursday = getResetPeriods(THURSDAY_SIEGE)
+        const friday = getResetPeriods(THURSDAY_SIEGE + 24 * 3_600_000)
+        const saturday = getResetPeriods(SATURDAY_SIEGE)
+
+        expect(thursday.siege).toBeGreaterThan(before.siege)
+        expect(friday.siege).toBe(thursday.siege)
+        expect(saturday.siege).toBeGreaterThan(friday.siege)
+    })
+
+    it("counts down to the next siege, across the weekend gap", () => {
+        expect(getNextReset("siege", THURSDAY_SIEGE - 1)).toBe(THURSDAY_SIEGE)
+        expect(getNextReset("siege", THURSDAY_SIEGE)).toBe(SATURDAY_SIEGE)
+        expect(getNextReset("siege", SATURDAY_SIEGE)).toBe(NEXT_THURSDAY_SIEGE)
+        // Wednesday: no siege in the day before, still the coming Thursday.
+        expect(getNextReset("siege", Date.UTC(2026, 10, 11, 12))).toBe(
+            NEXT_THURSDAY_SIEGE,
+        )
+    })
+
+    it("follows server time in summer", () => {
+        expect(getNextReset("siege", SUMMER_SIEGE - 1)).toBe(SUMMER_SIEGE)
+    })
+})
+
 describe("readCount", () => {
     it("reads a count from this period", () => {
         expect(readCount({ period: 5, count: 3 }, 5)).toBe(3)

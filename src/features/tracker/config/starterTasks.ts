@@ -1,5 +1,27 @@
 import type { TrackerTask } from "@tracker/types"
 
+// The starter tasks a save knew before saves recorded them (`presets`).
+// Fixed for good: starter tasks added later join those saves on read.
+export const FIRST_PRESETS: readonly string[] = [
+    "supply-requests",
+    "nightmare",
+    "duty-missions",
+    "shugo-festival",
+    "odyle-craft",
+    "odyle-shop",
+    "ludra",
+    "ascension-trial",
+    "arena-wins",
+    "arena-participation",
+    "battlefield-wins",
+    "battlefield-participation",
+    "unknown-fissure",
+    "odyle-craft-server",
+    "odyle-shop-server",
+    "command-faction",
+    "command-abyss",
+]
+
 // Caps checked by the user on the EU client (November 2026). Shared tasks
 // count once per server for all its characters.
 export const STARTER_TASKS: readonly TrackerTask[] = [
@@ -145,5 +167,14 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         reset: "weekly",
         cap: 20,
         shared: true,
+    },
+    // The Abyss corridor, once per Artifact Siege.
+    {
+        id: "corridors",
+        name: "Corridors",
+        subtitle: "Artifact Siege",
+        reset: "siege",
+        cap: 1,
+        shared: false,
     },
 ]

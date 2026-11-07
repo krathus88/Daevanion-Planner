@@ -1,3 +1,4 @@
+import { ArtifactSiege } from "@assets/timers"
 import {
     Arena,
     AscensionTrial,
@@ -33,6 +34,8 @@ const TASK_ICONS: Record<string, string> = {
     "odyle-shop-server": OdyleEnergy,
     "command-faction": CommandFaction,
     "command-abyss": CommandAbyss,
+    // The Timers page's Artifact Siege icon.
+    corridors: ArtifactSiege,
 }
 
 export const getTaskIcon = (taskId: string) => {

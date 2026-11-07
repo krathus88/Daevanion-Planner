@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { parseTrackerData } from "@tracker/storage/trackerData"
-import { STARTER_TASKS } from "./starterTasks"
+import { FIRST_PRESETS, STARTER_TASKS } from "./starterTasks"
 import { getTaskIcon } from "./taskIcons"
 
 describe("STARTER_TASKS", () => {
@@ -8,6 +8,15 @@ describe("STARTER_TASKS", () => {
         const ids = STARTER_TASKS.map((task) => task.id)
 
         expect(new Set(ids).size).toBe(ids.length)
+    })
+
+    it("still has every task older saves knew, Corridors coming after", () => {
+        const ids = STARTER_TASKS.map((task) => task.id)
+
+        expect(ids.filter((id) => !FIRST_PRESETS.includes(id))).toEqual([
+            "corridors",
+        ])
+        expect(FIRST_PRESETS.every((id) => ids.includes(id))).toBe(true)
     })
 
     it("would survive a save as the user's own list", () => {
@@ -72,6 +81,18 @@ describe("STARTER_TASKS", () => {
             cap: 21,
             recharge: 3,
             bonusCap: 30,
+        })
+    })
+
+    it("tracks Corridors once per character each Artifact Siege", () => {
+        expect(
+            STARTER_TASKS.find((task) => task.id === "corridors"),
+        ).toMatchObject({
+            name: "Corridors",
+            subtitle: "Artifact Siege",
+            reset: "siege",
+            shared: false,
+            cap: 1,
         })
     })
 

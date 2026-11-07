@@ -6,6 +6,7 @@ import type {
     TrackerReset,
     TrackerTask,
 } from "@tracker/types"
+import { insertPreset } from "./presetTasks"
 import { clampEntries, type EntriesLeft } from "./taskEntries"
 
 export type TaskFields = {
@@ -297,21 +298,10 @@ export const getRemovedPresets = (data: TrackerData) => {
 // list (or last).
 export const restorePreset = (data: TrackerData, id: string): TrackerData => {
     const tasks = getTasks(data)
-    const index = STARTER_TASKS.findIndex((task) => task.id === id)
+    const preset = STARTER_TASKS.find((task) => task.id === id)
+    const next = preset ? insertPreset(tasks, preset) : tasks
 
-    if (index === -1 || tasks.some((task) => task.id === id)) {
-        return data
-    }
-
-    const laterIds = new Set(
-        STARTER_TASKS.slice(index + 1).map((task) => task.id),
-    )
-    const at = tasks.findIndex((task) => laterIds.has(task.id))
-    const next = [...tasks]
-
-    next.splice(at === -1 ? next.length : at, 0, { ...STARTER_TASKS[index] })
-
-    return { ...data, tasks: next }
+    return next === tasks ? data : { ...data, tasks: [...next] }
 }
 
 // Back to the starter list; counts of the user's own tasks stay unread.

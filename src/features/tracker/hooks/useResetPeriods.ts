@@ -11,7 +11,8 @@ const getPeriods = () => {
     if (
         !cached ||
         cached.daily !== next.daily ||
-        cached.weekly !== next.weekly
+        cached.weekly !== next.weekly ||
+        cached.siege !== next.siege
     ) {
         cached = next
     }

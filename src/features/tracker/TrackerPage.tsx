@@ -68,7 +68,8 @@ export const TrackerPage = () => {
                         <Text textStyle="hint">
                             Dailies and weeklies per character, and per server
                             for shared ones. Counts clear at the daily reset
-                            (07:00 UTC) or the weekly one (Wednesday 07:00 UTC).
+                            (07:00 UTC), the weekly one (Wednesday 07:00 UTC) or
+                            each Artifact Siege.
                         </Text>
                     </Flex>
 

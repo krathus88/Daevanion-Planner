@@ -158,7 +158,7 @@ describe("TrackerPage", () => {
 
         const aria = screen.getByRole("article", { name: "Aria" })
 
-        expect(within(aria).getByText("0/10 done")).toBeInTheDocument()
+        expect(within(aria).getByText("0/11 done")).toBeInTheDocument()
 
         await userEvent.click(
             within(aria).getByRole("button", {
@@ -166,7 +166,7 @@ describe("TrackerPage", () => {
             }),
         )
 
-        expect(within(aria).getByText("1/10 done")).toBeInTheDocument()
+        expect(within(aria).getByText("1/11 done")).toBeInTheDocument()
     })
 
     it("ticks a task with a cap of 1", async () => {
@@ -318,11 +318,11 @@ describe("TrackerPage", () => {
         await waitFor(() => {
             expect(readTrackerData().ignored).toEqual({ a: ["arena-wins"] })
         })
-        expect(within(aria).getByText("0/9 done")).toBeInTheDocument()
+        expect(within(aria).getByText("0/10 done")).toBeInTheDocument()
         // Other characters still count it.
         expect(
             within(screen.getByRole("article", { name: "Bran" })).getByText(
-                "0/10 done",
+                "0/11 done",
             ),
         ).toBeInTheDocument()
 
