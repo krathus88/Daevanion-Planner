@@ -716,6 +716,38 @@ export const optimizePriorityPlans = async (
         }
     }
 
+    const statNodesOn = (
+        layoutName: MainBoardId,
+        path: string[],
+        stat: StatType,
+    ) => {
+        return path.filter((key) => statAt(layoutName, key) === stat).length
+    }
+
+    // Maxed stat nodes a route only passed through aren't pinned, so a
+    // reroute could trade them away, and the points it saves may not buy
+    // them back. A target counts only the stats ranked above it; refining
+    // and swaps (no target) count every maxed stat.
+    const dropsMaxedStat = (
+        candidate: PlanChange<MainBoardId>,
+        target: PriorityTarget | null,
+    ) => {
+        return focusStats.some((stat) => {
+            if (target && !waitsBehind(target, stat)) {
+                return false
+            }
+
+            let change = 0
+            for (const [layoutName, { plan }] of candidate.changes) {
+                change +=
+                    statNodesOn(layoutName, plan.plannedPath, stat) -
+                    statNodesOn(layoutName, plans[layoutName].plannedPath, stat)
+            }
+
+            return change < 0
+        })
+    }
+
     const fillByRank = async (stepMs: number, isDone: () => boolean) => {
         for (const step of rankSteps) {
             if (isDone()) {
@@ -739,7 +771,7 @@ export const optimizePriorityPlans = async (
                 const unfit = new Set<PriorityTarget>()
                 for (const target of remaining) {
                     const candidate = await tryAddTarget(target, stepMs)
-                    if (!candidate) {
+                    if (!candidate || dropsMaxedStat(candidate, target)) {
                         unfit.add(target)
                     } else if (isBetterPath(candidate, best)) {
                         best = candidate
@@ -779,7 +811,11 @@ export const optimizePriorityPlans = async (
                       searchWith(MIN_STEP_MS),
                   )
                 : null
-            if (refined && improves(routeState(), refined)) {
+            if (
+                refined &&
+                improves(routeState(), refined) &&
+                !dropsMaxedStat(refined, null)
+            ) {
                 commit({ ...refined, target: null })
             }
         }

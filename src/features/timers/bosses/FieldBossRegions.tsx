@@ -9,6 +9,7 @@ import type { TimerColor, TimerId } from "@timers/config/timers"
 import type { TimerEntry } from "@timers/hooks/useTimers"
 import { getPartner, type Server } from "@timers/config/servers"
 import type { BossReport } from "@timers/storage/timerSettings"
+import { compareBosses } from "@timers/logic/bossOrder"
 import { BossRow } from "./BossRow"
 import { ServerSelect } from "./ServerSelect"
 import { SharingPopover } from "./SharingPopover"
@@ -54,15 +55,12 @@ export const FieldBossRegions = ({
         }
     }
 
-    // Longest respawn first, then by name; scheduled bosses keep config order.
     const shown = entries
         .filter((entry) => entry.timer.boss?.region === region)
-        .sort(
-            (a, b) =>
-                (b.timer.boss?.respawn ?? 0) - (a.timer.boss?.respawn ?? 0) ||
-                (a.timer.boss?.schedule || b.timer.boss?.schedule
-                    ? 0
-                    : a.timer.name.localeCompare(b.timer.name)),
+        .sort((a, b) =>
+            a.timer.boss && b.timer.boss
+                ? compareBosses(a.timer.boss, b.timer.boss)
+                : 0,
         )
 
     // In the server's order: its own faction first, then the Abyss.

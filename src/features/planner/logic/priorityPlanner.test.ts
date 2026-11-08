@@ -110,6 +110,93 @@ const abilityNodes = (abilityId: string, board: MainBoardId) => {
         .map(([key]) => key)
 }
 
+// A Cleric setup shared by a user: Attack and Crit maxed before rank 5.
+const optimizeMaxedCrit = async (points: number, stallMs = 1) => {
+    const cleric = await loadClassPreset("cleric")
+    const priorities = {
+        ...defaultAbilityPriorities(cleric),
+        d: 5,
+        dm: 4,
+        hl: 3,
+        jt: 5,
+        rr: 3,
+        cot: 4,
+        lor: 4,
+        peg: 1,
+        phe: 2,
+        piv: 4,
+        prb: 3,
+        psw: 5,
+        pwb: 4,
+        pelg: 1,
+    }
+    const maxCrit = { enabled: true, skillAfter: 4, passiveAfter: 4 }
+    const result = await optimize({
+        classPreset: cleric,
+        priorities: priorities,
+        minimums: resolveAbilityMinimums(cleric, priorities, {
+            d: 2,
+            da: 4,
+            er: 4,
+            hl: 4,
+            jt: 4,
+            rr: 4,
+            lor: 4,
+            phe: 4,
+            piv: 4,
+            prb: 4,
+            pwb: 4,
+        }),
+        maximums: {
+            d: 2,
+            dm: 2,
+            hl: 4,
+            jt: 4,
+            cot: 2,
+            lor: 4,
+            lss: 0,
+            phb: 0,
+            psw: 4,
+            pelb: 0,
+            ppoc: 0,
+        },
+        points: points,
+        stallMs: stallMs,
+        statSettings: {
+            order: [
+                "attack",
+                "critical-hit",
+                "defense",
+                "max-hp",
+                "critical-hit-resist",
+            ],
+            tied: ["critical-hit", "max-hp"],
+            ignored: ["max-mp"],
+            max: {
+                ...NOTHING_MAXED.max,
+                attack: maxCrit,
+                "critical-hit": maxCrit,
+            },
+        },
+    })
+
+    return { cleric: cleric, result: result }
+}
+
+const maxedCritNodes = (
+    plans: Record<MainBoardId, { plannedPath: string[] }>,
+) => {
+    return MAIN_BOARD_IDS.reduce((total, board) => {
+        return (
+            total +
+            plans[board].plannedPath.filter((key) => {
+                const stat = layouts[board].nodeStats[key]
+                return stat === "attack" || stat === "critical-hit"
+            }).length
+        )
+    }, 0)
+}
+
 describe("optimizePriorityPlans", () => {
     it("plans nothing with no points", async () => {
         const result = await optimize({ points: 0 })
@@ -628,6 +715,31 @@ describe("optimizePriorityPlans", () => {
         expect(
             result.shortfalls.map((shortfall) => shortfall.abilityId),
         ).not.toContain("dm")
+    })
+
+    // A later rank used to reroute a board off Crit nodes the route only
+    // passed through, so Survival Willpower (rank 5) took Crit's points.
+    it("keeps a maxed stat's nodes from abilities ranked after it", async () => {
+        const { cleric, result } = await optimizeMaxedCrit(366)
+
+        for (const board of MAIN_BOARD_IDS) {
+            const assignments = cleric.assignments[board] ?? {}
+
+            for (const key of result.plans[board].targetCells) {
+                expect(assignments[key], `${board} ${key}`).not.toBe("psw")
+            }
+        }
+    })
+
+    // Refining used to take a route 1 point cheaper that left out two Crit
+    // and Attack nodes, and the point it saved couldn't buy them back.
+    it("never refines away a maxed stat's nodes", async () => {
+        const quick = await optimizeMaxedCrit(416)
+        const refined = await optimizeMaxedCrit(416, 100_000)
+
+        expect(maxedCritNodes(refined.result.plans)).toBeGreaterThanOrEqual(
+            maxedCritNodes(quick.result.plans),
+        )
     })
 
     // Lower ranks and later searches spend the points left, so a minimum

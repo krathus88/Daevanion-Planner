@@ -74,6 +74,47 @@ const EXECUTORS_NOTE = "Thu, Sat 21:30"
 export const FIELD_BOSSES = [
     // Verteron (Elyos)
     {
+        // "gartua" from before there were other bosses; saved timers use it.
+        id: "gartua",
+        region: "verteron",
+        name: "Eternal Gartua",
+        shortName: "Gartua",
+        zone: "Isle of Eternity",
+        level: 51,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
+    },
+    {
+        id: "lagta",
+        region: "verteron",
+        name: "High Commander Lagta",
+        shortName: "Lagta",
+        zone: "Red Forest",
+        level: 48,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
+    },
+    {
+        id: "dartan",
+        region: "verteron",
+        name: "Silent Dartan",
+        shortName: "Dartan",
+        zone: "Artamia Plateau South",
+        level: 48,
+        respawn: 6 * HOUR,
+    },
+    {
+        id: "kashapa",
+        region: "verteron",
+        name: "Soul Ruler Kashapa",
+        shortName: "Kashapa",
+        zone: "Artamia Plateau East",
+        level: 48,
+        respawn: 6 * HOUR,
+    },
+    {
         id: "kernon",
         region: "verteron",
         name: "Kernon of the West",
@@ -253,49 +294,48 @@ export const FIELD_BOSSES = [
         level: 45,
         respawn: 6 * HOUR,
     },
+
+    // Altgard (Asmodians)
     {
-        id: "dartan",
-        region: "verteron",
-        name: "Silent Dartan",
-        shortName: "Dartan",
-        zone: "Artamia Plateau South",
-        level: 48,
-        respawn: 6 * HOUR,
-    },
-    {
-        id: "kashapa",
-        region: "verteron",
-        name: "Soul Ruler Kashapa",
-        shortName: "Kashapa",
-        zone: "Artamia Plateau East",
-        level: 48,
-        respawn: 6 * HOUR,
-    },
-    {
-        id: "lagta",
-        region: "verteron",
-        name: "High Commander Lagta",
-        shortName: "Lagta",
-        zone: "Red Forest",
-        level: 48,
-        respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
-    },
-    {
-        // "gartua" from before there were other bosses; saved timers use it.
-        id: "gartua",
-        region: "verteron",
-        name: "Eternal Gartua",
+        id: "immortal-gartua",
+        region: "altgard",
+        name: "Immortal Gartua",
         shortName: "Gartua",
-        zone: "Isle of Eternity",
+        zone: "Isle of Immortality",
         level: 51,
         respawn: 11 * HOUR,
         // Usually dies within 10 seconds.
         aliveFor: QUICK_KILL_ALIVE_FOR,
     },
-
-    // Altgard (Asmodians)
+    {
+        id: "lagta-altgard",
+        region: "altgard",
+        name: "High Commander Lagta",
+        shortName: "Lagta",
+        zone: "Ragta Fortress",
+        level: 48,
+        respawn: 11 * HOUR,
+        // Usually dies within 10 seconds.
+        aliveFor: QUICK_KILL_ALIVE_FOR,
+    },
+    {
+        id: "dartan-altgard",
+        region: "altgard",
+        name: "Silent Dartan",
+        shortName: "Dartan",
+        zone: "Forest of Purification",
+        level: 48,
+        respawn: 6 * HOUR,
+    },
+    {
+        id: "kashapa-altgard",
+        region: "altgard",
+        name: "Soul Ruler Kashapa",
+        shortName: "Kashapa",
+        zone: "Pafnite Burial Ground",
+        level: 48,
+        respawn: 6 * HOUR,
+    },
     {
         id: "danar",
         region: "altgard",
@@ -475,46 +515,6 @@ export const FIELD_BOSSES = [
         zone: "Impetusium Plaza",
         level: 45,
         respawn: 6 * HOUR,
-    },
-    {
-        id: "dartan-altgard",
-        region: "altgard",
-        name: "Silent Dartan",
-        shortName: "Dartan",
-        zone: "Forest of Purification",
-        level: 48,
-        respawn: 6 * HOUR,
-    },
-    {
-        id: "kashapa-altgard",
-        region: "altgard",
-        name: "Soul Ruler Kashapa",
-        shortName: "Kashapa",
-        zone: "Pafnite Burial Ground",
-        level: 48,
-        respawn: 6 * HOUR,
-    },
-    {
-        id: "lagta-altgard",
-        region: "altgard",
-        name: "High Commander Lagta",
-        shortName: "Lagta",
-        zone: "Ragta Fortress",
-        level: 48,
-        respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
-    },
-    {
-        id: "immortal-gartua",
-        region: "altgard",
-        name: "Immortal Gartua",
-        shortName: "Gartua",
-        zone: "Isle of Immortality",
-        level: 51,
-        respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
 
     // Chaotic Lower Reshanta (Abyss), in the order the tab lists them.
