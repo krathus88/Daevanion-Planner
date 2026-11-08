@@ -15,6 +15,8 @@ type TaskTileProps = {
     count?: TaskCount
     entries?: TaskEntries
     done: boolean
+    // In the Ignored section: dimmed, never green.
+    ignored: boolean
     // The whole box is done and green, so the tile drops its border.
     boxDone: boolean
     // Fading out on its way to the Done section.
@@ -46,6 +48,7 @@ export const TaskTile = ({
     count,
     entries,
     done,
+    ignored,
     boxDone,
     leaving,
     slideId,
@@ -53,7 +56,7 @@ export const TaskTile = ({
     onEntriesChange,
     onIgnoredChange,
 }: TaskTileProps) => {
-    const colors = getTileColors(done, boxDone)
+    const colors = getTileColors(done && !ignored, boxDone)
 
     return (
         <Flex
@@ -75,7 +78,7 @@ export const TaskTile = ({
                 period={period}
                 count={count}
                 entries={entries}
-                ignored={false}
+                ignored={ignored}
                 onCountChange={onCountChange}
                 onEntriesChange={onEntriesChange}
                 onIgnoredChange={onIgnoredChange}

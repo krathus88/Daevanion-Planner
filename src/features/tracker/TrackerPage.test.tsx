@@ -7,7 +7,8 @@ import {
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
-import { STARTER_TASKS } from "./config/starterTasks"
+import { STARTER_TASKS, STARTS_IGNORED } from "./config/starterTasks"
+import { STARTER_IDS } from "./logic/presetTasks"
 import { getTaskTitle } from "./logic/taskTitle"
 import { readTrackerData, writeTrackerData } from "./storage/trackerData"
 import { TrackerPage } from "./TrackerPage"
@@ -24,6 +25,13 @@ vi.hoisted(() => {
     )
 })
 
+// What every character starts with ignored.
+const START_IGNORED = {
+    a: [...STARTS_IGNORED],
+    b: [...STARTS_IGNORED],
+    c: [...STARTS_IGNORED],
+}
+
 // Aria and Bran share Siel; Cael is on Zikel.
 const withCharacters = () => {
     writeTrackerData({
@@ -33,10 +41,11 @@ const withCharacters = () => {
             { id: "c", name: "Cael", classId: "ranger", server: "zikel" },
         ],
         tasks: null,
+        presets: STARTER_IDS,
         counts: {},
         entries: {},
         minimized: [],
-        ignored: {},
+        ignored: START_IGNORED,
     })
 }
 
@@ -89,16 +98,26 @@ describe("TrackerPage", () => {
                 .map((card) => card.getAttribute("aria-label")),
         ).toEqual(["Siel", "Zikel", "Aria", "Bran", "Cael"])
 
+        // Arena 1v1 starts in the collapsed Ignored section.
         for (const task of STARTER_TASKS) {
             const owner = task.shared ? "Siel" : "Aria"
             const card = screen.getByRole("article", { name: owner })
+            const button = within(card).queryByRole("button", {
+                name: `Ignore: ${getTaskTitle(task)}, ${owner}`,
+            })
 
-            expect(
-                within(card).getByRole("button", {
-                    name: `Ignore: ${getTaskTitle(task)}, ${owner}`,
-                }),
-            ).toBeInTheDocument()
+            if (STARTS_IGNORED.includes(task.id)) {
+                expect(button).not.toBeInTheDocument()
+            } else {
+                expect(button).toBeInTheDocument()
+            }
         }
+        expect(
+            within(screen.getByRole("article", { name: "Aria" })).getByRole(
+                "button",
+                { name: /^Ignored · 2/ },
+            ),
+        ).toBeInTheDocument()
 
         // The subtitle sits on its own line under the name.
         expect(
@@ -129,7 +148,7 @@ describe("TrackerPage", () => {
             }),
         ).not.toBeInTheDocument()
         expect(
-            within(aria).getByRole("img", { name: "Arena (Wins) 0/30" }),
+            within(aria).getByRole("img", { name: "Arena 5v5 (Wins) 0/30" }),
         ).toBeInTheDocument()
         expect(
             within(aria).queryByRole("img", { name: /Battlefield \(Wins\)/ }),
@@ -242,6 +261,19 @@ describe("TrackerPage", () => {
         await userEvent.click(
             within(aria).getByRole("button", { name: /^Done · 1/ }),
         )
+
+        // Both Daily boxes count all the dailies, and the one in Done isn't
+        // complete while Nightmare is left.
+        const dailies = await within(aria).findAllByRole("group", {
+            name: "Daily",
+        })
+
+        expect(dailies).toHaveLength(2)
+
+        for (const box of dailies) {
+            expect(box).toHaveTextContent("1/2")
+        }
+
         await userEvent.click(
             await within(aria).findByRole("button", {
                 name: "Supply Requests, Aria: 1 of 1",
@@ -309,14 +341,17 @@ describe("TrackerPage", () => {
 
         await userEvent.click(
             within(aria).getByRole("button", {
-                name: "Ignore: Arena (Wins), Aria",
+                name: "Ignore: Arena 5v5 (Wins), Aria",
             }),
         )
 
         // It fades out first, then moves.
-        expect(readTrackerData().ignored).toEqual({})
+        expect(readTrackerData().ignored).toEqual(START_IGNORED)
         await waitFor(() => {
-            expect(readTrackerData().ignored).toEqual({ a: ["arena-wins"] })
+            expect(readTrackerData().ignored).toEqual({
+                ...START_IGNORED,
+                a: [...STARTS_IGNORED, "arena-wins"],
+            })
         })
         expect(within(aria).getByText("0/10 done")).toBeInTheDocument()
         // Other characters still count it.
@@ -329,23 +364,27 @@ describe("TrackerPage", () => {
         // It moves into the card's collapsed Ignored section.
         expect(
             within(aria).queryByRole("button", {
-                name: "Stop ignoring: Arena (Wins), Aria",
+                name: "Stop ignoring: Arena 5v5 (Wins), Aria",
             }),
         ).not.toBeInTheDocument()
 
         await userEvent.click(
-            within(aria).getByRole("button", { name: /^Ignored · 1/ }),
+            within(aria).getByRole("button", { name: /^Ignored · 3/ }),
         )
+        // In a Weekly box of its own, like the Done section.
+        expect(
+            await within(aria).findAllByRole("group", { name: "Weekly" }),
+        ).toHaveLength(2)
         await userEvent.click(
             await within(aria).findByRole("button", {
-                name: "Stop ignoring: Arena (Wins), Aria",
+                name: "Stop ignoring: Arena 5v5 (Wins), Aria",
             }),
         )
 
-        expect(readTrackerData().ignored).toEqual({})
+        expect(readTrackerData().ignored).toEqual(START_IGNORED)
         expect(
             within(aria).getByRole("button", {
-                name: "Ignore: Arena (Wins), Aria",
+                name: "Ignore: Arena 5v5 (Wins), Aria",
             }),
         ).toBeInTheDocument()
     })
@@ -419,7 +458,7 @@ describe("TrackerPage", () => {
         withCharacters()
         renderWithChakra(<TrackerPage />)
 
-        const label = "Arena (Wins), Aria"
+        const label = "Arena 5v5 (Wins), Aria"
         const more = screen.getByRole("button", { name: `One more: ${label}` })
 
         await userEvent.click(more)

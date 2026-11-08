@@ -11,10 +11,15 @@ import { TaskGroupBox, type BoxSizing } from "./TaskGroupBox"
 
 type TaskGroupBoxesProps = {
     groups: TaskGroup[]
+    // The card's tasks by reset, ignored ones left out: each box counts its
+    // whole reset, not only the tasks in its section.
+    allGroups: readonly TaskGroup[]
     // Which part of the card these are in, so slide ids stay unique.
     slideScope: string
     // Done task ids fading out on their way to the Done section.
     leaving?: readonly string[]
+    // The Ignored section (see TaskGroupBox).
+    ignored?: boolean
     owner: string
     ownerLabel: string
     periods: ResetPeriods
@@ -33,8 +38,10 @@ type TaskGroupBoxesProps = {
 // until it can't fit two tiles a row there: then it wraps to a row of its own.
 export const TaskGroupBoxes = ({
     groups,
+    allGroups,
     slideScope,
     leaving = [],
+    ignored = false,
     owner,
     ownerLabel,
     periods,
@@ -59,9 +66,14 @@ export const TaskGroupBoxes = ({
                 <TaskGroupBox
                     key={group.reset}
                     group={group}
+                    resetGroup={
+                        allGroups.find((item) => item.reset === group.reset) ??
+                        group
+                    }
                     leaving={leaving}
                     slideScope={slideScope}
                     sizing={getSizing(index)}
+                    ignored={ignored}
                     owner={owner}
                     ownerLabel={ownerLabel}
                     period={periods[group.reset]}

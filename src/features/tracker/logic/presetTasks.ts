@@ -1,5 +1,5 @@
-import { STARTER_TASKS } from "@tracker/config/starterTasks"
-import type { TrackerTask } from "@tracker/types"
+import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
+import type { TrackerData, TrackerTask } from "@tracker/types"
 
 export const STARTER_IDS = STARTER_TASKS.map((task) => task.id)
 
@@ -40,4 +40,52 @@ export const addNewPresets = (
     }
 
     return next
+}
+
+// Each owner's ignored tasks with `taskIds` added, without repeats.
+export const addIgnored = (
+    ignored: TrackerData["ignored"],
+    owners: readonly string[],
+    taskIds: readonly string[],
+) => {
+    if (taskIds.length === 0) {
+        return ignored
+    }
+
+    const next = { ...ignored }
+
+    for (const owner of owners) {
+        const current = next[owner] ?? []
+        const added = taskIds.filter((id) => !current.includes(id))
+
+        if (added.length > 0) {
+            next[owner] = [...current, ...added]
+        }
+    }
+
+    return next
+}
+
+// Starter tasks that start ignored and the save didn't know of yet.
+export const getNewIgnoredPresets = (knownIds: readonly string[]) => {
+    return STARTS_IGNORED.filter((id) => !knownIds.includes(id))
+}
+
+const ARENA_5V5_IDS = ["arena-wins", "arena-participation"]
+
+// Saves from before Arena 1v1 call the 5v5 tasks just "Arena"; ones the user
+// renamed keep their name.
+export const renameOldPresets = (
+    tasks: readonly TrackerTask[],
+    knownIds: readonly string[],
+) => {
+    if (knownIds.includes("arena-1v1-wins")) {
+        return tasks
+    }
+
+    return tasks.map((task) => {
+        return ARENA_5V5_IDS.includes(task.id) && task.name === "Arena"
+            ? { ...task, name: "Arena 5v5" }
+            : task
+    })
 }

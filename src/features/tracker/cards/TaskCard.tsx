@@ -24,7 +24,6 @@ import type {
     IgnoredChangeHandler,
 } from "./taskHandlers"
 import { TaskGroupBoxes } from "./TaskGroupBoxes"
-import { TaskGroups } from "./TaskGroups"
 
 type TaskCardProps = {
     title: string
@@ -149,6 +148,7 @@ export const TaskCard = ({
                 <Flex ref={contentRef} flexDir="column" gap="4">
                     <TaskGroupBoxes
                         groups={active.todo}
+                        allGroups={split.active}
                         slideScope="todo"
                         leaving={leaving}
                         owner={owner}
@@ -173,6 +173,7 @@ export const TaskCard = ({
                                 {/* Same boxes and tiles as above, so they stay green. */}
                                 <TaskGroupBoxes
                                     groups={active.done}
+                                    allGroups={split.active}
                                     slideScope="done"
                                     leaving={leaving}
                                     owner={owner}
@@ -196,12 +197,16 @@ export const TaskCard = ({
                                 variant="sub"
                                 count={countTasks(split.ignored)}
                             >
-                                <TaskGroups
+                                {/* Same boxes and tiles as above, dimmed. */}
+                                <TaskGroupBoxes
                                     groups={split.ignored}
+                                    allGroups={split.ignored}
+                                    slideScope="ignored"
+                                    ignored
                                     owner={owner}
                                     ownerLabel={ownerLabel}
-                                    ignored
                                     periods={periods}
+                                    wide={wide}
                                     counts={counts}
                                     entries={entries}
                                     onCountChange={handleCountChange}

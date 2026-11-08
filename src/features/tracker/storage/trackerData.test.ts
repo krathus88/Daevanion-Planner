@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { readSyncMeta } from "@account/sync/syncMeta"
+import { STARTS_IGNORED } from "@tracker/config/starterTasks"
 import { STARTER_IDS } from "@tracker/logic/presetTasks"
 import type { TrackerData } from "@tracker/types"
 import {
@@ -97,11 +98,40 @@ describe("parseTrackerData", () => {
             shared: false,
         })
         // Starter tasks that came out later join the user's own list.
-        expect(parsed.tasks?.map((task) => task.id)).toEqual(["t", "corridors"])
+        expect(parsed.tasks?.map((task) => task.id)).toEqual([
+            "t",
+            "arena-1v1-wins",
+            "arena-1v1-participation",
+            "corridors",
+        ])
         expect(parsed.presets).toEqual(STARTER_IDS)
         expect(parsed.entries).toEqual({})
         expect(parsed.minimized).toEqual([])
-        expect(parsed.ignored).toEqual({})
+        // Arena 1v1 joins ignored.
+        expect(parsed.ignored).toEqual({ a: [...STARTS_IGNORED] })
+    })
+
+    it("ignores new starter tasks that start ignored, once, for every character", () => {
+        const known = STARTER_IDS.filter((id) => !STARTS_IGNORED.includes(id))
+        const parsed = parseTrackerData({
+            characters: [
+                DATA.characters[0],
+                { ...DATA.characters[0], id: "b" },
+            ],
+            tasks: null,
+            presets: known,
+            ignored: { a: ["t"] },
+        })
+
+        expect(parsed.ignored).toEqual({
+            a: ["t", ...STARTS_IGNORED],
+            b: [...STARTS_IGNORED],
+        })
+
+        // Unignored after that, it stays unignored.
+        expect(
+            parseTrackerData({ ...parsed, ignored: { a: ["t"] } }).ignored,
+        ).toEqual({ a: ["t"] })
     })
 
     it("adds starter tasks newer than the save to the user's own list, once", () => {

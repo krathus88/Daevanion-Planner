@@ -1,3 +1,4 @@
+import { AppError } from "@layout/AppError"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { Provider } from "@ui/provider"
 import { StrictMode } from "react"
@@ -10,6 +11,8 @@ const router = createRouter({
     basepath: import.meta.env.BASE_URL,
     defaultPreload: "intent",
     scrollRestoration: true,
+    // Any route that crashes shows this instead of taking the app down.
+    defaultErrorComponent: AppError,
 })
 
 declare module "@tanstack/react-router" {

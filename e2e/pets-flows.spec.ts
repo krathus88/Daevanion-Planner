@@ -153,6 +153,22 @@ test.describe("an open pet's spots", () => {
         await expect(page).not.toHaveURL(/pet=/)
         await expect(page.getByRole("button", { name: /^#1 / })).toBeVisible()
     })
+
+    // Cadaver Cleaner only spawns in Altgard, so it opens there with no map
+    // in the URL.
+    test("closing a pet stays on its map", async ({ page }) => {
+        await page.goto("/pets")
+        await page
+            .getByRole("button", { name: /Cadaver Cleaner/ })
+            .first()
+            .click()
+        await expect(page).toHaveURL(/pet=/)
+        await expect(page).not.toHaveURL(/map=/)
+        await page.getByRole("button", { name: "Close pet" }).click()
+
+        await expect(page).not.toHaveURL(/pet=/)
+        await expect(page).toHaveURL(/map=altgard/)
+    })
 })
 
 test.describe("the map's pins", () => {

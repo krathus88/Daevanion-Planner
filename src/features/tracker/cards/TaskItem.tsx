@@ -59,8 +59,9 @@ export const TaskItem = ({
     const label = `${getTaskTitle(task)}, ${ownerLabel}`
     const current = readCount(count, period)
     const isDone = !ignored && isTaskDone(task, count, entries, period)
-    // Wide controls always go under the name, so the layout doesn't change
-    // with the tile's width; pips stay beside it.
+    // Wide controls go under the name, or beside it in a tile wide enough for
+    // both (all tiles in a box share a width, so they switch together); pips
+    // always sit beside it.
     const isStacked = control === "entries" || control === "stepper"
 
     return (
@@ -68,6 +69,8 @@ export const TaskItem = ({
             // For the ignore toggle, top right, shown on hover.
             className="group"
             pos="relative"
+            // For the wide controls' container query.
+            css={{ containerType: "inline-size" }}
             // One-line rows keep their right-hand control clear of it.
             pe={isStacked ? undefined : "6"}
             alignItems="center"
@@ -85,6 +88,20 @@ export const TaskItem = ({
                 justifyContent="space-between"
                 columnGap="3"
                 rowGap="1"
+                // Room for the name (8rem, longer ones wrap) beside the
+                // widest control (entries, 13.5rem), gap and padding.
+                css={
+                    isStacked
+                        ? {
+                              "@container (min-width: 23.5rem)": {
+                                  flexDirection: "row",
+                                  flexWrap: "nowrap",
+                                  alignItems: "center",
+                                  "& > :first-of-type": { minWidth: "32" },
+                              },
+                          }
+                        : undefined
+                }
             >
                 <TaskName task={task} done={isDone} ignored={ignored} />
 

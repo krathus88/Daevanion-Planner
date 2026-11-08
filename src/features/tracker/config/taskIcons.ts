@@ -25,6 +25,8 @@ const TASK_ICONS: Record<string, string> = {
     "ascension-trial": AscensionTrial,
     "arena-wins": Arena,
     "arena-participation": Arena,
+    "arena-1v1-wins": Arena,
+    "arena-1v1-participation": Arena,
     "battlefield-wins": Battlefield,
     "battlefield-participation": Battlefield,
     ludra: Ludra,

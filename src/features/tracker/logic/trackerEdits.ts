@@ -1,4 +1,4 @@
-import { STARTER_TASKS } from "@tracker/config/starterTasks"
+import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
 import { MAX_TASK_CAP } from "@tracker/storage/trackerData"
 import type {
     TrackerCharacter,
@@ -6,7 +6,7 @@ import type {
     TrackerReset,
     TrackerTask,
 } from "@tracker/types"
-import { insertPreset } from "./presetTasks"
+import { addIgnored, insertPreset } from "./presetTasks"
 import { clampEntries, type EntriesLeft } from "./taskEntries"
 
 export type TaskFields = {
@@ -160,7 +160,15 @@ export const addCharacter = (
         name: fields.name.trim(),
     }
 
-    return { ...data, characters: [...data.characters, character] }
+    // Starter tasks that start ignored, if the list still has them.
+    const taskIds = new Set(getTasks(data).map((task) => task.id))
+    const startIgnored = STARTS_IGNORED.filter((id) => taskIds.has(id))
+
+    return {
+        ...data,
+        characters: [...data.characters, character],
+        ignored: addIgnored(data.ignored, [character.id], startIgnored),
+    }
 }
 
 export const updateCharacter = (

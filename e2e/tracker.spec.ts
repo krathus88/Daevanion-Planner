@@ -230,7 +230,7 @@ test.describe("tracker", () => {
             page.getByRole("button", { name: "Expand Aria" }),
         ).toBeVisible()
         await expect(
-            aria.getByRole("img", { name: "Arena (Wins) 0/30" }),
+            aria.getByRole("img", { name: "Arena 5v5 (Wins) 0/30" }),
         ).toBeVisible()
         await expect(
             aria.getByRole("button", { name: "Supply Requests, Aria: 1 of 1" }),
@@ -307,6 +307,36 @@ test.describe("tracker", () => {
                 }
             })
             .toEqual({ below: true, sameWidth: true })
+    })
+
+    test("puts a wide control beside the name when the tile has room", async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await openWithCharacters(page, ["Aria"])
+
+        const aria = page.getByRole("article", { name: "Aria" })
+        const name = aria.getByText("Ascension Trial", { exact: true })
+        const use = aria.getByRole("button", {
+            name: "Use one: Ascension Trial, Aria",
+        })
+        // Where the Use button sits against the name: beside it or under it.
+        const place = async () => {
+            const n = await name.boundingBox()
+            const u = await use.boundingBox()
+
+            if (!n || !u) {
+                return null
+            }
+
+            return u.y >= n.y + n.height ? "under" : "beside"
+        }
+
+        await expect.poll(place).toBe("beside")
+
+        // A phone's tiles are too narrow, so it goes under the name.
+        await page.setViewportSize({ width: 390, height: 844 })
+        await expect.poll(place).toBe("under")
     })
 
     test("fits a phone without sideways scrolling", async ({ page }) => {

@@ -44,11 +44,16 @@ const FLEX_GROW = {
 
 type TaskGroupBoxProps = {
     group: TaskGroup
+    // All of the reset's tasks (ignored ones left out), done or not, for the
+    // count and the box turning green.
+    resetGroup: TaskGroup
     // Done task ids fading out on their way to the Done section.
     leaving: readonly string[]
     // Which part of the card this is in, so slide ids stay unique.
     slideScope: string
     sizing: BoxSizing
+    // The Ignored section: dimmed tiles, no count, never green.
+    ignored?: boolean
     owner: string
     ownerLabel: string
     period: number
@@ -59,13 +64,15 @@ type TaskGroupBoxProps = {
     onIgnoredChange: IgnoredChangeHandler
 }
 
-// One reset's tasks as tiles. A done tile turns green; once every tile is
-// done, the whole box does instead.
+// One reset's tasks as tiles. A done tile turns green; once every task of
+// the reset is done, the whole box does instead.
 export const TaskGroupBox = ({
     group,
+    resetGroup,
     leaving,
     slideScope,
     sizing,
+    ignored = false,
     owner,
     ownerLabel,
     period,
@@ -75,9 +82,10 @@ export const TaskGroupBox = ({
     onEntriesChange,
     onIgnoredChange,
 }: TaskGroupBoxProps) => {
-    // The ignored ones are already split off into their own section.
-    const progress = getGroupProgress(group, counts, entries, [], period)
-    const isComplete = progress.done === progress.total
+    // The ignored ones are already split off into their own section. Done
+    // ones may sit in the Done section, but still count here.
+    const progress = getGroupProgress(resetGroup, counts, entries, [], period)
+    const isComplete = !ignored && progress.done === progress.total
     // Every task leaving takes the whole box with it, so it fades as one.
     const isLeaving = group.tasks.every((task) => leaving.includes(task.id))
 
@@ -104,12 +112,14 @@ export const TaskGroupBox = ({
             <Flex px="1" alignItems="center" gap="2">
                 <Text textStyle="label">{group.label}</Text>
 
-                <Text
-                    color={isComplete ? "app.success" : "app.muted"}
-                    fontSize="xs"
-                >
-                    {progress.done}/{progress.total}
-                </Text>
+                {!ignored && (
+                    <Text
+                        color={isComplete ? "app.success" : "app.muted"}
+                        fontSize="xs"
+                    >
+                        {progress.done}/{progress.total}
+                    </Text>
+                )}
 
                 {isComplete && (
                     <Icon boxSize="3.5" color="app.success">
@@ -138,6 +148,7 @@ export const TaskGroupBox = ({
                             entries?.[task.id],
                             period,
                         )}
+                        ignored={ignored}
                         boxDone={isComplete}
                         leaving={!isLeaving && leaving.includes(task.id)}
                         slideId={`${slideScope}:${task.id}`}

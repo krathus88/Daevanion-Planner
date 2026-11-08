@@ -4,7 +4,13 @@ import { isRecord } from "@planner/storage/isRecord"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
 import { FIRST_PRESETS, STARTER_TASKS } from "@tracker/config/starterTasks"
 import { isTrackerReset } from "@tracker/config/trackerResets"
-import { addNewPresets, STARTER_IDS } from "@tracker/logic/presetTasks"
+import {
+    addIgnored,
+    addNewPresets,
+    getNewIgnoredPresets,
+    renameOldPresets,
+    STARTER_IDS,
+} from "@tracker/logic/presetTasks"
 import type {
     TaskCount,
     TaskEntries,
@@ -195,16 +201,17 @@ const pickIgnored = (value: unknown) => {
 }
 
 // The user's own list, with starter tasks it didn't know of yet added.
-const pickTasks = (value: Record<string, unknown>) => {
+const pickTasks = (
+    value: Record<string, unknown>,
+    known: readonly string[],
+) => {
     if (!Array.isArray(value.tasks)) {
         return null
     }
 
-    const known = Array.isArray(value.presets)
-        ? pickStrings(value.presets)
-        : FIRST_PRESETS
+    const tasks = renameOldPresets(pickById(value.tasks, parseTask), known)
 
-    return [...addNewPresets(pickById(value.tasks, parseTask), known)]
+    return [...addNewPresets(tasks, known)]
 }
 
 export const parseTrackerData = (value: unknown): TrackerData => {
@@ -212,14 +219,24 @@ export const parseTrackerData = (value: unknown): TrackerData => {
         return EMPTY_DATA
     }
 
+    const known = Array.isArray(value.presets)
+        ? pickStrings(value.presets)
+        : FIRST_PRESETS
+    const characters = pickById(value.characters, parseCharacter)
+
     return {
-        characters: pickById(value.characters, parseCharacter),
-        tasks: pickTasks(value),
+        characters: characters,
+        tasks: pickTasks(value, known),
         presets: STARTER_IDS,
         counts: pickPerOwner(value.counts, isTaskCount),
         entries: pickPerOwner(value.entries, isTaskEntries),
         minimized: pickStrings(value.minimized),
-        ignored: pickIgnored(value.ignored),
+        // Starter tasks that start ignored do so for the characters already there.
+        ignored: addIgnored(
+            pickIgnored(value.ignored),
+            characters.map((character) => character.id),
+            getNewIgnoredPresets(known),
+        ),
     }
 }
 

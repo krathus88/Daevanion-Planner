@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { STARTER_TASKS } from "@tracker/config/starterTasks"
+import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
 import { MAX_TASK_CAP } from "@tracker/storage/trackerData"
 import type { TrackerData, TrackerTask } from "@tracker/types"
 import {
@@ -115,6 +115,20 @@ describe("characters", () => {
             name: "Cael",
             classId: "ranger",
             server: "zikel",
+        })
+        // The list has no Arena 1v1, so nothing starts ignored.
+        expect(next.ignored).toEqual({})
+    })
+
+    it("starts a new character with Arena 1v1 ignored", () => {
+        const next = addCharacter(data({ tasks: null }), {
+            name: "Cael",
+            classId: "ranger",
+            server: "zikel",
+        })
+
+        expect(next.ignored).toEqual({
+            [next.characters[2].id]: [...STARTS_IGNORED],
         })
     })
 

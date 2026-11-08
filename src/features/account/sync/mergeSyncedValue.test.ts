@@ -101,10 +101,12 @@ describe("mergeSyncedValue: tracker", () => {
                 TRACKER_KEY,
                 {
                     characters: [{ id: "a", name: "A", classId: "cleric" }],
+                    presets: STARTER_IDS,
                     counts: { a: { t: { period: 2, count: 1 } } },
                 },
                 {
                     characters: [{ id: "b", name: "B", classId: "ranger" }],
+                    presets: STARTER_IDS,
                     counts: { a: { t: { period: 3, count: 0 } } },
                 },
                 true,

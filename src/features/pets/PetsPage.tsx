@@ -87,13 +87,14 @@ export const PetsPage = () => {
         changeSouls([{ petId: petId, souls: total }])
     }
 
-    // Picking a pet jumps to its best map; picking it again deselects it.
+    // Picking a pet jumps to its best map; picking it again deselects it and
+    // stays on the map it showed.
     const handlePetSelect = (petId: number) => {
         navigate({
             search: (previous) => ({
                 ...previous,
                 pet: previous.pet === petId ? undefined : petId,
-                map: undefined,
+                map: previous.pet === petId ? mapId : undefined,
                 spot: undefined,
                 others: undefined,
             }),
@@ -109,11 +110,13 @@ export const PetsPage = () => {
         }
     }
 
+    // Closing a pet stays on the map it showed.
     const handlePetClear = () => {
         navigate({
             search: (previous) => ({
                 ...previous,
                 pet: undefined,
+                map: mapId,
                 spot: undefined,
                 others: undefined,
             }),

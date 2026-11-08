@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { parseTrackerData } from "@tracker/storage/trackerData"
-import { FIRST_PRESETS, STARTER_TASKS } from "./starterTasks"
+import { FIRST_PRESETS, STARTER_TASKS, STARTS_IGNORED } from "./starterTasks"
 import { getTaskIcon } from "./taskIcons"
 
 describe("STARTER_TASKS", () => {
@@ -10,10 +10,12 @@ describe("STARTER_TASKS", () => {
         expect(new Set(ids).size).toBe(ids.length)
     })
 
-    it("still has every task older saves knew, Corridors coming after", () => {
+    it("still has every task older saves knew, Arena 1v1 and Corridors coming after", () => {
         const ids = STARTER_TASKS.map((task) => task.id)
 
         expect(ids.filter((id) => !FIRST_PRESETS.includes(id))).toEqual([
+            "arena-1v1-wins",
+            "arena-1v1-participation",
             "corridors",
         ])
         expect(FIRST_PRESETS.every((id) => ids.includes(id))).toBe(true)
@@ -37,8 +39,29 @@ describe("STARTER_TASKS", () => {
             "ascension-trial",
             "arena-wins",
             "arena-participation",
+            "arena-1v1-wins",
+            "arena-1v1-participation",
             "battlefield-wins",
             "battlefield-participation",
+        ])
+    })
+
+    it("has Arena 5v5 and 1v1 with the same caps, 1v1 starting ignored", () => {
+        const arena = STARTER_TASKS.filter((task) => {
+            return task.name.startsWith("Arena")
+        })
+
+        expect(
+            arena.map((task) => [task.name, task.subtitle, task.cap]),
+        ).toEqual([
+            ["Arena 5v5", "Wins", 30],
+            ["Arena 5v5", "Participation", 10],
+            ["Arena 1v1", "Wins", 30],
+            ["Arena 1v1", "Participation", 10],
+        ])
+        expect(STARTS_IGNORED).toEqual([
+            "arena-1v1-wins",
+            "arena-1v1-participation",
         ])
     })
 

@@ -95,7 +95,7 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
     },
     {
         id: "arena-wins",
-        name: "Arena",
+        name: "Arena 5v5",
         subtitle: "Wins",
         reset: "weekly",
         cap: 30,
@@ -103,7 +103,24 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
     },
     {
         id: "arena-participation",
-        name: "Arena",
+        name: "Arena 5v5",
+        subtitle: "Participation",
+        reset: "weekly",
+        cap: 10,
+        shared: false,
+    },
+    // Every character starts with these ignored (`STARTS_IGNORED`).
+    {
+        id: "arena-1v1-wins",
+        name: "Arena 1v1",
+        subtitle: "Wins",
+        reset: "weekly",
+        cap: 30,
+        shared: false,
+    },
+    {
+        id: "arena-1v1-participation",
+        name: "Arena 1v1",
         subtitle: "Participation",
         reset: "weekly",
         cap: 10,
@@ -177,4 +194,11 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         cap: 1,
         shared: false,
     },
+]
+
+// Starter tasks every character starts with ignored: new characters, and
+// existing ones when the task first reaches their save.
+export const STARTS_IGNORED: readonly string[] = [
+    "arena-1v1-wins",
+    "arena-1v1-participation",
 ]

@@ -641,13 +641,8 @@ export const optimizePriorityPlans = async (
             }
         }
 
-        for (const layoutName of boards) {
-            pinStatNodes(
-                layoutName,
-                plans[layoutName].plannedPath.filter(isFreeOn(layoutName)),
-            )
-        }
-
+        // Nodes already on a route stay unpinned, so refining can still move
+        // higher ranks' routes off them; the block takes them back after.
         const stepsFor = (layoutName: MainBoardId) => {
             const cached = stepsByBoard.get(layoutName)
             if (cached) {

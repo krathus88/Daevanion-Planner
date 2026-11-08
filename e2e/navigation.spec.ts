@@ -1,3 +1,4 @@
+import type { Request } from "@playwright/test"
 import { expect, test } from "./fixtures"
 
 test.describe("routing", () => {
@@ -59,6 +60,46 @@ test.describe("site navigation", () => {
             .getByRole("link", { name: "Daevanion Planner" })
             .click()
         await expect(page).toHaveURL(/\/planner\//)
+    })
+
+    test("a page that can't load shows the error screen, not a blank app", async ({
+        page,
+    }) => {
+        const loaded = new Set<string>()
+        const handleRequest = (request: Request) => {
+            loaded.add(request.url())
+        }
+
+        page.on("request", handleRequest)
+        await page.goto("/tracker")
+        await expect(
+            page.getByRole("heading", { name: "Tracker" }),
+        ).toBeVisible()
+        page.off("request", handleRequest)
+
+        // As after a deploy: code the tab hasn't loaded yet (the Pets page's)
+        // is gone from the server. The router reloads once, which can't help
+        // here, then the page shows the error.
+        await page.route("**/assets/*.js", (route) => {
+            return loaded.has(route.request().url())
+                ? route.continue()
+                : route.abort()
+        })
+        await page
+            .getByRole("navigation", { name: "Site" })
+            .getByRole("link", { name: "Pets" })
+            .click()
+
+        await expect(
+            page.getByRole("heading", { name: "A new version is out" }),
+        ).toBeVisible()
+        await expect(
+            page.getByRole("button", { name: "Reload page" }),
+        ).toBeVisible()
+        // The header still works.
+        await expect(
+            page.getByRole("navigation", { name: "Site" }),
+        ).toBeVisible()
     })
 
     test("the header tabs are Pets, Tracker, Timers, after the logo", async ({
