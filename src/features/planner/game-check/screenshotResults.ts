@@ -37,3 +37,24 @@ export const getBoardGaps = (board: BoardState, boardId: BoardId) => {
 
     return compareWithGame(layouts[boardId], acquired, planned)
 }
+
+// Whether a board read differs from what it shows in the current view.
+export const differsFromGame = (board: BoardState, boardId: BoardId) => {
+    const gaps = getBoardGaps(board, boardId)
+
+    return gaps !== null && (gaps.missing.length > 0 || gaps.extra.length > 0)
+}
+
+// The board to open after a check: none while the open board differs from the
+// game, else the first board read (in screenshot order) that does.
+export const pickBoardToShow = (
+    openBoardId: BoardId,
+    boardIds: BoardId[],
+    differs: (boardId: BoardId) => boolean,
+) => {
+    if (differs(openBoardId)) {
+        return null
+    }
+
+    return boardIds.find(differs) ?? null
+}

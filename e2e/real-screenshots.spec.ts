@@ -174,4 +174,24 @@ test.describe("the game check", () => {
         await expect(dialog).toContainText("53", { timeout: 30_000 })
         await expect(dialog).not.toContainText("daevanion.jpg")
     })
+
+    test("shows the board that differs from the game", async ({ page }) => {
+        await page.goto("/planner/gladiator/zikel")
+        await page
+            .getByRole("tabpanel", { name: "This board" })
+            .getByRole("button", { name: "Check screenshots" })
+            .click()
+
+        const dialog = page.getByRole("dialog")
+
+        await dialog
+            .locator('input[type="file"]')
+            .setInputFiles(shot("daevanion.jpg"))
+        await dialog
+            .getByRole("button", { name: "Show on the board" })
+            .click({ timeout: 30_000 })
+
+        await expect(page).toHaveURL(/\/planner\/gladiator\/nezekan/)
+        await expect(dialog).toBeHidden()
+    })
 })

@@ -11,9 +11,17 @@ import { ScreenshotDropzone } from "@common/ScreenshotDropzone"
 import { ScreenshotProgress } from "@common/ScreenshotProgress"
 import { useBoard } from "@planner/context/boardContext"
 import { useGameScreenshots } from "@planner/hooks/useGameScreenshots"
+import { getRouteApi } from "@tanstack/react-router"
 import type { ClipboardEvent } from "react"
 import { GameCheckResults } from "./GameCheckResults"
 import { GameCheckSteps } from "./GameCheckSteps"
+import {
+    differsFromGame,
+    groupResults,
+    pickBoardToShow,
+} from "./screenshotResults"
+
+const route = getRouteApi("/planner/$classId/$layout")
 
 type GameCheckDialogProps = {
     open: boolean
@@ -26,14 +34,40 @@ export const GameCheckDialog = ({
     open,
     onOpenChange,
 }: GameCheckDialogProps) => {
-    const { gameCheck } = useBoard()
+    const board = useBoard()
+    const navigate = route.useNavigate()
+    const { classId } = route.useParams()
     const { results, progress, readFiles, reset } = useGameScreenshots(
-        gameCheck.addReading,
+        board.gameCheck.addReading,
     )
 
     const close = () => {
         onOpenChange(false)
         reset()
+    }
+
+    // Opens the first board read that differs from the game, unless the open
+    // board does.
+    const showOnBoard = () => {
+        const boardToShow = pickBoardToShow(
+            board.layoutName,
+            groupResults(results).boardIds,
+            (boardId) => differsFromGame(board, boardId),
+        )
+
+        close()
+
+        if (boardToShow) {
+            void navigate({
+                to: "/planner/$classId/$layout",
+                params: {
+                    classId: classId,
+                    layout: boardToShow,
+                },
+                search: true,
+                resetScroll: false,
+            })
+        }
     }
 
     const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
@@ -109,7 +143,7 @@ export const GameCheckDialog = ({
                                 <Button
                                     variant="primary"
                                     size="sm"
-                                    onClick={close}
+                                    onClick={showOnBoard}
                                 >
                                     Show on the board
                                 </Button>

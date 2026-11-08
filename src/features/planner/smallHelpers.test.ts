@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { ScreenshotResult } from "@planner/hooks/useGameScreenshots"
 import { formatSearchTime } from "./config/searchTime"
-import { groupResults } from "./game-check/screenshotResults"
+import type { BoardId } from "@config/boards"
+import { groupResults, pickBoardToShow } from "./game-check/screenshotResults"
 import {
     readPrioritiesOpen,
     writePrioritiesOpen,
@@ -78,5 +79,37 @@ describe("groupResults", () => {
 
     it("handles nothing", () => {
         expect(groupResults([])).toEqual({ boardIds: [], skippedFiles: [] })
+    })
+})
+
+describe("pickBoardToShow", () => {
+    const differs = (...boardIds: BoardId[]) => {
+        return (boardId: BoardId) => boardIds.includes(boardId)
+    }
+
+    it("stays on the open board when it differs", () => {
+        expect(
+            pickBoardToShow(
+                "nezekan",
+                ["zikel", "nezekan"],
+                differs("zikel", "nezekan"),
+            ),
+        ).toBeNull()
+    })
+
+    it("opens the first board read that differs", () => {
+        expect(
+            pickBoardToShow(
+                "nezekan",
+                ["vaizel", "triniel", "zikel"],
+                differs("zikel", "triniel"),
+            ),
+        ).toBe("triniel")
+    })
+
+    it("stays put when every board matches", () => {
+        expect(
+            pickBoardToShow("nezekan", ["zikel", "nezekan"], differs()),
+        ).toBeNull()
     })
 })
