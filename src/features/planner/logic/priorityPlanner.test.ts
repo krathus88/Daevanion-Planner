@@ -770,6 +770,51 @@ describe("optimizePriorityPlans", () => {
         )
     })
 
+    // Points a maxed stat's next node couldn't use yet went to a lower rank,
+    // and nothing gave them back once more points were free.
+    it("trades lower ranks' points back for a maxed stat's nodes", async () => {
+        const statSettings: StatSettings = {
+            ...NOTHING_MAXED,
+            max: {
+                ...NOTHING_MAXED.max,
+                "critical-hit": {
+                    enabled: true,
+                    skillAfter: 1,
+                    passiveAfter: 1,
+                },
+            },
+        }
+        const base = {
+            points: 48,
+            boards: ["nezekan"] as const,
+            statSettings: statSettings,
+        }
+        const critNodes = (path: string[]) => {
+            return path.filter(
+                (key) => layouts.nezekan.nodeStats[key] === "critical-hit",
+            ).length
+        }
+        const quick = await optimize({ ...base, stallMs: 1 })
+        const refined = await optimize({ ...base, stallMs: 1_000_000 })
+        const priorities = defaultAbilityPriorities(preset)
+        const firstRank = (path: string[]) => {
+            const assignments = preset.assignments.nezekan ?? {}
+            return path.filter(
+                (key) =>
+                    assignments[key] !== undefined &&
+                    priorities[assignments[key]] <= 1,
+            )
+        }
+
+        expect(critNodes(refined.plans.nezekan.plannedPath)).toBeGreaterThan(
+            critNodes(quick.plans.nezekan.plannedPath),
+        )
+        expect(firstRank(refined.plans.nezekan.plannedPath)).toEqual(
+            expect.arrayContaining(firstRank(quick.plans.nezekan.plannedPath)),
+        )
+        expect(refined.plans.nezekan.plannedCost).toBeLessThanOrEqual(48)
+    })
+
     // Lower ranks and later searches spend the points left, so a minimum
     // lost along the way can't be put back.
     it.each(CLASS_IDS)(

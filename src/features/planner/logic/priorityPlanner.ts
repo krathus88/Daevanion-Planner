@@ -30,6 +30,7 @@ import {
     swapMinimum,
     upgradesIn,
     type AbilityMinimum,
+    type BoardChanges,
     type PlanChange,
     type RouteState,
     type SearchRoute,
@@ -793,6 +794,151 @@ export const optimizePriorityPlans = async (
         }
     }
 
+    const statNodeTotals = new Map(
+        focusStats.map((stat) => [
+            stat,
+            boards.reduce(
+                (total, layoutName) =>
+                    total +
+                    Object.values(layouts[layoutName].nodeStats).filter(
+                        (node) => node === stat,
+                    ).length,
+                0,
+            ),
+        ]),
+    )
+    const statNodesTaken = (stat: StatType) => {
+        return boards.reduce(
+            (total, layoutName) =>
+                total +
+                statNodesOn(layoutName, plans[layoutName].plannedPath, stat),
+            0,
+        )
+    }
+
+    const routeKey = () => {
+        return boards
+            .map((layoutName) => plans[layoutName].plannedPath.join(" "))
+            .join("|")
+    }
+
+    const copySets = (sets: Record<MainBoardId, Set<string>>) => {
+        return {
+            nezekan: new Set(sets.nezekan),
+            zikel: new Set(sets.zikel),
+            vaizel: new Set(sets.vaizel),
+            triniel: new Set(sets.triniel),
+        }
+    }
+
+    // Points freed while refining go to whatever fits first, so a lower rank
+    // can take points a maxed stat's next node needed, and adding never gives
+    // them back. This drops the targets ranked after the stat, lets the stat
+    // take what it can and the lower ranks refill; kept only if the stat
+    // gained nodes and nothing ranked above it lost any.
+    const triedTrades = new Map<StatType, string>()
+    const tradeForMaxedStats = async (
+        sliceMs: number,
+        isDone: () => boolean,
+    ) => {
+        for (const stat of focusStats) {
+            if (isDone()) {
+                return
+            }
+
+            const taken = statNodesTaken(stat)
+            const key = routeKey()
+            if (
+                taken >= (statNodeTotals.get(stat) ?? 0) ||
+                triedTrades.get(stat) === key
+            ) {
+                continue
+            }
+
+            const dropped = targets.filter(
+                (target) =>
+                    plans[target.layout].targetCells.includes(target.key) &&
+                    waitsBehind(target, stat) &&
+                    requiredOf(target.abilityId ?? "") === 0,
+            )
+            if (dropped.length === 0) {
+                continue
+            }
+
+            const before = {
+                plans: { ...plans },
+                scores: { ...scores },
+                totalCost: totalCost,
+                totalScore: totalScore,
+                statTargetKeys: copySets(statTargetKeys),
+                minimumPins: copySets(minimumPins),
+                finds: finds,
+                idleSince: idleSince,
+            }
+            const kept = targets.filter(
+                (target) => !waitsBehind(target, stat) && isOnRoute(target),
+            )
+            const otherStats = focusStats
+                .filter((other) => other !== stat)
+                .map((other) => ({
+                    stat: other,
+                    taken: statNodesTaken(other),
+                }))
+
+            let changes: BoardChanges<MainBoardId> | null = new Map()
+            for (const layoutName of new Set(
+                dropped.map((target) => target.layout),
+            )) {
+                const keys = new Set(plans[layoutName].targetCells)
+                for (const target of dropped) {
+                    if (target.layout === layoutName) {
+                        keys.delete(target.key)
+                    }
+                }
+                changes = await searchChange(
+                    changes,
+                    layoutName,
+                    keys,
+                    searchWith(sliceMs),
+                )
+                if (!changes) {
+                    break
+                }
+            }
+            const freed = changes
+                ? await keepMinimums(
+                      routeState(),
+                      abilityMinimums,
+                      changes,
+                      searchWith(MIN_STEP_MS),
+                  )
+                : null
+            if (freed) {
+                commit({ ...freed, target: null })
+                await fillByRank(MIN_STEP_MS, isStopped)
+            }
+
+            const better =
+                freed !== null &&
+                statNodesTaken(stat) > taken &&
+                kept.every(isOnRoute) &&
+                otherStats.every(
+                    (other) => statNodesTaken(other.stat) >= other.taken,
+                )
+            if (!better) {
+                Object.assign(plans, before.plans)
+                Object.assign(scores, before.scores)
+                Object.assign(statTargetKeys, before.statTargetKeys)
+                Object.assign(minimumPins, before.minimumPins)
+                totalCost = before.totalCost
+                totalScore = before.totalScore
+                finds = before.finds
+                idleSince = before.idleSince
+                triedTrades.set(stat, key)
+            }
+        }
+    }
+
     // Each board's search fits in what's left before the phase goes idle.
     const refineRoutes = async (sliceMs: number) => {
         const boards = (Object.keys(plans) as MainBoardId[]).filter(
@@ -875,6 +1021,7 @@ export const optimizePriorityPlans = async (
 
     while (!isOver()) {
         await refineRound(async () => {
+            await tradeForMaxedStats(refineSliceMs, isOver)
             await refineRoutes(refineSliceMs)
             await swapMinimums(isOver)
             if (isOver()) {
