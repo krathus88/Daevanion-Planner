@@ -1,9 +1,12 @@
 import type { MainBoardId } from "@config/boards"
 import type { ClassPreset } from "@config/classPresets"
+import { MAX_SEARCH_MS } from "@planner/config/searchTime"
+import { searchArielRoute } from "@planner/logic/arielRoute"
 import {
     optimizePriorityPlans,
     type PriorityPlannerProgress,
 } from "@planner/logic/priorityPlanner"
+import type { ArielSettings } from "@planner/storage/arielSettings"
 import type { RankOrder } from "@planner/storage/rankOrder"
 import type {
     SpecialPriorities,
@@ -29,6 +32,7 @@ type StartMessage = {
     // Each phase ends once this long passes without a better plan.
     stallMs: number
     statSettings: StatSettings
+    arielSettings: ArielSettings
     boards?: MainBoardId[]
 }
 
@@ -53,9 +57,17 @@ const optimize = (message: StartMessage) => {
         pointBudget,
         stallMs,
         statSettings,
+        arielSettings,
         boards,
     } = message
-    void optimizePriorityPlans(
+    // Ariel has its own points, so its search runs alongside the main
+    // boards' (both yield to each other) and ends on its own stall window.
+    const ariel = searchArielRoute(arielSettings, {
+        maxMs: MAX_SEARCH_MS,
+        stallMs: stallMs,
+        shouldStop: shouldStop,
+    })
+    const main = optimizePriorityPlans(
         classPreset,
         priorities,
         minimums,
@@ -71,10 +83,12 @@ const optimize = (message: StartMessage) => {
         },
         boards,
     )
-        .then(({ plans, shortfalls, specialNodes, finds }) =>
+    void Promise.all([main, ariel])
+        .then(([{ plans, shortfalls, specialNodes, finds }, arielPlan]) =>
             globalThis.postMessage({
                 type: "done",
                 plans: plans,
+                ariel: arielPlan,
                 shortfalls: shortfalls,
                 specialNodes: specialNodes,
                 finds: finds,

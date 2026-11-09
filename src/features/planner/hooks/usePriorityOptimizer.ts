@@ -6,7 +6,6 @@ import {
     MAIN_BOARD_IDS,
     type BoardId,
 } from "@config/boards"
-import { planArielRoute } from "@planner/logic/arielRoute"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { formatPlanTime } from "@planner/logic/formatPlanTime"
 import {
@@ -23,6 +22,7 @@ import {
     readAbilitySkips,
     resolveAbilityMinimums,
     type MinimumShortfall,
+    type PriorityBoardPlan,
     type PriorityPlans,
 } from "@planner/storage/abilityPriorities"
 import {
@@ -50,6 +50,7 @@ type PriorityWorkerMessage =
     | {
           type: "done"
           plans: PriorityPlans
+          ariel: PriorityBoardPlan
           shortfalls: MinimumShortfall[]
           specialNodes: { taken: number; total: number }
           finds: SearchFinds
@@ -100,10 +101,11 @@ export const usePriorityOptimizer = ({
 
     const recordPlans = (
         mainPlans: PriorityPlans,
+        arielPlan: PriorityBoardPlan,
         arielSettings: ArielSettings,
         finds: SearchFinds,
     ) => {
-        const plans = { ...mainPlans, ariel: planArielRoute(arielSettings) }
+        const plans = { ...mainPlans, ariel: arielPlan }
         // Ariel's route is left as is until it has points to spend.
         const hasArielPoints = arielSettings.points > 0
         const boards = hasArielPoints ? BOARD_IDS : MAIN_BOARD_IDS
@@ -222,7 +224,12 @@ export const usePriorityOptimizer = ({
         }
 
         try {
-            const entries = recordPlans(data.plans, arielSettings, data.finds)
+            const entries = recordPlans(
+                data.plans,
+                data.ariel,
+                arielSettings,
+                data.finds,
+            )
             onComplete(() => applyPlans(entries))
             const isShort =
                 data.shortfalls.length > 0 ||

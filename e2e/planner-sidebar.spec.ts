@@ -185,8 +185,30 @@ test.describe("clear and undo", () => {
             page.getByRole("button", { name: "Find a good path" }),
         ).toBeEnabled()
         await expect(
-            page.getByText(/saved to optimization history|kept the previous/),
+            page.getByText(/saved to optimization history/),
         ).toBeVisible()
+    })
+
+    test("Ariel's search keeps improving until stopped", async ({ page }) => {
+        await openWith(page, {
+            "daevanion:v1:gladiator:settings": { ariel: { points: 120 } },
+        })
+        await page.goto("/planner/gladiator/ariel")
+
+        await page
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "5m" })
+        await page.getByRole("button", { name: "Find a good path" }).click()
+        await expect(page.getByText(/Checking routes/)).toBeVisible()
+        await expect(page.getByText(/No better route for/)).toBeVisible()
+        await page.getByRole("button", { name: "Stop & keep" }).click()
+
+        await expect(
+            page.getByText(/saved to optimization history/),
+        ).toBeVisible()
+        expect(
+            await readStored(page, "daevanion:v1:gladiator:ariel:progress"),
+        ).toMatchObject({ plannedCost: 120 })
     })
 })
 

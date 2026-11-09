@@ -90,6 +90,8 @@ type BoardGridProps = {
     neededCells?: ReadonlySet<string>
     preferredCells?: ReadonlySet<string>
     gameGaps?: ReadonlyMap<string, GameGap>
+    // A hovered stat's cells; the rest are dimmed while set.
+    highlightedCells?: ReadonlySet<string>
     availablePoints: number
     onSelect: (position: Position) => void
 }
@@ -103,6 +105,7 @@ export const BoardGrid = ({
     neededCells,
     preferredCells,
     gameGaps,
+    highlightedCells,
     availablePoints,
     onSelect,
 }: BoardGridProps) => {
@@ -195,6 +198,13 @@ export const BoardGrid = ({
                                         preferredCells?.has(key) ?? false
                                     }
                                     gameGap={gameGaps?.get(key)}
+                                    highlighted={
+                                        highlightedCells?.has(key) ?? false
+                                    }
+                                    dimmed={
+                                        highlightedCells !== undefined &&
+                                        !highlightedCells.has(key)
+                                    }
                                     position={position}
                                     readOnly={mode === "readonly"}
                                     onSelect={handleSelect}

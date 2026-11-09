@@ -57,23 +57,6 @@ describe("improvementStatus", () => {
             }),
         ).toBe("Best route so far found at <0.1s · 2 improvements")
     })
-
-    it("words a search from the current result until it beats it", () => {
-        expect(
-            improvementStatus({
-                finds: NO_FINDS,
-                noun: "route",
-                fromCurrent: true,
-            }),
-        ).toBe("Looking for a better route than the current one")
-        expect(
-            improvementStatus({
-                finds: { ...NO_FINDS, improvements: 1, lastImprovedMs: 2000 },
-                noun: "route",
-                fromCurrent: true,
-            }),
-        ).toBe("Best route so far found at 2.0s · 1 improvement")
-    })
 })
 
 describe("planPhaseStatus", () => {
@@ -155,18 +138,6 @@ describe("searchSummary", () => {
         )
     })
 
-    it("compares with the current result when it started from one", () => {
-        expect(
-            searchSummary({
-                finds: { ...improved, improvements: 1 },
-                noun: "route",
-                fromCurrent: true,
-            }),
-        ).toBe(
-            "Checked 4,820 options. Found 1 better route than the current one, the last at 1m 12s.",
-        )
-    })
-
     it("says when nothing beat the first result", () => {
         expect(
             searchSummary({
@@ -176,16 +147,6 @@ describe("searchSummary", () => {
         ).toBe(
             "Checked 1 option. No better plan turned up after the first at 4.2s.",
         )
-    })
-
-    it("only counts the options when nothing beat the current result", () => {
-        expect(
-            searchSummary({
-                finds: { ...NO_FINDS, optionsChecked: 900 },
-                noun: "route",
-                fromCurrent: true,
-            }),
-        ).toBe("Checked 900 options.")
     })
 
     it("says nothing when nothing was checked or found", () => {

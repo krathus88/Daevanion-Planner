@@ -6,6 +6,7 @@ import {
     SPECIAL_BONUSES,
     type SpecialBonusType,
 } from "@planner/config/specialNodes"
+import { useStatHighlight } from "@planner/hooks/useStatHighlight"
 import type { SpecialNodeCount } from "@planner/storage/specialPriorities"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
 import { AbilitySkipName } from "./AbilitySkipName"
@@ -31,7 +32,7 @@ export const SpecialPriorityRow = ({
     onPriorityChange,
     onSkipChange,
 }: SpecialPriorityRowProps) => {
-    const name = SPECIAL_BONUSES[bonus].name
+    const highlight = useStatHighlight(bonus)
 
     const handlePriorityChange = (event: ChangeEvent<HTMLInputElement>) => {
         onPriorityChange(
@@ -44,6 +45,17 @@ export const SpecialPriorityRow = ({
         onSkipChange(bonus, next)
     }
 
+    // Hovering the name shows its nodes on the board.
+    const handleHoverChange = (hovered: boolean) => {
+        if (hovered) {
+            highlight.show()
+        } else {
+            highlight.hide()
+        }
+    }
+
+    const name = SPECIAL_BONUSES[bonus].name
+
     return (
         <Flex minW="0" alignItems="center" gap="2">
             <LegendSwatch type="special" />
@@ -52,6 +64,7 @@ export const SpecialPriorityRow = ({
                 name={name}
                 skipped={skipped}
                 onChange={handleSkipChange}
+                onHoverChange={handleHoverChange}
             />
 
             <LimitInput

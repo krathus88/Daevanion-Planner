@@ -182,6 +182,35 @@ test.describe("all boards", () => {
         expect(total).toBeLessThanOrEqual(366)
     })
 
+    test("plans Ariel alongside the main boards", async ({ page }) => {
+        test.setTimeout(90_000)
+
+        await page.goto(BOARD)
+        await page.evaluate(() => {
+            localStorage.setItem(
+                "daevanion:v1:gladiator:settings",
+                JSON.stringify({ ariel: { points: 120 } }),
+            )
+        })
+        await page.reload()
+        await page.getByRole("tab", { name: "All boards" }).click()
+
+        const panel = page.getByRole("tabpanel", { name: "All boards" })
+
+        await panel
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "30s" })
+        await panel.getByRole("button", { name: "Optimize all boards" }).click()
+        await expect(
+            panel.getByText(/First plan ready at|Best plan so far found at/),
+        ).toBeVisible({ timeout: 15_000 })
+        await panel.getByRole("button", { name: "Stop & keep" }).click()
+
+        await expect(
+            panel.getByText(/Ariel using 120 of 120 Ariel points/),
+        ).toBeVisible({ timeout: 60_000 })
+    })
+
     test("the point budget carries to This board", async ({ page }) => {
         await page.goto(BOARD)
         await page.getByRole("tab", { name: "All boards" }).click()

@@ -3,6 +3,7 @@ import { useDraggable } from "@dnd-kit/react"
 import { LuGripVertical } from "react-icons/lu"
 import type { MainBoardId } from "@config/boards"
 import { STAT_NAMES, type StatType } from "@config/stats/stats"
+import { useStatHighlight } from "@planner/hooks/useStatHighlight"
 import type { StatMax, StatNodeCount } from "@planner/storage/statPriorities"
 import { scopeLabel } from "./scopeLabel"
 import { StatMaxFields } from "./StatMaxFields"
@@ -25,6 +26,7 @@ export const StatPriorityRow = ({
     onMaxChange,
 }: StatPriorityRowProps) => {
     const { ref, handleRef, isDragging } = useDraggable({ id: stat })
+    const highlight = useStatHighlight(stat)
 
     const handleMaxCheckedChange = (details: Switch.CheckedChangeDetails) => {
         if (max) {
@@ -60,7 +62,16 @@ export const StatPriorityRow = ({
                     <Icon as={LuGripVertical} boxSize="4" />
                 </Flex>
 
-                <Text minW="0" flex="1" fontSize="sm" truncate title={name}>
+                {/* Hovering the name shows its nodes on the board. */}
+                <Text
+                    minW="0"
+                    flex="1"
+                    fontSize="sm"
+                    truncate
+                    title={name}
+                    onMouseEnter={highlight.show}
+                    onMouseLeave={highlight.hide}
+                >
                     {name}
                 </Text>
 

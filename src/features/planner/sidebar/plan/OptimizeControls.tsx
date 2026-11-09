@@ -17,7 +17,7 @@ export const OptimizeControls = () => {
 
     const [stallSeconds, setStallSeconds] = useState(DEFAULT_STALL_SECONDS)
 
-    const optimize = () => {
+    const findPath = () => {
         planner.optimizePlanner(stallSeconds * 1000)
     }
 
@@ -38,7 +38,6 @@ export const OptimizeControls = () => {
                     {improvementStatus({
                         finds: planner.routeFinds,
                         noun: "route",
-                        fromCurrent: planner.improvesCurrent,
                     })}
                 </StatusText>
 
@@ -89,16 +88,10 @@ export const OptimizeControls = () => {
                     planner.targetCells.size === 0 &&
                     wants.needCells.size === 0
                 }
-                onClick={optimize}
+                onClick={findPath}
             >
                 Find a good path
             </Button>
-
-            {planner.plannedCost !== null && (
-                <Button variant="secondary" size="sm" onClick={optimize}>
-                    Improve
-                </Button>
-            )}
 
             <SearchTimeSelect
                 size="sm"

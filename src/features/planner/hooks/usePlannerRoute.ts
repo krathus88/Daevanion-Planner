@@ -69,8 +69,6 @@ export const usePlannerRoute = ({
         targetCells: progress.targetCells,
         needCells: needCells,
         preferred: preferred,
-        plannedPath: progress.plannedPath,
-        plannedCost: progress.plannedCost,
         availablePoints: availablePoints,
         plannerHistory: plannerHistory,
         setPlannerHistory: setPlannerHistory,

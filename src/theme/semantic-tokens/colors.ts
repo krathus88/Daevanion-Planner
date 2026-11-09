@@ -56,6 +56,9 @@ export const colors = defineSemanticTokens.colors({
         // Tooltip values that change with skill level, like in game.
         scaling: { value: "{colors.gold.300}" },
         special: { value: "{colors.gold.400}" },
+        // Ariel's Boss Damage nodes: special, but drawn as stat nodes.
+        specialStatBorder: { value: "#fbe7b5" },
+        specialStatTint: { value: "#a97a2a" },
         specialSwatch: { value: "{colors.gold.600}" },
         startFg: { value: "{colors.gold.950}" },
         gemShade: { value: "rgba(110, 68, 14, 0.4)" },
@@ -69,6 +72,9 @@ export const colors = defineSemanticTokens.colors({
         // Game screenshot check: planned but not acquired, and the reverse.
         gameMissing: { value: "{colors.coral.400}" },
         gameExtra: { value: "{colors.purple.300}" },
+        // Nodes of the stat hovered in a priority list: a faint frame, the
+        // dimmed rest does most of the work.
+        highlight: { value: "{colors.whiteAlpha.500}" },
         labelBg: { value: "{colors.blackAlpha.600}" },
         ariel: { value: "{colors.bronze.500}" },
         arielActive: { value: "{colors.bronze.400}" },

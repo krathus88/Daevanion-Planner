@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react"
+import { renderHook, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { loadClassPreset, type ClassPreset } from "@config/classPresets"
+import { useHighlightedStat } from "@planner/hooks/useStatHighlight"
 import { readStatSettings } from "@planner/storage/statPriorities"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { StatPriorityList } from "./StatPriorityList"
@@ -33,6 +34,30 @@ const settings = () => {
 }
 
 describe("StatPriorityList", () => {
+    it("highlights a stat's nodes while its name is hovered", async () => {
+        const highlighted = renderHook(() => {
+            return useHighlightedStat()
+        })
+        renderWithChakra(<StatPriorityList classPreset={preset} />)
+
+        const name = screen.getByTitle("Defense")
+
+        await userEvent.hover(name)
+
+        // Not at once: the board waits a moment.
+        expect(highlighted.result.current).toBeNull()
+        await waitFor(
+            () => {
+                expect(highlighted.result.current).toBe("defense")
+            },
+            { timeout: 2000 },
+        )
+
+        await userEvent.unhover(name)
+
+        expect(highlighted.result.current).toBeNull()
+    })
+
     it("starts with Max on for Attack and Critical Hit only", () => {
         renderWithChakra(<StatPriorityList classPreset={preset} />)
 

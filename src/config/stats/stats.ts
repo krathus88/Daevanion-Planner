@@ -92,15 +92,22 @@ const ARIEL_STAT_TOOLTIPS: Record<ArielStatType, string> = {
 export const ARIEL_SPECIAL_STATS = [
     "pve-damage-boost",
     "pve-damage-tolerance",
+    "boss-damage-boost",
+    "boss-damage-tolerance",
 ] as const
+
+export const isArielSpecialStat = (stat: string | undefined) => {
+    return (
+        stat !== undefined &&
+        (ARIEL_SPECIAL_STATS as readonly string[]).includes(stat)
+    )
+}
 
 export const ARIEL_PLAIN_STATS = [
     "pve-attack",
     "pve-accuracy",
     "pve-defense",
     "pve-evasion",
-    "boss-damage-boost",
-    "boss-damage-tolerance",
     "boss-attack",
     "boss-defense",
     "ariel-critical-hit",

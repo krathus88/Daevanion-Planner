@@ -1,10 +1,11 @@
 import {
     ARIEL_NODE_GIVES,
-    ARIEL_SPECIAL_STATS,
+    isArielSpecialStat,
     type ArielPriorityStat,
     type ArielStatType,
     type BoardStat,
 } from "@config/stats/stats"
+import { SAME_RANK_ORDERS } from "@planner/storage/rankOrder"
 
 // Ariel's stats are ranked by tier. A node is worth the tiers of every stat
 // it gives.
@@ -44,32 +45,92 @@ const TIER_WEIGHTS: Record<StatTier, number> = {
     ignore: 0,
 }
 
-// Within a tier, special nodes go before stat nodes, whatever they cost;
-// still below the next tier up.
-const SPECIAL_FACTOR = 1_000
+// Within a tier, Ariel's groups (offensive/defensive special nodes and
+// stats) go by their same-rank order: More before Equal before Less, whatever the nodes cost (a level is
+// worth 10x, more than the 4x cost gap), still below the next tier up.
+// Equal levels go by value per point. Ignore (a group clicked off by name,
+// see `arielOrder`) makes its stats worth nothing, whatever their tier.
+export const ARIEL_SAME_RANK_ORDERS = [...SAME_RANK_ORDERS, "ignore"] as const
+export type ArielSameRankOrder = (typeof ARIEL_SAME_RANK_ORDERS)[number]
+
+export const ARIEL_RANK_GROUPS = [
+    "special-offense",
+    "special-defense",
+    "stat-offense",
+    "stat-defense",
+] as const
+export type ArielRankGroup = (typeof ARIEL_RANK_GROUPS)[number]
+export type ArielRankOrder = Readonly<
+    Record<ArielRankGroup, ArielSameRankOrder>
+>
+
+export const ARIEL_RANK_GROUP_NAMES: Record<ArielRankGroup, string> = {
+    "special-offense": "Offensive special nodes",
+    "special-defense": "Defensive special nodes",
+    "stat-offense": "Offensive stats",
+    "stat-defense": "Defensive stats",
+}
+
+// Special nodes first, as before the order could be picked.
+export const DEFAULT_ARIEL_RANK_ORDER: ArielRankOrder = {
+    "special-offense": "more",
+    "special-defense": "more",
+    "stat-offense": "equal",
+    "stat-defense": "equal",
+}
+
+// Everything else is offensive. Max MP sits with the defensive stats.
+const DEFENSIVE_ARIEL_STATS: ReadonlySet<ArielPriorityStat> = new Set([
+    "pve-damage-tolerance",
+    "boss-damage-tolerance",
+    "pve-defense",
+    "pve-evasion",
+    "boss-defense",
+    "ariel-critical-hit-resist",
+    "ariel-max-hp",
+    "ariel-max-mp",
+])
+
+const arielRankGroup = (stat: ArielPriorityStat): ArielRankGroup => {
+    const side = DEFENSIVE_ARIEL_STATS.has(stat) ? "defense" : "offense"
+    return isArielSpecialStat(stat) ? `special-${side}` : `stat-${side}`
+}
+
+const RANK_ORDER_WEIGHTS: Record<ArielSameRankOrder, number> = {
+    more: 100,
+    equal: 10,
+    less: 1,
+    ignore: 0,
+}
 
 export const arielNodeTierValue = (
     node: ArielStatType,
     tiers: Readonly<Record<ArielPriorityStat, StatTier>>,
+    order: ArielRankOrder,
 ) => {
     let value = 0
     for (const stat of ARIEL_NODE_GIVES[node]) {
-        const isSpecial = (ARIEL_SPECIAL_STATS as readonly string[]).includes(
-            stat,
-        )
-        value += TIER_WEIGHTS[tiers[stat]] * (isSpecial ? SPECIAL_FACTOR : 1)
+        value +=
+            TIER_WEIGHTS[tiers[stat]] *
+            RANK_ORDER_WEIGHTS[order[arielRankGroup(stat)]]
     }
 
     return value
 }
 
-// The node's best tier among the stats it gives.
+// The node's best tier among the stats it gives; stats of an ignored
+// group don't count.
 export const arielNodeTier = (
     node: ArielStatType,
     tiers: Readonly<Record<ArielPriorityStat, StatTier>>,
+    order: ArielRankOrder,
 ) => {
     let best: StatTier = "ignore"
     for (const stat of ARIEL_NODE_GIVES[node]) {
+        if (order[arielRankGroup(stat)] === "ignore") {
+            continue
+        }
+
         if (STAT_TIERS.indexOf(tiers[stat]) < STAT_TIERS.indexOf(best)) {
             best = tiers[stat]
         }

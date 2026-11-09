@@ -24,6 +24,12 @@ export const gradients = defineTokens.gradients({
             passiveLit: {
                 value: "conic-gradient(from 45deg, #b6f7cf, #3fbf72, #86efac, #3fbf72, #b6f7cf)",
             },
+            gold: {
+                value: "conic-gradient(from 45deg, #e8c374, #a97a2a, #d9a441, #a97a2a, #e8c374)",
+            },
+            goldLit: {
+                value: "conic-gradient(from 45deg, #fff3cc, #e0ad4c, #f6d68a, #e0ad4c, #fff3cc)",
+            },
         },
         gem: {
             sheen: {

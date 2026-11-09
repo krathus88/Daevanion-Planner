@@ -22,6 +22,11 @@ export const ArielStatPriorityList = ({
         update({ ...settings, tiers: { ...settings.tiers, [stat]: tier } })
     }
 
+    const handleIgnoredChange = (stat: ArielPriorityStat, ignored: boolean) => {
+        const rest = settings.ignored.filter((other) => other !== stat)
+        update({ ...settings, ignored: ignored ? [...rest, stat] : rest })
+    }
+
     return (
         <Flex flexDir="column" gap="2">
             {stats.map((stat) => (
@@ -29,8 +34,10 @@ export const ArielStatPriorityList = ({
                     key={stat}
                     stat={stat}
                     tier={settings.tiers[stat]}
+                    ignored={settings.ignored.includes(stat)}
                     count={nodeCounts.counts?.[stat]}
                     onTierChange={handleTierChange}
+                    onIgnoredChange={handleIgnoredChange}
                 />
             ))}
 

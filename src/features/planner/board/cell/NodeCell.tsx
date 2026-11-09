@@ -1,5 +1,5 @@
 import type { ClassAbility } from "@config/classPresets"
-import type { BoardStat } from "@config/stats/stats"
+import { isArielSpecialStat, type BoardStat } from "@config/stats/stats"
 import { AbsoluteCenter, Box, Button, Image } from "@chakra-ui/react"
 import { Tooltip } from "@ui/tooltip"
 import { useState } from "react"
@@ -17,6 +17,7 @@ import { GameGapOutline } from "./GameGapOutline"
 import { CELL_BOX, getNodeStyles } from "./nodeStyles"
 import { NodeTooltip } from "./NodeTooltip"
 import { SpecialGem } from "./SpecialGem"
+import { StatHighlightOutline } from "./StatHighlightOutline"
 import { NeedMarker } from "./NeedMarker"
 import { PreferMarker } from "./PreferMarker"
 import { TargetMarker } from "./TargetMarker"
@@ -37,6 +38,9 @@ export type NodeCellProps = {
     specialBonus?: SpecialBonusType
     // How the node differs in a game screenshot.
     gameGap?: GameGap
+    // A stat hovered in a priority list: its nodes framed, the rest dimmed.
+    highlighted?: boolean
+    dimmed?: boolean
     onSelect: (position: Position) => void
 }
 
@@ -54,6 +58,8 @@ export const NodeCell = ({
     stat,
     specialBonus,
     gameGap,
+    highlighted = false,
+    dimmed = false,
     onSelect,
 }: NodeCellProps) => {
     const [failedImageSource, setFailedImageSource] = useState<string | null>(
@@ -78,6 +84,7 @@ export const NodeCell = ({
         adjacentAvailable: adjacentAvailable,
         targeted: targeted,
         canSelect: canSelect,
+        golden: isArielSpecialStat(stat),
     })
     const nodeName = getNodeName(ability, stat, specialBonus)
     // Special nodes read by shape and selected stat nodes by fill: no text.
@@ -91,7 +98,11 @@ export const NodeCell = ({
               : appearance.label || (selected ? "✓" : "")
 
     return (
-        <Box pos="relative" boxSize={CELL_BOX}>
+        <Box
+            pos="relative"
+            boxSize={CELL_BOX}
+            opacity={dimmed ? "disabled" : undefined}
+        >
             <Tooltip
                 content={
                     <NodeTooltip
@@ -224,6 +235,8 @@ export const NodeCell = ({
             ) : (
                 preferred && <PreferMarker />
             )}
+
+            {highlighted && <StatHighlightOutline />}
 
             {gameGap && <GameGapOutline gap={gameGap} />}
 

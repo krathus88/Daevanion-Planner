@@ -40,6 +40,14 @@ const TONE_STYLES: Record<
     },
 }
 
+// Ariel's Boss Damage nodes: special, but drawn as stat nodes, in gold.
+const GOLDEN_COLORS = {
+    solid: "board.specialStatBorder",
+    tint: "board.specialStatTint",
+    orb: "board.orb.gold",
+    orbLit: "board.orb.goldLit",
+} as const
+
 type NodeStyleInput = {
     appearance: BoardNodeAppearance
     ability?: ClassAbility
@@ -47,6 +55,8 @@ type NodeStyleInput = {
     adjacentAvailable: boolean
     targeted: boolean
     canSelect: boolean
+    // A stat node that counts as special gets gold instead of its tone.
+    golden?: boolean
 }
 
 export const getNodeStyles = ({
@@ -56,11 +66,14 @@ export const getNodeStyles = ({
     adjacentAvailable,
     targeted,
     canSelect,
+    golden = false,
 }: NodeStyleInput) => {
     const isBasic = appearance.type === "basic"
     const isSpecial = appearance.type === "special"
-    const tone =
+    const toneStyles =
         isBasic && appearance.tone ? TONE_STYLES[appearance.tone] : null
+    const tone =
+        toneStyles && golden ? { ...toneStyles, ...GOLDEN_COLORS } : toneStyles
     const size: SizeToken = isBasic
         ? (tone?.size ?? BASIC_SIZE)
         : isSpecial

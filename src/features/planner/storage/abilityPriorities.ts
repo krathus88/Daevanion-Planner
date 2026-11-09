@@ -386,7 +386,7 @@ export const readSharedAbilityUpgradeCounts = (
     return counts
 }
 
-type PriorityBoardPlan = {
+export type PriorityBoardPlan = {
     targetCells: string[]
     plannedPath: string[]
     plannedCost: number

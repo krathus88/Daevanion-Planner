@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest"
-import { DEFAULT_ARIEL_STAT_TIERS } from "@planner/config/stats"
+import { ARIEL_PRIORITY_STATS } from "@config/stats/stats"
+import {
+    DEFAULT_ARIEL_RANK_ORDER,
+    DEFAULT_ARIEL_STAT_TIERS,
+} from "@planner/config/stats"
 import { layouts } from "@planner/config/layouts"
 import { readAllocationSnapshot } from "./allocationSnapshot"
 import {
@@ -139,10 +143,76 @@ describe("Ariel settings", () => {
             points: -1,
             tiers: { "pve-attack": "nonsense" },
         })
-        expect(readArielSettings(CLASS)).toEqual({
-            points: 0,
-            tiers: DEFAULT_ARIEL_STAT_TIERS,
+        expect(readArielSettings(CLASS)).toEqual(DEFAULT_ARIEL_SETTINGS)
+    })
+
+    it("starts the default Ignore stats clicked off, with a tier to come back to", () => {
+        const settings = DEFAULT_ARIEL_SETTINGS
+
+        expect(settings.ignored.length).toBeGreaterThan(0)
+        for (const stat of ARIEL_PRIORITY_STATS) {
+            expect(settings.tiers[stat]).not.toBe("ignore")
+            expect(settings.ignored.includes(stat)).toBe(
+                DEFAULT_ARIEL_STAT_TIERS[stat] === "ignore",
+            )
+        }
+    })
+
+    it("turns an old Ignore tier into a clicked-off stat", () => {
+        writeClassSettings(CLASS, "ariel", {
+            points: 10,
+            tiers: { "pve-attack": "ignore", "pve-evasion": "good" },
         })
+
+        const settings = readArielSettings(CLASS)
+
+        expect(settings.ignored).toContain("pve-attack")
+        expect(settings.tiers["pve-attack"]).toBe(
+            DEFAULT_ARIEL_STAT_TIERS["pve-attack"],
+        )
+        // Saved with a tier, so no longer ignored by default.
+        expect(settings.ignored).not.toContain("pve-evasion")
+        expect(settings.tiers["pve-evasion"]).toBe("good")
+    })
+
+    it("keeps the clicked-off stats it saved, dropping unknown ones", () => {
+        writeClassSettings(CLASS, "ariel", {
+            points: 10,
+            ignored: ["pve-attack", "nonsense"],
+        })
+
+        expect(readArielSettings(CLASS).ignored).toEqual(["pve-attack"])
+    })
+
+    it("keeps a valid same-rank order and repairs the rest", () => {
+        writeClassSettings(CLASS, "ariel", {
+            points: 10,
+            order: {
+                "stat-defense": "more",
+                "stat-offense": "ignore",
+                "special-offense": "nonsense",
+            },
+        })
+
+        const settings = readArielSettings(CLASS)
+
+        expect(settings.order).toEqual({
+            ...DEFAULT_ARIEL_RANK_ORDER,
+            "stat-defense": "more",
+        })
+        // An old Ignore level is a clicked-off group now.
+        expect(settings.ignoredGroups).toEqual(["stat-offense"])
+    })
+
+    it("keeps the clicked-off groups it saved, dropping unknown ones", () => {
+        writeClassSettings(CLASS, "ariel", {
+            points: 10,
+            ignoredGroups: ["special-defense", "nonsense"],
+        })
+
+        expect(readArielSettings(CLASS).ignoredGroups).toEqual([
+            "special-defense",
+        ])
     })
 
     it("explains settings that aren't an object", () => {

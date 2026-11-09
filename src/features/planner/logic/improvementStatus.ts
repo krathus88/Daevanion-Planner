@@ -46,25 +46,17 @@ export const joinParagraphs = (...paragraphs: string[]) => {
 type SearchSummaryOptions = {
     finds: SearchFinds
     noun: Noun
-    // The search started from a result the user already had.
-    fromCurrent?: boolean
 }
 
 // The paragraph a finished search adds to its result message.
-export const searchSummary = ({
-    finds,
-    noun,
-    fromCurrent = false,
-}: SearchSummaryOptions) => {
+export const searchSummary = ({ finds, noun }: SearchSummaryOptions) => {
     const { optionsChecked, firstFoundMs, improvements, lastImprovedMs } = finds
     const checked =
         optionsChecked > 0 ? `Checked ${plural(optionsChecked, "option")}.` : ""
     let found = ""
     if (improvements > 0 && lastImprovedMs !== null) {
-        const than = fromCurrent ? "than the current one" : "after the first"
-
-        found = `Found ${plural(improvements, `better ${noun}`)} ${than}, the last at ${formatFoundAt(lastImprovedMs)}.`
-    } else if (firstFoundMs !== null && !fromCurrent) {
+        found = `Found ${plural(improvements, `better ${noun}`)} after the first, the last at ${formatFoundAt(lastImprovedMs)}.`
+    } else if (firstFoundMs !== null) {
         found = `No better ${noun} turned up after the first at ${formatFoundAt(firstFoundMs)}.`
     }
 
@@ -101,21 +93,16 @@ export const idleStatus = (idleMs: number, stallMs: number, noun: Noun) => {
 type ImprovementStatusOptions = {
     finds: SearchFinds
     noun: Noun
-    fromCurrent?: boolean
 }
 
 // The line under a search's status.
 export const improvementStatus = ({
     finds,
     noun,
-    fromCurrent = false,
 }: ImprovementStatusOptions) => {
     const { firstFoundMs, improvements, lastImprovedMs } = finds
     if (improvements > 0 && lastImprovedMs !== null) {
         return `Best ${noun} so far found at ${formatFoundAt(lastImprovedMs)} · ${plural(improvements, "improvement")}`
-    }
-    if (fromCurrent) {
-        return `Looking for a better ${noun} than the current one`
     }
     if (firstFoundMs === null) {
         return `Building the first ${noun}…`

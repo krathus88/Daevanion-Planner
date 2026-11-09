@@ -10,7 +10,7 @@ import {
     type PlannerResult,
     type SearchLimit,
 } from "@planner/logic/plannerLogic"
-import { growByStatValue } from "@planner/logic/statFill"
+import { searchStatFill } from "@planner/logic/statFillSearch"
 import { growWithFocus } from "@planner/logic/statFocus"
 
 type StartMessage = {
@@ -78,6 +78,8 @@ const optimize = (message: StartMessage) => {
 
     const runGrowStats = async () => {
         const startKey = keyOf(start)
+        // Only the filled route is shown: a bare route to the targets would
+        // replace the shown one for being cheaper.
         const base =
             targetSet.size > 0
                 ? await findPlannerPath(
@@ -85,10 +87,7 @@ const optimize = (message: StartMessage) => {
                       start,
                       targetSet,
                       limit,
-                      {
-                          onProgress: postProgress,
-                          onBest: (best) => postCandidate(best, startedAt),
-                      },
+                      { onProgress: postProgress, onBest: () => {} },
                       weights,
                   )
                 : {
@@ -101,29 +100,39 @@ const optimize = (message: StartMessage) => {
             return base
         }
 
-        const grown = growByStatValue({
+        const toResult = (path: ReadonlySet<string>, cost: number) => {
+            const shown = new Set(path)
+            shown.delete(startKey)
+            return {
+                ok: true as const,
+                path: shown,
+                cost: cost,
+                statScore: routeStatScore(shown, weights),
+            }
+        }
+
+        const best = await searchStatFill({
             layout: layout,
+            startKey: startKey,
+            kept: new Set([startKey, ...targetSet]),
             route: new Set([startKey, ...base.path]),
-            cost: base.cost,
             budget: availablePoints,
             weights: stats,
+            limit: limit,
+            onProgress: postProgress,
+            onBest: (found) => {
+                // Always taken: the search only reports better routes.
+                postCandidate(toResult(found.path, found.cost), startedAt, true)
+            },
         })
-        grown.path.delete(startKey)
-        const result: Extract<PlannerResult, { ok: true }> = {
-            ok: true,
-            path: grown.path,
-            cost: grown.cost,
-            statScore: routeStatScore(grown.path, weights),
-        }
-        if (result.cost === 0) {
+        if (best.cost === 0) {
             return {
                 ok: false as const,
                 reason: "No stat node fits in Ariel's points with these priorities.",
             }
         }
 
-        postCandidate(result, startedAt, true)
-        return result
+        return toResult(best.path, best.cost)
     }
 
     const run = async () => {

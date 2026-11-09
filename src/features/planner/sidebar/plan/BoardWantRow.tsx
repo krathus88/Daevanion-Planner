@@ -1,6 +1,7 @@
 import { Flex, Image, Text } from "@chakra-ui/react"
 import { LegendSwatch } from "@planner/board/LegendSwatch"
 import { SPECIAL_BONUSES } from "@planner/config/specialNodes"
+import { useStatHighlight } from "@planner/hooks/useStatHighlight"
 import type { BoardWant, Want } from "@planner/logic/boardWants"
 import { AbilityTooltip } from "@planner/shared/AbilityTooltip"
 import { Tooltip } from "@ui/tooltip"
@@ -28,6 +29,11 @@ export const BoardWantRow = memo(function BoardWantRow({
     taken,
     onChange,
 }: BoardWantRowProps) {
+    // A special node's name shows its nodes on the board while hovered.
+    const highlight = useStatHighlight(
+        want.kind === "special" ? want.bonus : null,
+    )
+
     const name =
         want.kind === "special"
             ? SPECIAL_BONUSES[want.bonus].name
@@ -65,7 +71,15 @@ export const BoardWantRow = memo(function BoardWantRow({
                 )
             )}
 
-            <Text minW="0" flex="1" fontSize="sm" truncate title={name}>
+            <Text
+                minW="0"
+                flex="1"
+                fontSize="sm"
+                truncate
+                title={name}
+                onMouseEnter={highlight.show}
+                onMouseLeave={highlight.hide}
+            >
                 {name}
             </Text>
 

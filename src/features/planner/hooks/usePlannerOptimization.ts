@@ -20,8 +20,12 @@ import {
     NO_FINDS,
     searchSummary,
 } from "@planner/logic/improvementStatus"
-import { routeStatScore, statWeights } from "@planner/config/stats"
-import { arielNodeValues } from "@planner/logic/arielRoute"
+import { statWeights } from "@planner/config/stats"
+import {
+    arielNodeValues,
+    arielOrder,
+    arielTiers,
+} from "@planner/logic/arielRoute"
 import {
     pathPriorities,
     type PathPriorities,
@@ -74,8 +78,6 @@ type UsePlannerOptimizationProps = {
     targetCells: Set<string>
     needCells: ReadonlySet<string>
     preferred: ReadonlySet<string>
-    plannedPath: Set<string>
-    plannedCost: number | null
     availablePoints: number
     plannerHistory: SavedPlanner[]
     setPlannerHistory: Dispatch<SetStateAction<SavedPlanner[]>>
@@ -94,8 +96,6 @@ export const usePlannerOptimization = ({
     targetCells,
     needCells,
     preferred,
-    plannedPath,
-    plannedCost,
     availablePoints,
     plannerHistory,
     setPlannerHistory,
@@ -110,8 +110,6 @@ export const usePlannerOptimization = ({
     const [optimizationProgress, setOptimizationProgress] =
         useState<PlannerProgress | null>(null)
     const [routeFinds, setRouteFinds] = useState(NO_FINDS)
-    // Improve starts from the route already shown.
-    const [improvesCurrent, setImprovesCurrent] = useState(false)
     // Stop was pressed; the worker is wrapping up its route.
     const [isStopping, setIsStopping] = useState(false)
     const plannerWorker = useRef<Worker | null>(null)
@@ -134,7 +132,10 @@ export const usePlannerOptimization = ({
                 // Use the default Ariel priorities.
             }
 
-            const values = arielNodeValues(arielSettings.tiers)
+            const values = arielNodeValues(
+                arielTiers(arielSettings),
+                arielOrder(arielSettings),
+            )
             return {
                 statValues: values,
                 priorities: {
@@ -164,26 +165,13 @@ export const usePlannerOptimization = ({
         }
     }
 
-    // The search ends once stallMs pass without a better route.
+    // A new search each time, ignoring the route shown; it ends once stallMs
+    // pass without a better route.
     const optimizePlanner = (stallMs = DEFAULT_STALL_SECONDS * 1000) => {
         const { statValues: values, priorities } = readPriorities()
-        const weights = new Map(priorities.weights)
         const requiredCells = new Set([...targetCells, ...needCells])
-        // A route that misses a newly needed node can't be kept.
-        const previousBest =
-            plannedCost === null ||
-            [...requiredCells].some((key) => !plannedPath.has(key))
-                ? null
-                : {
-                      ok: true as const,
-                      path: [...plannedPath],
-                      cost: plannedCost,
-                      statScore: routeStatScore(plannedPath, weights),
-                  }
         cancelOptimization()
         setOptimizationProgress(null)
-        bestPlannerResult.current = previousBest
-        setImprovesCurrent(previousBest !== null)
         setMessage("")
         // This run's own count, for the message once it's done.
         let finds = NO_FINDS
@@ -278,22 +266,6 @@ export const usePlannerOptimization = ({
                     )
                     return
                 }
-                // Still the starting route: nothing cheaper or with better
-                // stats beat it.
-                if (previousBest && bestResult === previousBest) {
-                    setMessage(
-                        joinParagraphs(
-                            `No better route found after ${searchedFor}; kept the previous ${previousBest.cost}-point route.`,
-                            searchSummary({
-                                finds: finds,
-                                noun: "route",
-                                fromCurrent: true,
-                            }),
-                        ),
-                    )
-                    return
-                }
-
                 const completedAt = Date.now()
                 const historyEntry: SavedPlanner = {
                     id: crypto.randomUUID(),
@@ -332,10 +304,6 @@ export const usePlannerOptimization = ({
                     setMessage(
                         `Route found, but it could not be saved to browser history: ${saveError}`,
                     )
-                } else if (!isMainBoard(layoutName)) {
-                    setMessage(
-                        "Ariel route built and saved to optimization history.",
-                    )
                 } else {
                     setMessage(
                         joinParagraphs(
@@ -343,7 +311,6 @@ export const usePlannerOptimization = ({
                             searchSummary({
                                 finds: finds,
                                 noun: "route",
-                                fromCurrent: previousBest !== null,
                             }),
                         ),
                     )
@@ -416,7 +383,6 @@ export const usePlannerOptimization = ({
         isStopping: isStopping,
         optimizationProgress: optimizationProgress,
         routeFinds: routeFinds,
-        improvesCurrent: improvesCurrent,
         optimizePlanner: optimizePlanner,
         stopOptimization: stopOptimization,
         cancelOptimization: cancelOptimization,

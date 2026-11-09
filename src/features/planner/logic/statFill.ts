@@ -3,19 +3,22 @@ import type { BoardLayout } from "@planner/config/layouts"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
 
 // Weight counts once per point a node costs, so a tier is worth the same
-// per point on every node.
+// per point on every node. `noise` (around 1) scales each option's value, so
+// a search can try other picks than the best one.
 export const growByStatValue = ({
     layout,
     route,
     cost,
     budget,
     weights,
+    noise,
 }: {
     layout: BoardLayout
     route: ReadonlySet<string>
     cost: number
     budget: number
     weights: ReadonlyMap<string, number>
+    noise?: () => number
 }) => {
     const path = new Set(route)
     let total = cost
@@ -45,7 +48,7 @@ export const growByStatValue = ({
                 current = parents.get(current)
             }
 
-            const value = gained / distance
+            const value = (gained / distance) * (noise?.() ?? 1)
             if (
                 !best ||
                 value > best.value ||

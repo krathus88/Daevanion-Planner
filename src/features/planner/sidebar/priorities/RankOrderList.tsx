@@ -1,4 +1,4 @@
-import { Flex, SegmentGroup, Text } from "@chakra-ui/react"
+import { Flex, Text } from "@chakra-ui/react"
 import { useRankOrder } from "@planner/hooks/useRankOrder"
 import {
     RANK_GROUP_NAMES,
@@ -10,6 +10,7 @@ import {
 } from "@planner/storage/rankOrder"
 import { StatusText } from "@common/StatusText"
 import { Term } from "@common/Term"
+import { SameRankOrderRow } from "./SameRankOrderRow"
 import { SAME_RANK_ORDER_COLORS } from "./tierColors"
 
 type RankOrderListProps = {
@@ -19,11 +20,8 @@ type RankOrderListProps = {
 export const RankOrderList = ({ classId }: RankOrderListProps) => {
     const { order, error, update } = useRankOrder(classId)
 
-    const handleValueChange = (
-        group: RankGroup,
-        details: SegmentGroup.ValueChangeDetails,
-    ) => {
-        update({ ...order, [group]: details.value as SameRankOrder })
+    const handleChange = (group: RankGroup, value: SameRankOrder) => {
+        update({ ...order, [group]: value })
     }
 
     return (
@@ -35,43 +33,16 @@ export const RankOrderList = ({ classId }: RankOrderListProps) => {
             </Text>
 
             {RANK_GROUPS.map((group) => (
-                <Flex key={group} minW="0" alignItems="center" gap="2">
-                    <Text minW="0" flex="1" fontSize="sm" truncate>
-                        {RANK_GROUP_NAMES[group]}
-                    </Text>
-
-                    <SegmentGroup.Root
-                        layout="compact"
-                        value={order[group]}
-                        flexShrink="0"
-                        aria-label={`${RANK_GROUP_NAMES[group]} order within a rank`}
-                        onValueChange={(details) =>
-                            handleValueChange(group, details)
-                        }
-                    >
-                        <SegmentGroup.Indicator />
-
-                        {SAME_RANK_ORDERS.map((value) => (
-                            <SegmentGroup.Item
-                                key={value}
-                                value={value}
-                                color="app.subtle"
-                                _checked={{
-                                    color: SAME_RANK_ORDER_COLORS[value],
-                                }}
-                                _hover={{
-                                    color: SAME_RANK_ORDER_COLORS[value],
-                                }}
-                            >
-                                <SegmentGroup.ItemText>
-                                    {SAME_RANK_ORDER_NAMES[value]}
-                                </SegmentGroup.ItemText>
-
-                                <SegmentGroup.ItemHiddenInput />
-                            </SegmentGroup.Item>
-                        ))}
-                    </SegmentGroup.Root>
-                </Flex>
+                <SameRankOrderRow
+                    key={group}
+                    group={group}
+                    value={order[group]}
+                    options={SAME_RANK_ORDERS}
+                    names={SAME_RANK_ORDER_NAMES}
+                    colors={SAME_RANK_ORDER_COLORS}
+                    label={RANK_GROUP_NAMES[group]}
+                    onChange={handleChange}
+                />
             ))}
 
             {error && <StatusText>{error}</StatusText>}

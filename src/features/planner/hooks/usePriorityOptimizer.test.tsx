@@ -56,6 +56,7 @@ const done = (overrides: object = {}) => {
             vaizel: plan(30),
             triniel: plan(40),
         },
+        ariel: plan(25),
         shortfalls: [],
         specialNodes: { taken: 2, total: 2 },
         finds: {
@@ -239,8 +240,12 @@ describe("usePriorityOptimizer", () => {
         })
         lastWorker().emit(done())
 
-        expect(readPlannerHistory(CLASS, "ariel").value).toHaveLength(1)
-        expect(result.current.message).toContain("of 30 Ariel points")
+        expect(readPlannerHistory(CLASS, "ariel").value?.[0]).toMatchObject({
+            plannedCost: 25,
+        })
+        expect(result.current.message).toContain(
+            "Ariel using 25 of 30 Ariel points",
+        )
     })
 
     it("applies plans only when told, keeping manual picks", () => {

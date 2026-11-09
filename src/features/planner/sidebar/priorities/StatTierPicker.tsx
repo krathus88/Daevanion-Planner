@@ -6,14 +6,20 @@ import {
 } from "@planner/config/stats"
 import { STAT_TIER_COLORS } from "./tierColors"
 
+// Ignore is clicking the stat's name, not a tier.
+const PICKED_TIERS = STAT_TIERS.filter((tier) => tier !== "ignore")
+
 type StatTierPickerProps = {
-    value: StatTier
+    // Null: none picked (an ignored stat).
+    value: StatTier | null
+    disabled?: boolean
     label: string
     onChange: (tier: StatTier) => void
 }
 
 export const StatTierPicker = ({
     value,
+    disabled = false,
     label,
     onChange,
 }: StatTierPickerProps) => {
@@ -26,12 +32,13 @@ export const StatTierPicker = ({
             layout="compact"
             value={value}
             flexShrink="0"
+            disabled={disabled}
             aria-label={label}
             onValueChange={handleValueChange}
         >
             <SegmentGroup.Indicator />
 
-            {STAT_TIERS.map((tier) => (
+            {PICKED_TIERS.map((tier) => (
                 <SegmentGroup.Item
                     key={tier}
                     value={tier}
