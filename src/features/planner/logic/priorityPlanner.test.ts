@@ -21,7 +21,12 @@ import {
     resolveAbilityMinimums,
 } from "@planner/storage/abilityPriorities"
 import { DEFAULT_RANK_ORDER } from "@planner/storage/rankOrder"
-import { DEFAULT_SPECIAL_PRIORITIES } from "@planner/storage/specialPriorities"
+import type { SpecialBonusType } from "@planner/config/specialNodes"
+import {
+    DEFAULT_SPECIAL_PRIORITIES,
+    SPECIAL_BONUS_TYPES,
+    type SpecialSkips,
+} from "@planner/storage/specialPriorities"
 import {
     DEFAULT_STAT_SETTINGS,
     type StatSettings,
@@ -61,6 +66,7 @@ type Options = {
     minimums?: Record<string, number>
     maximums?: Record<string, number>
     priorities?: Record<string, number>
+    specialSkips?: SpecialSkips
     stallMs?: number
     shouldStop?: () => boolean
     statSettings?: StatSettings
@@ -74,6 +80,7 @@ const optimize = ({
     minimums = {},
     maximums = {},
     priorities,
+    specialSkips = {},
     stallMs = 1,
     shouldStop,
     statSettings = DEFAULT_STAT_SETTINGS,
@@ -89,6 +96,7 @@ const optimize = ({
         minimums,
         maximums,
         DEFAULT_SPECIAL_PRIORITIES,
+        specialSkips,
         DEFAULT_RANK_ORDER,
         points,
         { stallMs: stallMs, shouldStop: shouldStop },
@@ -359,6 +367,26 @@ describe("optimizePriorityPlans", () => {
         expect(result.specialNodes.total).toBe(total)
         expect(result.specialNodes.taken).toBeGreaterThan(0)
         expect(result.specialNodes.taken).toBeLessThanOrEqual(total)
+    })
+
+    it("never targets a skipped special node", async () => {
+        const skips: Partial<Record<SpecialBonusType, true>> = {}
+
+        for (const bonus of SPECIAL_BONUS_TYPES) {
+            skips[bonus] = true
+        }
+
+        const result = await optimize({ points: 150, specialSkips: skips })
+
+        expect(result.specialNodes.total).toBe(0)
+
+        for (const board of MAIN_BOARD_IDS) {
+            const specials = Object.keys(layouts[board].specialNodeBonuses)
+
+            for (const key of result.plans[board].targetCells) {
+                expect(specials).not.toContain(key)
+            }
+        }
     })
 
     it("reports progress, ending at the points used", async () => {

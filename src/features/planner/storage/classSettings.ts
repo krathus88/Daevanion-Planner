@@ -2,7 +2,12 @@ import { setStoredItem } from "@account/sync/syncMeta"
 import { isRecord } from "./isRecord"
 
 export type ClassSettingsSection =
-    "abilities" | "specialPriorities" | "rankOrder" | "stats" | "ariel"
+    | "abilities"
+    | "specialPriorities"
+    | "specialSkips"
+    | "rankOrder"
+    | "stats"
+    | "ariel"
 
 const SETTINGS_CHANGE_EVENT = "daevanion-settings-change"
 

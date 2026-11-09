@@ -20,7 +20,8 @@ import {
     NO_FINDS,
     searchSummary,
 } from "@planner/logic/improvementStatus"
-import { routeStatScore, statWeights, tierValues } from "@planner/config/stats"
+import { routeStatScore, statWeights } from "@planner/config/stats"
+import { arielNodeValues } from "@planner/logic/arielRoute"
 import {
     pathPriorities,
     type PathPriorities,
@@ -133,7 +134,7 @@ export const usePlannerOptimization = ({
                 // Use the default Ariel priorities.
             }
 
-            const values = tierValues(arielSettings.tiers)
+            const values = arielNodeValues(arielSettings.tiers)
             return {
                 statValues: values,
                 priorities: {

@@ -26,7 +26,8 @@ export const SpecialPriorityList = ({
     return (
         <Flex flexDir="column" alignItems="stretch" gap="2">
             <Text textStyle="hint">
-                Ranked on the same scale as <Term>abilities</Term>.
+                Ranked on the same scale as <Term>abilities</Term>. Click a name
+                to skip it.
             </Text>
 
             <Flex justifyContent="flex-end" gap="2" textStyle="caption">
@@ -42,9 +43,11 @@ export const SpecialPriorityList = ({
                     key={bonus}
                     bonus={bonus}
                     priority={special.priorities[bonus]}
+                    skipped={special.skips[bonus] === true}
                     count={special.counts?.[bonus]}
                     layout={layout}
                     onPriorityChange={special.updatePriority}
+                    onSkipChange={special.updateSkip}
                 />
             ))}
 

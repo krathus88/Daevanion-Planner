@@ -27,28 +27,25 @@ const STAT_TOOLTIPS: Record<StatType, string> = {
     "max-mp": "Max MP +50",
 }
 
-// Ariel's stats have their own priorities, so they're separate entries.
-export const ARIEL_STAT_TYPES = [
-    "pve-damage-boost",
-    "pve-damage-tolerance",
-    "boss-damage-boost",
-    "boss-damage-tolerance",
-    "ariel-critical-hit",
-    "ariel-critical-hit-resist",
-    "pve-attack",
-    "pve-defense",
-    "pve-attack-defense",
-    "pve-accuracy",
-    "pve-evasion",
-    "pve-accuracy-evasion",
-    "boss-attack",
-    "boss-defense",
-    "boss-attack-defense",
-    "ariel-max-hp",
-    "ariel-max-mp",
-] as const
-
-export type ArielStatType = (typeof ARIEL_STAT_TYPES)[number]
+// Ariel's node kinds; each gives one or two stats (`ARIEL_NODE_GIVES`).
+export type ArielStatType =
+    | "pve-damage-boost"
+    | "pve-damage-tolerance"
+    | "boss-damage-boost"
+    | "boss-damage-tolerance"
+    | "ariel-critical-hit"
+    | "ariel-critical-hit-resist"
+    | "pve-attack"
+    | "pve-defense"
+    | "pve-attack-defense"
+    | "pve-accuracy"
+    | "pve-evasion"
+    | "pve-accuracy-evasion"
+    | "boss-attack"
+    | "boss-defense"
+    | "boss-attack-defense"
+    | "ariel-max-hp"
+    | "ariel-max-mp"
 
 export const ARIEL_STAT_NAMES: Record<ArielStatType, string> = {
     "pve-damage-boost": "PvE Damage Boost",
@@ -88,6 +85,58 @@ const ARIEL_STAT_TOOLTIPS: Record<ArielStatType, string> = {
     "boss-attack-defense": "Boss Attack +3\nBoss Defense +30",
     "ariel-max-hp": "Max HP +100",
     "ariel-max-mp": "Max MP +50",
+}
+
+// What Ariel's priorities rank: its special nodes, then its stats. A
+// combined node (Attack + Defense) gives both of its stats.
+export const ARIEL_SPECIAL_STATS = [
+    "pve-damage-boost",
+    "pve-damage-tolerance",
+] as const
+
+export const ARIEL_PLAIN_STATS = [
+    "pve-attack",
+    "pve-accuracy",
+    "pve-defense",
+    "pve-evasion",
+    "boss-damage-boost",
+    "boss-damage-tolerance",
+    "boss-attack",
+    "boss-defense",
+    "ariel-critical-hit",
+    "ariel-critical-hit-resist",
+    "ariel-max-hp",
+    "ariel-max-mp",
+] as const
+
+export const ARIEL_PRIORITY_STATS = [
+    ...ARIEL_SPECIAL_STATS,
+    ...ARIEL_PLAIN_STATS,
+] as const
+
+export type ArielPriorityStat = (typeof ARIEL_PRIORITY_STATS)[number]
+
+export const ARIEL_NODE_GIVES: Record<
+    ArielStatType,
+    readonly ArielPriorityStat[]
+> = {
+    "pve-damage-boost": ["pve-damage-boost"],
+    "pve-damage-tolerance": ["pve-damage-tolerance"],
+    "boss-damage-boost": ["boss-damage-boost"],
+    "boss-damage-tolerance": ["boss-damage-tolerance"],
+    "ariel-critical-hit": ["ariel-critical-hit"],
+    "ariel-critical-hit-resist": ["ariel-critical-hit-resist"],
+    "pve-attack": ["pve-attack"],
+    "pve-defense": ["pve-defense"],
+    "pve-attack-defense": ["pve-attack", "pve-defense"],
+    "pve-accuracy": ["pve-accuracy"],
+    "pve-evasion": ["pve-evasion"],
+    "pve-accuracy-evasion": ["pve-accuracy", "pve-evasion"],
+    "boss-attack": ["boss-attack"],
+    "boss-defense": ["boss-defense"],
+    "boss-attack-defense": ["boss-attack", "boss-defense"],
+    "ariel-max-hp": ["ariel-max-hp"],
+    "ariel-max-mp": ["ariel-max-mp"],
 }
 
 export type BoardStat = StatType | ArielStatType

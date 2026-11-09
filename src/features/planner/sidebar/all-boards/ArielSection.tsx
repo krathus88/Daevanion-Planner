@@ -8,7 +8,7 @@ import {
 import { PointsField } from "@common/PointsField"
 import { Section } from "@common/Section"
 import { Term } from "@common/Term"
-import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
+import { ArielPriorities } from "../priorities/ArielPriorities"
 
 type ArielSectionProps = {
     classId: string
@@ -36,8 +36,8 @@ export const ArielSection = ({ classId }: ArielSectionProps) => {
             onOpenChange={handleOpenChange}
         >
             <Text textStyle="hint">
-                <Term>Ariel</Term> has only <Term>stat</Term> nodes and its own
-                points (<Term>Daevanion Crystal: Ariel</Term>).
+                <Term>Ariel</Term> has its own points (
+                <Term>Daevanion Crystal: Ariel</Term>).
             </Text>
 
             <PointsField
@@ -46,9 +46,7 @@ export const ArielSection = ({ classId }: ArielSectionProps) => {
                 onChange={handlePointsChange}
             />
 
-            <Section title="Stat priorities" variant="sub">
-                <ArielStatPriorityList classId={classId} />
-            </Section>
+            <ArielPriorities classId={classId} />
         </Section>
     )
 }

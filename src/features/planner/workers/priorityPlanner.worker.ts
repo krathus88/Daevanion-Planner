@@ -5,7 +5,10 @@ import {
     type PriorityPlannerProgress,
 } from "@planner/logic/priorityPlanner"
 import type { RankOrder } from "@planner/storage/rankOrder"
-import type { SpecialPriorities } from "@planner/storage/specialPriorities"
+import type {
+    SpecialPriorities,
+    SpecialSkips,
+} from "@planner/storage/specialPriorities"
 import type { StatSettings } from "@planner/storage/statPriorities"
 import type {
     AbilityMaximums,
@@ -20,6 +23,7 @@ type StartMessage = {
     minimums: AbilityMinimums
     maximums: AbilityMaximums
     specialPriorities: SpecialPriorities
+    specialSkips: SpecialSkips
     rankOrder: RankOrder
     pointBudget: number
     // Each phase ends once this long passes without a better plan.
@@ -44,6 +48,7 @@ const optimize = (message: StartMessage) => {
         minimums,
         maximums,
         specialPriorities,
+        specialSkips,
         rankOrder,
         pointBudget,
         stallMs,
@@ -56,6 +61,7 @@ const optimize = (message: StartMessage) => {
         minimums,
         maximums,
         specialPriorities,
+        specialSkips,
         rankOrder,
         pointBudget,
         { stallMs: stallMs, shouldStop: shouldStop },

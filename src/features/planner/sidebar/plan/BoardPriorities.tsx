@@ -12,7 +12,7 @@ import {
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
 import { Term } from "@common/Term"
-import { ArielStatPriorityList } from "../priorities/ArielStatPriorityList"
+import { ArielPriorities } from "../priorities/ArielPriorities"
 import { StatPriorityList } from "../priorities/StatPriorityList"
 import { BoardWantList } from "./BoardWantList"
 
@@ -44,12 +44,12 @@ export const BoardPriorities = () => {
     if (!isMainBoard(layoutName)) {
         return (
             <Section
-                title="Stat priorities"
+                title="Ariel priorities"
                 variant="featured"
                 open={isOpen}
                 onOpenChange={handleOpenChange}
             >
-                <ArielStatPriorityList classId={classPreset.id} />
+                <ArielPriorities classId={classPreset.id} />
             </Section>
         )
     }

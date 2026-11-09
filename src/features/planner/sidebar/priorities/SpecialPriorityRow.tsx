@@ -8,23 +8,28 @@ import {
 } from "@planner/config/specialNodes"
 import type { SpecialNodeCount } from "@planner/storage/specialPriorities"
 import { PLANNED_COLUMN_WIDTH } from "./abilityColumns"
+import { AbilitySkipName } from "./AbilitySkipName"
 import { LimitInput } from "./LimitInput"
 import { scopeLabel } from "./scopeLabel"
 
 type SpecialPriorityRowProps = {
     bonus: SpecialBonusType
     priority: number
+    skipped: boolean
     count?: SpecialNodeCount
     layout?: MainBoardId
     onPriorityChange: (bonus: SpecialBonusType, priority: number) => void
+    onSkipChange: (bonus: SpecialBonusType, skipped: boolean) => void
 }
 
 export const SpecialPriorityRow = ({
     bonus,
     priority,
+    skipped,
     count,
     layout,
     onPriorityChange,
+    onSkipChange,
 }: SpecialPriorityRowProps) => {
     const name = SPECIAL_BONUSES[bonus].name
 
@@ -35,18 +40,25 @@ export const SpecialPriorityRow = ({
         )
     }
 
+    const handleSkipChange = (next: boolean) => {
+        onSkipChange(bonus, next)
+    }
+
     return (
         <Flex minW="0" alignItems="center" gap="2">
             <LegendSwatch type="special" />
 
-            <Text minW="0" flex="1" fontSize="sm" truncate title={name}>
-                {name}
-            </Text>
+            <AbilitySkipName
+                name={name}
+                skipped={skipped}
+                onChange={handleSkipChange}
+            />
 
             <LimitInput
                 max={99}
                 min={1}
                 value={priority}
+                disabled={skipped}
                 aria-label={`${name} priority rank`}
                 onChange={handlePriorityChange}
             />

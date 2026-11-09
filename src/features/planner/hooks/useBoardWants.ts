@@ -22,6 +22,7 @@ import { subscribeToClassSettings } from "@planner/storage/classSettings"
 import {
     DEFAULT_SPECIAL_PRIORITIES,
     readSpecialPriorities,
+    readSpecialSkips,
 } from "@planner/storage/specialPriorities"
 
 const readRanks = (classPreset: ClassPreset) => {
@@ -30,6 +31,7 @@ const readRanks = (classPreset: ClassPreset) => {
             priorities: readAbilityPriorities(classPreset),
             specialPriorities: readSpecialPriorities(classPreset.id),
             skips: readAbilitySkips(classPreset),
+            specialSkips: readSpecialSkips(classPreset.id),
             error: null,
         }
     } catch (error) {
@@ -37,6 +39,7 @@ const readRanks = (classPreset: ClassPreset) => {
             priorities: defaultAbilityPriorities(classPreset),
             specialPriorities: DEFAULT_SPECIAL_PRIORITIES,
             skips: {},
+            specialSkips: {},
             error: errorMessage(error, "Could not read the class's ranks."),
         }
     }
@@ -68,6 +71,7 @@ export const useBoardWants = (
         priorities: ranks.priorities,
         specialPriorities: ranks.specialPriorities,
         skips: ranks.skips,
+        specialSkips: ranks.specialSkips,
     })
 
     const needCells = new Set(

@@ -21,7 +21,9 @@ import {
     DEFAULT_SPECIAL_PRIORITIES,
     readSharedSpecialNodeCounts,
     readSpecialPriorities,
+    readSpecialSkips,
     writeSpecialPriorities,
+    writeSpecialSkips,
 } from "./specialPriorities"
 
 const CLASS = "gladiator"
@@ -90,6 +92,23 @@ describe("special priorities", () => {
         }).toThrow("Could not read special node priorities")
     })
 
+    it("skips none by default and keeps only real skips", () => {
+        expect(readSpecialSkips(CLASS)).toEqual({})
+        expect(writeSpecialSkips(CLASS, { "combat-speed": true })).toBeNull()
+        expect(readSpecialSkips(CLASS)).toEqual({ "combat-speed": true })
+
+        writeClassSettings(CLASS, "specialSkips", {
+            "damage-boost": "yes",
+            nonsense: true,
+        })
+        expect(readSpecialSkips(CLASS)).toEqual({})
+
+        writeClassSettings(CLASS, "specialSkips", 5)
+        expect(() => {
+            return readSpecialSkips(CLASS)
+        }).toThrow("Could not read skipped special nodes")
+    })
+
     it("counts taken specials", () => {
         const [key, bonus] = Object.entries(
             layouts.nezekan.specialNodeBonuses,
@@ -134,12 +153,29 @@ describe("Ariel settings", () => {
         }).toThrow("Could not read Ariel settings")
     })
 
-    it("counts taken nodes", () => {
-        const [key, stat] = Object.entries(layouts.ariel.nodeStats)[0]
+    it("drops tiers of the old combined stats", () => {
+        writeClassSettings(CLASS, "ariel", {
+            points: 10,
+            tiers: { "pve-attack-defense": "ignore", "pve-attack": "good" },
+        })
+
+        const tiers = readArielSettings(CLASS).tiers
+
+        expect(tiers).not.toHaveProperty("pve-attack-defense")
+        expect(tiers["pve-attack"]).toBe("good")
+    })
+
+    it("counts a taken combined node for both of its stats", () => {
+        const [key] = Object.entries(layouts.ariel.nodeStats).find(
+            ([, node]) => node === "pve-attack-defense",
+        ) ?? [""]
 
         writeBoardProgress(CLASS, "ariel", { ...progress, plannedPath: [key] })
+        const counts = readArielStatNodeCounts(CLASS)
 
-        expect(readArielStatNodeCounts(CLASS)[stat].taken).toBe(1)
+        expect(counts["pve-attack"]).toEqual({ taken: 1, total: 24 })
+        expect(counts["pve-defense"]).toEqual({ taken: 1, total: 24 })
+        expect(counts["pve-evasion"].taken).toBe(0)
     })
 })
 

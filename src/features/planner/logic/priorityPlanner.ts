@@ -14,6 +14,7 @@ import { routeStatScore, statWeights } from "@planner/config/stats"
 import {
     DEFAULT_SPECIAL_PRIORITY,
     type SpecialPriorities,
+    type SpecialSkips,
 } from "@planner/storage/specialPriorities"
 import {
     SAME_RANK_ORDERS,
@@ -98,6 +99,7 @@ export const optimizePriorityPlans = async (
     minimums: AbilityMinimums,
     maximums: AbilityMaximums,
     specialPriorities: SpecialPriorities,
+    specialSkips: SpecialSkips,
     rankOrder: RankOrder,
     pointBudget: number,
     limit: PriorityPlannerLimit,
@@ -152,6 +154,11 @@ export const optimizePriorityPlans = async (
                 const key = keyOf({ row: row, column: column })
                 if (appearance.type === "special") {
                     const bonus = layout.specialNodeBonuses[key]
+                    // Skipped: never a target. A route may still pass through.
+                    if (bonus && specialSkips[bonus]) {
+                        continue
+                    }
+
                     targets.push({
                         layout: layoutName,
                         key: key,

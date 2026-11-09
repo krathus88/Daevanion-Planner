@@ -74,6 +74,52 @@ export const writeSpecialPriorities = (
     }
 }
 
+// Skipped special nodes are never targets; a route may still pass one.
+export type SpecialSkips = Readonly<Partial<Record<SpecialBonusType, true>>>
+
+export const readSpecialSkips = (
+    classId: string,
+    source?: Record<string, unknown>,
+): SpecialSkips => {
+    try {
+        const value = readClassSettings(classId, "specialSkips", source)
+        if (value === undefined) {
+            return {}
+        }
+
+        if (!isRecord(value)) {
+            throw new Error("Saved skipped special nodes are invalid.")
+        }
+
+        const skips: Partial<Record<SpecialBonusType, true>> = {}
+        for (const bonus of SPECIAL_BONUS_TYPES) {
+            if (value[bonus] === true) {
+                skips[bonus] = true
+            }
+        }
+
+        return skips
+    } catch (error) {
+        throw new Error(
+            error instanceof Error
+                ? `Could not read skipped special nodes: ${error.message}`
+                : "Could not read skipped special nodes.",
+            { cause: error },
+        )
+    }
+}
+
+export const writeSpecialSkips = (classId: string, skips: SpecialSkips) => {
+    try {
+        writeClassSettings(classId, "specialSkips", skips)
+        return null
+    } catch (error) {
+        return error instanceof Error
+            ? `Could not save skipped special nodes: ${error.message}`
+            : "Could not save skipped special nodes."
+    }
+}
+
 export type SpecialNodeCount = {
     taken: number
     total: number

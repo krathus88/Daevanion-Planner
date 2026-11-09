@@ -1,14 +1,14 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { ARIEL_STAT_NAMES, type ArielStatType } from "@config/stats/stats"
+import { ARIEL_STAT_NAMES, type ArielPriorityStat } from "@config/stats/stats"
 import type { StatTier } from "@planner/config/stats"
 import type { StatNodeCount } from "@planner/storage/statPriorities"
 import { StatTierPicker } from "./StatTierPicker"
 
 type ArielStatRowProps = {
-    stat: ArielStatType
+    stat: ArielPriorityStat
     tier: StatTier
     count?: StatNodeCount
-    onTierChange: (stat: ArielStatType, tier: StatTier) => void
+    onTierChange: (stat: ArielPriorityStat, tier: StatTier) => void
 }
 
 export const ArielStatRow = ({

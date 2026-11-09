@@ -146,4 +146,16 @@ describe("resolveWants", () => {
         expect(resolved.get("a")).toBe("skip")
         expect(resolved.get("b")).toBe("need")
     })
+
+    it("defaults a special node skipped on All boards to Skip", () => {
+        const resolved = resolveWants({
+            wants: [special],
+            choices: {},
+            priorities: {},
+            specialPriorities: DEFAULT_SPECIAL_PRIORITIES,
+            specialSkips: { "combat-speed": true },
+        })
+
+        expect(resolved.get(special.id)).toBe("skip")
+    })
 })

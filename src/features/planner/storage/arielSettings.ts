@@ -1,4 +1,8 @@
-import { ARIEL_STAT_TYPES, type ArielStatType } from "@config/stats/stats"
+import {
+    ARIEL_NODE_GIVES,
+    ARIEL_PRIORITY_STATS,
+    type ArielPriorityStat,
+} from "@config/stats/stats"
 import { layouts } from "@planner/config/layouts"
 import {
     DEFAULT_ARIEL_STAT_TIERS,
@@ -12,7 +16,7 @@ import type { StatNodeCount } from "./statPriorities"
 
 export type ArielSettings = {
     points: number
-    tiers: Record<ArielStatType, StatTier>
+    tiers: Record<ArielPriorityStat, StatTier>
 }
 
 // Max 60: 30 each from Krao Cave and Draupnir.
@@ -45,15 +49,16 @@ export const readArielSettings = (classId: string): ArielSettings => {
             throw new Error("Saved Ariel settings are invalid.")
         }
 
+        // Older saves also ranked the combined nodes; those are dropped.
         const savedTiers = isRecord(value.tiers) ? value.tiers : {}
         const tiers = Object.fromEntries(
-            ARIEL_STAT_TYPES.map((stat) => [
+            ARIEL_PRIORITY_STATS.map((stat) => [
                 stat,
                 isTier(savedTiers[stat])
                     ? savedTiers[stat]
                     : DEFAULT_ARIEL_STAT_TIERS[stat],
             ]),
-        ) as Record<ArielStatType, StatTier>
+        ) as Record<ArielPriorityStat, StatTier>
 
         return {
             points: isPoints(value.points)
@@ -85,9 +90,10 @@ export const writeArielSettings = (
     }
 }
 
+// A combined node counts for both of its stats.
 export const readArielStatNodeCounts = (classId: string) => {
-    const counts = {} as Record<ArielStatType, StatNodeCount>
-    for (const stat of ARIEL_STAT_TYPES) {
+    const counts = {} as Record<ArielPriorityStat, StatNodeCount>
+    for (const stat of ARIEL_PRIORITY_STATS) {
         counts[stat] = { taken: 0, total: 0 }
     }
 
@@ -97,13 +103,19 @@ export const readArielStatNodeCounts = (classId: string) => {
     }
 
     const nodeStats = layouts.ariel.nodeStats
-    for (const stat of Object.values(nodeStats)) {
-        counts[stat].total += 1
+    for (const node of Object.values(nodeStats)) {
+        for (const stat of ARIEL_NODE_GIVES[node]) {
+            counts[stat].total += 1
+        }
     }
 
     for (const key of progress.value?.plannedPath ?? []) {
-        const stat = nodeStats[key]
-        if (stat) {
+        const node = nodeStats[key]
+        if (!node) {
+            continue
+        }
+
+        for (const stat of ARIEL_NODE_GIVES[node]) {
             counts[stat].taken += 1
         }
     }

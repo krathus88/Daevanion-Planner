@@ -22,6 +22,7 @@ import {
 } from "@planner/storage/rankOrder"
 import {
     readSpecialPriorities,
+    readSpecialSkips,
     SPECIAL_BONUS_TYPES,
 } from "@planner/storage/specialPriorities"
 import { readStatSettings } from "@planner/storage/statPriorities"
@@ -58,6 +59,7 @@ const readSummary = (plan: SharedPlan, classPreset: ClassPreset) => {
             maximums: readAbilityMaximums(classPreset, settings),
             skips: readAbilitySkips(classPreset, settings),
             special: readSpecialPriorities(plan.classId, settings),
+            specialSkips: readSpecialSkips(plan.classId, settings),
             rankOrder: readRankOrder(plan.classId, settings),
             stats: stats,
             statRows: statSummaryRows(stats),
@@ -166,6 +168,11 @@ export const SharedSettingsPanel = ({
                                 <SummaryRow
                                     key={bonus}
                                     label={`${summary.special[bonus]}. ${SPECIAL_BONUSES[bonus].name}`}
+                                    value={
+                                        summary.specialSkips[bonus]
+                                            ? "Skipped"
+                                            : undefined
+                                    }
                                 />
                             ))}
                     </Section>

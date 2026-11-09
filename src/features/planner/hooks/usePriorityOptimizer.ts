@@ -39,7 +39,10 @@ import {
     type ArielSettings,
 } from "@planner/storage/arielSettings"
 import { readRankOrder } from "@planner/storage/rankOrder"
-import { readSpecialPriorities } from "@planner/storage/specialPriorities"
+import {
+    readSpecialPriorities,
+    readSpecialSkips,
+} from "@planner/storage/specialPriorities"
 import { readStatSettings } from "@planner/storage/statPriorities"
 
 type PriorityWorkerMessage =
@@ -266,6 +269,7 @@ export const usePriorityOptimizer = ({
                 minimums: limits.minimums,
                 maximums: limits.maximums,
                 specialPriorities: readSpecialPriorities(classPreset.id),
+                specialSkips: readSpecialSkips(classPreset.id),
                 rankOrder: readRankOrder(classPreset.id),
                 statSettings: readStatSettings(classPreset.id),
                 arielSettings: readArielSettings(classPreset.id),

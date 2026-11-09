@@ -7,7 +7,10 @@ import type {
     AbilityPriorities,
     AbilitySkips,
 } from "@planner/storage/abilityPriorities"
-import type { SpecialPriorities } from "@planner/storage/specialPriorities"
+import type {
+    SpecialPriorities,
+    SpecialSkips,
+} from "@planner/storage/specialPriorities"
 
 export type BoardWant =
     | { id: string; kind: "special"; bonus: SpecialBonusType; keys: string[] }
@@ -92,22 +95,29 @@ export const wantRank = (
         : (priorities[want.ability.id] ?? Number.MAX_SAFE_INTEGER)
 }
 
-// An ability skipped on All boards defaults to Skip; a choice made here wins.
+// An ability or special node skipped on All boards defaults to Skip; a
+// choice made here wins.
 export const resolveWants = ({
     wants,
     choices,
     priorities,
     specialPriorities,
     skips = {},
+    specialSkips = {},
 }: {
     wants: readonly BoardWant[]
     choices: Readonly<Record<string, Want>>
     priorities: AbilityPriorities
     specialPriorities: SpecialPriorities
     skips?: AbilitySkips
+    specialSkips?: SpecialSkips
 }) => {
     const defaultOf = (want: BoardWant) => {
-        if (want.kind !== "special" && skips[want.ability.id]) {
+        const isSkipped =
+            want.kind === "special"
+                ? specialSkips[want.bonus]
+                : skips[want.ability.id]
+        if (isSkipped) {
             return "skip"
         }
 

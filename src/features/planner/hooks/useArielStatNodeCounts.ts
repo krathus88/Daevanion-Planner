@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import type { ArielStatType } from "@config/stats/stats"
+import type { ArielPriorityStat } from "@config/stats/stats"
 import { errorMessage } from "@planner/logic/errorMessage"
 import { readArielStatNodeCounts } from "@planner/storage/arielSettings"
 import { subscribeToBoardStorage } from "@planner/storage/boardStorage"
@@ -18,7 +18,7 @@ const readCounts = (classId: string) => {
 
 export const useArielStatNodeCounts = (classId: string) => {
     const [state, setState] = useState<{
-        counts: Record<ArielStatType, StatNodeCount> | null
+        counts: Record<ArielPriorityStat, StatNodeCount> | null
         error: string | null
     }>(() => readCounts(classId))
 

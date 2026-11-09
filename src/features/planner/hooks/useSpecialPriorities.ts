@@ -8,16 +8,31 @@ import {
     DEFAULT_SPECIAL_PRIORITIES,
     readSharedSpecialNodeCounts,
     readSpecialPriorities,
+    readSpecialSkips,
     writeSpecialPriorities,
+    writeSpecialSkips,
     type SpecialNodeCount,
+    type SpecialPriorities,
+    type SpecialSkips,
 } from "@planner/storage/specialPriorities"
 
-const readPriorities = (classId: string) => {
+const readPriorities = (
+    classId: string,
+): {
+    priorities: SpecialPriorities
+    skips: SpecialSkips
+    error: string | null
+} => {
     try {
-        return { priorities: readSpecialPriorities(classId), error: null }
+        return {
+            priorities: readSpecialPriorities(classId),
+            skips: readSpecialSkips(classId),
+            error: null,
+        }
     } catch (error) {
         return {
             priorities: DEFAULT_SPECIAL_PRIORITIES,
+            skips: {},
             error: errorMessage(
                 error,
                 "Could not read special node priorities.",
@@ -46,6 +61,7 @@ const readCounts = (classId: string, layout?: MainBoardId) => {
 export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
     const [initial] = useState(() => readPriorities(classId))
     const [priorities, setPriorities] = useState(initial.priorities)
+    const [skips, setSkips] = useState(initial.skips)
     const [error, setError] = useState<string | null>(initial.error)
     const [nodeCounts, setNodeCounts] = useState<{
         counts: Record<SpecialBonusType, SpecialNodeCount> | null
@@ -65,6 +81,7 @@ export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
             subscribeToClassSettings(classId, () => {
                 const next = readPriorities(classId)
                 setPriorities(next.priorities)
+                setSkips(next.skips)
                 setError(next.error)
             }),
         [classId],
@@ -82,10 +99,32 @@ export const useSpecialPriorities = (classId: string, layout?: MainBoardId) => {
         setError(null)
     }
 
+    const updateSkip = (bonus: SpecialBonusType, skipped: boolean) => {
+        const nextSkips: Partial<Record<SpecialBonusType, true>> = {
+            ...skips,
+        }
+        if (skipped) {
+            nextSkips[bonus] = true
+        } else {
+            delete nextSkips[bonus]
+        }
+
+        const writeError = writeSpecialSkips(classId, nextSkips)
+        if (writeError) {
+            setError(writeError)
+            return
+        }
+
+        setSkips(nextSkips)
+        setError(null)
+    }
+
     return {
         priorities: priorities,
+        skips: skips,
         counts: nodeCounts.counts,
         error: error ?? nodeCounts.error,
         updatePriority: updatePriority,
+        updateSkip: updateSkip,
     }
 }
