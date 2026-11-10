@@ -11,6 +11,7 @@ import { getPartner, type Server } from "@timers/config/servers"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { compareBosses } from "@timers/logic/bossOrder"
 import { BossRow } from "./BossRow"
+import { NotmeterCredit } from "./NotmeterCredit"
 import { ServerSelect } from "./ServerSelect"
 import { SharingPopover } from "./SharingPopover"
 
@@ -22,6 +23,7 @@ type FieldBossRegionsProps = {
     focusedTimer?: TimerId
     now: number
     shared: boolean
+    notmeterError: string | null
     onServerChange: (server: string) => void
     onSharedChange: (shared: boolean) => void
     onRegionChange: (region: FieldBossRegion) => void
@@ -40,6 +42,7 @@ export const FieldBossRegions = ({
     focusedTimer,
     now,
     shared,
+    notmeterError,
     onServerChange,
     onSharedChange,
     onRegionChange,
@@ -134,6 +137,10 @@ export const FieldBossRegions = ({
                         ? `Using shared timers for ${server.name}, and for ${server.name} + ${getPartner(server).name} in the Abyss.`
                         : "Shared timers are off: only your own timers show."}
                 </Text>
+
+                {shared && region !== "abyss" && (
+                    <NotmeterCredit error={notmeterError} />
+                )}
             </Flex>
 
             {region === "abyss" && (

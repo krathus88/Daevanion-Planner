@@ -24,6 +24,7 @@ import {
 } from "@timers/shared/sharedReports"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { useAuth } from "@account/hooks/useAuth"
+import { useNotmeterFeed } from "./useNotmeterFeed"
 import { useNow } from "./useNow"
 import { useSharedReports } from "./useSharedReports"
 import { useTimerSettings } from "./useTimerSettings"
@@ -65,6 +66,7 @@ export const useTimers = () => {
     const sharedReports = useSharedReports(
         settings.showShared ? [server.id, server.pairId] : null,
     )
+    const notmeterFeed = useNotmeterFeed(settings.showShared)
 
     const canShare =
         settings.showShared && auth.status === "signedIn" && auth.isReporter
@@ -100,6 +102,8 @@ export const useTimers = () => {
             scope
                 ? (sharedReports[getSharedReportKey(scope, timer.id)] ?? null)
                 : null,
+            notmeterFeed.reports[getSharedReportKey(server.id, timer.id)] ??
+                null,
         )
         const state = getTimerState(timer, report, now)
         const soonMinutes = settings.soonMinutes[timer.id] ?? timer.soonMinutes
@@ -135,6 +139,7 @@ export const useTimers = () => {
         comingNext: comingNext,
         settings: settings,
         canShare: canShare,
+        notmeterError: notmeterFeed.error,
         togglePinned: togglePinned,
         changePinnedColumns: changePinnedColumns,
         changeTimerColor: changeTimerColor,

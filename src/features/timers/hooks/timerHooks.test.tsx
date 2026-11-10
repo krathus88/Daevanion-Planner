@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => {
     return {
         auth: { status: "signedOut", error: null } as AuthState,
         shared: {} as Record<string, unknown>,
+        notmeter: { reports: {}, error: null } as {
+            reports: Record<string, unknown>
+            error: string | null
+        },
+        notmeterEnabled: [] as boolean[],
         write: vi.fn(),
     }
 })
@@ -25,6 +30,16 @@ vi.mock("./useSharedReports", () => {
     return {
         useSharedReports: () => {
             return mocks.shared
+        },
+    }
+})
+
+vi.mock("./useNotmeterFeed", () => {
+    return {
+        useNotmeterFeed: (enabled: boolean) => {
+            mocks.notmeterEnabled.push(enabled)
+
+            return mocks.notmeter
         },
     }
 })
@@ -48,6 +63,8 @@ const REPORTER: AuthState = {
 beforeEach(() => {
     mocks.auth = { status: "signedOut", error: null }
     mocks.shared = {}
+    mocks.notmeter = { reports: {}, error: null }
+    mocks.notmeterEnabled = []
     mocks.write.mockReset()
 })
 
@@ -244,6 +261,47 @@ describe("useTimers", () => {
             reportSource: "shared",
             canClearReport: false,
         })
+    })
+
+    it("uses NotMeter's live time, not clearable", () => {
+        mocks.notmeter = {
+            reports: {
+                "siel/gartua": {
+                    report: { spawnAt: 900, reportedAt: 800 },
+                    reportedAt: 800,
+                },
+            },
+            error: "x",
+        }
+
+        const result = setup()
+
+        act(() => {
+            result.current.changeServer("siel")
+        })
+
+        expect(entry(result, "gartua")).toMatchObject({
+            report: { spawnAt: 900, reportedAt: 800 },
+            reportSource: "notmeter",
+            canClearReport: false,
+        })
+        expect(result.current.notmeterError).toBe("x")
+    })
+
+    it("reads NotMeter only while shared timers are on", () => {
+        const result = setup()
+
+        act(() => {
+            result.current.changeShowShared(false)
+        })
+
+        expect(mocks.notmeterEnabled.at(-1)).toBe(false)
+
+        act(() => {
+            result.current.changeShowShared(true)
+        })
+
+        expect(mocks.notmeterEnabled.at(-1)).toBe(true)
     })
 
     it("shares a reporter's report and drops the local copy", async () => {

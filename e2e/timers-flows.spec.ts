@@ -380,3 +380,59 @@ test.describe("the pinned layout editor", () => {
             .toEqual([["weekly"], ["daily"]])
     })
 })
+
+test.describe("NotMeter's live times", () => {
+    const FEED = "**/NotMeter-Cache/main/presence/*"
+    const NOW = Date.parse("2026-07-01T12:00:00Z")
+
+    const serveFeed = (page: Page, body: object) => {
+        return page.route(FEED, (route) => {
+            return route.fulfill({ json: body })
+        })
+    }
+
+    test("set a boss's timer and are credited", async ({ page }) => {
+        await page.clock.setFixedTime(NOW)
+        await serveFeed(page, {
+            schema: "notmeter-global-field-boss-public-cache-v1",
+            version: 1,
+            globalRegion: "eu",
+            servers: [
+                {
+                    serverId: 1301,
+                    maps: [
+                        {
+                            entries: [
+                                {
+                                    // High Commander Lagta, Verteron
+                                    bossCode: 2101131,
+                                    targetAt: NOW + 2 * 3_600_000,
+                                    observedAtMs: NOW - 60_000,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        })
+        await page.goto("/timers")
+
+        const card = page
+            .getByText(LAGTA)
+            .locator(
+                "xpath=ancestor::*[.//button[normalize-space()='Killed']][1]",
+            )
+
+        await expect(card).not.toContainText("Not set")
+        await expect(page.getByRole("link", { name: "NotMeter" })).toBeVisible()
+    })
+
+    test("say so when the feed's format changed", async ({ page }) => {
+        await serveFeed(page, { schema: "something-else", version: 2 })
+        await page.goto("/timers")
+
+        await expect(
+            page.getByText(/can't be read right now \(unknown format/),
+        ).toBeVisible()
+    })
+})

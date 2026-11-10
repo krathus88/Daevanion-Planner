@@ -22,6 +22,7 @@ type TimerTabsProps = {
     timers: TimerEntry[]
     now: number
     shared: boolean
+    notmeterError: string | null
     onTabChange: (tab: TimerCategory) => void
     onServerChange: (server: string) => void
     onSharedChange: (shared: boolean) => void
@@ -42,6 +43,7 @@ export const TimerTabs = ({
     timers,
     now,
     shared,
+    notmeterError,
     onTabChange,
     onServerChange,
     onSharedChange,
@@ -88,6 +90,7 @@ export const TimerTabs = ({
                             focusedTimer={focusedTimer}
                             now={now}
                             shared={shared}
+                            notmeterError={notmeterError}
                             onServerChange={onServerChange}
                             onSharedChange={onSharedChange}
                             onRegionChange={onRegionChange}

@@ -23,6 +23,7 @@ export const TimersPage = () => {
         timers,
         pinnedColumns,
         settings,
+        notmeterError,
         togglePinned,
         changePinnedColumns,
         changeTimerColor,
@@ -92,9 +93,9 @@ export const TimersPage = () => {
                             <Heading size="lg">Timers</Heading>
 
                             <Text textStyle="hint">
-                                EU servers. Community-reported times, shown in
-                                your local time. <Term>Pinned</Term> timers show
-                                in the header.
+                                EU servers. Live and community-reported times,
+                                shown in your local time. <Term>Pinned</Term>{" "}
+                                timers show in the header.
                             </Text>
                         </Flex>
 
@@ -129,6 +130,7 @@ export const TimersPage = () => {
                     timers={timers}
                     now={now}
                     shared={settings.showShared}
+                    notmeterError={notmeterError}
                     onTabChange={handleTabChange}
                     onServerChange={changeServer}
                     onSharedChange={changeShowShared}
