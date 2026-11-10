@@ -23,6 +23,8 @@ const KEY = "daevanion:tracker:v1:data"
 const CHANGE_EVENT = "daevanion-tracker-change"
 
 export const MAX_TASK_CAP = 999
+export const MAX_SHORT_NOTE = 80
+export const MAX_LONG_NOTE = 2000
 
 const EMPTY_DATA: TrackerData = {
     characters: [],
@@ -32,6 +34,9 @@ const EMPTY_DATA: TrackerData = {
     entries: {},
     minimized: [],
     ignored: {},
+    energy: {},
+    notes: {},
+    membership: true,
 }
 
 const isWholeNumber = (value: unknown, min: number): value is number => {
@@ -120,6 +125,53 @@ const isTaskEntries = (value: unknown): value is TaskEntries => {
         isWholeNumber(value.base, 0) &&
         isWholeNumber(value.bonus, 0)
     )
+}
+
+// Odyle Energy by character id; bad entries are dropped one by one.
+const pickEnergy = (value: unknown) => {
+    const energy: TrackerData["energy"] = {}
+
+    if (!isRecord(value)) {
+        return energy
+    }
+
+    for (const [characterId, entries] of Object.entries(value)) {
+        if (isTaskEntries(entries)) {
+            energy[characterId] = entries
+        }
+    }
+
+    return energy
+}
+
+// Notes by character id; empty ones are dropped, overlong ones cut.
+const pickNotes = (value: unknown) => {
+    const notes: TrackerData["notes"] = {}
+
+    if (!isRecord(value)) {
+        return notes
+    }
+
+    for (const [characterId, note] of Object.entries(value)) {
+        if (!isRecord(note)) {
+            continue
+        }
+
+        const short =
+            typeof note.short === "string"
+                ? note.short.slice(0, MAX_SHORT_NOTE)
+                : ""
+        const long =
+            typeof note.long === "string"
+                ? note.long.slice(0, MAX_LONG_NOTE)
+                : ""
+
+        if (short.trim() !== "" || long.trim() !== "") {
+            notes[characterId] = { short: short, long: long }
+        }
+    }
+
+    return notes
 }
 
 // Drops whatever doesn't parse, entry by entry, keeping the first of each id.
@@ -237,6 +289,10 @@ export const parseTrackerData = (value: unknown): TrackerData => {
             characters.map((character) => character.id),
             getNewIgnoredPresets(known),
         ),
+        energy: pickEnergy(value.energy),
+        notes: pickNotes(value.notes),
+        // Saves from before it existed assume the membership.
+        membership: value.membership !== false,
     }
 }
 

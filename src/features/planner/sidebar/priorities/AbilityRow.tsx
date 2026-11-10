@@ -118,6 +118,8 @@ export const AbilityRow = ({ ability, limits, layout }: AbilityRowProps) => {
                 min={0}
                 placeholder="–"
                 value={maximum ?? ""}
+                // Empty is no limit.
+                fallback={null}
                 disabled={isSkipped}
                 title="Leave empty for no limit"
                 aria-label={`${ability.name} maximum upgrades`}

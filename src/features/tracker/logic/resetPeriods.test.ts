@@ -23,6 +23,17 @@ describe("getResetPeriods", () => {
     })
 })
 
+describe("energy recharge", () => {
+    it("moves on at each recharge, 8 times a day", () => {
+        const before = getResetPeriods(BEFORE_RESET)
+        const after = getResetPeriods(AFTER_RESET)
+        const nextDay = getResetPeriods(AFTER_RESET + 24 * 3_600_000)
+
+        expect(after.energy).toBe(before.energy + 1)
+        expect(nextDay.energy).toBe(after.energy + 8)
+    })
+})
+
 describe("getNextReset", () => {
     it("is the coming 07:00 UTC for dailies", () => {
         expect(getNextReset("daily", BEFORE_RESET)).toBe(AFTER_RESET)

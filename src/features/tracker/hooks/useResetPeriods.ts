@@ -10,6 +10,7 @@ const getPeriods = () => {
 
     if (
         !cached ||
+        cached.energy !== next.energy ||
         cached.daily !== next.daily ||
         cached.weekly !== next.weekly ||
         cached.siege !== next.siege
@@ -20,8 +21,9 @@ const getPeriods = () => {
     return cached
 }
 
-// The current reset periods. Unlike useNow, it changes only at a reset, so
-// the cards (which read every count by period) don't re-render each second.
+// The current reset periods. Unlike useNow, it changes only at a reset (the
+// energy one every 3 hours), so the cards (which read every count by period)
+// don't re-render each second.
 export const useResetPeriods = () => {
     return useSyncExternalStore(subscribeToNow, getPeriods)
 }

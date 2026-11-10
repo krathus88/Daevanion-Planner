@@ -81,6 +81,25 @@ const mergeEntries = (
     return merged
 }
 
+// Odyle Energy per character: the later recharge wins; in the same one the
+// newer side's, since cubes and items move it either way.
+const mergeEnergy = (
+    newer: TrackerData["energy"],
+    older: TrackerData["energy"],
+) => {
+    const merged = { ...newer }
+
+    for (const [characterId, energy] of Object.entries(older)) {
+        const current = merged[characterId]
+
+        if (!current || energy.period > current.period) {
+            merged[characterId] = energy
+        }
+    }
+
+    return merged
+}
+
 // Characters and tasks by id, counts and entries one by one. A list removed on one side
 // comes back from the other, like saved plans.
 export const mergeTrackerData = (newer: unknown, older: unknown) => {
@@ -102,5 +121,9 @@ export const mergeTrackerData = (newer: unknown, older: unknown) => {
         // Choices about the view and the list: the side edited last.
         minimized: newerData.minimized,
         ignored: newerData.ignored,
+        energy: mergeEnergy(newerData.energy, olderData.energy),
+        // Per character, the newer side's note.
+        notes: { ...olderData.notes, ...newerData.notes },
+        membership: newerData.membership,
     }
 }

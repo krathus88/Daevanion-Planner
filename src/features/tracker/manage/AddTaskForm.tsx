@@ -69,6 +69,7 @@ export const AddTaskForm = ({ onCreate }: AddTaskFormProps) => {
                 <WholeNumberInput
                     size="sm"
                     value={cap}
+                    fallback={1}
                     w="16"
                     textAlign="center"
                     aria-label="New task cap"

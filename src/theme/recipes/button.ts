@@ -48,6 +48,12 @@ export const buttonRecipe = defineRecipe({
                 bg: "transparent",
                 color: "app.muted",
                 _hover: { bg: "app.hover", color: "app.fg" },
+                // A tooltip marks its trigger expanded until it closes, a moment
+                // after the pointer left, and Chakra's ghost paints expanded
+                // dark. Menus and popovers keep it, as their open state.
+                "&[data-scope=tooltip][data-expanded]:not(:hover)": {
+                    bg: "transparent",
+                },
             },
             dangerGhost: {
                 bg: "transparent",

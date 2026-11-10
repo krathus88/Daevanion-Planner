@@ -14,6 +14,9 @@ export const TrackerPage = () => {
     const {
         characters,
         tasks,
+        energy,
+        notes,
+        membership,
         counts,
         entries,
         minimized,
@@ -23,6 +26,9 @@ export const TrackerPage = () => {
         changeCount,
         changeEntries,
         changeMinimized,
+        changeMembership,
+        changeEnergy,
+        changeNote,
         changeIgnored,
         createCharacter,
         changeCharacter,
@@ -69,7 +75,8 @@ export const TrackerPage = () => {
                             Dailies and weeklies per character, and per server
                             for shared ones. Counts clear at the daily reset
                             (07:00 UTC), the weekly one (Wednesday 07:00 UTC) or
-                            each Artifact Siege.
+                            each Artifact Siege; Odyle Energy recharges every 3
+                            hours.
                         </Text>
                     </Flex>
 
@@ -101,12 +108,17 @@ export const TrackerPage = () => {
                         characters={characters}
                         tasks={tasks}
                         counts={counts}
+                        energy={energy}
+                        notes={notes}
+                        membership={membership}
                         entries={entries}
                         minimized={minimized}
                         ignored={ignored}
                         periods={periods}
                         onCountChange={changeCount}
                         onEntriesChange={changeEntries}
+                        onEnergyChange={changeEnergy}
+                        onNoteChange={changeNote}
                         onMinimizedChange={changeMinimized}
                         onIgnoredChange={changeIgnored}
                     />
@@ -115,12 +127,14 @@ export const TrackerPage = () => {
 
             <CharactersDialog
                 characters={characters}
+                membership={membership}
                 open={charactersOpen}
                 onOpenChange={setCharactersOpen}
                 onCreate={createCharacter}
                 onChange={changeCharacter}
                 onDelete={deleteCharacter}
                 onMove={shiftCharacter}
+                onMembershipChange={changeMembership}
             />
 
             <TasksDialog

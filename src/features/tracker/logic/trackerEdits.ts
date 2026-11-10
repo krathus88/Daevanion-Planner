@@ -1,12 +1,18 @@
 import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
-import { MAX_TASK_CAP } from "@tracker/storage/trackerData"
+import {
+    MAX_LONG_NOTE,
+    MAX_SHORT_NOTE,
+    MAX_TASK_CAP,
+} from "@tracker/storage/trackerData"
 import type {
+    CharacterNote,
     TrackerCharacter,
     TrackerData,
     TrackerReset,
     TrackerTask,
 } from "@tracker/types"
 import { addIgnored, insertPreset } from "./presetTasks"
+import { clampEnergy, getEnergyCap, type EnergyLeft } from "./odyleEnergy"
 import { clampEntries, type EntriesLeft } from "./taskEntries"
 
 export type TaskFields = {
@@ -195,7 +201,17 @@ export const removeCharacter = (data: TrackerData, id: string): TrackerData => {
         entries: dropPerOwner(data.entries, id, null),
         ignored: dropIgnored(data.ignored, id, null),
         minimized: data.minimized.filter((owner) => owner !== id),
+        energy: dropKey(data.energy, id),
+        notes: dropKey(data.notes, id),
     }
+}
+
+const dropKey = <T>(record: Record<string, T>, key: string) => {
+    const next = { ...record }
+
+    delete next[key]
+
+    return next
 }
 
 export const moveCharacter = (
@@ -315,6 +331,51 @@ export const restorePreset = (data: TrackerData, id: string): TrackerData => {
 // Back to the starter list; counts of the user's own tasks stay unread.
 export const restoreStarterTasks = (data: TrackerData): TrackerData => {
     return { ...data, tasks: null }
+}
+
+// A character's Odyle Energy as of `period`, kept within the account's cap.
+export const setEnergy = (
+    data: TrackerData,
+    characterId: string,
+    period: number,
+    left: EnergyLeft,
+): TrackerData => {
+    return {
+        ...data,
+        energy: {
+            ...data.energy,
+            [characterId]: {
+                period: period,
+                ...clampEnergy(left, getEnergyCap(data.membership)),
+            },
+        },
+    }
+}
+
+// Saves a character's note, trimmed; an empty one removes it.
+export const setNote = (
+    data: TrackerData,
+    characterId: string,
+    note: CharacterNote,
+): TrackerData => {
+    const short = note.short.trim().slice(0, MAX_SHORT_NOTE)
+    const long = note.long.trim().slice(0, MAX_LONG_NOTE)
+
+    if (short === "" && long === "") {
+        return { ...data, notes: dropKey(data.notes, characterId) }
+    }
+
+    return {
+        ...data,
+        notes: { ...data.notes, [characterId]: { short: short, long: long } },
+    }
+}
+
+export const setMembership = (
+    data: TrackerData,
+    membership: boolean,
+): TrackerData => {
+    return { ...data, membership: membership }
 }
 
 // Minimizes or expands the given cards, by owner, leaving the rest as is.

@@ -40,6 +40,11 @@ export type TaskEntries = {
     bonus: number
 }
 
+export type CharacterNote = {
+    short: string
+    long: string
+}
+
 export type TrackerData = {
     characters: TrackerCharacter[]
     // Null until the user edits the list; the starter list is used instead.
@@ -55,4 +60,11 @@ export type TrackerData = {
     // Task ids each owner skips for good: still shown, dimmed, and left out
     // of the progress.
     ignored: Record<string, string[]>
+    // Odyle Energy by character id (not a task: it sits on the card itself).
+    energy: Record<string, TaskEntries>
+    // A note per character id: the short one shows on the card, the long one
+    // (or the short) on the note button's hover. Characters without one are left out.
+    notes: Record<string, CharacterNote>
+    // The account's Special Quai Membership: raises the Odyle Energy cap.
+    membership: boolean
 }

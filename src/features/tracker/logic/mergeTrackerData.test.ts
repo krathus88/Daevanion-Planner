@@ -115,6 +115,59 @@ describe("mergeTrackerData", () => {
             entries: {},
             minimized: [],
             ignored: {},
+            energy: {},
+            notes: {},
+            membership: true,
         })
+    })
+
+    it("merges Odyle Energy per character, the later recharge first", () => {
+        const merged = mergeTrackerData(
+            {
+                energy: {
+                    a: { period: 5, base: 100, bonus: 0 },
+                    b: { period: 5, base: 200, bonus: 0 },
+                },
+            },
+            {
+                energy: {
+                    a: { period: 6, base: 50, bonus: 0 },
+                    b: { period: 5, base: 300, bonus: 0 },
+                    c: { period: 1, base: 10, bonus: 0 },
+                },
+            },
+        )
+
+        expect(merged.energy).toEqual({
+            a: { period: 6, base: 50, bonus: 0 },
+            b: { period: 5, base: 200, bonus: 0 },
+            c: { period: 1, base: 10, bonus: 0 },
+        })
+    })
+
+    it("takes each character's note from the newer side", () => {
+        const merged = mergeTrackerData(
+            { notes: { a: { short: "New", long: "" } } },
+            {
+                notes: {
+                    a: { short: "Old", long: "Old details" },
+                    b: { short: "Bran", long: "" },
+                },
+            },
+        )
+
+        expect(merged.notes).toEqual({
+            a: { short: "New", long: "" },
+            b: { short: "Bran", long: "" },
+        })
+    })
+
+    it("takes the membership from the newer side", () => {
+        expect(mergeTrackerData({ membership: false }, {}).membership).toBe(
+            false,
+        )
+        expect(mergeTrackerData({}, { membership: false }).membership).toBe(
+            true,
+        )
     })
 })

@@ -1,8 +1,10 @@
-import type { InputProps } from "@chakra-ui/react"
-import { WholeNumberInput } from "@common/WholeNumberInput"
+import {
+    WholeNumberInput,
+    type WholeNumberInputProps,
+} from "@common/WholeNumberInput"
 import { LIMIT_COLUMN_WIDTH } from "./abilityColumns"
 
-export const LimitInput = ({ ...props }: InputProps) => {
+export const LimitInput = ({ ...props }: WholeNumberInputProps) => {
     return (
         <WholeNumberInput
             size="sm"

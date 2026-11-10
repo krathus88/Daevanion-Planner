@@ -41,6 +41,8 @@ export const PriorityInput = ({
             max={99}
             min={1}
             value={draft ?? value}
+            // Left empty, the rank stays as it was (see commit).
+            fallback={null}
             onChange={handleChange}
             onBlur={commit}
             onKeyDown={handleKeyDown}

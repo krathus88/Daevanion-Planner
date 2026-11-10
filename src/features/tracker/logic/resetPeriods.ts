@@ -4,6 +4,7 @@ import {
     type ServerSchedule,
 } from "@timers/logic/serverSchedule"
 import { getResetSchedule } from "@tracker/config/trackerResets"
+import { getEnergyPeriod } from "./odyleEnergy"
 import type { TaskCount, TrackerReset } from "@tracker/types"
 
 const HOUR = 3_600_000
@@ -42,10 +43,12 @@ const getResetPeriod = (reset: TrackerReset, now: number) => {
     return Math.round(getServerReset(schedule, now).last / HOUR)
 }
 
-export type ResetPeriods = Record<TrackerReset, number>
+// Plus Odyle Energy's recharge, every 3 hours.
+export type ResetPeriods = Record<TrackerReset | "energy", number>
 
 export const getResetPeriods = (now: number): ResetPeriods => {
     return {
+        energy: getEnergyPeriod(now),
         daily: getResetPeriod("daily", now),
         weekly: getResetPeriod("weekly", now),
         siege: getResetPeriod("siege", now),

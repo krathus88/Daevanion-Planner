@@ -71,6 +71,7 @@ export const SpecialPriorityRow = ({
                 max={99}
                 min={1}
                 value={priority}
+                fallback={1}
                 disabled={skipped}
                 aria-label={`${name} priority rank`}
                 onChange={handlePriorityChange}

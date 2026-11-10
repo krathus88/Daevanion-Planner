@@ -10,16 +10,23 @@ type TaskCardHeaderProps = {
     minimized: boolean
     icon?: ReactNode
     subtitle?: ReactNode
+    // Right after the title (a character's note button); it keeps its clicks
+    // to itself.
+    titleAction?: ReactNode
     onMinimizedChange: (minimized: boolean) => void
 }
 
-// The whole header minimizes and expands the card.
+// A click anywhere on the header minimizes and expands the card. The chevron
+// is the button that does it for keyboards and screen readers (a button can't
+// hold the title's own button, so the header itself isn't one); its click
+// bubbles up to the header like any other.
 export const TaskCardHeader = ({
     title,
     progress,
     minimized,
     icon,
     subtitle,
+    titleAction,
     onMinimizedChange,
 }: TaskCardHeaderProps) => {
     const handleToggle = () => {
@@ -29,27 +36,20 @@ export const TaskCardHeader = ({
     const isDone = progress.total > 0 && progress.done === progress.total
 
     return (
-        <chakra.button
+        <Flex
             m="-2"
             p="2"
-            display="flex"
             flexDir="column"
             gap="2"
             borderRadius="md"
-            textAlign="start"
             cursor="button"
             transitionProperty="common"
             transitionDuration="fast"
             _hover={{ bg: "app.hover" }}
-            _focusVisible={{ outline: "2px solid", outlineColor: "app.accent" }}
-            type="button"
-            aria-label={minimized ? `Expand ${title}` : `Minimize ${title}`}
-            aria-expanded={!minimized}
             onClick={handleToggle}
         >
-            <Flex as="span" w="full" alignItems="center" gap="3">
+            <Flex w="full" alignItems="center" gap="3">
                 <Flex
-                    as="span"
                     boxSize="8"
                     flexShrink="0"
                     alignItems="center"
@@ -58,44 +58,59 @@ export const TaskCardHeader = ({
                     {icon}
                 </Flex>
 
-                <Flex as="span" minW="0" flex="1" flexDir="column">
-                    <Text
-                        as="span"
-                        fontSize="lg"
-                        fontWeight="semibold"
-                        truncate
-                    >
-                        {title}
-                    </Text>
+                <Flex minW="0" flex="1" flexDir="column">
+                    <Flex minW="0" alignItems="center" gap="1">
+                        <Text fontSize="lg" fontWeight="semibold" truncate>
+                            {title}
+                        </Text>
+
+                        {titleAction}
+                    </Flex>
 
                     {subtitle}
                 </Flex>
 
                 {progress.total > 0 && (
                     <Text
-                        as="span"
                         flexShrink="0"
                         color={isDone ? "app.success" : "app.muted"}
                         fontSize="sm"
                         fontWeight="semibold"
                     >
-                        {progress.done}/{progress.total} done
+                        {progress.done}/{progress.total}
                     </Text>
                 )}
 
-                <Icon boxSize="4" flexShrink="0" color="app.muted">
-                    {minimized ? <LuChevronDown /> : <LuChevronUp />}
-                </Icon>
+                <chakra.button
+                    p="1"
+                    m="-1"
+                    display="flex"
+                    flexShrink="0"
+                    borderRadius="sm"
+                    color="app.muted"
+                    cursor="button"
+                    _focusVisible={{
+                        outline: "2px solid",
+                        outlineColor: "app.accent",
+                    }}
+                    type="button"
+                    aria-label={
+                        minimized ? `Expand ${title}` : `Minimize ${title}`
+                    }
+                    aria-expanded={!minimized}
+                >
+                    <Icon boxSize="4">
+                        {minimized ? <LuChevronDown /> : <LuChevronUp />}
+                    </Icon>
+                </chakra.button>
             </Flex>
 
             {progress.total > 0 && (
-                <chakra.span w="full">
-                    <ProgressBar
-                        value={(progress.done / progress.total) * 100}
-                        label={`${title}: ${progress.done} of ${progress.total} done`}
-                    />
-                </chakra.span>
+                <ProgressBar
+                    value={(progress.done / progress.total) * 100}
+                    label={`${title}: ${progress.done} of ${progress.total} done`}
+                />
             )}
-        </chakra.button>
+        </Flex>
     )
 }

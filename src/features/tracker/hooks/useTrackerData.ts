@@ -1,5 +1,6 @@
 import { requestPersistentStorage } from "@planner/storage/persistStorage"
 import type { EntriesLeft } from "@tracker/logic/taskEntries"
+import type { EnergyLeft } from "@tracker/logic/odyleEnergy"
 import {
     addCharacter,
     addTask,
@@ -13,7 +14,10 @@ import {
     restoreStarterTasks,
     setCount,
     setEntries,
+    setEnergy,
     setIgnored,
+    setMembership,
+    setNote,
     setMinimized,
     updateCharacter,
     updateTask,
@@ -25,7 +29,7 @@ import {
     subscribeToTrackerData,
     writeTrackerData,
 } from "@tracker/storage/trackerData"
-import type { TrackerTask } from "@tracker/types"
+import type { CharacterNote, TrackerTask } from "@tracker/types"
 import { useSyncExternalStore } from "react"
 
 export const useTrackerData = () => {
@@ -104,11 +108,33 @@ export const useTrackerData = () => {
         writeTrackerData(setIgnored(readTrackerData(), owner, taskId, ignored))
     }
 
+    const changeEnergy = (
+        characterId: string,
+        period: number,
+        left: EnergyLeft,
+    ) => {
+        writeTrackerData(
+            setEnergy(readTrackerData(), characterId, period, left),
+        )
+        requestPersistentStorage()
+    }
+
+    const changeNote = (characterId: string, note: CharacterNote) => {
+        writeTrackerData(setNote(readTrackerData(), characterId, note))
+    }
+
+    const changeMembership = (membership: boolean) => {
+        writeTrackerData(setMembership(readTrackerData(), membership))
+    }
+
     const tasks = getTasks(data)
 
     return {
         characters: data.characters,
         tasks: tasks,
+        energy: data.energy,
+        notes: data.notes,
+        membership: data.membership,
         counts: data.counts,
         entries: data.entries,
         minimized: data.minimized,
@@ -116,6 +142,9 @@ export const useTrackerData = () => {
         usesStarterTasks: data.tasks === null,
         removedPresets: getRemovedPresets(data),
         changeMinimized: changeMinimized,
+        changeMembership: changeMembership,
+        changeEnergy: changeEnergy,
+        changeNote: changeNote,
         changeIgnored: changeIgnored,
         changeCount: changeCount,
         changeEntries: changeEntries,

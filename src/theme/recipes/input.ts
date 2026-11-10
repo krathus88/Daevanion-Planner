@@ -9,6 +9,15 @@ export const fieldStyles = {
     _placeholder: { color: "app.subtle" },
 } as const
 
+// Multi-line fields look like the single-line ones.
+export const textareaRecipe = defineRecipe({
+    variants: {
+        variant: {
+            outline: fieldStyles,
+        },
+    },
+})
+
 export const inputRecipe = defineRecipe({
     base: {
         // Hide number spinners; Firefox needs `textfield`.

@@ -45,6 +45,8 @@ export const StatMaxFields = ({
                 max={MAX_STAT_RANK}
                 min={1}
                 placeholder="–"
+                // Empty waits for every skill or passive.
+                fallback={null}
                 value={value.skillAfter ?? ""}
                 title="Goes before skills ranked after this; empty waits for every skill"
                 aria-label={`Max ${name} before skills ranked after`}
@@ -59,6 +61,8 @@ export const StatMaxFields = ({
                 max={MAX_STAT_RANK}
                 min={1}
                 placeholder="–"
+                // Empty waits for every skill or passive.
+                fallback={null}
                 value={value.passiveAfter ?? ""}
                 title="Goes before passives ranked after this; empty waits for every passive"
                 aria-label={`Max ${name} before passives ranked after`}

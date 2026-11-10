@@ -15,7 +15,10 @@ import {
     restoreStarterTasks,
     setCount,
     setEntries,
+    setEnergy,
     setIgnored,
+    setMembership,
+    setNote,
     setMinimized,
     updateCharacter,
     updateTask,
@@ -50,6 +53,9 @@ const data = (overrides: Partial<TrackerData> = {}): TrackerData => {
         entries: {},
         minimized: [],
         ignored: {},
+        energy: {},
+        notes: {},
+        membership: true,
         ...overrides,
     }
 }
@@ -318,5 +324,54 @@ describe("setMinimized", () => {
 
         expect(minimized.minimized).toEqual(["a", "x"])
         expect(setMinimized(minimized, ["a"], false).minimized).toEqual(["x"])
+    })
+})
+
+describe("setMembership", () => {
+    it("sets the account's membership, keeping the rest", () => {
+        const before = data()
+        const after = setMembership(before, false)
+
+        expect(after.membership).toBe(false)
+        expect(after.characters).toBe(before.characters)
+    })
+})
+
+describe("setEnergy", () => {
+    it("saves a character's energy within the account's cap", () => {
+        const left = { base: 900, bonus: 2500 }
+
+        expect(setEnergy(data(), "a", 7, left).energy).toEqual({
+            a: { period: 7, base: 840, bonus: 2000 },
+        })
+        expect(
+            setEnergy(data({ membership: false }), "a", 7, left).energy.a,
+        ).toEqual({ period: 7, base: 560, bonus: 2000 })
+    })
+
+    it("is dropped with its character", () => {
+        const withEnergy = setEnergy(data(), "a", 7, { base: 10, bonus: 0 })
+
+        expect(removeCharacter(withEnergy, "a").energy).toEqual({})
+    })
+})
+
+describe("setNote", () => {
+    it("saves a character's note trimmed, and removes an empty one", () => {
+        const saved = setNote(data(), "a", {
+            short: "  Alt for keys ",
+            long: "Runs Shugo only\n",
+        })
+
+        expect(saved.notes).toEqual({
+            a: { short: "Alt for keys", long: "Runs Shugo only" },
+        })
+        expect(setNote(saved, "a", { short: " ", long: "" }).notes).toEqual({})
+    })
+
+    it("is dropped with its character", () => {
+        const saved = setNote(data(), "a", { short: "Main", long: "" })
+
+        expect(removeCharacter(saved, "a").notes).toEqual({})
     })
 })

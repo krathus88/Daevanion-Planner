@@ -41,6 +41,10 @@ type TaskCardProps = {
     minimized?: boolean
     icon?: ReactNode
     subtitle?: ReactNode
+    // Shown above the task boxes, minimized or not (a character's Odyle Energy).
+    top?: ReactNode
+    // Right after the title in the header (a character's note button).
+    titleAction?: ReactNode
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onMinimizedChange: (owner: string, minimized: boolean) => void
@@ -60,6 +64,8 @@ export const TaskCard = ({
     minimized = false,
     icon,
     subtitle,
+    top,
+    titleAction,
     onCountChange,
     onEntriesChange,
     onMinimizedChange,
@@ -131,21 +137,28 @@ export const TaskCard = ({
                 minimized={minimized}
                 icon={icon}
                 subtitle={subtitle}
+                titleAction={titleAction}
                 onMinimizedChange={handleMinimizedChange}
             />
 
             {minimized ? (
-                <PendingTasks
-                    pending={getPendingTasks(
-                        taskGroups,
-                        counts,
-                        entries,
-                        ignored,
-                        periods,
-                    )}
-                />
+                <Flex flexDir="column" gap="3">
+                    {top}
+
+                    <PendingTasks
+                        pending={getPendingTasks(
+                            taskGroups,
+                            counts,
+                            entries,
+                            ignored,
+                            periods,
+                        )}
+                    />
+                </Flex>
             ) : (
                 <Flex ref={contentRef} flexDir="column" gap="4">
+                    {top}
+
                     <TaskGroupBoxes
                         groups={active.todo}
                         allGroups={split.active}

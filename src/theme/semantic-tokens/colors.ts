@@ -36,6 +36,8 @@ export const colors = defineSemanticTokens.colors({
         dangerMuted: { value: "rgba(242, 119, 122, 0.12)" },
         dangerStrong: { value: "rgba(242, 119, 122, 0.24)" },
         dangerBorder: { value: "rgba(242, 119, 122, 0.45)" },
+        // About to need action (e.g. Odyle Energy nearly capped), short of danger.
+        warning: { value: "{colors.orange.400}" },
         info: { value: "{colors.periwinkle.400}" },
         infoMuted: { value: "rgba(134, 174, 252, 0.12)" },
         infoStrong: { value: "rgba(134, 174, 252, 0.24)" },

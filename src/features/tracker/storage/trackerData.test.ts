@@ -32,6 +32,9 @@ const DATA: TrackerData = {
     entries: { "server:zikel": { d: { period: 4, base: 6, bonus: 1 } } },
     minimized: ["a"],
     ignored: { a: ["t"] },
+    energy: { a: { period: 9, base: 400, bonus: 40 } },
+    notes: { a: { short: "Alt for keys", long: "" } },
+    membership: false,
 }
 
 afterEach(() => {
@@ -78,6 +81,17 @@ describe("parseTrackerData", () => {
             },
             minimized: ["a", 3, null],
             ignored: { a: ["t", 4], b: "nope", c: [] },
+            energy: {
+                a: { period: 9, base: 400, bonus: 40 },
+                b: { period: 9, base: -1, bonus: 0 },
+                c: "full",
+            },
+            notes: {
+                a: { short: "Alt for keys", long: 5 },
+                b: { short: "  ", long: "" },
+                c: "nope",
+            },
+            membership: false,
         })
 
         expect(parsed).toEqual(DATA)
@@ -109,6 +123,8 @@ describe("parseTrackerData", () => {
         expect(parsed.minimized).toEqual([])
         // Arena 1v1 joins ignored.
         expect(parsed.ignored).toEqual({ a: [...STARTS_IGNORED] })
+        expect(parsed.energy).toEqual({})
+        expect(parsed.membership).toBe(true)
     })
 
     it("ignores new starter tasks that start ignored, once, for every character", () => {
@@ -242,6 +258,9 @@ describe("readTrackerData", () => {
             entries: {},
             minimized: [],
             ignored: {},
+            energy: {},
+            notes: {},
+            membership: true,
         })
     })
 

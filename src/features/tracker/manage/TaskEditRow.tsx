@@ -87,6 +87,7 @@ export const TaskEditRow = ({
             <WholeNumberInput
                 size="sm"
                 value={String(task.cap)}
+                fallback={1}
                 w="16"
                 textAlign="center"
                 aria-label={`Cap of ${label}`}

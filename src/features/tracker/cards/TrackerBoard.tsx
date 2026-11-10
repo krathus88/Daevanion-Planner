@@ -13,8 +13,10 @@ import { ResetCountdowns } from "./ResetCountdowns"
 import { ServerCard } from "./ServerCard"
 import type {
     CountChangeHandler,
+    EnergyChangeHandler,
     EntriesChangeHandler,
     IgnoredChangeHandler,
+    NoteChangeHandler,
 } from "./taskHandlers"
 
 type TrackerBoardProps = {
@@ -22,11 +24,16 @@ type TrackerBoardProps = {
     tasks: readonly TrackerTask[]
     counts: TrackerData["counts"]
     entries: TrackerData["entries"]
+    energy: TrackerData["energy"]
+    notes: TrackerData["notes"]
+    membership: boolean
     minimized: string[]
     ignored: TrackerData["ignored"]
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
+    onEnergyChange: EnergyChangeHandler
+    onNoteChange: NoteChangeHandler
     onMinimizedChange: (owners: readonly string[], minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
 }
@@ -38,11 +45,16 @@ export const TrackerBoard = ({
     tasks,
     counts,
     entries,
+    energy,
+    notes,
+    membership,
     minimized,
     ignored,
     periods,
     onCountChange,
     onEntriesChange,
+    onEnergyChange,
+    onNoteChange,
     onMinimizedChange,
     onIgnoredChange,
 }: TrackerBoardProps) => {
@@ -107,11 +119,16 @@ export const TrackerBoard = ({
                             taskGroups={ownGroups}
                             counts={counts}
                             entries={entries}
+                            energy={energy}
+                            notes={notes}
+                            membership={membership}
                             minimized={minimized}
                             ignored={ignored}
                             periods={periods}
                             onCountChange={onCountChange}
                             onEntriesChange={onEntriesChange}
+                            onEnergyChange={onEnergyChange}
+                            onNoteChange={onNoteChange}
                             onMinimizedChange={handleCardMinimized}
                             onIgnoredChange={onIgnoredChange}
                         />

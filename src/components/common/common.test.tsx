@@ -126,6 +126,84 @@ describe("WholeNumberInput", () => {
         expect(input.selectionStart).toBe(0)
         expect(input.selectionEnd).toBe(2)
     })
+
+    // A number owned elsewhere, reported on every change, like most fields.
+    const Owned = ({ fallback }: { fallback?: number | null }) => {
+        const [value, setValue] = useState<number | null>(50)
+
+        const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            setValue(
+                event.target.value === "" ? null : Number(event.target.value),
+            )
+        }
+
+        return (
+            <>
+                <WholeNumberInput
+                    value={value ?? ""}
+                    fallback={fallback}
+                    aria-label="Number"
+                    onChange={handleChange}
+                />
+
+                <output aria-label="Owned">{String(value)}</output>
+            </>
+        )
+    }
+
+    it("selects everything on the first click after focus", async () => {
+        renderWithChakra(<Owned />)
+
+        const input = screen.getByLabelText("Number") as HTMLInputElement
+
+        input.focus()
+        input.setSelectionRange(1, 1)
+        await userEvent.click(input)
+
+        expect(input.selectionStart).toBe(0)
+        expect(input.selectionEnd).toBe(2)
+    })
+
+    it("stays empty while focused, then reports 0 once left", async () => {
+        renderWithChakra(<Owned />)
+
+        const input = screen.getByLabelText("Number")
+
+        await userEvent.clear(input)
+
+        expect(input).toHaveValue("")
+        expect(screen.getByLabelText("Owned")).toHaveTextContent("50")
+
+        await userEvent.tab()
+
+        expect(input).toHaveValue("0")
+        expect(screen.getByLabelText("Owned")).toHaveTextContent("0")
+    })
+
+    it("falls back to its own default", async () => {
+        renderWithChakra(<Owned fallback={1} />)
+
+        const input = screen.getByLabelText("Number")
+
+        await userEvent.clear(input)
+        await userEvent.tab()
+
+        expect(input).toHaveValue("1")
+    })
+
+    it("passes empty on when empty means something", async () => {
+        renderWithChakra(<Owned fallback={null} />)
+
+        const input = screen.getByLabelText("Number")
+
+        await userEvent.clear(input)
+
+        expect(screen.getByLabelText("Owned")).toHaveTextContent("null")
+
+        await userEvent.tab()
+
+        expect(input).toHaveValue("")
+    })
 })
 
 describe("PointsField", () => {
@@ -148,13 +226,17 @@ describe("PointsField", () => {
         expect(onChange).toHaveBeenLastCalledWith(7)
     })
 
-    it("reads a cleared field as 0", async () => {
+    it("reads a field left empty as 0", async () => {
         const onChange = vi.fn()
 
         renderWithChakra(
             <PointsField value={5} label="Points" onChange={onChange} />,
         )
         await userEvent.clear(screen.getByLabelText("Points"))
+
+        expect(onChange).not.toHaveBeenCalled()
+
+        await userEvent.tab()
 
         expect(onChange).toHaveBeenLastCalledWith(0)
     })

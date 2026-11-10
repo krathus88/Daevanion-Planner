@@ -46,6 +46,9 @@ const withCharacters = () => {
         entries: {},
         minimized: [],
         ignored: START_IGNORED,
+        energy: {},
+        notes: {},
+        membership: true,
     })
 }
 
@@ -177,7 +180,7 @@ describe("TrackerPage", () => {
 
         const aria = screen.getByRole("article", { name: "Aria" })
 
-        expect(within(aria).getByText("0/11 done")).toBeInTheDocument()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
 
         await userEvent.click(
             within(aria).getByRole("button", {
@@ -185,7 +188,7 @@ describe("TrackerPage", () => {
             }),
         )
 
-        expect(within(aria).getByText("1/11 done")).toBeInTheDocument()
+        expect(within(aria).getByText("1/11")).toBeInTheDocument()
     })
 
     it("ticks a task with a cap of 1", async () => {
@@ -353,11 +356,11 @@ describe("TrackerPage", () => {
                 a: [...STARTS_IGNORED, "arena-wins"],
             })
         })
-        expect(within(aria).getByText("0/10 done")).toBeInTheDocument()
+        expect(within(aria).getByText("0/10")).toBeInTheDocument()
         // Other characters still count it.
         expect(
             within(screen.getByRole("article", { name: "Bran" })).getByText(
-                "0/11 done",
+                "0/11",
             ),
         ).toBeInTheDocument()
 
@@ -413,14 +416,14 @@ describe("TrackerPage", () => {
             screen.getByRole("button", { name: `One bonus more: ${label}` }),
         )
 
-        expect(within(siel).getByText("0/7 done")).toBeInTheDocument()
+        expect(within(siel).getByText("0/7")).toBeInTheDocument()
 
         await userEvent.click(
             screen.getByRole("button", { name: `All done: ${label}` }),
         )
 
         expect(screen.getByLabelText(`Entries left: ${label}`)).toHaveValue("0")
-        expect(within(siel).getByText("1/7 done")).toBeInTheDocument()
+        expect(within(siel).getByText("1/7")).toBeInTheDocument()
         expect(
             screen.getByLabelText(`Bonus tickets: ${label}`),
         ).toHaveTextContent("Bonus 1/30")
@@ -536,6 +539,259 @@ describe("TrackerPage", () => {
                 "Entries left: Daily Dungeon (Unknown Fissure), Zikel",
             ),
         ).toHaveValue("14")
+    })
+
+    it("shows Odyle Energy on character cards only, outside the progress", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const label = "Odyle Energy, Aria"
+        const aria = screen.getByRole("article", { name: "Aria" })
+        const total = within(aria).getByRole("button", {
+            name: `${label}: 840, edit`,
+        })
+
+        // Not a task: no box or tile of its own, above the Daily box.
+        expect(within(aria).getAllByRole("group")[0]).toHaveAccessibleName(
+            "Daily",
+        )
+        expect(total.closest('[role="group"]')).toBeNull()
+        expect(
+            within(screen.getByRole("article", { name: "Siel" })).queryByRole(
+                "button",
+                { name: /^Odyle Energy, Siel/ },
+            ),
+        ).not.toBeInTheDocument()
+        // Only the total until the fields are opened.
+        expect(screen.queryByLabelText(`Energy: ${label}`)).toBeNull()
+
+        await userEvent.click(
+            screen.getByRole("button", { name: `Spend 80: ${label}` }),
+        )
+
+        expect(
+            screen.getByRole("button", { name: `${label}: 760, edit` }),
+        ).toBeInTheDocument()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
+
+        await userEvent.click(
+            screen.getByRole("button", { name: `${label}: 760, edit` }),
+        )
+
+        const energy = screen.getByLabelText(`Energy: ${label}`)
+
+        expect(energy).toHaveFocus()
+        expect(energy).toHaveValue("760")
+
+        // 25 left and 70 extra: the recharged part goes first. Pasted, as
+        // focus selects the value again a frame later, between typed keys.
+        await userEvent.clear(energy)
+        await userEvent.paste("25")
+        await userEvent.click(screen.getByLabelText(`Extra energy: ${label}`))
+        await userEvent.paste("70")
+        await userEvent.click(
+            screen.getByRole("button", { name: `Spend 80: ${label}` }),
+        )
+
+        expect(readTrackerData().energy.a).toMatchObject({
+            base: 0,
+            bonus: 15,
+        })
+        // Too little left for a cube.
+        expect(
+            screen.getByRole("button", { name: `Spend 80: ${label}` }),
+        ).toBeDisabled()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
+    })
+
+    it("keeps Odyle Energy on a minimized card", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Minimize Aria" }),
+        )
+
+        const aria = screen.getByRole("article", { name: "Aria" })
+
+        expect(
+            within(aria).getByRole("button", {
+                name: "Odyle Energy, Aria: 840, edit",
+            }),
+        ).toBeInTheDocument()
+        expect(
+            within(aria).getByRole("button", {
+                name: "Spend 80: Odyle Energy, Aria",
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it("closes the Odyle Energy fields once focus leaves the row", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        await userEvent.click(
+            screen.getByRole("button", {
+                name: "Odyle Energy, Aria: 840, edit",
+            }),
+        )
+
+        expect(
+            screen.getByLabelText("Energy: Odyle Energy, Aria"),
+        ).toHaveFocus()
+
+        // Between its own fields it stays open.
+        await userEvent.tab()
+
+        expect(
+            screen.getByLabelText("Extra energy: Odyle Energy, Aria"),
+        ).toHaveFocus()
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Characters" }),
+        )
+
+        expect(
+            screen.queryByLabelText("Energy: Odyle Energy, Aria"),
+        ).not.toBeInTheDocument()
+    })
+
+    it("caps Odyle Energy at 560 and cubes at 40 without the membership", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        expect(
+            screen.getByLabelText("Odyle Energy, Aria: 840, edit"),
+        ).toBeInTheDocument()
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Characters" }),
+        )
+
+        const dialog = await screen.findByRole("dialog", { name: "Characters" })
+        const membership = within(dialog).getByRole("checkbox", {
+            name: "Special Quai Membership",
+        })
+
+        expect(membership).toBeChecked()
+
+        await userEvent.click(membership)
+
+        expect(readTrackerData().membership).toBe(false)
+        expect(
+            screen.getByLabelText("Odyle Energy, Aria: 560, edit"),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByLabelText("Odyle Energy, Bran: 560, edit"),
+        ).toBeInTheDocument()
+
+        await userEvent.keyboard("{Escape}")
+        await waitForElementToBeRemoved(dialog)
+        await userEvent.click(
+            screen.getByRole("button", {
+                name: "Spend 40: Odyle Energy, Aria",
+            }),
+        )
+
+        expect(readTrackerData().energy.a).toMatchObject({ base: 520 })
+    })
+
+    it("edits a character's note, its short line between Odyle Energy and the boxes", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const aria = screen.getByRole("article", { name: "Aria" })
+
+        await userEvent.click(
+            within(aria).getByRole("button", { name: "Note for Aria" }),
+        )
+
+        const dialog = await screen.findByRole("dialog", {
+            name: "Note for Aria",
+        })
+
+        await userEvent.type(
+            within(dialog).getByRole("textbox", { name: "Short" }),
+            "Alt for keys",
+        )
+        await userEvent.type(
+            within(dialog).getByRole("textbox", { name: "Details" }),
+            "Runs Shugo only",
+        )
+        await userEvent.click(
+            within(dialog).getByRole("button", { name: "Save" }),
+        )
+        await waitFor(() => {
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+        })
+
+        expect(readTrackerData().notes).toEqual({
+            a: { short: "Alt for keys", long: "Runs Shugo only" },
+        })
+        // Clicking in the dialog didn't reach the header.
+        expect(readTrackerData().minimized).toEqual([])
+
+        const short = within(aria).getByText("Alt for keys")
+        const energy = within(aria).getByRole("button", {
+            name: "Odyle Energy, Aria: 840, edit",
+        })
+        const daily = within(aria).getByRole("group", { name: "Daily" })
+
+        expect(
+            energy.compareDocumentPosition(short) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        expect(
+            short.compareDocumentPosition(daily) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        // Only Aria has one.
+        expect(
+            within(screen.getByRole("article", { name: "Bran" })).queryByText(
+                "Alt for keys",
+            ),
+        ).not.toBeInTheDocument()
+    })
+
+    it("cancels a note edit, and shows the note on a minimized card", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Note for Aria" }),
+        )
+
+        const dialog = await screen.findByRole("dialog", {
+            name: "Note for Aria",
+        })
+
+        await userEvent.type(
+            within(dialog).getByRole("textbox", { name: "Short" }),
+            "Unsaved",
+        )
+        await userEvent.click(
+            within(dialog).getByRole("button", { name: "Cancel" }),
+        )
+        await waitFor(() => {
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+        })
+
+        expect(readTrackerData().notes).toEqual({})
+        expect(screen.queryByText("Unsaved")).not.toBeInTheDocument()
+
+        writeTrackerData({
+            ...readTrackerData(),
+            notes: { a: { short: "Main", long: "" } },
+        })
+        await userEvent.click(
+            screen.getByRole("button", { name: "Minimize Aria" }),
+        )
+
+        expect(
+            within(screen.getByRole("article", { name: "Aria" })).getByText(
+                "Main",
+            ),
+        ).toBeInTheDocument()
     })
 
     it("edits the task list", async () => {

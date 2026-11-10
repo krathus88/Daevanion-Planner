@@ -3,26 +3,31 @@ import type { CharacterFields } from "@tracker/logic/trackerEdits"
 import type { TrackerCharacter } from "@tracker/types"
 import { AddCharacterForm } from "./AddCharacterForm"
 import { CharacterEditRow } from "./CharacterEditRow"
+import { MembershipToggle } from "./MembershipToggle"
 import { SortableList } from "./SortableList"
 
 type CharactersDialogProps = {
     characters: TrackerCharacter[]
+    membership: boolean
     open: boolean
     onOpenChange: (open: boolean) => void
     onCreate: (fields: CharacterFields) => void
     onChange: (id: string, changes: Partial<CharacterFields>) => void
     onDelete: (id: string) => void
     onMove: (id: string, targetId: string) => void
+    onMembershipChange: (membership: boolean) => void
 }
 
 export const CharactersDialog = ({
     characters,
+    membership,
     open,
     onOpenChange,
     onCreate,
     onChange,
     onDelete,
     onMove,
+    onMembershipChange,
 }: CharactersDialogProps) => {
     const handleOpenChange = (details: Dialog.OpenChangeDetails) => {
         onOpenChange(details.open)
@@ -75,6 +80,11 @@ export const CharactersDialog = ({
                                 )}
 
                                 <AddCharacterForm onCreate={onCreate} />
+
+                                <MembershipToggle
+                                    checked={membership}
+                                    onChange={onMembershipChange}
+                                />
                             </Flex>
                         </Dialog.Body>
 
