@@ -1,6 +1,6 @@
 import { Flex, Icon } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
-import { getTaskIcon } from "@tracker/config/taskIcons"
+import { getTaskIcon, getTaskIconGlow } from "@tracker/config/taskIcons"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
 import type { PendingTask } from "@tracker/logic/trackerCards"
 import { Tooltip } from "@ui/tooltip"
@@ -24,7 +24,10 @@ export const PendingTaskChip = ({ item }: PendingTaskChipProps) => {
                 aria-label={label}
             >
                 {icon ? (
-                    <IconImage icon={icon} />
+                    <IconImage
+                        icon={icon}
+                        glow={getTaskIconGlow(item.task.id)}
+                    />
                 ) : (
                     <Icon boxSize="4" color="app.muted">
                         <LuCircleDashed />

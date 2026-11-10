@@ -1,6 +1,6 @@
 import { Box, Flex, Icon, Text } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
-import { getTaskIcon } from "@tracker/config/taskIcons"
+import { getTaskIcon, getTaskIconGlow } from "@tracker/config/taskIcons"
 import type { TrackerTask } from "@tracker/types"
 import { LuCheck } from "react-icons/lu"
 
@@ -18,7 +18,7 @@ export const TaskName = ({ task, done, ignored }: TaskNameProps) => {
     return (
         <Flex minW="36" flex="1" alignItems="center" gap="2">
             {icon ? (
-                <IconImage icon={icon} />
+                <IconImage icon={icon} glow={getTaskIconGlow(task.id)} />
             ) : (
                 // Keeps names lined up with the ones beside an icon.
                 <Box boxSize="5" flexShrink="0" />

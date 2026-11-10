@@ -3,7 +3,7 @@ import { HOVER_REVEAL } from "@common/hoverReveal"
 import { ConfirmButton } from "@common/ConfirmButton"
 import { IconImage } from "@common/IconImage"
 import { WholeNumberInput } from "@common/WholeNumberInput"
-import { getTaskIcon } from "@tracker/config/taskIcons"
+import { getTaskIcon, getTaskIconGlow } from "@tracker/config/taskIcons"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
 import type { TaskFields } from "@tracker/logic/trackerEdits"
 import type { TrackerReset, TrackerTask } from "@tracker/types"
@@ -57,7 +57,7 @@ export const TaskEditRow = ({
     return (
         <SortableRow id={task.id} index={index} label={label}>
             {icon ? (
-                <IconImage icon={icon} />
+                <IconImage icon={icon} glow={getTaskIconGlow(task.id)} />
             ) : (
                 // Keeps names lined up with the presets' beside an icon.
                 <Box boxSize="5" flexShrink="0" />

@@ -1,6 +1,11 @@
-import { ArtifactSiege } from "@assets/timers"
 import {
-    Arena,
+    ArtifactSiege,
+    DimensionalInvasion,
+    ShugoFestival,
+} from "@assets/timers"
+import {
+    Arena1v1,
+    Arena5v5,
     AscensionTrial,
     Battlefield,
     CommandAbyss,
@@ -10,7 +15,6 @@ import {
     Ludra,
     Nightmare,
     OdyleEnergy,
-    ShugoFestival,
     SupplyRequest,
 } from "@assets/tracker"
 
@@ -20,13 +24,18 @@ const TASK_ICONS: Record<string, string> = {
     "supply-requests": SupplyRequest,
     nightmare: Nightmare,
     "duty-missions": DutyMissions,
+    // The Timers page's Shugo Festival icon.
     "shugo-festival": ShugoFestival,
+    // The Timers page's Dimensional Invasion icon.
+    invasion: DimensionalInvasion,
     "unknown-fissure": DailyDungeon,
     "ascension-trial": AscensionTrial,
-    "arena-wins": Arena,
-    "arena-participation": Arena,
-    "arena-1v1-wins": Arena,
-    "arena-1v1-participation": Arena,
+    // Same crossed swords, told apart by color: 5v5 blue, 1v1 red,
+    // Battlefield grey.
+    "arena-wins": Arena5v5,
+    "arena-participation": Arena5v5,
+    "arena-1v1-wins": Arena1v1,
+    "arena-1v1-participation": Arena1v1,
     "battlefield-wins": Battlefield,
     "battlefield-participation": Battlefield,
     ludra: Ludra,
@@ -42,4 +51,15 @@ const TASK_ICONS: Record<string, string> = {
 
 export const getTaskIcon = (taskId: string) => {
     return TASK_ICONS[taskId]
+}
+
+// Ticket icons that look alike get a glow to tell them apart at a glance:
+// Nightmare blue, Ascension Trial red.
+const TASK_ICON_GLOWS: Record<string, string> = {
+    nightmare: "blue.400",
+    "ascension-trial": "red.500",
+}
+
+export const getTaskIconGlow = (taskId: string) => {
+    return TASK_ICON_GLOWS[taskId]
 }

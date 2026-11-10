@@ -72,47 +72,50 @@ export const TaskEntriesCounter = ({
                     </Text>
                 </Flex>
 
-                <Flex alignItems="center" gap="1">
-                    <Text
-                        textStyle="caption"
-                        whiteSpace="nowrap"
-                        aria-label={`Bonus tickets: ${label}`}
-                    >
-                        Bonus{" "}
-                        {/* Red once capped, as new tickets would be wasted. */}
+                {/* Tasks without bonus tickets (Invasion) show only their entries. */}
+                {bonusCap > 0 && (
+                    <Flex alignItems="center" gap="1">
                         <Text
-                            as="span"
-                            color={
-                                left.bonus >= bonusCap
-                                    ? "app.dangerFaint"
-                                    : "app.successFaint"
-                            }
-                            fontWeight="semibold"
+                            textStyle="caption"
+                            whiteSpace="nowrap"
+                            aria-label={`Bonus tickets: ${label}`}
                         >
-                            {left.bonus}/{bonusCap}
+                            Bonus{" "}
+                            {/* Red once capped, as new tickets would be wasted. */}
+                            <Text
+                                as="span"
+                                color={
+                                    left.bonus >= bonusCap
+                                        ? "app.dangerFaint"
+                                        : "app.successFaint"
+                                }
+                                fontWeight="semibold"
+                            >
+                                {left.bonus}/{bonusCap}
+                            </Text>
                         </Text>
-                    </Text>
 
-                    <IconButton
-                        variant="ghost"
-                        size="2xs"
-                        disabled={left.bonus <= 0}
-                        aria-label={`One bonus less: ${label}`}
-                        onClick={handleBonusDecrease}
-                    >
-                        <LuMinus />
-                    </IconButton>
+                        <IconButton
+                            variant="ghost"
+                            size="2xs"
+                            disabled={left.bonus <= 0}
+                            aria-label={`One bonus less: ${label}`}
+                            onClick={handleBonusDecrease}
+                        >
+                            <LuMinus />
+                        </IconButton>
 
-                    <IconButton
-                        variant="ghost"
-                        size="2xs"
-                        disabled={left.bonus >= bonusCap}
-                        aria-label={`One bonus more: ${label}`}
-                        onClick={handleBonusIncrease}
-                    >
-                        <LuPlus />
-                    </IconButton>
-                </Flex>
+                        <IconButton
+                            variant="ghost"
+                            size="2xs"
+                            disabled={left.bonus >= bonusCap}
+                            aria-label={`One bonus more: ${label}`}
+                            onClick={handleBonusIncrease}
+                        >
+                            <LuPlus />
+                        </IconButton>
+                    </Flex>
+                )}
             </Flex>
 
             <Flex alignItems="center" gap="1">

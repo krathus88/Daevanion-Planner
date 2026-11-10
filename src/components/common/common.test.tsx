@@ -4,6 +4,7 @@ import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { CardGrid } from "./CardGrid"
+import { IconImage } from "./IconImage"
 import { ConfirmButton } from "./ConfirmButton"
 import { NumberedStep } from "./NumberedStep"
 import { PointsField } from "./PointsField"
@@ -470,5 +471,27 @@ describe("ConfirmButton", () => {
 
         expect(onConfirm).not.toHaveBeenCalled()
         expect(screen.getByRole("button", { name: "Remove" })).toBeVisible()
+    })
+})
+
+describe("IconImage", () => {
+    const render = (glow?: string) => {
+        const { container } = renderWithChakra(
+            <IconImage icon="icon.webp" glow={glow} />,
+        )
+
+        return getComputedStyle(container.querySelector("img") as Element)
+            .filter
+    }
+
+    it("glows in the given color, or not at all", () => {
+        expect(render("blue.400")).toContain("drop-shadow")
+        expect(render()).not.toContain("drop-shadow")
+    })
+
+    it("draws nothing without an icon", () => {
+        const { container } = renderWithChakra(<IconImage />)
+
+        expect(container.querySelector("img")).toBeNull()
     })
 })

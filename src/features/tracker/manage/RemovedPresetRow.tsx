@@ -1,6 +1,6 @@
 import { Button, Flex, Text } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
-import { getTaskIcon } from "@tracker/config/taskIcons"
+import { getTaskIcon, getTaskIconGlow } from "@tracker/config/taskIcons"
 import { TRACKER_RESETS } from "@tracker/config/trackerResets"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
 import type { TrackerTask } from "@tracker/types"
@@ -24,7 +24,10 @@ export const RemovedPresetRow = ({
 
     return (
         <Flex alignItems="center" gap="2">
-            <IconImage icon={getTaskIcon(preset.id)} />
+            <IconImage
+                icon={getTaskIcon(preset.id)}
+                glow={getTaskIconGlow(preset.id)}
+            />
 
             <Flex minW="0" flex="1" flexDir="column">
                 <Text fontSize="sm" truncate>

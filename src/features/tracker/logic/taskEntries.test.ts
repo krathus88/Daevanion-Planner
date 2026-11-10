@@ -81,3 +81,22 @@ describe("clampEntries", () => {
         })
     })
 })
+
+describe("Invasion", () => {
+    const invasion = STARTER_TASKS.find((task) => task.id === "invasion")
+
+    if (!invasion) {
+        throw new Error("Invasion missing from the starter tasks")
+    }
+
+    it("adds 1 entry a day, up to 7, with no bonus tickets", () => {
+        const saved = { period: 10, base: 4, bonus: 0 }
+
+        expect(readEntries(invasion, saved, 11)).toEqual({ base: 5, bonus: 0 })
+        expect(readEntries(invasion, saved, 20)).toEqual({ base: 7, bonus: 0 })
+        expect(clampEntries(invasion, { base: 3, bonus: 5 })).toEqual({
+            base: 3,
+            bonus: 0,
+        })
+    })
+})

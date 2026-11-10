@@ -114,6 +114,7 @@ describe("parseTrackerData", () => {
         // Starter tasks that came out later join the user's own list.
         expect(parsed.tasks?.map((task) => task.id)).toEqual([
             "t",
+            "invasion",
             "arena-1v1-wins",
             "arena-1v1-participation",
             "corridors",

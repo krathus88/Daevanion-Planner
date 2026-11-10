@@ -416,14 +416,14 @@ describe("TrackerPage", () => {
             screen.getByRole("button", { name: `One bonus more: ${label}` }),
         )
 
-        expect(within(siel).getByText("0/7")).toBeInTheDocument()
+        expect(within(siel).getByText("0/8")).toBeInTheDocument()
 
         await userEvent.click(
             screen.getByRole("button", { name: `All done: ${label}` }),
         )
 
         expect(screen.getByLabelText(`Entries left: ${label}`)).toHaveValue("0")
-        expect(within(siel).getByText("1/7")).toBeInTheDocument()
+        expect(within(siel).getByText("1/8")).toBeInTheDocument()
         expect(
             screen.getByLabelText(`Bonus tickets: ${label}`),
         ).toHaveTextContent("Bonus 1/30")
@@ -437,14 +437,14 @@ describe("TrackerPage", () => {
         const daily = within(siel).getByRole("group", { name: "Daily" })
         const weekly = within(siel).getByRole("group", { name: "Weekly" })
 
-        expect(daily).toHaveTextContent("0/2")
+        expect(daily).toHaveTextContent("0/3")
         expect(weekly).toHaveTextContent("0/5")
 
         await userEvent.click(
             screen.getByRole("button", { name: "Duty Missions, Siel: 5 of 5" }),
         )
 
-        expect(daily).toHaveTextContent("1/2")
+        expect(daily).toHaveTextContent("1/3")
         expect(weekly).toHaveTextContent("0/5")
 
         // The Daily Dungeon refills weekly, so it's in the weekly box.
@@ -502,6 +502,35 @@ describe("TrackerPage", () => {
                 name: "Duty Missions, Zikel: 1 of 5",
             }),
         ).toHaveAttribute("aria-pressed", "false")
+    })
+
+    it("tracks Invasion per server as entries, without a bonus line", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const label = "Invasion, Siel"
+        const siel = screen.getByRole("article", { name: "Siel" })
+
+        expect(
+            within(
+                within(siel).getByRole("group", { name: "Daily" }),
+            ).getByLabelText(`Entries left: ${label}`),
+        ).toHaveValue("7")
+        expect(
+            screen.queryByLabelText(`Bonus tickets: ${label}`),
+        ).not.toBeInTheDocument()
+
+        await userEvent.click(
+            screen.getByRole("button", { name: `Use one: ${label}` }),
+        )
+
+        expect(readTrackerData().entries["server:siel"].invasion).toMatchObject(
+            { base: 6, bonus: 0 },
+        )
+        // Shared: Zikel keeps its own entries.
+        expect(
+            screen.getByLabelText("Entries left: Invasion, Zikel"),
+        ).toHaveValue("7")
     })
 
     it("spends Daily Dungeon entries, then bonus tickets", async () => {

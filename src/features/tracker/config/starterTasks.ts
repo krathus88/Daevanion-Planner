@@ -58,6 +58,16 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         recharge: 3,
         bonusCap: 30,
     },
+    // Dimensional Invasion: 1 entry a day, piling up to 7; no bonus tickets.
+    {
+        id: "invasion",
+        name: "Invasion",
+        reset: "daily",
+        cap: 7,
+        shared: true,
+        recharge: 1,
+        bonusCap: 0,
+    },
     {
         id: "odyle-craft",
         name: "Odyle Energy",

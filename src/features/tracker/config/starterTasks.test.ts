@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { parseTrackerData } from "@tracker/storage/trackerData"
 import { FIRST_PRESETS, STARTER_TASKS, STARTS_IGNORED } from "./starterTasks"
-import { getTaskIcon } from "./taskIcons"
+import { getTaskIcon, getTaskIconGlow } from "./taskIcons"
 
 describe("STARTER_TASKS", () => {
     it("has unique ids", () => {
@@ -10,10 +10,11 @@ describe("STARTER_TASKS", () => {
         expect(new Set(ids).size).toBe(ids.length)
     })
 
-    it("still has every task older saves knew, Arena 1v1 and Corridors coming after", () => {
+    it("still has every task older saves knew, Invasion, Arena 1v1 and Corridors coming after", () => {
         const ids = STARTER_TASKS.map((task) => task.id)
 
         expect(ids.filter((id) => !FIRST_PRESETS.includes(id))).toEqual([
+            "invasion",
             "arena-1v1-wins",
             "arena-1v1-participation",
             "corridors",
@@ -107,6 +108,18 @@ describe("STARTER_TASKS", () => {
         })
     })
 
+    it("tracks Invasion per server as entries, 1 a day piling up to 7", () => {
+        expect(
+            STARTER_TASKS.find((task) => task.id === "invasion"),
+        ).toMatchObject({
+            reset: "daily",
+            shared: true,
+            cap: 7,
+            recharge: 1,
+            bonusCap: 0,
+        })
+    })
+
     it("tracks Corridors once per character each Artifact Siege", () => {
         expect(
             STARTER_TASKS.find((task) => task.id === "corridors"),
@@ -140,5 +153,20 @@ describe("getTaskIcon", () => {
         }
 
         expect(getTaskIcon("my-own-task")).toBeUndefined()
+    })
+})
+
+describe("getTaskIconGlow", () => {
+    it("glows Nightmare blue and Ascension Trial red, nothing else", () => {
+        expect(getTaskIconGlow("nightmare")).toBe("blue.400")
+        expect(getTaskIconGlow("ascension-trial")).toBe("red.500")
+
+        const others = STARTER_TASKS.filter((task) => {
+            return task.id !== "nightmare" && task.id !== "ascension-trial"
+        })
+
+        for (const task of others) {
+            expect(getTaskIconGlow(task.id)).toBeUndefined()
+        }
     })
 })

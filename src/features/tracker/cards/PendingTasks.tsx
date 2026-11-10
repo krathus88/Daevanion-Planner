@@ -7,11 +7,20 @@ type PendingTasksProps = {
     pending: PendingTask[]
 }
 
-// A minimized card's summary: an icon per task still left.
+// A minimized card's summary: an icon per task still left, on a panel like
+// the task boxes (green like a finished box once nothing is left).
 export const PendingTasks = ({ pending }: PendingTasksProps) => {
     if (pending.length === 0) {
         return (
-            <Flex alignItems="center" gap="1.5" color="app.success">
+            <Flex
+                px="3"
+                py="2"
+                alignItems="center"
+                gap="1.5"
+                bg="app.successFill"
+                borderRadius="md"
+                color="app.success"
+            >
                 <Icon boxSize="4">
                     <LuCheck />
                 </Icon>
@@ -22,7 +31,15 @@ export const PendingTasks = ({ pending }: PendingTasksProps) => {
     }
 
     return (
-        <Flex flexWrap="wrap" alignItems="center" gap="1.5">
+        <Flex
+            px="3"
+            py="1"
+            flexWrap="wrap"
+            alignItems="center"
+            gap="1.5"
+            bg="app.subcard"
+            borderRadius="md"
+        >
             <Text me="1" textStyle="caption">
                 Left
             </Text>
