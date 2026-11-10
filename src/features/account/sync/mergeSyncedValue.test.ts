@@ -122,6 +122,9 @@ describe("mergeSyncedValue: tracker", () => {
             entries: {},
             minimized: [],
             ignored: {},
+            energy: {},
+            notes: {},
+            membership: true,
         })
     })
 })
