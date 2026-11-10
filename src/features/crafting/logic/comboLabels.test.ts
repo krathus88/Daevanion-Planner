@@ -1,20 +1,15 @@
 import { describe, expect, it } from "vitest"
-import { describeComboVerdict } from "./comboLabels"
+import { describeComboHint } from "./comboLabels"
 import type { ComboValue } from "./comboValue"
 import { partsToText } from "./textParts"
 
 const RING = { id: 1, name: "Ring", grade: "rare" as const }
-const SPLENDENT_RING = { id: 2, name: "Splendent Ring", grade: "epic" as const }
-const WHITE = { id: 3, name: "White Sword", grade: "unique" as const }
-const SPLENDENT_WHITE = {
-    id: 4,
-    name: "Splendent White Sword",
-    grade: "unique" as const,
-}
 
-// The lines as plain text.
-const getLines = (...args: Parameters<typeof describeComboVerdict>) => {
-    return describeComboVerdict(...args).map(partsToText)
+// The hint as plain text.
+const getHint = (value: ComboValue) => {
+    const hint = describeComboHint(value, RING)
+
+    return hint === null ? null : partsToText(hint)
 }
 
 const VALUE: ComboValue = {
@@ -33,43 +28,37 @@ const VALUE: ComboValue = {
     profitPerAttempt: 100,
 }
 
-describe("describeComboVerdict", () => {
-    it("says which is cheaper and what crafting to sell makes", () => {
-        expect(getLines(VALUE, RING, SPLENDENT_RING)).toEqual([
-            "About 4 attempts at 125 Kinah: 500 Kinah per Splendent Ring, 200 Kinah once the Ring made on the way are sold (after 10% tax).",
-            "Crafting for it is cheaper than buying one by 400 Kinah.",
-            "Crafting 100 to sell everything made: about 10,000 Kinah profit after 10% tax.",
-        ])
+describe("describeComboHint", () => {
+    it("says nothing once every price is in", () => {
+        expect(getHint(VALUE)).toBeNull()
     })
 
-    it("asks for prices first", () => {
+    it("asks for the materials' prices first", () => {
         expect(
-            getLines(
-                { ...VALUE, attemptCost: null, costPerProc: null },
-                RING,
-                SPLENDENT_RING,
-            ),
-        ).toEqual(["Price every material to see what a proc costs."])
+            getHint({ ...VALUE, attemptCost: null, costPerProc: null }),
+        ).toBe("Price every material to see what a proc costs.")
     })
 
-    it("leaves the market out for bound items", () => {
+    it("asks for the regular item's and then its own price", () => {
+        expect(getHint({ ...VALUE, netCostPerProc: null })).toBe(
+            "Set what Ring sells for (Main craft) to count the ones made on the way.",
+        )
+        expect(getHint({ ...VALUE, splendentPrice: null })).toBe(
+            "Set its price to compare with buying one.",
+        )
+    })
+
+    it("asks nothing of bound items", () => {
         expect(
-            getLines(
-                {
-                    ...VALUE,
-                    regularTradable: false,
-                    splendentTradable: false,
-                    regularPrice: null,
-                    splendentPrice: null,
-                    netCostPerProc: null,
-                    profitPerAttempt: null,
-                },
-                WHITE,
-                SPLENDENT_WHITE,
-            ),
-        ).toEqual([
-            "About 4 attempts at 125 Kinah: 500 Kinah per Splendent White Sword.",
-            "Splendent White Sword is bound.",
-        ])
+            getHint({
+                ...VALUE,
+                regularTradable: false,
+                splendentTradable: false,
+                regularPrice: null,
+                splendentPrice: null,
+                netCostPerProc: null,
+                profitPerAttempt: null,
+            }),
+        ).toBeNull()
     })
 })

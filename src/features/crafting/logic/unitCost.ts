@@ -107,3 +107,43 @@ export const getItemCost = (
         ? getCraftCost(data, settings, id)
         : getBuyPrice(settings, id).value
 }
+
+// Average Kinah for one of an item counting only its own craft: the bound
+// item it upgrades (or any bound material) is taken as already had, and every
+// other material at the cheaper of buying and crafting it. Null when any of
+// those has no price.
+export const getThisCraftCost = (
+    data: CraftingData,
+    settings: PlanSettings,
+    id: number,
+) => {
+    const recipe = data.recipes.get(id)
+
+    if (!recipe) {
+        return null
+    }
+
+    const success = getRecipeSuccess(data, settings, recipe)
+    let total = 0
+
+    for (const [materialId, count] of recipe.materials) {
+        const craftable = data.recipes.has(materialId)
+
+        if (craftable && !isTradable(data, materialId)) {
+            continue
+        }
+
+        const prices = [
+            getBuyPrice(settings, materialId).value,
+            craftable ? getCraftCost(data, settings, materialId) : null,
+        ].filter((price) => price !== null)
+
+        if (prices.length === 0) {
+            return null
+        }
+
+        total += Math.min(...prices) * count
+    }
+
+    return total / getCraftChance(recipe, success) / getAverageYield(recipe)
+}

@@ -2,16 +2,21 @@ import { Flex, Text } from "@chakra-ui/react"
 import type { CraftPlan } from "@crafting/logic/craftPlan"
 import { formatCount, formatKinah } from "@crafting/logic/formatKinah"
 import { getPlanTotals } from "@crafting/logic/planTotals"
+import { AmountLoading } from "./AmountLoading"
 import { PlanCostLine } from "./PlanCostLine"
 
 type PlanSummaryProps = {
     plan: CraftPlan
     // Average Kinah to craft one target item, when every material is priced.
     costEach: number | null
+    // The same counting only its own craft (bound gear it upgrades as had).
+    thisCraftEach: number | null
     // The target's price.
     sellPrice: number | null
     // False for Transfer Crafting: the market doesn't sell it.
     tradable: boolean
+    // Market prices still loading: the Kinah would still change.
+    pricesLoading: boolean
 }
 
 // Kinah to spend first and biggest, then what's missing and how many crafts,
@@ -19,8 +24,10 @@ type PlanSummaryProps = {
 export const PlanSummary = ({
     plan,
     costEach,
+    thisCraftEach,
     sellPrice,
     tradable,
+    pricesLoading,
 }: PlanSummaryProps) => {
     const totals = getPlanTotals(plan)
     const allOwned = totals.missing === 0
@@ -46,7 +53,11 @@ export const PlanSummary = ({
                         fontWeight="bold"
                         lineHeight="short"
                     >
-                        {formatKinah(totals.spend)}
+                        {pricesLoading ? (
+                            <AmountLoading w="40" h="7" />
+                        ) : (
+                            formatKinah(totals.spend)
+                        )}
                     </Text>
 
                     <Text textStyle="caption">to spend</Text>
@@ -67,13 +78,18 @@ export const PlanSummary = ({
                 </Text>
             </Flex>
 
-            <PlanCostLine
-                tradable={tradable}
-                costEach={costEach}
-                sellPrice={sellPrice}
-                unpriced={totals.unpriced}
-                unpricedMissing={totals.spend === null ? 0 : plan.unpriced}
-            />
+            {pricesLoading ? (
+                <AmountLoading w="64" />
+            ) : (
+                <PlanCostLine
+                    tradable={tradable}
+                    costEach={costEach}
+                    thisCraftEach={thisCraftEach}
+                    sellPrice={sellPrice}
+                    unpriced={totals.unpriced}
+                    unpricedMissing={totals.spend === null ? 0 : plan.unpriced}
+                />
+            )}
         </Flex>
     )
 }

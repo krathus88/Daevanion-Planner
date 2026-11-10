@@ -9,7 +9,7 @@ import {
     SPLENDENT_SWORD,
     SWORD,
 } from "@test/craftingFixture"
-import { getCraftCost } from "./unitCost"
+import { getCraftCost, getThisCraftCost } from "./unitCost"
 
 const data = makeCraftingData()
 const PRICES = { [ORE]: 10, [SOLVENT]: 5 }
@@ -171,5 +171,39 @@ describe("getCraftCost", () => {
         expect(
             getCraftCost(looped, makeSettings({ prices: { 1: 7 } }), 1),
         ).toBe(14)
+    })
+})
+
+describe("getThisCraftCost", () => {
+    it("takes the bound item it upgrades as already had", () => {
+        // 2 Solvent; the White Greatsword and its own chain left out.
+        expect(
+            getThisCraftCost(
+                transferChain,
+                makeSettings({ prices: PRICES }),
+                42,
+            ),
+        ).toBe(10)
+    })
+
+    it("counts each material at the cheaper of buying and crafting it", () => {
+        // Ingots cost 25 to craft but sell for 20: 3 Ingots and 5 Ore.
+        const settings = makeSettings({
+            prices: PRICES,
+            marketPrices: { [INGOT]: 20 },
+        })
+
+        expect(getThisCraftCost(data, settings, SWORD)).toBe(110)
+        expect(getCraftCost(data, settings, SWORD)).toBe(125)
+    })
+
+    it("is unknown while a material has no price", () => {
+        expect(
+            getThisCraftCost(
+                data,
+                makeSettings({ prices: { [ORE]: 10 } }),
+                SWORD,
+            ),
+        ).toBeNull()
     })
 })

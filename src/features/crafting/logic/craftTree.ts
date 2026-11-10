@@ -8,6 +8,7 @@ import type { PlanSettings } from "@crafting/types"
 import {
     getBuyPrice,
     getPrice,
+    arePricesLoading,
     getPriceState,
     type CraftPlan,
     type CraftStep,
@@ -33,6 +34,8 @@ export type TreeLine = {
     // Average Kinah to craft one, when the plan crafts it and every material
     // is priced.
     craftCost: number | null
+    // Market prices are still loading, so the craft cost may change.
+    pricesLoading: boolean
     // How many the whole plan needs, wherever it's used; 0 when the item's
     // plan is already covered higher up.
     planNeed: number
@@ -93,8 +96,12 @@ export const getTreeLines = (
             price: getPrice(settings, id),
             priceState: getPriceState(settings, id),
             tradable: isTradable(data, id),
-            morph: getMorph(data, settings, id),
+            // Which is cheaper isn't known until the market answers.
+            morph: arePricesLoading(settings)
+                ? null
+                : getMorph(data, settings, id),
             craftCost: step ? getCraftCost(data, settings, id) : null,
+            pricesLoading: arePricesLoading(settings),
             planNeed: step?.need ?? material?.need ?? 0,
             covered: step
                 ? step.owned >= step.need

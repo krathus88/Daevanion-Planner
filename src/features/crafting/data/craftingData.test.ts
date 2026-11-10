@@ -4,7 +4,7 @@ import {
     PROFESSION_CATEGORIES,
 } from "@crafting/config/professions"
 import raw from "./recipes.json"
-import { buildCraftingData, getItem } from "./craftingData"
+import { buildCraftingData, getItem, getProcs } from "./craftingData"
 
 const data = buildCraftingData(raw as Parameters<typeof buildCraftingData>[0])
 
@@ -14,6 +14,22 @@ describe("buildCraftingData", () => {
 
         expect(getItem(data, 610710001).name).toBe("Orichalcum Ingot")
         expect(ingot).toMatchObject({ profession: "blacksmithing", yield: 10 })
+    })
+
+    it("makes a craft's proc the transfer it skips", () => {
+        // True Dragon Lord Mace procs Splendent True Dragon Lord Mace, which
+        // the game also lists as a transfer from it under another id.
+        const transfer = data.recipes.get(110730096)
+
+        expect(getProcs(data, 110730015)).toEqual([
+            { id: 110730096, chance: 25 },
+        ])
+        expect(transfer?.transfer).toBe(true)
+        expect(transfer?.combo).toEqual({
+            base: 110730015,
+            chance: 25,
+            only: false,
+        })
     })
 
     it("names an item missing from the data by its id", () => {

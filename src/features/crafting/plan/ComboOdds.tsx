@@ -8,55 +8,53 @@ type ComboOddsProps = {
     attempts: number
 }
 
-const wholePercent = new Intl.NumberFormat("en-US", {
-    style: "percent",
-    maximumFractionDigits: 0,
-})
+type OddsChipProps = {
+    crafts: number
+    caption: string
+    // The plan's own attempts, set apart.
+    isPlan?: boolean
+}
 
-const oneDecimal = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 })
-
-// How many crafts for how sure a proc is, and what this plan's attempts give.
-export const ComboOdds = ({ value, attempts }: ComboOddsProps) => {
+const OddsChip = ({ crafts, caption, isPlan }: OddsChipProps) => {
     return (
-        <Flex flexDir="column" gap="1.5">
-            <Flex flexWrap="wrap" gap="2">
-                {value.craftsFor.map((entry) => (
-                    <Flex
-                        key={entry.confidence}
-                        px="2.5"
-                        py="1.5"
-                        flexDir="column"
-                        bg="app.row"
-                        borderColor="app.border"
-                        borderWidth="1px"
-                        borderRadius="md"
-                    >
-                        <Text
-                            color="app.fg"
-                            fontSize="sm"
-                            fontWeight="semibold"
-                        >
-                            {formatCount(entry.crafts)}{" "}
-                            {entry.crafts === 1 ? "craft" : "crafts"}
-                        </Text>
+        <Flex
+            px="2.5"
+            py="1.5"
+            flexDir="column"
+            bg="app.row"
+            borderColor={isPlan ? "app.accent" : "app.border"}
+            borderWidth="1px"
+            borderRadius="md"
+        >
+            <Text color="app.fg" fontSize="sm" fontWeight="semibold">
+                {formatCount(crafts)} {crafts === 1 ? "craft" : "crafts"}
+            </Text>
 
-                        <Text textStyle="caption">
-                            {entry.confidence}% sure of one
-                        </Text>
-                    </Flex>
-                ))}
-            </Flex>
+            <Text textStyle="caption">{caption}</Text>
+        </Flex>
+    )
+}
+
+// How many crafts for how sure a proc is, and how sure this plan's are.
+export const ComboOdds = ({ value, attempts }: ComboOddsProps) => {
+    const planOdds = Math.round(getProcOdds(value.procChance, attempts) * 100)
+
+    return (
+        <Flex flexWrap="wrap" gap="2">
+            {value.craftsFor.map((entry) => (
+                <OddsChip
+                    key={entry.confidence}
+                    crafts={entry.crafts}
+                    caption={`${entry.confidence}% sure of one`}
+                />
+            ))}
 
             {attempts > 0 && (
-                <Text color="app.muted" fontSize="sm">
-                    This plan's {formatCount(attempts)}{" "}
-                    {attempts === 1 ? "attempt" : "attempts"}:{" "}
-                    {wholePercent.format(
-                        getProcOdds(value.procChance, attempts),
-                    )}{" "}
-                    chance of at least one, about{" "}
-                    {oneDecimal.format(attempts * value.procChance)} on average.
-                </Text>
+                <OddsChip
+                    crafts={attempts}
+                    caption={`Your plan: ${planOdds}% sure`}
+                    isPlan
+                />
             )}
         </Flex>
     )

@@ -8,6 +8,8 @@ import { getTransferCombo } from "@crafting/logic/transferCombo"
 import { ItemMention } from "@crafting/mention/ItemMention"
 import type { PlanSettings } from "@crafting/types"
 import { LuSparkles } from "react-icons/lu"
+import { arePricesLoading } from "@crafting/logic/craftPlan"
+import { AmountLoading } from "./AmountLoading"
 import { TransferComboMaterials } from "./TransferComboMaterials"
 
 type TransferComboCardProps = {
@@ -19,7 +21,8 @@ type TransferComboCardProps = {
     comboChance: number
 }
 
-// A Transfer Crafting combo: these items are bound and few, so it's not about
+// A combo that skips a Transfer Crafting step (a transfer's or a craft's, like
+// True Dragon Lord Mace's): those items are bound and few, so it's not about
 // odds over many crafts but what one proc skips, the next transfer.
 export const TransferComboCard = ({
     data,
@@ -43,6 +46,14 @@ export const TransferComboCard = ({
     const splendent = getItem(data, splendentId)
     const base = getItem(data, baseId)
     const missChance = Math.round((1 - combo.chance) * 100)
+    const pricesLoading = arePricesLoading(settings)
+    const formatAmount = (amount: number | null) => {
+        return pricesLoading ? (
+            <AmountLoading w="24" h="6" />
+        ) : (
+            formatKinah(amount)
+        )
+    }
 
     return (
         <Card borderColor="app.accent">
@@ -57,10 +68,11 @@ export const TransferComboCard = ({
             <ItemName item={splendent} wrap />
 
             <Text color="app.muted" fontSize="sm">
-                Each <ItemMention item={base} /> transfer has a {comboChance}%
-                chance to make <ItemMention item={splendent} /> straight away,
-                skipping its transfer. If it doesn't proc, that transfer still
-                needs:
+                Each <ItemMention item={base} />{" "}
+                {data.recipes.get(baseId)?.transfer ? "transfer" : "craft"} has
+                a {comboChance}% chance to make <ItemMention item={splendent} />{" "}
+                straight away, skipping its transfer. If it doesn't proc, that
+                transfer still needs:
             </Text>
 
             <TransferComboMaterials materials={combo.materials} />
@@ -79,12 +91,12 @@ export const TransferComboCard = ({
                 />
 
                 <StatTile
-                    value={formatKinah(combo.extraCost)}
+                    value={formatAmount(combo.extraCost)}
                     label={`Misses (${missChance}%): that transfer`}
                 />
 
                 <StatTile
-                    value={formatKinah(
+                    value={formatAmount(
                         combo.extraCost === null
                             ? null
                             : combo.extraCost * (1 - combo.chance),
@@ -93,7 +105,7 @@ export const TransferComboCard = ({
                 />
             </Grid>
 
-            {combo.extraCost === null && (
+            {combo.extraCost === null && !pricesLoading && (
                 <Text textStyle="hint">
                     Price those materials to see what a proc saves.
                 </Text>

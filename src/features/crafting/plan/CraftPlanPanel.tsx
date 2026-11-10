@@ -1,6 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
-import { Section } from "@common/Section"
 import type { ProfessionId } from "@crafting/config/professions"
 import { NumberField } from "@common/NumberField"
 import {
@@ -11,22 +10,22 @@ import {
 } from "@crafting/data/craftingData"
 import { ItemName } from "@crafting/ItemName"
 import {
+    arePricesLoading,
     buildCraftPlan,
     getPlanProfessions,
     getPrice,
 } from "@crafting/logic/craftPlan"
 import { indexPlan } from "@crafting/logic/craftTree"
-import { getMaterialIndex } from "@crafting/logic/materialOrder"
 import { isTradable } from "@crafting/logic/tradable"
 import { describeRecipe } from "@crafting/logic/recipeLabels"
-import { getCraftCost } from "@crafting/logic/unitCost"
+import { getCraftCost, getThisCraftCost } from "@crafting/logic/unitCost"
 import type { PlanSettings } from "@crafting/types"
 import { PlanContext } from "@crafting/context/planContext"
 import { getCraftedFrom } from "@crafting/logic/craftedFrom"
+import { AllMaterials } from "./AllMaterials"
 import { ComboCard } from "./ComboCard"
 import { CraftedFromLinks } from "./CraftedFromLinks"
 import { CraftStepBody } from "./CraftStepBody"
-import { MaterialList } from "./MaterialList"
 import { PlanSummary } from "./PlanSummary"
 import { ProficiencyField } from "./ProficiencyField"
 import { TransferComboCard } from "./TransferComboCard"
@@ -74,6 +73,12 @@ export const CraftPlanPanel = ({
     const plan = buildCraftPlan(data, settings, item.id, count)
     // A base item's combo proc, shown in its own card.
     const proc = getProcs(data, recipe.id)[0]
+    // A proc that skips a Transfer Crafting step (Splendent White, Splendent
+    // True): bound gear, so what it skips, not odds and market prices.
+    const transferProc =
+        proc !== undefined &&
+        (recipe.transfer === true ||
+            data.recipes.get(proc.id)?.transfer === true)
     const handlers = {
         onOwnedChange: onOwnedChange,
         onSuccessChange: onSuccessChange,
@@ -139,14 +144,18 @@ export const CraftPlanPanel = ({
                     <PlanSummary
                         plan={plan}
                         costEach={getCraftCost(data, settings, item.id)}
+                        thisCraftEach={getThisCraftCost(
+                            data,
+                            settings,
+                            item.id,
+                        )}
                         sellPrice={getPrice(settings, item.id)}
                         tradable={isTradable(data, item.id)}
+                        pricesLoading={arePricesLoading(settings)}
                     />
                 </Card>
 
-                {/* Transfer Crafting items are bound and few: what a proc
-            skips, not odds and market prices. */}
-                {proc && recipe.transfer && (
+                {proc && transferProc && (
                     <TransferComboCard
                         data={data}
                         baseId={recipe.id}
@@ -156,7 +165,7 @@ export const CraftPlanPanel = ({
                     />
                 )}
 
-                {proc && !recipe.transfer && (
+                {proc && !transferProc && (
                     <ComboCard
                         data={data}
                         recipe={recipe}
@@ -181,20 +190,15 @@ export const CraftPlanPanel = ({
                     />
                 </Card>
 
-                <Section
-                    title="All materials"
-                    defaultOpen={false}
-                    count={plan.materials.length + plan.steps.length - 1}
-                >
-                    <MaterialList
-                        rows={getMaterialIndex(data, settings, plan)}
-                        settings={settings}
-                        onOwnedChange={onOwnedChange}
-                        onPriceChange={onPriceChange}
-                        onBoughtChange={onBoughtChange}
-                        onItemSelect={onItemSelect}
-                    />
-                </Section>
+                <AllMaterials
+                    data={data}
+                    plan={plan}
+                    settings={settings}
+                    onOwnedChange={onOwnedChange}
+                    onPriceChange={onPriceChange}
+                    onBoughtChange={onBoughtChange}
+                    onItemSelect={onItemSelect}
+                />
             </Flex>
         </PlanContext.Provider>
     )

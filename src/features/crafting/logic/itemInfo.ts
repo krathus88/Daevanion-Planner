@@ -1,6 +1,6 @@
 import type { CraftingData } from "@crafting/data/craftingData"
 import type { PlanSettings } from "@crafting/types"
-import { getBuyPrice, getListedPrice } from "./craftPlan"
+import { arePricesLoading, getBuyPrice, getListedPrice } from "./craftPlan"
 import { formatKinah } from "./formatKinah"
 import { describeRecipe } from "./recipeLabels"
 import { isTradable } from "./tradable"
@@ -25,6 +25,12 @@ export const describeItemPrice = (
     }
 
     const buy = getBuyPrice(settings, id)
+    const listed = getListedPrice(settings, id)
+
+    // Only a merchant's price is sure before the market answers.
+    if (listed?.source !== "merchant" && arePricesLoading(settings)) {
+        return "Loading the market price…"
+    }
 
     if (buy.value === null) {
         return "No price set"
@@ -33,8 +39,6 @@ export const describeItemPrice = (
     if (buy.morph !== null) {
         return `${formatKinah(buy.value)} each by Substance Morph`
     }
-
-    const listed = getListedPrice(settings, id)
 
     if (listed?.source === "merchant") {
         return `${formatKinah(buy.value)} each from a merchant`

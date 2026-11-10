@@ -8,7 +8,7 @@ import {
 } from "@crafting/data/craftingData"
 import { ItemName } from "@crafting/ItemName"
 import { getComboValue } from "@crafting/logic/comboValue"
-import { getPriceState } from "@crafting/logic/craftPlan"
+import { arePricesLoading, getPriceState } from "@crafting/logic/craftPlan"
 import { ItemMention } from "@crafting/mention/ItemMention"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import type { PlanSettings } from "@crafting/types"
@@ -76,12 +76,9 @@ export const ComboCard = ({
                     <ItemName item={splendent} wrap />
 
                     <Text color="app.muted" fontSize="sm">
-                        Each craft has a {comboChance}% chance to make it
-                        instead of <ItemMention item={regular} />: about 1 in{" "}
-                        {oneDecimal.format(value.attemptsPerProc)} attempts
-                        {value.successKnown
-                            ? ", failures included."
-                            : " (success taken as 100% until your proficiency is set)."}
+                        About 1 in {oneDecimal.format(value.attemptsPerProc)}{" "}
+                        crafts instead of <ItemMention item={regular} />
+                        {value.successKnown ? "" : " (at 100% success)"}
                     </Text>
                 </Flex>
 
@@ -115,7 +112,7 @@ export const ComboCard = ({
             <ComboVerdict
                 value={value}
                 regular={regular}
-                splendent={splendent}
+                pricesLoading={arePricesLoading(settings)}
             />
         </Card>
     )

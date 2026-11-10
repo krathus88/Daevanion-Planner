@@ -11,6 +11,7 @@ import { LuCheck } from "react-icons/lu"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
 import { ItemNameLink } from "./ItemNameLink"
 import { ListedPriceText } from "./ListedPriceText"
+import { AmountLoading } from "./AmountLoading"
 import { PriceLoading } from "./PriceLoading"
 import { MATERIAL_COLUMNS } from "./materialColumns"
 
@@ -22,6 +23,8 @@ type MaterialRowProps = {
     crafted: boolean
     // False for Transfer Crafting: bound price, never bought instead.
     tradable: boolean
+    // Market prices still loading: its Kinah may still change.
+    pricesLoading: boolean
     // As saved; can be more than the plan needs.
     owned: number
     onOwnedChange: (itemId: number, owned: number) => void
@@ -41,6 +44,7 @@ export const MaterialRow = ({
     priceState,
     crafted,
     tradable,
+    pricesLoading,
     owned,
     onOwnedChange,
     onPriceChange,
@@ -67,7 +71,8 @@ export const MaterialRow = ({
 
     const caption = crafted
         ? "Crafted"
-        : material.morph && (
+        : !pricesLoading &&
+          material.morph && (
               <Tooltip
                   content={describeMorph(
                       material.morph.item.name,
@@ -184,7 +189,13 @@ export const MaterialRow = ({
                 textAlign="right"
                 whiteSpace="nowrap"
             >
-                {showCost ? formatCount(Math.round(material.cost ?? 0)) : "—"}
+                {pricesLoading && !crafted && !done ? (
+                    <AmountLoading w="full" />
+                ) : showCost ? (
+                    formatCount(Math.round(material.cost ?? 0))
+                ) : (
+                    "—"
+                )}
             </Text>
         </Grid>
     )

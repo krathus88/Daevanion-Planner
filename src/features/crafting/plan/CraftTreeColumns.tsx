@@ -6,6 +6,7 @@ import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import type { ChangeEvent } from "react"
 import { LuCheck } from "react-icons/lu"
 import { ListedPriceText } from "./ListedPriceText"
+import { AmountLoading } from "./AmountLoading"
 import { PriceLoading } from "./PriceLoading"
 import { TREE_COLUMN_WIDTHS } from "./treeColumns"
 
@@ -41,6 +42,7 @@ export const CraftTreeColumns = ({
 
     const state = line.priceState
     const cheaperToBuy =
+        !line.pricesLoading &&
         line.price !== null &&
         line.craftCost !== null &&
         line.price < line.craftCost
@@ -94,11 +96,17 @@ export const CraftTreeColumns = ({
                         : undefined
                 }
             >
-                {line.step
-                    ? line.craftCost === null
-                        ? "—"
-                        : formatCount(Math.round(line.craftCost))
-                    : ""}
+                {line.step && line.pricesLoading ? (
+                    <AmountLoading w="full" />
+                ) : line.step ? (
+                    line.craftCost === null ? (
+                        "—"
+                    ) : (
+                        formatCount(Math.round(line.craftCost))
+                    )
+                ) : (
+                    ""
+                )}
             </Text>
 
             <Flex

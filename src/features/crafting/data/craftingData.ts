@@ -69,6 +69,33 @@ export type CraftingData = {
     chanceTables: number[][]
 }
 
+// The game lists some combo items twice: what a craft procs (e.g. True Dragon
+// Lord Mace's 25% Splendent True Dragon Lord Mace) and, under another id, the
+// same-named Transfer Crafting recipe made from that base. A proc skips that
+// transfer (user-told), so the proc is the transfer's item.
+const getProcTransfer = (
+    recipes: Recipe[],
+    items: Map<number, CraftingItem>,
+    recipe: Recipe,
+) => {
+    const combo = recipe.combo
+    const name = items.get(recipe.id)?.name
+
+    if (!combo?.only || name === undefined) {
+        return undefined
+    }
+
+    return recipes.find((other) => {
+        return (
+            other.transfer === true &&
+            other.combo === undefined &&
+            other.faction === recipe.faction &&
+            items.get(other.id)?.name === name &&
+            other.materials.some(([id]) => id === combo.base)
+        )
+    })
+}
+
 export const buildCraftingData = (raw: RawCraftingData): CraftingData => {
     const items = new Map<number, CraftingItem>()
     const recipes = new Map<number, Recipe>()
@@ -81,9 +108,24 @@ export const buildCraftingData = (raw: RawCraftingData): CraftingData => {
 
     for (const recipe of raw.recipes) {
         recipes.set(recipe.id, recipe)
+    }
 
+    for (const recipe of raw.recipes) {
         if (recipe.combo) {
-            const proc = { id: recipe.id, chance: recipe.combo.chance }
+            const transfer = getProcTransfer(raw.recipes, items, recipe)
+            const proc = {
+                id: transfer?.id ?? recipe.id,
+                chance: recipe.combo.chance,
+            }
+
+            // The transfer it skips is also had from the combo, like White
+            // Dragon Lord Ring's Splendent White.
+            if (transfer) {
+                recipes.set(transfer.id, {
+                    ...transfer,
+                    combo: { ...recipe.combo, only: false },
+                })
+            }
 
             procs.set(recipe.combo.base, [
                 ...(procs.get(recipe.combo.base) ?? []),

@@ -21,6 +21,27 @@ const getRows = (settings = makeSettings()) => {
 }
 
 describe("getMaterialIndex", () => {
+    it("lists only the main craft's own materials for this craft", () => {
+        const settings = makeSettings({ owned: { [ORE]: 4 } })
+        const plan = buildCraftPlan(data, settings, SWORD, 2)
+        const rows = getMaterialIndex(data, settings, plan, "craft")
+
+        // 2 Swords: 6 Ingots and 10 Ore, not the Ore the Ingots take.
+        expect(
+            rows.map((row) => {
+                return {
+                    id: row.material.item.id,
+                    need: row.material.need,
+                    missing: row.material.missing,
+                    crafted: row.crafted,
+                }
+            }),
+        ).toEqual([
+            { id: INGOT, need: 6, missing: 6, crafted: true },
+            { id: ORE, need: 10, missing: 6, crafted: false },
+        ])
+    })
+
     it("lists every item but the main craft, Ingot before its Ore", () => {
         expect(getRows()).toEqual([
             { id: INGOT, crafted: true },

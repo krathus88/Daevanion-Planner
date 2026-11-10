@@ -42,6 +42,8 @@ export type CraftStep = {
     // Splendent items its crafts can proc (the game's Combo Activation
     // Chance), and about how many these attempts make.
     procs: { item: CraftingItem; chance: number; count: number }[]
+    // How many of each material these attempts use, in recipe order.
+    uses: [id: number, count: number][]
 }
 
 // An item to gather or buy: a raw material, or a craftable one marked bought.
@@ -120,6 +122,12 @@ export const getPriceState = (
     return settings.pendingPrices[id]
         ? { kind: "loading" }
         : { kind: "own", value: getOwnPrice(settings, id) }
+}
+
+// True while the market is still asked for any of the plan's prices: every
+// sum and cost shown may still change.
+export const arePricesLoading = (settings: PlanSettings) => {
+    return Object.keys(settings.pendingPrices).length > 0
 }
 
 // What an item costs to get: its own price, or the Odyle it can be Substance
@@ -253,6 +261,33 @@ const getLoopItems = (
     return loops
 }
 
+// A material to gather or buy, this many needed: the bag first, the rest
+// priced at the cheaper of its own price and its Odyle's.
+export const getPlanMaterial = (
+    data: CraftingData,
+    settings: PlanSettings,
+    id: number,
+    need: number,
+): PlanMaterial => {
+    const owned = Math.min(need, settings.owned[id] ?? 0)
+    const missing = need - owned
+    const buy = getBuyPrice(settings, id)
+
+    return {
+        item: getItem(data, id),
+        need: need,
+        owned: owned,
+        missing: missing,
+        price: getPrice(settings, id),
+        cost: buy.value === null ? null : buy.value * missing,
+        morph:
+            buy.morph === null || buy.value === null
+                ? null
+                : { item: getItem(data, buy.morph), price: buy.value },
+        craftable: data.recipes.has(id),
+    }
+}
+
 export const buildCraftPlan = (
     data: CraftingData,
     settings: PlanSettings,
@@ -311,15 +346,19 @@ export const buildCraftPlan = (
         const ownAttempts = (crafts * (1 - skip)) / chance
         const stepAttempts = Math.max(0, Math.ceil(ownAttempts - 1e-9))
         const combo = recipe.combo
+        const uses: [number, number][] = []
 
         for (const [materialId, materialCount] of recipe.materials) {
             // A skipping item's base: one craft per item, proc or not.
-            const uses =
+            const stepUses =
                 skip > 0 && materialId === combo?.base
                     ? Math.max(0, Math.ceil(ownAttempts + crafts * skip - 1e-9))
                     : stepAttempts
 
-            addNeed(materialId, materialCount * uses)
+            const total = materialCount * stepUses
+
+            uses.push([materialId, total])
+            addNeed(materialId, total)
         }
 
         steps.push({
@@ -352,36 +391,21 @@ export const buildCraftPlan = (
                     ),
                 }
             }),
+            uses: uses,
         })
         attempts += stepAttempts
     }
 
     for (const [id, need] of rawNeeds) {
-        const owned = Math.min(need, settings.owned[id] ?? 0)
-        const missing = need - owned
-        const price = getPrice(settings, id)
-        const buy = getBuyPrice(settings, id)
-        const materialCost = buy.value === null ? null : buy.value * missing
+        const material = getPlanMaterial(data, settings, id, need)
 
-        if (materialCost !== null) {
-            cost += materialCost
-        } else if (missing > 0) {
+        if (material.cost !== null) {
+            cost += material.cost
+        } else if (material.missing > 0) {
             unpriced++
         }
 
-        materials.push({
-            item: getItem(data, id),
-            need: need,
-            owned: owned,
-            missing: missing,
-            price: price,
-            cost: materialCost,
-            morph:
-                buy.morph === null || buy.value === null
-                    ? null
-                    : { item: getItem(data, buy.morph), price: buy.value },
-            craftable: data.recipes.has(id),
-        })
+        materials.push(material)
     }
 
     return {

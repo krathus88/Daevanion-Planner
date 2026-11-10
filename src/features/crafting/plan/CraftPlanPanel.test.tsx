@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { getItem } from "@crafting/data/craftingData"
 import type { PlanSettings } from "@crafting/types"
 import {
@@ -16,6 +16,23 @@ import { renderWithChakra } from "@test/renderWithChakra"
 import { CraftPlanPanel } from "./CraftPlanPanel"
 
 const data = makeCraftingData()
+
+// jsdom has none; the segment switch's indicator measures with one.
+class NoResizeObserver {
+    observe() {}
+
+    unobserve() {}
+
+    disconnect() {}
+}
+
+beforeAll(() => {
+    vi.stubGlobal("ResizeObserver", NoResizeObserver)
+})
+
+afterAll(() => {
+    vi.unstubAllGlobals()
+})
 
 const setup = (
     settings: PlanSettings = makeSettings(),
@@ -126,10 +143,25 @@ describe("CraftPlanPanel", () => {
         ).toBeVisible()
     })
 
-    it("lists every item in All materials, upgrades first", async () => {
+    it("lists the main craft's own materials first", async () => {
+        setup()
+
+        const section = await openMaterials()
+
+        expect(
+            within(section)
+                .getAllByRole("group")
+                .map((row) => row.getAttribute("aria-label")),
+        ).toEqual(["Ingot", "Ore"])
+    })
+
+    it("lists every item of the whole chain, upgrades first", async () => {
         setup(makeSettings({ owned: { [ORE]: 30 } }))
 
         const section = await openMaterials()
+
+        await userEvent.click(within(section).getByText("Whole chain"))
+
         const rows = within(section).getAllByRole("group")
 
         expect(rows.map((row) => row.getAttribute("aria-label"))).toEqual([
@@ -138,6 +170,40 @@ describe("CraftPlanPanel", () => {
             "Solvent",
         ])
         expect(within(rows[0]).getByText("Crafted")).toBeVisible()
+    })
+
+    it("shows this craft's own cost beside the whole chain's", () => {
+        // Ingots cost 25 to craft, 20 to buy.
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5 },
+                marketPrices: { [INGOT]: 20 },
+            }),
+        )
+
+        // The amounts are spans inside the line.
+        const line = screen.getByText((_, element) => {
+            return (
+                element?.tagName === "P" &&
+                (element.textContent ?? "").startsWith("Whole chain")
+            )
+        })
+
+        expect(line).toHaveTextContent(
+            "Whole chain 125 Kinah each · this craft only 110 Kinah",
+        )
+    })
+
+    it("sums up the combo in numbers, asking only for a missing price", () => {
+        setup(makeSettings({ prices: { [ORE]: 10, [SOLVENT]: 5 } }))
+
+        // 2 attempts at 25%: 1 - 0.75² is about 44%.
+        expect(screen.getByText("Your plan: 44% sure")).toBeVisible()
+        expect(
+            // Sword is an item mention inside the line.
+            screen.getByText(/sells for \(Main craft\) to count the ones/),
+        ).toBeVisible()
+        expect(screen.queryByText(/Crafting 100/)).toBeNull()
     })
 
     it("opens the item it's crafted from", async () => {
@@ -192,6 +258,30 @@ describe("CraftPlanPanel", () => {
             within(ore).getByLabelText("Loading the market price"),
         ).toBeVisible()
         expect(within(ore).queryByLabelText("Price (Kinah)")).toBeNull()
+    })
+
+    it("holds every Kinah sum while market prices load", async () => {
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5, [SWORD]: 200 },
+                pendingPrices: { [INGOT]: true },
+            }),
+        )
+
+        // To spend, the cost line and the Ingot's craft cost wait.
+        expect(screen.queryByText("350 Kinah")).toBeNull()
+        expect(screen.queryByText(/^Cost/)).toBeNull()
+        expect(
+            within(getTreeLine("Ingot")).getByLabelText("Loading prices"),
+        ).toBeVisible()
+
+        const section = await openMaterials()
+
+        expect(
+            within(
+                within(section).getByRole("group", { name: "Ore" }),
+            ).getByLabelText("Loading prices"),
+        ).toBeVisible()
     })
 
     it("reports a new count", async () => {
