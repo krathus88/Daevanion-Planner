@@ -5,7 +5,7 @@
 // lightness times the color), Arena 1v1 red. Duty Missions is Journal.
 // Nightmare is the wiki's Nightmare Dungeon Challenge Ticket; Command is Supply
 // Request tinted blue (faction) or purple (Abyss). Ludra is the wiki's Abyssal
-// Forge Challenge Ticket, Shugo Festival its Reward Key.
+// Forge Challenge Ticket.
 export { default as Arena1v1 } from "./arena.webp"
 export { default as Arena5v5 } from "./arena-5v5.webp"
 export { default as AscensionTrial } from "./ascension-trial.webp"
@@ -17,5 +17,4 @@ export { default as DutyMissions } from "./duty-missions.webp"
 export { default as Ludra } from "./ludra.webp"
 export { default as Nightmare } from "./nightmare.webp"
 export { default as OdyleEnergy } from "./odyle-energy.webp"
-export { default as ShugoFestival } from "./shugo-festival.webp"
 export { default as SupplyRequest } from "./supply-request.webp"

@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+// The feed needs only sharedReports' key helper; a real client per
+// resetModules makes Supabase warn about several auth clients.
+vi.mock("@account/supabaseClient", () => {
+    return { supabase: {} }
+})
+
 const GARTUA = 2101074
 const DANAR = 2400017
 const ARGO_SPIRIT_KING = 2600068

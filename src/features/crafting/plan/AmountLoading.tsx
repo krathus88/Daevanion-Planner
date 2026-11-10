@@ -1,10 +1,11 @@
 import { Skeleton, type SkeletonProps } from "@chakra-ui/react"
 
 // Where a Kinah sum or cost goes while market prices load: it would still
-// change.
+// change. A span, since it often stands inside a Text (<p>).
 export const AmountLoading = (props: SkeletonProps) => {
     return (
         <Skeleton
+            as="span"
             display="inline-block"
             w="16"
             h="4"

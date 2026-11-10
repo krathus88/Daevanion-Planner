@@ -174,6 +174,9 @@ export default defineConfig(({ mode }) => ({
         // Icons stay separate files instead of base64 in the bundle, so the
         // app's JavaScript parses faster and only icons on screen download.
         assetsInlineLimit: 0,
+        // Chakra v3 alone is ~540 kB minified (every page needs all of it), so
+        // the default 500 kB would always warn. Anything else this big is news.
+        chunkSizeWarningLimit: 600,
         rolldownOptions: {
             output: {
                 // Libraries change less often than the app, so they get their
@@ -192,6 +195,10 @@ export default defineConfig(({ mode }) => ({
                         {
                             name: "router",
                             test: /node_modules[\\/]@tanstack[\\/]/,
+                        },
+                        {
+                            name: "supabase",
+                            test: /node_modules[\\/]@supabase[\\/]/,
                         },
                     ],
                 },

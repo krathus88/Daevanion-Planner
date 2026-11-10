@@ -1,6 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
 import type { ProfessionId } from "@crafting/config/professions"
+import { MAX_CRAFT_COUNT } from "@crafting/config/craftCount"
 import { NumberField } from "@common/NumberField"
 import {
     getProcs,
@@ -29,9 +30,6 @@ import { CraftStepBody } from "./CraftStepBody"
 import { PlanSummary } from "./PlanSummary"
 import { ProficiencyField } from "./ProficiencyField"
 import { TransferComboCard } from "./TransferComboCard"
-
-// The most a plan makes at once.
-export const MAX_CRAFT_COUNT = 9999
 
 type CraftPlanPanelProps = {
     data: CraftingData

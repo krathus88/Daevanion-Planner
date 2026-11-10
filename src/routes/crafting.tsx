@@ -1,6 +1,6 @@
 import { CraftingPage } from "@crafting/CraftingPage"
 import { loadCraftingData } from "@crafting/data/craftingData"
-import { MAX_CRAFT_COUNT } from "@crafting/plan/CraftPlanPanel"
+import { MAX_CRAFT_COUNT } from "@crafting/config/craftCount"
 import { createFileRoute } from "@tanstack/react-router"
 
 type CraftingSearch = {
