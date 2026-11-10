@@ -3,7 +3,9 @@ import type { CategoryId, ProfessionId } from "@crafting/config/professions"
 import { getItem } from "@crafting/data/craftingData"
 import { RecipeFinder } from "@crafting/finder/RecipeFinder"
 import { useCraftingSettings } from "@crafting/hooks/useCraftingSettings"
+import { useMarketPrices } from "@crafting/hooks/useMarketPrices"
 import { useSharedPrices } from "@crafting/hooks/useSharedPrices"
+import { getPlanItemIds } from "@crafting/logic/planItems"
 import { pickPrices } from "@crafting/logic/prices"
 import {
     filterRecipeEntries,
@@ -38,6 +40,12 @@ export const CraftingPage = () => {
         changeProficiency,
     } = useCraftingSettings()
     const sharedPrices = useSharedPrices(settings.server)
+    // Aion2Market's prices for the open item's whole recipe tree.
+    const marketPrices = useMarketPrices(
+        search.item !== undefined && data.recipes.has(search.item)
+            ? getPlanItemIds(data, search.item)
+            : [],
+    )
 
     const [craftWindow, setCraftWindow] = useState<CraftingWindow>(() => {
         return getStartWindow(data, search.item)
@@ -91,6 +99,8 @@ export const CraftingPage = () => {
     const planSettings: PlanSettings = {
         owned: settings.owned,
         prices: pickPrices(settings.prices[server.id], sharedPrices),
+        marketPrices: marketPrices.prices,
+        pendingPrices: marketPrices.pending,
         bought: settings.bought,
         success: settings.success,
         proficiency: settings.proficiency,
@@ -173,7 +183,16 @@ export const CraftingPage = () => {
                     >
                         AION 2 Hub crafting calculator
                     </Link>
-                    , read {data.fetched}. Item icons © NCSOFT.
+                    , read {data.fetched}. Prices from{" "}
+                    <Link
+                        href="https://aion2.exchange/"
+                        color="app.muted"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Aion2Market
+                    </Link>
+                    . Item icons © NCSOFT.
                 </Text>
             </Flex>
         </Container>

@@ -5,6 +5,8 @@ import { formatCount } from "@crafting/logic/formatKinah"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import type { ChangeEvent } from "react"
 import { LuCheck } from "react-icons/lu"
+import { ListedPriceText } from "./ListedPriceText"
+import { PriceLoading } from "./PriceLoading"
 import { TREE_COLUMN_WIDTHS } from "./treeColumns"
 
 type CraftTreeColumnsProps = {
@@ -20,9 +22,10 @@ const getPlanColor = (line: TreeLine) => {
     return line.covered ? "app.success" : "app.fg"
 }
 
-// A tree line's numbers: its price (editable, the same price wherever the
-// item is used; none for Transfer Crafting, which the market doesn't sell), its craft cost when the plan crafts it, and how many the
-// whole plan needs.
+// A tree line's numbers: its price (a merchant's or the market's read-only,
+// else editable and the same wherever the item is used; none for bound
+// items), its craft cost when the plan crafts it, and how many the whole plan
+// needs.
 export const CraftTreeColumns = ({
     line,
     onPriceChange,
@@ -36,6 +39,7 @@ export const CraftTreeColumns = ({
         )
     }
 
+    const state = line.priceState
     const cheaperToBuy =
         line.price !== null &&
         line.craftCost !== null &&
@@ -54,12 +58,23 @@ export const CraftTreeColumns = ({
                 </Text>
             )}
 
-            {line.tradable && (
+            {line.tradable && state.kind === "listed" && (
+                <ListedPriceText
+                    w={TREE_COLUMN_WIDTHS.price}
+                    price={state.price}
+                />
+            )}
+
+            {line.tradable && state.kind === "loading" && (
+                <PriceLoading w={TREE_COLUMN_WIDTHS.price} />
+            )}
+
+            {line.tradable && state.kind === "own" && (
                 <WholeNumberInput
                     size="xs"
                     w={TREE_COLUMN_WIDTHS.price}
                     fallback={null}
-                    value={line.price ?? ""}
+                    value={state.value ?? ""}
                     textAlign="right"
                     placeholder="Price"
                     aria-label="Price (Kinah)"

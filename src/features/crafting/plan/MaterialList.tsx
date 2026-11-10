@@ -1,4 +1,5 @@
 import { Flex } from "@chakra-ui/react"
+import { getPriceState } from "@crafting/logic/craftPlan"
 import type { MaterialIndexRow } from "@crafting/logic/materialOrder"
 import type { PlanSettings } from "@crafting/types"
 import { MaterialListHeader } from "./MaterialListHeader"
@@ -31,6 +32,7 @@ export const MaterialList = ({
                 <MaterialRow
                     key={row.material.item.id}
                     material={row.material}
+                    priceState={getPriceState(settings, row.material.item.id)}
                     crafted={row.crafted}
                     tradable={row.tradable}
                     owned={settings.owned[row.material.item.id] ?? 0}

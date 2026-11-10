@@ -8,9 +8,11 @@ import type { PlanSettings } from "@crafting/types"
 import {
     getBuyPrice,
     getPrice,
+    getPriceState,
     type CraftPlan,
     type CraftStep,
     type PlanMaterial,
+    type PriceState,
 } from "./craftPlan"
 import { isTradable } from "./tradable"
 import { getCraftCost } from "./unitCost"
@@ -20,8 +22,10 @@ export type TreeLine = {
     item: CraftingItem
     // What one craft of the parent uses.
     perCraft: number
-    // Its own price (to buy, or for the main craft to sell), as set.
+    // The price the plan counts (merchant, market, else set by hand).
     price: number | null
+    // What its price spot shows: fixed, loading, or the field.
+    priceState: PriceState
     // False for Transfer Crafting items: the market doesn't sell them.
     tradable: boolean
     // The Odyle it's cheaper to Substance Morph from, and that price.
@@ -87,6 +91,7 @@ export const getTreeLines = (
             item: getItem(data, id),
             perCraft: perCraft,
             price: getPrice(settings, id),
+            priceState: getPriceState(settings, id),
             tradable: isTradable(data, id),
             morph: getMorph(data, settings, id),
             craftCost: step ? getCraftCost(data, settings, id) : null,

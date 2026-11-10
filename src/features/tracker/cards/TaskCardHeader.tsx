@@ -1,13 +1,15 @@
-import { chakra, Flex, Icon, Text } from "@chakra-ui/react"
+import { chakra, Flex, Icon, Link, Text } from "@chakra-ui/react"
 import { ProgressBar } from "@common/ProgressBar"
 import type { CardProgress } from "@tracker/logic/trackerCards"
-import type { ReactNode } from "react"
+import type { MouseEvent, ReactNode } from "react"
 import { LuChevronDown, LuChevronUp } from "react-icons/lu"
 
 type TaskCardHeaderProps = {
     title: string
     progress: CardProgress
     minimized: boolean
+    // Makes the title a link opening in a new tab (a character's kisk.app page).
+    titleHref?: string
     icon?: ReactNode
     subtitle?: ReactNode
     // Right after the title (a character's note button); it keeps its clicks
@@ -24,6 +26,7 @@ export const TaskCardHeader = ({
     title,
     progress,
     minimized,
+    titleHref,
     icon,
     subtitle,
     titleAction,
@@ -31,6 +34,11 @@ export const TaskCardHeader = ({
 }: TaskCardHeaderProps) => {
     const handleToggle = () => {
         onMinimizedChange(!minimized)
+    }
+
+    // Opening the link isn't a click on the header, which would minimize.
+    const handleLinkClick = (event: MouseEvent<HTMLElement>) => {
+        event.stopPropagation()
     }
 
     const isDone = progress.total > 0 && progress.done === progress.total
@@ -61,7 +69,19 @@ export const TaskCardHeader = ({
                 <Flex minW="0" flex="1" flexDir="column">
                     <Flex minW="0" alignItems="center" gap="1">
                         <Text fontSize="lg" fontWeight="semibold" truncate>
-                            {title}
+                            {titleHref ? (
+                                <Link
+                                    href={titleHref}
+                                    color="app.fg"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={handleLinkClick}
+                                >
+                                    {title}
+                                </Link>
+                            ) : (
+                                title
+                            )}
                         </Text>
 
                         {titleAction}

@@ -8,12 +8,15 @@ import {
 } from "@crafting/data/craftingData"
 import { ItemName } from "@crafting/ItemName"
 import { getComboValue } from "@crafting/logic/comboValue"
+import { getPriceState } from "@crafting/logic/craftPlan"
 import { ItemMention } from "@crafting/mention/ItemMention"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import type { PlanSettings } from "@crafting/types"
 import { LuSparkles } from "react-icons/lu"
 import { ComboOdds } from "./ComboOdds"
 import { ComboVerdict } from "./ComboVerdict"
+import { ListedPriceText } from "./ListedPriceText"
+import { PriceLoading } from "./PriceLoading"
 
 type ComboCardProps = {
     data: CraftingData
@@ -44,6 +47,7 @@ export const ComboCard = ({
     }
 
     const splendent = getItem(data, splendentId)
+    const priceState = getPriceState(settings, splendentId)
     const regular = getItem(data, recipe.id)
     const value = getComboValue(
         data,
@@ -81,10 +85,21 @@ export const ComboCard = ({
                     </Text>
                 </Flex>
 
-                {value.splendentTradable && (
+                {value.splendentTradable && priceState.kind === "listed" && (
+                    <ListedPriceText
+                        label="Its price (Kinah)"
+                        price={priceState.price}
+                    />
+                )}
+
+                {value.splendentTradable && priceState.kind === "loading" && (
+                    <PriceLoading w="32" label="Its price (Kinah)" />
+                )}
+
+                {value.splendentTradable && priceState.kind === "own" && (
                     <Flex w="32">
                         <NumberField
-                            value={settings.prices[splendentId] ?? null}
+                            value={priceState.value}
                             label="Its price (Kinah)"
                             fallback={null}
                             max={MAX_AMOUNT}

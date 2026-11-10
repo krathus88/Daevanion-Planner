@@ -89,6 +89,8 @@ export const makeSettings = (
     return {
         owned: {},
         prices: {},
+        marketPrices: {},
+        pendingPrices: {},
         bought: [],
         success: {},
         proficiency: {},

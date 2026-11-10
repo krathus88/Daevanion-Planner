@@ -28,5 +28,12 @@ describe("item info", () => {
         expect(describeItemPrice(data, makeSettings(), ORE)).toBe(
             "No price set",
         )
+        expect(
+            describeItemPrice(
+                data,
+                makeSettings({ marketPrices: { [ORE]: 15 } }),
+                ORE,
+            ),
+        ).toBe("15 Kinah each on the market")
     })
 })

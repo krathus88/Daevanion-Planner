@@ -1,7 +1,7 @@
 import { Badge, Flex, Grid, Text } from "@chakra-ui/react"
 import { WholeNumberInput } from "@common/WholeNumberInput"
 import { ItemName } from "@crafting/ItemName"
-import type { PlanMaterial } from "@crafting/logic/craftPlan"
+import type { PlanMaterial, PriceState } from "@crafting/logic/craftPlan"
 import { formatCount } from "@crafting/logic/formatKinah"
 import { describeMorph } from "@crafting/logic/stepLabels"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
@@ -10,10 +10,14 @@ import type { ChangeEvent } from "react"
 import { LuCheck } from "react-icons/lu"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
 import { ItemNameLink } from "./ItemNameLink"
+import { ListedPriceText } from "./ListedPriceText"
+import { PriceLoading } from "./PriceLoading"
 import { MATERIAL_COLUMNS } from "./materialColumns"
 
 type MaterialRowProps = {
     material: PlanMaterial
+    // What its price spot shows: fixed, loading, or the field.
+    priceState: PriceState
     // Crafted on the way, not gathered or bought.
     crafted: boolean
     // False for Transfer Crafting: bound price, never bought instead.
@@ -34,6 +38,7 @@ const readAmount = (text: string) => {
 // One line of the materials table: a material, or an item crafted on the way.
 export const MaterialRow = ({
     material,
+    priceState,
     crafted,
     tradable,
     owned,
@@ -151,12 +156,20 @@ export const MaterialRow = ({
                 </Text>
             )}
 
-            {tradable && (
+            {tradable && priceState.kind === "listed" && (
+                <ListedPriceText gridArea="price" price={priceState.price} />
+            )}
+
+            {tradable && priceState.kind === "loading" && (
+                <PriceLoading gridArea="price" />
+            )}
+
+            {tradable && priceState.kind === "own" && (
                 <WholeNumberInput
                     size="xs"
                     gridArea="price"
                     fallback={null}
-                    value={material.price ?? ""}
+                    value={priceState.value ?? ""}
                     textAlign="right"
                     placeholder="—"
                     aria-label="Price (Kinah)"

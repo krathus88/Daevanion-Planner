@@ -164,6 +164,36 @@ describe("CraftPlanPanel", () => {
         ).toBeNull()
     })
 
+    it("shows a market price read-only, over one set by hand", () => {
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5 },
+                marketPrices: { [ORE]: 12 },
+            }),
+        )
+
+        const ore = getTreeLine("Ore")
+
+        expect(within(ore).getByText("12")).toBeVisible()
+        expect(within(ore).getByText("market")).toBeVisible()
+        expect(within(ore).queryByLabelText("Price (Kinah)")).toBeNull()
+        // No market price: the field stays.
+        expect(
+            within(getTreeLine("Ingot")).getByLabelText("Price (Kinah)"),
+        ).toBeVisible()
+    })
+
+    it("shows a loading placeholder while the market price loads", () => {
+        setup(makeSettings({ pendingPrices: { [ORE]: true } }))
+
+        const ore = getTreeLine("Ore")
+
+        expect(
+            within(ore).getByLabelText("Loading the market price"),
+        ).toBeVisible()
+        expect(within(ore).queryByLabelText("Price (Kinah)")).toBeNull()
+    })
+
     it("reports a new count", async () => {
         const { onCountChange } = setup()
 

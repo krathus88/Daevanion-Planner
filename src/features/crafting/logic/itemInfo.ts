@@ -1,6 +1,6 @@
 import type { CraftingData } from "@crafting/data/craftingData"
 import type { PlanSettings } from "@crafting/types"
-import { getBuyPrice } from "./craftPlan"
+import { getBuyPrice, getListedPrice } from "./craftPlan"
 import { formatKinah } from "./formatKinah"
 import { describeRecipe } from "./recipeLabels"
 import { isTradable } from "./tradable"
@@ -13,7 +13,8 @@ export const describeItemSource = (data: CraftingData, id: number) => {
     return recipe ? describeRecipe(data, recipe) : "Gathered or bought"
 }
 
-// Its price on your server, by Substance Morph when that's cheaper.
+// Its price (a merchant's, the market's, else set by hand), by Substance Morph
+// when that's cheaper.
 export const describeItemPrice = (
     data: CraftingData,
     settings: PlanSettings,
@@ -29,7 +30,17 @@ export const describeItemPrice = (
         return "No price set"
     }
 
-    return buy.morph === null
-        ? `${formatKinah(buy.value)} each`
-        : `${formatKinah(buy.value)} each by Substance Morph`
+    if (buy.morph !== null) {
+        return `${formatKinah(buy.value)} each by Substance Morph`
+    }
+
+    const listed = getListedPrice(settings, id)
+
+    if (listed?.source === "merchant") {
+        return `${formatKinah(buy.value)} each from a merchant`
+    }
+
+    return listed
+        ? `${formatKinah(buy.value)} each on the market`
+        : `${formatKinah(buy.value)} each`
 }

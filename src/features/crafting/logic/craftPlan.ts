@@ -10,6 +10,7 @@ import {
     PROFESSION_IDS,
     type ProfessionId,
 } from "@crafting/config/professions"
+import { MERCHANT_PRICES } from "@crafting/config/merchantPrices"
 import { getMorphSource } from "@crafting/config/substanceMorph"
 import type { PlanSettings } from "@crafting/types"
 import { getRecipeSuccess } from "./successChance"
@@ -70,8 +71,55 @@ export type CraftPlan = {
     unpriced: number
 }
 
+// A fixed price: a merchant's (always), else the market's.
+export type ListedPrice = { value: number; source: "merchant" | "market" }
+
+export const getListedPrice = (
+    settings: PlanSettings,
+    id: number,
+): ListedPrice | null => {
+    const merchant = MERCHANT_PRICES[id]
+    const market = settings.marketPrices[id]
+
+    if (merchant !== undefined) {
+        return { value: merchant, source: "merchant" }
+    }
+
+    return market === undefined ? null : { value: market, source: "market" }
+}
+
+// The price a plan counts: a merchant's, else the market's (the real one),
+// else one set by hand (yours or your server's).
 export const getPrice = (settings: PlanSettings, id: number) => {
+    return getListedPrice(settings, id)?.value ?? settings.prices[id] ?? null
+}
+
+// A price set by hand: what a price field edits, shown only where there's no
+// merchant or market price.
+const getOwnPrice = (settings: PlanSettings, id: number) => {
     return settings.prices[id] ?? null
+}
+
+// What an item's price spot shows: its fixed price, a loading placeholder
+// while the market is asked, else the field for a price set by hand.
+export type PriceState =
+    | { kind: "listed"; price: ListedPrice }
+    | { kind: "loading" }
+    | { kind: "own"; value: number | null }
+
+export const getPriceState = (
+    settings: PlanSettings,
+    id: number,
+): PriceState => {
+    const listed = getListedPrice(settings, id)
+
+    if (listed) {
+        return { kind: "listed", price: listed }
+    }
+
+    return settings.pendingPrices[id]
+        ? { kind: "loading" }
+        : { kind: "own", value: getOwnPrice(settings, id) }
 }
 
 // What an item costs to get: its own price, or the Odyle it can be Substance

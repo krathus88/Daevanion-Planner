@@ -9,7 +9,13 @@ import {
     SPLENDENT_SWORD,
     SWORD,
 } from "@test/craftingFixture"
-import { buildCraftPlan, getBuyPrice, getCraftChance } from "./craftPlan"
+import {
+    buildCraftPlan,
+    getBuyPrice,
+    getCraftChance,
+    getPrice,
+    getPriceState,
+} from "./craftPlan"
 
 const data = makeCraftingData()
 
@@ -304,6 +310,51 @@ describe("getCraftChance", () => {
 // Real ids: Substance Morph is kept by item id.
 const ODYLE = 610610013
 const SAPPHIRE = 610660025
+
+describe("getPriceState", () => {
+    const SALT = 630554002
+
+    it("shows a merchant's price first, fixed", () => {
+        const settings = makeSettings({
+            prices: { [SALT]: 1 },
+            marketPrices: { [SALT]: 999 },
+        })
+
+        expect(getPriceState(settings, SALT)).toEqual({
+            kind: "listed",
+            price: { value: 220, source: "merchant" },
+        })
+        expect(getPrice(settings, SALT)).toBe(220)
+    })
+
+    it("loads, then shows the market's price, else the field", () => {
+        expect(
+            getPriceState(
+                makeSettings({ pendingPrices: { [ORE]: true } }),
+                ORE,
+            ),
+        ).toEqual({ kind: "loading" })
+        expect(
+            getPriceState(makeSettings({ marketPrices: { [ORE]: 12 } }), ORE),
+        ).toEqual({ kind: "listed", price: { value: 12, source: "market" } })
+        expect(
+            getPriceState(makeSettings({ prices: { [ORE]: 10 } }), ORE),
+        ).toEqual({ kind: "own", value: 10 })
+    })
+})
+
+describe("getPrice", () => {
+    it("takes the market's price, else one set by hand", () => {
+        const settings = makeSettings({
+            prices: { [ORE]: 10 },
+            marketPrices: { [ORE]: 12, [SOLVENT]: 7 },
+        })
+
+        expect(getPrice(settings, ORE)).toBe(12)
+        expect(getPrice(settings, SOLVENT)).toBe(7)
+        expect(getPrice(settings, INGOT)).toBeNull()
+    })
+})
 
 describe("getBuyPrice", () => {
     it("takes the Odyle's price when morphing is cheaper", () => {

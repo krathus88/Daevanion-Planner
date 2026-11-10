@@ -26,10 +26,14 @@ export type CraftingSettings = {
 }
 
 // What a plan is worked out from: the settings with each item's price picked
-// (local or shared).
+// (local or shared), and market prices, which win where they exist.
 export type PlanSettings = {
     owned: Record<string, number>
     prices: Record<string, number>
+    // Aion2Market's prices: they win over `prices`.
+    marketPrices: Record<string, number>
+    // Items whose market price is still being fetched.
+    pendingPrices: Record<string, true>
     bought: number[]
     success: Record<string, number>
     proficiency: Partial<Record<ProfessionId, number>>

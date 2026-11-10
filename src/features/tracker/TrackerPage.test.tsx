@@ -174,6 +174,34 @@ describe("TrackerPage", () => {
         ).toHaveAttribute("aria-expanded", "true")
     })
 
+    it("links a character's name to its kisk.app page without minimizing", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const aria = screen.getByRole("article", { name: "Aria" })
+        const link = within(aria).getByRole("link", { name: "Aria" })
+
+        expect(link).toHaveAttribute(
+            "href",
+            "https://kisk.app/c/eu/siel/Aria/gear",
+        )
+        expect(link).toHaveAttribute("target", "_blank")
+        // Server cards have no page there.
+        expect(
+            within(screen.getByRole("article", { name: "Siel" })).queryByRole(
+                "link",
+            ),
+        ).not.toBeInTheDocument()
+
+        // jsdom doesn't navigate; the click only must not reach the header.
+        link.addEventListener("click", (event) => {
+            event.preventDefault()
+        })
+        await userEvent.click(link)
+
+        expect(readTrackerData().minimized).toEqual([])
+    })
+
     it("shows each card's progress", async () => {
         withCharacters()
         renderWithChakra(<TrackerPage />)

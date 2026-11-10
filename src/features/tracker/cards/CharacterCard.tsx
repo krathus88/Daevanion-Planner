@@ -1,6 +1,7 @@
 import { Flex, Image, Text } from "@chakra-ui/react"
 import { CLASS_ICONS, CLASS_NAMES } from "@config/classPresets/classInfo"
 import { getServer } from "@timers/config/servers"
+import { getCharacterLink } from "@tracker/logic/characterLink"
 import { getCharacterName } from "@tracker/logic/characterName"
 import {
     getCubeCost,
@@ -88,6 +89,7 @@ export const CharacterCard = ({
             entries={entries[character.id]}
             ignored={ignored[character.id]}
             minimized={minimized.includes(character.id)}
+            titleHref={getCharacterLink(character) ?? undefined}
             // Odyle Energy, then the note's short line, above the task boxes.
             top={
                 <Flex flexDir="column" gap="2">

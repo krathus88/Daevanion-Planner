@@ -39,6 +39,8 @@ type TaskCardProps = {
     // A full-width card, whose boxes line up with the Characters columns.
     wide?: boolean
     minimized?: boolean
+    // Makes the title a link (a character's kisk.app page).
+    titleHref?: string
     icon?: ReactNode
     subtitle?: ReactNode
     // Shown above the task boxes, minimized or not (a character's Odyle Energy).
@@ -62,6 +64,7 @@ export const TaskCard = ({
     ignored = [],
     wide = false,
     minimized = false,
+    titleHref,
     icon,
     subtitle,
     top,
@@ -135,6 +138,7 @@ export const TaskCard = ({
                 title={title}
                 progress={progress}
                 minimized={minimized}
+                titleHref={titleHref}
                 icon={icon}
                 subtitle={subtitle}
                 titleAction={titleAction}

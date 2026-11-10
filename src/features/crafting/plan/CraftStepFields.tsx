@@ -1,9 +1,11 @@
 import { Flex, Grid } from "@chakra-ui/react"
 import { NumberField } from "@common/NumberField"
-import type { CraftStep } from "@crafting/logic/craftPlan"
+import type { CraftStep, PriceState } from "@crafting/logic/craftPlan"
 import { formatSuccess, type SuccessInfo } from "@crafting/logic/successChance"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
+import { ListedPriceText } from "./ListedPriceText"
+import { PriceLoading } from "./PriceLoading"
 import type { PlanHandlers } from "./planHandlers"
 import { STEP_FIELD_COLUMNS } from "./stepFieldColumns"
 
@@ -16,7 +18,8 @@ type CraftStepFieldsProps = {
     success: SuccessInfo
     // A percent set by hand, or null to use the game's table.
     manualSuccess: number | null
-    price: number | null
+    // What its price spot shows: fixed, loading, or the field.
+    priceState: PriceState
     handlers: PlanHandlers
 }
 
@@ -29,7 +32,7 @@ export const CraftStepFields = ({
     owned,
     success,
     manualSuccess,
-    price,
+    priceState,
     handlers,
 }: CraftStepFieldsProps) => {
     const itemId = step.item.id
@@ -75,9 +78,20 @@ export const CraftStepFields = ({
             )}
 
             {/* Other crafts' prices are on their tree line. */}
-            {isTarget && tradable && (
+            {isTarget && tradable && priceState.kind === "listed" && (
+                <ListedPriceText
+                    label="Sells for (Kinah)"
+                    price={priceState.price}
+                />
+            )}
+
+            {isTarget && tradable && priceState.kind === "loading" && (
+                <PriceLoading label="Sells for (Kinah)" />
+            )}
+
+            {isTarget && tradable && priceState.kind === "own" && (
                 <NumberField
-                    value={price}
+                    value={priceState.value}
                     label="Sells for (Kinah)"
                     fallback={null}
                     max={MAX_AMOUNT}

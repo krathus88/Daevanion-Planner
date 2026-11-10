@@ -1,6 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { CraftingData } from "@crafting/data/craftingData"
-import { getPrice, type CraftStep } from "@crafting/logic/craftPlan"
+import { getPriceState, type CraftStep } from "@crafting/logic/craftPlan"
 import { getTreeLines, type PlanIndex } from "@crafting/logic/craftTree"
 import { describeCombo, describeStepStatus } from "@crafting/logic/stepLabels"
 import { describeSuccess, getSuccessInfo } from "@crafting/logic/successChance"
@@ -54,7 +54,7 @@ export const CraftStepBody = ({
                 owned={settings.owned[step.item.id] ?? 0}
                 success={success}
                 manualSuccess={settings.success[step.item.id] ?? null}
-                price={getPrice(settings, step.item.id)}
+                priceState={getPriceState(settings, step.item.id)}
                 handlers={handlers}
             />
 
