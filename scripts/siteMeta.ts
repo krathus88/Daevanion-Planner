@@ -15,6 +15,9 @@ export const PETS_DESCRIPTION =
 export const TRACKER_DESCRIPTION =
     "AION 2 daily and weekly tracker: tick off dungeons, missions and arena runs for each of your characters, cleared at every reset."
 
+export const CRAFTING_DESCRIPTION =
+    "AION 2 crafting calculator: every craft and raw material an item needs, what you still have to gather, combo chances and the Kinah it costs."
+
 export type SiteClass = {
     id: string
     name: string

@@ -142,6 +142,15 @@ export const NavDrawer = ({
                                 </NavDrawerLink>
 
                                 <NavDrawerLink
+                                    isActive={currentPage === "crafting"}
+                                    onNavigate={handleNavigate}
+                                >
+                                    <RouterLink to="/crafting">
+                                        Crafting
+                                    </RouterLink>
+                                </NavDrawerLink>
+
+                                <NavDrawerLink
                                     isActive={currentPage === "timers"}
                                     onNavigate={handleNavigate}
                                 >

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { SyncConflict } from "./cloudSync"
 import { formatEditTime, summarizeConflicts } from "./conflictSummary"
-import { PETS_KEY, TIMERS_KEY, TRACKER_KEY } from "./syncedKeys"
+import { CRAFTING_KEY, PETS_KEY, TIMERS_KEY, TRACKER_KEY } from "./syncedKeys"
 
 const conflict = (
     key: string,
@@ -49,6 +49,13 @@ describe("summarizeConflicts", () => {
         expect(row.label).toBe("Tracker")
         expect(row.device.detail).toBe("1 character")
         expect(row.account.detail).toBe("0 characters")
+    })
+
+    it("describes crafting", () => {
+        const [row] = summarizeConflicts([conflict(CRAFTING_KEY, {}, {})])
+
+        expect(row.label).toBe("Crafting")
+        expect(row.device.detail).toBe("Prices and bag counts")
     })
 
     it("groups a class's keys and adds up its saved plans", () => {

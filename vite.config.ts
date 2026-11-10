@@ -7,6 +7,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
 import { BOARD_IDS, BOARD_NAMES } from "./src/config/boards.ts"
 import {
+    CRAFTING_DESCRIPTION,
     PETS_DESCRIPTION,
     readClasses,
     SITE_DESCRIPTION,
@@ -18,9 +19,9 @@ import {
 // Link previews (Discord, Slack, X...) read Open Graph tags from the raw HTML
 // and don't run JavaScript. This adds the tags to index.html and, after a
 // build, writes planner/<class>/<board>.html for every class and board, and
-// timers.html, pets.html and tracker.html, each with its own title and
-// banner. GitHub Pages serves /planner/<class>/<board>, /timers, /pets and
-// /tracker from those files.
+// timers.html, pets.html, tracker.html and crafting.html, each with its own
+// title and banner. GitHub Pages serves /planner/<class>/<board>, /timers,
+// /pets, /tracker and /crafting from those files.
 const sharePreviews = (): Plugin => {
     const start = "<!-- share-preview -->"
     const end = "<!-- /share-preview -->"
@@ -113,6 +114,16 @@ const sharePreviews = (): Plugin => {
                     "og/default.png",
                     "tracker",
                     TRACKER_DESCRIPTION,
+                ),
+            )
+
+            writePage(
+                "crafting",
+                tags(
+                    "Daevanion - Crafting",
+                    "og/default.png",
+                    "crafting",
+                    CRAFTING_DESCRIPTION,
                 ),
             )
 

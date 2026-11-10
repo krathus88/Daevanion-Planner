@@ -34,6 +34,7 @@
             "@timers/*": ["./src/features/timers/*"],
             "@pets/*": ["./src/features/pets/*"],
             "@tracker/*": ["./src/features/tracker/*"],
+            "@crafting/*": ["./src/features/crafting/*"],
             "@theme/*": ["./src/theme/*"],
             "@test/*": ["./src/test/*"]
         }

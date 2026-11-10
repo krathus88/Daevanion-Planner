@@ -2,6 +2,7 @@ import { CLASS_NAMES, isClassId } from "@config/classPresets/classInfo"
 import { isRecord } from "@planner/storage/isRecord"
 import type { SyncConflict } from "./cloudSync"
 import {
+    CRAFTING_KEY,
     getPlannerClassId,
     PETS_KEY,
     TIMERS_KEY,
@@ -23,7 +24,7 @@ export type ConflictSummaryRow = {
 
 type Group = {
     label: string
-    kind: "planner" | "pets" | "timers" | "tracker"
+    kind: "planner" | "pets" | "timers" | "tracker" | "crafting"
     deviceCount: number
     accountCount: number
     deviceTime: number | undefined
@@ -75,6 +76,10 @@ const getGroup = (key: string) => {
         return { id: "tracker", label: "Tracker", kind: "tracker" as const }
     }
 
+    if (key === CRAFTING_KEY) {
+        return { id: "crafting", label: "Crafting", kind: "crafting" as const }
+    }
+
     const classId = getPlannerClassId(key)
 
     return {
@@ -97,12 +102,16 @@ const describe = (kind: Group["kind"], count: number) => {
         return `${count} ${count === 1 ? "character" : "characters"}`
     }
 
+    if (kind === "crafting") {
+        return "Prices and bag counts"
+    }
+
     return count > 0
         ? `${count} saved ${count === 1 ? "plan" : "plans"}`
         : "Board plans and settings"
 }
 
-// One row per class, plus pets, timers and the tracker, comparing what each side has.
+// One row per class, plus pets, timers, the tracker and crafting, comparing what each side has.
 export const summarizeConflicts = (conflicts: SyncConflict[]) => {
     const groups = new Map<string, Group>()
 

@@ -55,6 +55,12 @@ test.describe("site navigation", () => {
             page.getByRole("heading", { name: "Tracker" }),
         ).toBeVisible()
 
+        await nav.getByRole("link", { name: "Crafting" }).click()
+        await expect(page).toHaveURL(/\/crafting/)
+        await expect(
+            page.getByRole("heading", { name: "Crafting" }),
+        ).toBeVisible()
+
         await page
             .getByRole("banner")
             .getByRole("link", { name: "Daevanion Planner" })
@@ -102,7 +108,7 @@ test.describe("site navigation", () => {
         ).toBeVisible()
     })
 
-    test("the header tabs are Pets, Tracker, Timers, after the logo", async ({
+    test("the header tabs are Pets, Tracker, Crafting, Timers, after the logo", async ({
         page,
     }) => {
         await page.goto("/")
@@ -114,7 +120,7 @@ test.describe("site navigation", () => {
         ).toHaveAttribute("aria-current", "page")
         await expect(
             page.getByRole("navigation", { name: "Site" }).getByRole("link"),
-        ).toHaveText(["Pets", "Tracker", "Timers"])
+        ).toHaveText(["Pets", "Tracker", "Crafting", "Timers"])
     })
 
     test("the phone menu lists the planner first", async ({ page }) => {
@@ -127,7 +133,13 @@ test.describe("site navigation", () => {
                 .getByRole("dialog")
                 .getByRole("navigation", { name: "Site" })
                 .getByRole("link"),
-        ).toHaveText(["Daevanion Planner", "Pets", "Tracker", "Timers"])
+        ).toHaveText([
+            "Daevanion Planner",
+            "Pets",
+            "Tracker",
+            "Crafting",
+            "Timers",
+        ])
     })
 
     test("phones get a menu instead", async ({ page }) => {
@@ -149,6 +161,7 @@ test.describe("site navigation", () => {
         "/timers",
         "/pets",
         "/tracker",
+        "/crafting?item=110130015",
     ]) {
         test(`${path} fits a phone without sideways scrolling`, async ({
             page,
@@ -185,6 +198,7 @@ test.describe("link previews", () => {
         ["/timers.html", "Daevanion - Timers"],
         ["/pets.html", "Daevanion - Pets"],
         ["/tracker.html", "Daevanion - Tracker"],
+        ["/crafting.html", "Daevanion - Crafting"],
         ["/planner/cleric/zikel.html", "Daevanion - Cleric · Zikel"],
     ]) {
         test(`${path} has its own Open Graph tags`, async ({ request }) => {

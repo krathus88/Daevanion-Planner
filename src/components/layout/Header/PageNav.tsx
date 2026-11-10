@@ -31,6 +31,17 @@ export const PageNav = ({ currentPage, ...props }: PageNavProps) => {
                 </RouterLink>
             </NavTab>
 
+            <NavTab isActive={currentPage === "crafting"}>
+                <RouterLink
+                    to="/crafting"
+                    aria-current={
+                        currentPage === "crafting" ? "page" : undefined
+                    }
+                >
+                    Crafting
+                </RouterLink>
+            </NavTab>
+
             <NavTab isActive={currentPage === "timers"}>
                 <RouterLink
                     to="/timers"

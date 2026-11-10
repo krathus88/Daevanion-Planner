@@ -22,6 +22,8 @@ export const tokens = defineTokens({
     cursor: {
         grab: { value: "grab" },
         grabbing: { value: "grabbing" },
+        // Text with a hover card, like an item named in a sentence.
+        help: { value: "help" },
         static: { value: "default" },
     },
     animations: {

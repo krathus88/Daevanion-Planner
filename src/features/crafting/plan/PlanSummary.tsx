@@ -1,0 +1,79 @@
+import { Flex, Text } from "@chakra-ui/react"
+import type { CraftPlan } from "@crafting/logic/craftPlan"
+import { formatCount, formatKinah } from "@crafting/logic/formatKinah"
+import { getPlanTotals } from "@crafting/logic/planTotals"
+import { PlanCostLine } from "./PlanCostLine"
+
+type PlanSummaryProps = {
+    plan: CraftPlan
+    // Average Kinah to craft one target item, when every material is priced.
+    costEach: number | null
+    // The target's price.
+    sellPrice: number | null
+    // False for Transfer Crafting: the market doesn't sell it.
+    tradable: boolean
+}
+
+// Kinah to spend first and biggest, then what's missing and how many crafts,
+// then one line on cost and profit.
+export const PlanSummary = ({
+    plan,
+    costEach,
+    sellPrice,
+    tradable,
+}: PlanSummaryProps) => {
+    const totals = getPlanTotals(plan)
+    const allOwned = totals.missing === 0
+
+    return (
+        <Flex
+            pt="3"
+            flexDir="column"
+            gap="1.5"
+            borderTopWidth="1px"
+            borderColor="app.border"
+        >
+            <Flex
+                flexWrap="wrap"
+                alignItems="baseline"
+                columnGap="6"
+                rowGap="1"
+            >
+                <Flex alignItems="baseline" gap="2">
+                    <Text
+                        color="app.fg"
+                        fontSize="2xl"
+                        fontWeight="bold"
+                        lineHeight="short"
+                    >
+                        {formatKinah(totals.spend)}
+                    </Text>
+
+                    <Text textStyle="caption">to spend</Text>
+                </Flex>
+
+                <Text
+                    color={allOwned ? "app.success" : "app.muted"}
+                    fontSize="sm"
+                >
+                    {allOwned
+                        ? "Every material in the bag"
+                        : `${totals.missing} of ${plan.materials.length} materials missing`}
+                </Text>
+
+                <Text color="app.muted" fontSize="sm">
+                    {formatCount(plan.attempts)}{" "}
+                    {plan.attempts === 1 ? "craft" : "crafts"}
+                </Text>
+            </Flex>
+
+            <PlanCostLine
+                tradable={tradable}
+                costEach={costEach}
+                sellPrice={sellPrice}
+                unpriced={totals.unpriced}
+                unpricedMissing={totals.spend === null ? 0 : plan.unpriced}
+            />
+        </Flex>
+    )
+}

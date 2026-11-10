@@ -7,11 +7,13 @@ import { CardGrid } from "./CardGrid"
 import { IconImage } from "./IconImage"
 import { ConfirmButton } from "./ConfirmButton"
 import { NumberedStep } from "./NumberedStep"
+import { NumberField } from "./NumberField"
 import { PointsField } from "./PointsField"
 import { ProgressBar } from "./ProgressBar"
 import { SaveForm } from "./SaveForm"
 import { ScreenshotDropzone } from "./ScreenshotDropzone"
 import { ScreenshotProgress } from "./ScreenshotProgress"
+import { SearchField } from "./SearchField"
 import { Section } from "./Section"
 import { StatTile } from "./StatTile"
 import { StatusText } from "./StatusText"
@@ -253,6 +255,76 @@ describe("PointsField", () => {
         )
 
         expect(screen.getByLabelText("Points")).toBeDisabled()
+    })
+})
+
+describe("NumberField", () => {
+    it("shows the value, or an empty field for null", () => {
+        renderWithChakra(
+            <>
+                <NumberField value={12} label="Count" onChange={() => {}} />
+
+                <NumberField value={null} label="Price" onChange={() => {}} />
+            </>,
+        )
+
+        expect(screen.getByLabelText("Count")).toHaveValue("12")
+        expect(screen.getByLabelText("Price")).toHaveValue("")
+    })
+
+    it("keeps numbers within min and max", () => {
+        const onChange = vi.fn()
+
+        renderWithChakra(
+            <NumberField
+                value={0}
+                label="Success"
+                min={1}
+                max={100}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.change(screen.getByLabelText("Success"), {
+            target: { value: "250" },
+        })
+
+        expect(onChange).toHaveBeenLastCalledWith(100)
+    })
+
+    it("reports its fallback once left empty", async () => {
+        const onChange = vi.fn()
+
+        renderWithChakra(
+            <NumberField
+                value={5}
+                label="Price"
+                fallback={null}
+                onChange={onChange}
+            />,
+        )
+        await userEvent.clear(screen.getByLabelText("Price"))
+        await userEvent.tab()
+
+        expect(onChange).toHaveBeenLastCalledWith(null)
+    })
+})
+
+describe("SearchField", () => {
+    it("reports typing under its label", async () => {
+        const onChange = vi.fn()
+
+        renderWithChakra(
+            <SearchField
+                value=""
+                placeholder="Search an item"
+                label="Search recipes"
+                onChange={onChange}
+            />,
+        )
+        await userEvent.type(screen.getByLabelText("Search recipes"), "o")
+
+        expect(screen.getByPlaceholderText("Search an item")).toBeVisible()
+        expect(onChange).toHaveBeenLastCalledWith("o")
     })
 })
 

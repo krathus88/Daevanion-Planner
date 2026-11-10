@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
+import { SearchField } from "@common/SearchField"
 import type { PetCategoryId } from "@pets/config/petCategories"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
 import { ImportDialog } from "@pets/importer/ImportDialog"
@@ -9,7 +10,6 @@ import { CategoryFilter } from "./CategoryFilter"
 import { ListOptions } from "./ListOptions"
 import { MinimizeListButton } from "./MinimizeListButton"
 import { PetList } from "./PetList"
-import { PetSearchField } from "./PetSearchField"
 
 type PetFinderProps = {
     atlas: PetAtlas
@@ -62,7 +62,12 @@ export const PetFinder = ({
             </Flex>
 
             <Flex alignItems="center" gap="1">
-                <PetSearchField value={query} onChange={onQueryChange} />
+                <SearchField
+                    value={query}
+                    placeholder="Search a pet or monster"
+                    label="Search pets"
+                    onChange={onQueryChange}
+                />
 
                 <ImportDialog atlas={atlas} />
 

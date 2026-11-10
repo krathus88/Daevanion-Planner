@@ -4,3 +4,4 @@ dist
 package-lock.json
 src/routeTree.gen.ts
 src/features/pets/data/petAtlas.json
+src/features/crafting/data/recipes.json

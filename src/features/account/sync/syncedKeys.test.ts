@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    CRAFTING_KEY,
     getPlannerClassId,
     isPlannerKey,
     isSyncedKey,
@@ -13,6 +14,7 @@ describe("isSyncedKey", () => {
         PETS_KEY,
         TIMERS_KEY,
         TRACKER_KEY,
+        CRAFTING_KEY,
         "daevanion:v1:gladiator:nezekan:saved-boards",
         "daevanion:v1:gladiator:shared-allocation",
         "daevanion:v1:gladiator:settings",
