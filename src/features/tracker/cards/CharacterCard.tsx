@@ -104,7 +104,15 @@ export const CharacterCard = ({
                     />
 
                     {note?.short && (
-                        <Text px="1" textStyle="hint" whiteSpace="pre-wrap">
+                        // On the task boxes' background, without their border.
+                        <Text
+                            px="3"
+                            py="1.5"
+                            bg="app.subcard"
+                            borderRadius="md"
+                            textStyle="hint"
+                            whiteSpace="pre-wrap"
+                        >
                             {note.short}
                         </Text>
                     )}
