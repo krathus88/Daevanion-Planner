@@ -39,6 +39,8 @@ type TaskCardProps = {
     // A full-width card, whose boxes line up with the Characters columns.
     wide?: boolean
     minimized?: boolean
+    // Whether the One-off box is open (it folds; see TaskGroupBox).
+    goalsOpen?: boolean
     // Makes the title a link (a character's kisk.app page).
     titleHref?: string
     icon?: ReactNode
@@ -51,6 +53,7 @@ type TaskCardProps = {
     onEntriesChange: EntriesChangeHandler
     onMinimizedChange: (owner: string, minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
+    onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
 export const TaskCard = ({
@@ -64,6 +67,7 @@ export const TaskCard = ({
     ignored = [],
     wide = false,
     minimized = false,
+    goalsOpen = false,
     titleHref,
     icon,
     subtitle,
@@ -73,6 +77,7 @@ export const TaskCard = ({
     onEntriesChange,
     onMinimizedChange,
     onIgnoredChange,
+    onGoalsOpenChange,
 }: TaskCardProps) => {
     const handleMinimizedChange = (next: boolean) => {
         onMinimizedChange(owner, next)
@@ -110,6 +115,11 @@ export const TaskCard = ({
     const handleEntriesChange: EntriesChangeHandler = (...args) => {
         captureSlide()
         onEntriesChange(...args)
+    }
+
+    const handleGoalsOpenChange = (next: boolean) => {
+        captureSlide()
+        onGoalsOpenChange(owner, next)
     }
 
     // Ignoring fades the task out first, like a done one leaving.
@@ -177,6 +187,8 @@ export const TaskCard = ({
                         onCountChange={handleCountChange}
                         onEntriesChange={handleEntriesChange}
                         onIgnoredChange={handleIgnoredChange}
+                        goalsOpen={goalsOpen}
+                        onGoalsOpenChange={handleGoalsOpenChange}
                     />
 
                     {active.done.length > 0 && (
@@ -202,6 +214,8 @@ export const TaskCard = ({
                                     onCountChange={handleCountChange}
                                     onEntriesChange={handleEntriesChange}
                                     onIgnoredChange={handleIgnoredChange}
+                                    goalsOpen={goalsOpen}
+                                    onGoalsOpenChange={handleGoalsOpenChange}
                                 />
                             </Section>
                         </Box>
@@ -229,6 +243,8 @@ export const TaskCard = ({
                                     onCountChange={handleCountChange}
                                     onEntriesChange={handleEntriesChange}
                                     onIgnoredChange={handleIgnoredChange}
+                                    goalsOpen={goalsOpen}
+                                    onGoalsOpenChange={handleGoalsOpenChange}
                                 />
                             </Section>
                         </Box>

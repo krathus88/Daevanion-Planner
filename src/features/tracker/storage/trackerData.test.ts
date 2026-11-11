@@ -31,6 +31,7 @@ const DATA: TrackerData = {
     counts: { a: { t: { period: 4, count: 2 } } },
     entries: { "server:zikel": { d: { period: 4, base: 6, bonus: 1 } } },
     minimized: ["a"],
+    goalsOpen: ["a"],
     ignored: { a: ["t"] },
     energy: { a: { period: 9, base: 400, bonus: 40 } },
     notes: { a: { short: "Alt for keys", long: "" } },
@@ -80,6 +81,7 @@ describe("parseTrackerData", () => {
                 },
             },
             minimized: ["a", 3, null],
+            goalsOpen: ["a", 7],
             ignored: { a: ["t", 4], b: "nope", c: [] },
             energy: {
                 a: { period: 9, base: 400, bonus: 40 },
@@ -118,10 +120,17 @@ describe("parseTrackerData", () => {
             "arena-1v1-wins",
             "arena-1v1-participation",
             "corridors",
+            "crystals-nightmare",
+            "crystals-shugo",
+            "shards-nightmare",
+            "shards-shugo",
+            "shards-abyss",
         ])
         expect(parsed.presets).toEqual(STARTER_IDS)
         expect(parsed.entries).toEqual({})
         expect(parsed.minimized).toEqual([])
+        // The One-off box starts closed.
+        expect(parsed.goalsOpen).toEqual([])
         // Arena 1v1 joins ignored.
         expect(parsed.ignored).toEqual({ a: [...STARTS_IGNORED] })
         expect(parsed.energy).toEqual({})
@@ -258,6 +267,7 @@ describe("readTrackerData", () => {
             counts: {},
             entries: {},
             minimized: [],
+            goalsOpen: [],
             ignored: {},
             energy: {},
             notes: {},

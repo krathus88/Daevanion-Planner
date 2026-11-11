@@ -5,16 +5,19 @@
 // lightness times the color), Arena 1v1 red. Duty Missions is Journal.
 // Nightmare is the wiki's Nightmare Dungeon Challenge Ticket; Command is Supply
 // Request tinted blue (faction) or purple (Abyss). Ludra is the wiki's Abyssal
-// Forge Challenge Ticket.
+// Forge Challenge Ticket. Daevanion Crystal is the wiki's item icon; Stigma
+// Shard's isn't on the wiki, so it's MetaBot's (metabot.gg) item icon.
 export { default as Arena1v1 } from "./arena.webp"
 export { default as Arena5v5 } from "./arena-5v5.webp"
 export { default as AscensionTrial } from "./ascension-trial.webp"
 export { default as Battlefield } from "./battlefield-grey.webp"
 export { default as CommandAbyss } from "./command-abyss.webp"
 export { default as CommandFaction } from "./command-faction.webp"
+export { default as DaevanionCrystal } from "./daevanion-crystal.webp"
 export { default as DailyDungeon } from "./daily-dungeon.webp"
 export { default as DutyMissions } from "./duty-missions.webp"
 export { default as Ludra } from "./ludra.webp"
 export { default as Nightmare } from "./nightmare.webp"
 export { default as OdyleEnergy } from "./odyle-energy.webp"
+export { default as StigmaShard } from "./stigma-shard.webp"
 export { default as SupplyRequest } from "./supply-request.webp"

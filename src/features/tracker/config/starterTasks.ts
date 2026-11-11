@@ -204,6 +204,47 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         cap: 1,
         shared: false,
     },
+    // One-off goals per character: how much each source gives in all, user-told.
+    {
+        id: "crystals-nightmare",
+        name: "Daevanion Crystals",
+        subtitle: "Nightmare",
+        reset: "once",
+        cap: 50,
+        shared: false,
+    },
+    {
+        id: "crystals-shugo",
+        name: "Daevanion Crystals",
+        subtitle: "Shugo Festival",
+        reset: "once",
+        cap: 50,
+        shared: false,
+    },
+    {
+        id: "shards-nightmare",
+        name: "Stigma Shards",
+        subtitle: "Nightmare",
+        reset: "once",
+        cap: 35,
+        shared: false,
+    },
+    {
+        id: "shards-shugo",
+        name: "Stigma Shards",
+        subtitle: "Shugo Festival",
+        reset: "once",
+        cap: 35,
+        shared: false,
+    },
+    {
+        id: "shards-abyss",
+        name: "Stigma Shards",
+        subtitle: "Abyss",
+        reset: "once",
+        cap: 200,
+        shared: false,
+    },
 ]
 
 // Starter tasks every character starts with ignored: new characters, and

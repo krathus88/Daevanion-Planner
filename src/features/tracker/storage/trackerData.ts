@@ -33,6 +33,7 @@ const EMPTY_DATA: TrackerData = {
     counts: {},
     entries: {},
     minimized: [],
+    goalsOpen: [],
     ignored: {},
     energy: {},
     notes: {},
@@ -283,6 +284,7 @@ export const parseTrackerData = (value: unknown): TrackerData => {
         counts: pickPerOwner(value.counts, isTaskCount),
         entries: pickPerOwner(value.entries, isTaskEntries),
         minimized: pickStrings(value.minimized),
+        goalsOpen: pickStrings(value.goalsOpen),
         // Starter tasks that start ignored do so for the characters already there.
         ignored: addIgnored(
             pickIgnored(value.ignored),

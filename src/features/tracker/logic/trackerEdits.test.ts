@@ -16,6 +16,7 @@ import {
     setCount,
     setEntries,
     setEnergy,
+    setGoalsOpen,
     setIgnored,
     setMembership,
     setNote,
@@ -52,6 +53,7 @@ const data = (overrides: Partial<TrackerData> = {}): TrackerData => {
         counts: {},
         entries: {},
         minimized: [],
+        goalsOpen: [],
         ignored: {},
         energy: {},
         notes: {},
@@ -307,11 +309,13 @@ describe("setIgnored", () => {
         const start = data({
             ignored: { a: ["t", "x"], b: ["t"] },
             minimized: ["a"],
+            goalsOpen: ["a", "b"],
         })
 
         expect(removeCharacter(start, "a")).toMatchObject({
             ignored: { b: ["t"] },
             minimized: [],
+            goalsOpen: ["b"],
         })
         expect(removeTask(start, "t").ignored).toEqual({ a: ["x"] })
     })
@@ -324,6 +328,16 @@ describe("setMinimized", () => {
 
         expect(minimized.minimized).toEqual(["a", "x"])
         expect(setMinimized(minimized, ["a"], false).minimized).toEqual(["x"])
+    })
+})
+
+describe("setGoalsOpen", () => {
+    it("opens and closes one owner's One-off box, leaving the others", () => {
+        const opened = setGoalsOpen(data({ goalsOpen: ["x"] }), "a", true)
+
+        expect(opened.goalsOpen).toEqual(["x", "a"])
+        expect(setGoalsOpen(opened, "a", true).goalsOpen).toEqual(["x", "a"])
+        expect(setGoalsOpen(opened, "x", false).goalsOpen).toEqual(["a"])
     })
 })
 

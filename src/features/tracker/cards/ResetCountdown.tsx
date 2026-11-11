@@ -2,10 +2,10 @@ import { Flex, Text } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
 import { formatCountdown, formatLocalTime } from "@timers/logic/formatTime"
 import { getNextReset } from "@tracker/logic/resetPeriods"
-import type { TrackerReset } from "@tracker/types"
+import type { TimedReset } from "@tracker/types"
 
 type ResetCountdownProps = {
-    reset: TrackerReset
+    reset: TimedReset
     label: string
     icon: string
     now: number

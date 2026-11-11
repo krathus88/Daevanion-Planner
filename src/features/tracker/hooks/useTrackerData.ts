@@ -14,6 +14,7 @@ import {
     restoreStarterTasks,
     setCount,
     setEntries,
+    setGoalsOpen,
     setEnergy,
     setIgnored,
     setMembership,
@@ -104,6 +105,10 @@ export const useTrackerData = () => {
         writeTrackerData(setMinimized(readTrackerData(), owners, minimized))
     }
 
+    const changeGoalsOpen = (owner: string, open: boolean) => {
+        writeTrackerData(setGoalsOpen(readTrackerData(), owner, open))
+    }
+
     const changeIgnored = (owner: string, taskId: string, ignored: boolean) => {
         writeTrackerData(setIgnored(readTrackerData(), owner, taskId, ignored))
     }
@@ -138,6 +143,7 @@ export const useTrackerData = () => {
         counts: data.counts,
         entries: data.entries,
         minimized: data.minimized,
+        goalsOpen: data.goalsOpen,
         ignored: data.ignored,
         usesStarterTasks: data.tasks === null,
         removedPresets: getRemovedPresets(data),
@@ -146,6 +152,7 @@ export const useTrackerData = () => {
         changeEnergy: changeEnergy,
         changeNote: changeNote,
         changeIgnored: changeIgnored,
+        changeGoalsOpen: changeGoalsOpen,
         changeCount: changeCount,
         changeEntries: changeEntries,
         createCharacter: createCharacter,

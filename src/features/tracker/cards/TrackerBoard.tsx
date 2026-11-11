@@ -6,6 +6,7 @@ import {
     getServerGroups,
     getTaskGroups,
 } from "@tracker/logic/trackerCards"
+import { getServerOwner } from "@tracker/logic/taskOwners"
 import type { TrackerCharacter, TrackerData, TrackerTask } from "@tracker/types"
 import { LuChevronsDownUp, LuChevronsUpDown } from "react-icons/lu"
 import { CharacterCard } from "./CharacterCard"
@@ -28,6 +29,8 @@ type TrackerBoardProps = {
     notes: TrackerData["notes"]
     membership: boolean
     minimized: string[]
+    // Owners whose One-off box is open.
+    goalsOpen: string[]
     ignored: TrackerData["ignored"]
     periods: ResetPeriods
     onCountChange: CountChangeHandler
@@ -36,6 +39,7 @@ type TrackerBoardProps = {
     onNoteChange: NoteChangeHandler
     onMinimizedChange: (owners: readonly string[], minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
+    onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
 // The server's shared tasks first, across the page (most players have one
@@ -49,6 +53,7 @@ export const TrackerBoard = ({
     notes,
     membership,
     minimized,
+    goalsOpen,
     ignored,
     periods,
     onCountChange,
@@ -57,6 +62,7 @@ export const TrackerBoard = ({
     onNoteChange,
     onMinimizedChange,
     onIgnoredChange,
+    onGoalsOpenChange,
 }: TrackerBoardProps) => {
     const serverGroups = getServerGroups(characters)
     const sharedGroups = getTaskGroups(tasks, true)
@@ -93,22 +99,28 @@ export const TrackerBoard = ({
             </Flex>
 
             {sharedGroups.length > 0 &&
-                serverGroups.map((group) => (
-                    <ServerCard
-                        key={group.server}
-                        group={group}
-                        taskGroups={sharedGroups}
-                        counts={counts}
-                        entries={entries}
-                        minimized={minimized}
-                        ignored={ignored}
-                        periods={periods}
-                        onCountChange={onCountChange}
-                        onEntriesChange={onEntriesChange}
-                        onMinimizedChange={handleCardMinimized}
-                        onIgnoredChange={onIgnoredChange}
-                    />
-                ))}
+                serverGroups.map((group) => {
+                    const owner = getServerOwner(group.server)
+
+                    return (
+                        <ServerCard
+                            key={group.server}
+                            group={group}
+                            taskGroups={sharedGroups}
+                            counts={counts[owner]}
+                            entries={entries[owner]}
+                            minimized={minimized.includes(owner)}
+                            goalsOpen={goalsOpen.includes(owner)}
+                            ignored={ignored[owner]}
+                            periods={periods}
+                            onCountChange={onCountChange}
+                            onEntriesChange={onEntriesChange}
+                            onMinimizedChange={handleCardMinimized}
+                            onIgnoredChange={onIgnoredChange}
+                            onGoalsOpenChange={onGoalsOpenChange}
+                        />
+                    )
+                })}
 
             {ownGroups.length > 0 && (
                 <CardGrid title="Characters">
@@ -117,13 +129,14 @@ export const TrackerBoard = ({
                             key={character.id}
                             character={character}
                             taskGroups={ownGroups}
-                            counts={counts}
-                            entries={entries}
-                            energy={energy}
-                            notes={notes}
+                            counts={counts[character.id]}
+                            entries={entries[character.id]}
+                            energy={energy[character.id]}
+                            note={notes[character.id]}
                             membership={membership}
-                            minimized={minimized}
-                            ignored={ignored}
+                            minimized={minimized.includes(character.id)}
+                            goalsOpen={goalsOpen.includes(character.id)}
+                            ignored={ignored[character.id]}
                             periods={periods}
                             onCountChange={onCountChange}
                             onEntriesChange={onEntriesChange}
@@ -131,6 +144,7 @@ export const TrackerBoard = ({
                             onNoteChange={onNoteChange}
                             onMinimizedChange={handleCardMinimized}
                             onIgnoredChange={onIgnoredChange}
+                            onGoalsOpenChange={onGoalsOpenChange}
                         />
                     ))}
                 </CardGrid>

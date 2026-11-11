@@ -120,6 +120,7 @@ export const mergeTrackerData = (newer: unknown, older: unknown) => {
         entries: mergeEntries(newerData.entries, olderData.entries),
         // Choices about the view and the list: the side edited last.
         minimized: newerData.minimized,
+        goalsOpen: newerData.goalsOpen,
         ignored: newerData.ignored,
         energy: mergeEnergy(newerData.energy, olderData.energy),
         // Per character, the newer side's note.

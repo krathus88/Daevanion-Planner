@@ -10,11 +10,13 @@ import {
     Battlefield,
     CommandAbyss,
     CommandFaction,
+    DaevanionCrystal,
     DailyDungeon,
     DutyMissions,
     Ludra,
     Nightmare,
     OdyleEnergy,
+    StigmaShard,
     SupplyRequest,
 } from "@assets/tracker"
 
@@ -47,6 +49,11 @@ const TASK_ICONS: Record<string, string> = {
     "command-abyss": CommandAbyss,
     // The Timers page's Artifact Siege icon.
     corridors: ArtifactSiege,
+    "crystals-nightmare": DaevanionCrystal,
+    "crystals-shugo": DaevanionCrystal,
+    "shards-nightmare": StigmaShard,
+    "shards-shugo": StigmaShard,
+    "shards-abyss": StigmaShard,
 }
 
 export const getTaskIcon = (taskId: string) => {

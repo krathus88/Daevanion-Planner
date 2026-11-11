@@ -13,9 +13,11 @@ import type { ResetPeriods } from "@tracker/logic/resetPeriods"
 import type { TaskGroup } from "@tracker/logic/trackerCards"
 import type {
     CharacterNote,
+    TaskCount,
+    TaskEntries,
     TrackerCharacter,
-    TrackerData,
 } from "@tracker/types"
+import { memo } from "react"
 import { NoteButton } from "./NoteButton"
 import { OdyleEnergyRow } from "./OdyleEnergyRow"
 import { TaskCard } from "./TaskCard"
@@ -30,14 +32,18 @@ import type {
 type CharacterCardProps = {
     character: TrackerCharacter
     taskGroups: TaskGroup[]
-    counts: TrackerData["counts"]
-    entries: TrackerData["entries"]
-    energy: TrackerData["energy"]
-    notes: TrackerData["notes"]
+    // This character's own slices of the data, so other characters' edits
+    // leave the props alone (see memo below).
+    counts?: Record<string, TaskCount>
+    entries?: Record<string, TaskEntries>
+    energy?: TaskEntries
+    note?: CharacterNote
     // The account's membership: Odyle Energy's cap and cube cost.
     membership: boolean
-    minimized: string[]
-    ignored: TrackerData["ignored"]
+    minimized: boolean
+    // Whether its One-off box is open.
+    goalsOpen: boolean
+    ignored?: string[]
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
@@ -45,17 +51,21 @@ type CharacterCardProps = {
     onNoteChange: NoteChangeHandler
     onMinimizedChange: (owner: string, minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
+    onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
-export const CharacterCard = ({
+// memo: the board re-maps every card when one changes, and the compiler
+// can't skip cards inside that map.
+export const CharacterCard = memo(function CharacterCard({
     character,
     taskGroups,
     counts,
     entries,
     energy,
-    notes,
+    note,
     membership,
     minimized,
+    goalsOpen,
     ignored,
     periods,
     onCountChange,
@@ -64,7 +74,8 @@ export const CharacterCard = ({
     onNoteChange,
     onMinimizedChange,
     onIgnoredChange,
-}: CharacterCardProps) => {
+    onGoalsOpenChange,
+}: CharacterCardProps) {
     const name = getCharacterName(character)
     const energyCap = getEnergyCap(membership)
 
@@ -76,8 +87,6 @@ export const CharacterCard = ({
         onNoteChange(character.id, next)
     }
 
-    const note = notes[character.id]
-
     return (
         <TaskCard
             title={name}
@@ -85,20 +94,17 @@ export const CharacterCard = ({
             ownerLabel={name}
             taskGroups={taskGroups}
             periods={periods}
-            counts={counts[character.id]}
-            entries={entries[character.id]}
-            ignored={ignored[character.id]}
-            minimized={minimized.includes(character.id)}
+            counts={counts}
+            entries={entries}
+            ignored={ignored}
+            minimized={minimized}
+            goalsOpen={goalsOpen}
             titleHref={getCharacterLink(character) ?? undefined}
             // Odyle Energy, then the note's short line, above the task boxes.
             top={
                 <Flex flexDir="column" gap="2">
                     <OdyleEnergyRow
-                        left={readEnergy(
-                            energy[character.id],
-                            periods.energy,
-                            energyCap,
-                        )}
+                        left={readEnergy(energy, periods.energy, energyCap)}
                         cap={energyCap}
                         cubeCost={getCubeCost(membership)}
                         ownerLabel={name}
@@ -146,6 +152,7 @@ export const CharacterCard = ({
             onEntriesChange={onEntriesChange}
             onMinimizedChange={onMinimizedChange}
             onIgnoredChange={onIgnoredChange}
+            onGoalsOpenChange={onGoalsOpenChange}
         />
     )
-}
+})

@@ -1,11 +1,11 @@
-import { Flex, Grid, Icon, Text } from "@chakra-ui/react"
+import { Collapsible, Flex, Grid, Icon, Text } from "@chakra-ui/react"
 import {
     getGroupProgress,
     isTaskDone,
     type TaskGroup,
 } from "@tracker/logic/trackerCards"
 import type { TaskCount, TaskEntries } from "@tracker/types"
-import { LuCheck } from "react-icons/lu"
+import { LuCheck, LuChevronRight } from "react-icons/lu"
 import type {
     CountChangeHandler,
     EntriesChangeHandler,
@@ -62,6 +62,9 @@ type TaskGroupBoxProps = {
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onIgnoredChange: IgnoredChangeHandler
+    // Given, the box folds: its header opens and closes it (the One-off box).
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 // One reset's tasks as tiles. A done tile turns green; once every task of
@@ -81,6 +84,8 @@ export const TaskGroupBox = ({
     onCountChange,
     onEntriesChange,
     onIgnoredChange,
+    open,
+    onOpenChange,
 }: TaskGroupBoxProps) => {
     // The ignored ones are already split off into their own section. Done
     // ones may sit in the Done section, but still count here.
@@ -88,6 +93,62 @@ export const TaskGroupBox = ({
     const isComplete = !ignored && progress.done === progress.total
     // Every task leaving takes the whole box with it, so it fades as one.
     const isLeaving = group.tasks.every((task) => leaving.includes(task.id))
+
+    const handleOpenChange = (details: Collapsible.OpenChangeDetails) => {
+        onOpenChange?.(details.open)
+    }
+
+    const heading = (
+        <>
+            <Text textStyle="label">{group.label}</Text>
+
+            {!ignored && (
+                <Text
+                    color={isComplete ? "app.success" : "app.muted"}
+                    fontSize="xs"
+                >
+                    {progress.done}/{progress.total}
+                </Text>
+            )}
+
+            {isComplete && (
+                <Icon boxSize="3.5" color="app.success">
+                    <LuCheck />
+                </Icon>
+            )}
+        </>
+    )
+    const tiles = (
+        <Grid
+            templateColumns="repeat(auto-fill, minmax(min(100%, 17rem), 1fr))"
+            gap="2"
+        >
+            {group.tasks.map((task) => (
+                <TaskTile
+                    key={task.id}
+                    task={task}
+                    owner={owner}
+                    ownerLabel={ownerLabel}
+                    period={period}
+                    count={counts?.[task.id]}
+                    entries={entries?.[task.id]}
+                    done={isTaskDone(
+                        task,
+                        counts?.[task.id],
+                        entries?.[task.id],
+                        period,
+                    )}
+                    ignored={ignored}
+                    boxDone={isComplete}
+                    leaving={!isLeaving && leaving.includes(task.id)}
+                    slideId={`${slideScope}:${task.id}`}
+                    onCountChange={onCountChange}
+                    onEntriesChange={onEntriesChange}
+                    onIgnoredChange={onIgnoredChange}
+                />
+            ))}
+        </Grid>
+    )
 
     return (
         <Flex
@@ -107,55 +168,34 @@ export const TaskGroupBox = ({
             role="group"
             aria-label={group.label}
         >
-            <Flex px="1" alignItems="center" gap="2">
-                <Text textStyle="label">{group.label}</Text>
-
-                {!ignored && (
-                    <Text
-                        color={isComplete ? "app.success" : "app.muted"}
-                        fontSize="xs"
+            {onOpenChange ? (
+                <Collapsible.Root open={open} onOpenChange={handleOpenChange}>
+                    <Collapsible.Trigger
+                        px="1"
+                        borderRadius="sm"
+                        fontWeight="normal"
                     >
-                        {progress.done}/{progress.total}
-                    </Text>
-                )}
+                        <Collapsible.Indicator>
+                            <LuChevronRight size={14} />
+                        </Collapsible.Indicator>
 
-                {isComplete && (
-                    <Icon boxSize="3.5" color="app.success">
-                        <LuCheck />
-                    </Icon>
-                )}
-            </Flex>
+                        {heading}
+                    </Collapsible.Trigger>
 
-            {/* Tiles sharing a row stretch to the row's tallest. */}
-            <Grid
-                templateColumns="repeat(auto-fill, minmax(min(100%, 17rem), 1fr))"
-                gap="2"
-            >
-                {group.tasks.map((task) => (
-                    <TaskTile
-                        key={task.id}
-                        task={task}
-                        owner={owner}
-                        ownerLabel={ownerLabel}
-                        period={period}
-                        count={counts?.[task.id]}
-                        entries={entries?.[task.id]}
-                        done={isTaskDone(
-                            task,
-                            counts?.[task.id],
-                            entries?.[task.id],
-                            period,
-                        )}
-                        ignored={ignored}
-                        boxDone={isComplete}
-                        leaving={!isLeaving && leaving.includes(task.id)}
-                        slideId={`${slideScope}:${task.id}`}
-                        onCountChange={onCountChange}
-                        onEntriesChange={onEntriesChange}
-                        onIgnoredChange={onIgnoredChange}
-                    />
-                ))}
-            </Grid>
+                    <Collapsible.Content pt="2">
+                        {/* Tiles sharing a row stretch to the row's tallest. */}
+                        {tiles}
+                    </Collapsible.Content>
+                </Collapsible.Root>
+            ) : (
+                <>
+                    <Flex px="1" alignItems="center" gap="2">
+                        {heading}
+                    </Flex>
+
+                    {tiles}
+                </>
+            )}
         </Flex>
     )
 }

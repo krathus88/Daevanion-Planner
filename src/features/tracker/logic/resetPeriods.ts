@@ -5,7 +5,7 @@ import {
 } from "@timers/logic/serverSchedule"
 import { getResetSchedule } from "@tracker/config/trackerResets"
 import { getEnergyPeriod } from "./odyleEnergy"
-import type { TaskCount, TrackerReset } from "@tracker/types"
+import type { TaskCount, TimedReset, TrackerReset } from "@tracker/types"
 
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
@@ -33,7 +33,7 @@ const getServerReset = (schedule: ServerSchedule, now: number) => {
 // Which reset period `now` falls in: counts saved in an older period read
 // as 0, so a reset needs no write. A server schedule's period is the hour
 // of its last start, so it only grows; it isn't a count of resets.
-const getResetPeriod = (reset: TrackerReset, now: number) => {
+const getResetPeriod = (reset: TimedReset, now: number) => {
     const schedule = getResetSchedule(reset)
 
     if (isFixedSchedule(schedule)) {
@@ -43,7 +43,8 @@ const getResetPeriod = (reset: TrackerReset, now: number) => {
     return Math.round(getServerReset(schedule, now).last / HOUR)
 }
 
-// Plus Odyle Energy's recharge, every 3 hours.
+// Plus Odyle Energy's recharge, every 3 hours. One-off goals keep period 0
+// for good.
 export type ResetPeriods = Record<TrackerReset | "energy", number>
 
 export const getResetPeriods = (now: number): ResetPeriods => {
@@ -52,10 +53,11 @@ export const getResetPeriods = (now: number): ResetPeriods => {
         daily: getResetPeriod("daily", now),
         weekly: getResetPeriod("weekly", now),
         siege: getResetPeriod("siege", now),
+        once: 0,
     }
 }
 
-export const getNextReset = (reset: TrackerReset, now: number) => {
+export const getNextReset = (reset: TimedReset, now: number) => {
     const schedule = getResetSchedule(reset)
 
     if (!isFixedSchedule(schedule)) {

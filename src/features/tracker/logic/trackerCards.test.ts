@@ -135,7 +135,7 @@ describe("getPendingTasks", () => {
                 empty: { period: 5, base: 0, bonus: 6 },
             },
             [],
-            { energy: 1, daily: 5, weekly: 1, siege: 1 },
+            { energy: 1, daily: 5, weekly: 1, siege: 1, once: 0 },
         )
 
         expect(pending.map((item) => [item.task.id, item.detail])).toEqual([
@@ -178,7 +178,7 @@ describe("done tasks", () => {
         ],
         false,
     )
-    const periods = { energy: 1, daily: 5, weekly: 1, siege: 1 }
+    const periods = { energy: 1, daily: 5, weekly: 1, siege: 1, once: 0 }
 
     it("lists the tasks done in their period, ignored ones left out", () => {
         const counts = {
@@ -217,7 +217,7 @@ describe("ignored tasks", () => {
             a: { period: 5, count: 0 },
             b: { period: 5, count: 2 },
         }
-        const periods = { energy: 1, daily: 5, weekly: 1, siege: 1 }
+        const periods = { energy: 1, daily: 5, weekly: 1, siege: 1, once: 0 }
 
         expect(getCardProgress(groups, counts, {}, ["a"], periods)).toEqual({
             done: 1,
@@ -249,7 +249,7 @@ describe("getCardProgress", () => {
             },
             { e: { period: 5, base: 0, bonus: 30 } },
             [],
-            { energy: 1, daily: 5, weekly: 2, siege: 1 },
+            { energy: 1, daily: 5, weekly: 2, siege: 1, once: 0 },
         )
 
         expect(progress).toEqual({ done: 2, total: 5 })

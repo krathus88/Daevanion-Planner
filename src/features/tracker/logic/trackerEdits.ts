@@ -201,6 +201,7 @@ export const removeCharacter = (data: TrackerData, id: string): TrackerData => {
         entries: dropPerOwner(data.entries, id, null),
         ignored: dropIgnored(data.ignored, id, null),
         minimized: data.minimized.filter((owner) => owner !== id),
+        goalsOpen: data.goalsOpen.filter((owner) => owner !== id),
         energy: dropKey(data.energy, id),
         notes: dropKey(data.notes, id),
     }
@@ -379,6 +380,19 @@ export const setMembership = (
 }
 
 // Minimizes or expands the given cards, by owner, leaving the rest as is.
+export const setGoalsOpen = (
+    data: TrackerData,
+    owner: string,
+    open: boolean,
+): TrackerData => {
+    const others = data.goalsOpen.filter((item) => item !== owner)
+
+    return {
+        ...data,
+        goalsOpen: open ? [...others, owner] : others,
+    }
+}
+
 export const setMinimized = (
     data: TrackerData,
     owners: readonly string[],

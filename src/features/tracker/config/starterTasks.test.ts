@@ -10,7 +10,7 @@ describe("STARTER_TASKS", () => {
         expect(new Set(ids).size).toBe(ids.length)
     })
 
-    it("still has every task older saves knew, Invasion, Arena 1v1 and Corridors coming after", () => {
+    it("still has every task older saves knew, Invasion, Arena 1v1, Corridors and the goals coming after", () => {
         const ids = STARTER_TASKS.map((task) => task.id)
 
         expect(ids.filter((id) => !FIRST_PRESETS.includes(id))).toEqual([
@@ -18,6 +18,11 @@ describe("STARTER_TASKS", () => {
             "arena-1v1-wins",
             "arena-1v1-participation",
             "corridors",
+            "crystals-nightmare",
+            "crystals-shugo",
+            "shards-nightmare",
+            "shards-shugo",
+            "shards-abyss",
         ])
         expect(FIRST_PRESETS.every((id) => ids.includes(id))).toBe(true)
     })
@@ -130,6 +135,25 @@ describe("STARTER_TASKS", () => {
             shared: false,
             cap: 1,
         })
+    })
+
+    it("has one-off Daevanion Crystal and Stigma Shard goals per character", () => {
+        const goals = STARTER_TASKS.filter((task) => task.reset === "once")
+
+        expect(
+            goals.map((task) => [
+                task.name,
+                task.subtitle,
+                task.cap,
+                task.shared,
+            ]),
+        ).toEqual([
+            ["Daevanion Crystals", "Nightmare", 50, false],
+            ["Daevanion Crystals", "Shugo Festival", 50, false],
+            ["Stigma Shards", "Nightmare", 35, false],
+            ["Stigma Shards", "Shugo Festival", 35, false],
+            ["Stigma Shards", "Abyss", 200, false],
+        ])
     })
 
     it("counts the weekly Commands per server", () => {

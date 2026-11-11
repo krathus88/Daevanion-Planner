@@ -20,6 +20,7 @@ export const TrackerPage = () => {
         counts,
         entries,
         minimized,
+        goalsOpen,
         ignored,
         usesStarterTasks,
         removedPresets,
@@ -30,6 +31,7 @@ export const TrackerPage = () => {
         changeEnergy,
         changeNote,
         changeIgnored,
+        changeGoalsOpen,
         createCharacter,
         changeCharacter,
         deleteCharacter,
@@ -75,8 +77,8 @@ export const TrackerPage = () => {
                             Dailies and weeklies per character, and per server
                             for shared ones. Counts clear at the daily reset
                             (07:00 UTC), the weekly one (Wednesday 07:00 UTC) or
-                            each Artifact Siege; Odyle Energy recharges every 3
-                            hours.
+                            each Artifact Siege; one-off goals never clear.
+                            Odyle Energy recharges every 3 hours.
                         </Text>
                     </Flex>
 
@@ -113,6 +115,7 @@ export const TrackerPage = () => {
                         membership={membership}
                         entries={entries}
                         minimized={minimized}
+                        goalsOpen={goalsOpen}
                         ignored={ignored}
                         periods={periods}
                         onCountChange={changeCount}
@@ -121,6 +124,7 @@ export const TrackerPage = () => {
                         onNoteChange={changeNote}
                         onMinimizedChange={changeMinimized}
                         onIgnoredChange={changeIgnored}
+                        onGoalsOpenChange={changeGoalsOpen}
                     />
                 )}
             </Flex>

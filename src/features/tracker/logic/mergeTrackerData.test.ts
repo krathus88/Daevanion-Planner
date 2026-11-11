@@ -106,6 +106,13 @@ describe("mergeTrackerData", () => {
         ).toEqual(["a"])
     })
 
+    it("takes open One-off boxes from the newer side", () => {
+        expect(
+            mergeTrackerData({ goalsOpen: ["a"] }, { goalsOpen: ["b"] })
+                .goalsOpen,
+        ).toEqual(["a"])
+    })
+
     it("drops what doesn't parse", () => {
         expect(mergeTrackerData("broken", null)).toEqual({
             characters: [],
@@ -114,6 +121,7 @@ describe("mergeTrackerData", () => {
             counts: {},
             entries: {},
             minimized: [],
+            goalsOpen: [],
             ignored: {},
             energy: {},
             notes: {},

@@ -1,6 +1,6 @@
 import { Flex } from "@chakra-ui/react"
 import { useNow } from "@timers/hooks/useNow"
-import { TRACKER_RESETS } from "@tracker/config/trackerResets"
+import { TIMED_RESETS } from "@tracker/config/trackerResets"
 import { ResetCountdown } from "./ResetCountdown"
 
 // Reads the clock itself, so only the countdowns re-render each second.
@@ -9,7 +9,7 @@ export const ResetCountdowns = () => {
 
     return (
         <Flex flexWrap="wrap" gap="3">
-            {TRACKER_RESETS.map((reset) => (
+            {TIMED_RESETS.map((reset) => (
                 <ResetCountdown
                     key={reset.id}
                     reset={reset.id}

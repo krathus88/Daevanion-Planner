@@ -45,6 +45,7 @@ const withCharacters = () => {
         counts: {},
         entries: {},
         minimized: [],
+        goalsOpen: [],
         ignored: START_IGNORED,
         energy: {},
         notes: {},
@@ -101,7 +102,8 @@ describe("TrackerPage", () => {
                 .map((card) => card.getAttribute("aria-label")),
         ).toEqual(["Siel", "Zikel", "Aria", "Bran", "Cael"])
 
-        // Arena 1v1 starts in the collapsed Ignored section.
+        // Arena 1v1 starts in the collapsed Ignored section, the goals in
+        // their closed One-off box.
         for (const task of STARTER_TASKS) {
             const owner = task.shared ? "Siel" : "Aria"
             const card = screen.getByRole("article", { name: owner })
@@ -109,7 +111,7 @@ describe("TrackerPage", () => {
                 name: `Ignore: ${getTaskTitle(task)}, ${owner}`,
             })
 
-            if (STARTS_IGNORED.includes(task.id)) {
+            if (STARTS_IGNORED.includes(task.id) || task.reset === "once") {
                 expect(button).not.toBeInTheDocument()
             } else {
                 expect(button).toBeInTheDocument()
@@ -208,7 +210,7 @@ describe("TrackerPage", () => {
 
         const aria = screen.getByRole("article", { name: "Aria" })
 
-        expect(within(aria).getByText("0/11")).toBeInTheDocument()
+        expect(within(aria).getByText("0/16")).toBeInTheDocument()
 
         await userEvent.click(
             within(aria).getByRole("button", {
@@ -216,7 +218,7 @@ describe("TrackerPage", () => {
             }),
         )
 
-        expect(within(aria).getByText("1/11")).toBeInTheDocument()
+        expect(within(aria).getByText("1/16")).toBeInTheDocument()
     })
 
     it("ticks a task with a cap of 1", async () => {
@@ -384,11 +386,11 @@ describe("TrackerPage", () => {
                 a: [...STARTS_IGNORED, "arena-wins"],
             })
         })
-        expect(within(aria).getByText("0/10")).toBeInTheDocument()
+        expect(within(aria).getByText("0/15")).toBeInTheDocument()
         // Other characters still count it.
         expect(
             within(screen.getByRole("article", { name: "Bran" })).getByText(
-                "0/11",
+                "0/16",
             ),
         ).toBeInTheDocument()
 
@@ -483,6 +485,60 @@ describe("TrackerPage", () => {
         )
 
         expect(weekly).toHaveTextContent("1/5")
+    })
+
+    it("tracks one-off goals per character in their own box, closed until opened", async () => {
+        withCharacters()
+        renderWithChakra(<TrackerPage />)
+
+        const aria = screen.getByRole("article", { name: "Aria" })
+        const goals = within(aria).getByRole("group", { name: "One-off" })
+
+        expect(goals).toHaveTextContent("0/5")
+        // Per character only: the server card has none.
+        expect(
+            within(screen.getByRole("article", { name: "Siel" })).queryByRole(
+                "group",
+                { name: "One-off" },
+            ),
+        ).toBeNull()
+
+        const label = "Stigma Shards (Abyss), Aria"
+        const toggle = within(goals).getByRole("button", {
+            name: "One-off 0/5",
+        })
+
+        // Closed at first: only its header shows.
+        expect(toggle).toHaveAttribute("aria-expanded", "false")
+        expect(
+            within(goals).queryByRole("button", { name: `One more: ${label}` }),
+        ).toBeNull()
+
+        await userEvent.click(toggle)
+
+        expect(toggle).toHaveAttribute("aria-expanded", "true")
+        expect(readTrackerData().goalsOpen).toEqual(["a"])
+
+        await userEvent.click(
+            within(goals).getByRole("button", { name: `One more: ${label}` }),
+        )
+
+        expect(screen.getByLabelText(label)).toHaveValue("1")
+        expect(readTrackerData().counts.a["shards-abyss"]).toEqual({
+            period: 0,
+            count: 1,
+        })
+        // Only Aria's box opened.
+        expect(
+            within(screen.getByRole("article", { name: "Bran" })).getByRole(
+                "button",
+                { name: "One-off 0/5" },
+            ),
+        ).toHaveAttribute("aria-expanded", "false")
+
+        await userEvent.click(toggle)
+
+        expect(readTrackerData().goalsOpen).toEqual([])
     })
 
     it("counts a large cap up, down, by typing and to the max", async () => {
@@ -629,7 +685,7 @@ describe("TrackerPage", () => {
         expect(
             screen.getByRole("button", { name: `${label}: 760, edit` }),
         ).toBeInTheDocument()
-        expect(within(aria).getByText("0/11")).toBeInTheDocument()
+        expect(within(aria).getByText("0/16")).toBeInTheDocument()
 
         await userEvent.click(
             screen.getByRole("button", { name: `${label}: 760, edit` }),
@@ -658,7 +714,7 @@ describe("TrackerPage", () => {
         expect(
             screen.getByRole("button", { name: `Spend 80: ${label}` }),
         ).toBeDisabled()
-        expect(within(aria).getByText("0/11")).toBeInTheDocument()
+        expect(within(aria).getByText("0/16")).toBeInTheDocument()
     })
 
     it("keeps Odyle Energy on a minimized card", async () => {

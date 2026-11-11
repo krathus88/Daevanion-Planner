@@ -23,6 +23,13 @@ describe("getResetPeriods", () => {
     })
 })
 
+describe("one-off goals", () => {
+    it("never leave period 0, so their counts never clear", () => {
+        expect(getResetPeriods(BEFORE_RESET).once).toBe(0)
+        expect(getResetPeriods(AFTER_RESET + 365 * 24 * 3_600_000).once).toBe(0)
+    })
+})
+
 describe("energy recharge", () => {
     it("moves on at each recharge, 8 times a day", () => {
         const before = getResetPeriods(BEFORE_RESET)

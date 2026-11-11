@@ -30,6 +30,9 @@ type TaskGroupBoxesProps = {
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onIgnoredChange: IgnoredChangeHandler
+    // The One-off box folds (see TaskGroupBox).
+    goalsOpen: boolean
+    onGoalsOpenChange: (open: boolean) => void
 }
 
 // A box per reset, each keeping its own height. On a narrow card they wrap,
@@ -51,6 +54,8 @@ export const TaskGroupBoxes = ({
     onCountChange,
     onEntriesChange,
     onIgnoredChange,
+    goalsOpen,
+    onGoalsOpenChange,
 }: TaskGroupBoxesProps) => {
     const getSizing = (index: number): BoxSizing => {
         if (!wide) {
@@ -82,6 +87,10 @@ export const TaskGroupBoxes = ({
                     onCountChange={onCountChange}
                     onEntriesChange={onEntriesChange}
                     onIgnoredChange={onIgnoredChange}
+                    open={group.reset === "once" ? goalsOpen : undefined}
+                    onOpenChange={
+                        group.reset === "once" ? onGoalsOpenChange : undefined
+                    }
                 />
             ))}
         </Flex>

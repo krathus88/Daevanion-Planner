@@ -1,6 +1,9 @@
 import type { ClassId } from "@config/classPresets/classInfo"
 
-export type TrackerReset = "daily" | "weekly" | "siege"
+// "once" never resets: one-off goals, like a source's lifetime cap.
+export type TrackerReset = "daily" | "weekly" | "siege" | "once"
+
+export type TimedReset = Exclude<TrackerReset, "once">
 
 // Caps up to 6 are boxes to tick, higher ones counters. A shared task has one count
 // per server instead of one per character.
@@ -57,6 +60,8 @@ export type TrackerData = {
     entries: Record<string, Record<string, TaskEntries>>
     // Owners whose card shows only its summary.
     minimized: string[]
+    // Owners whose One-off box is open (it starts closed).
+    goalsOpen: string[]
     // Task ids each owner skips for good: still shown, dimmed, and left out
     // of the progress.
     ignored: Record<string, string[]>

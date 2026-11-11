@@ -3,7 +3,8 @@ import { getCharacterName } from "@tracker/logic/characterName"
 import type { ResetPeriods } from "@tracker/logic/resetPeriods"
 import { getServerOwner } from "@tracker/logic/taskOwners"
 import type { ServerGroup, TaskGroup } from "@tracker/logic/trackerCards"
-import type { TrackerData } from "@tracker/types"
+import type { TaskCount, TaskEntries } from "@tracker/types"
+import { memo } from "react"
 import { LuServer } from "react-icons/lu"
 import { TaskCard } from "./TaskCard"
 import type {
@@ -15,31 +16,38 @@ import type {
 type ServerCardProps = {
     group: ServerGroup
     taskGroups: TaskGroup[]
-    counts: TrackerData["counts"]
-    entries: TrackerData["entries"]
-    minimized: string[]
-    ignored: TrackerData["ignored"]
+    // The server's own slices of the data (see memo below).
+    counts?: Record<string, TaskCount>
+    entries?: Record<string, TaskEntries>
+    minimized: boolean
+    // Whether its One-off box is open.
+    goalsOpen: boolean
+    ignored?: string[]
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onMinimizedChange: (owner: string, minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
+    onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
-// The server's shared tasks, across the page.
-export const ServerCard = ({
+// The server's shared tasks, across the page. memo: the board re-maps every
+// card when one changes, and the compiler can't skip cards inside that map.
+export const ServerCard = memo(function ServerCard({
     group,
     taskGroups,
     counts,
     entries,
     minimized,
+    goalsOpen,
     ignored,
     periods,
     onCountChange,
     onEntriesChange,
     onMinimizedChange,
     onIgnoredChange,
-}: ServerCardProps) => {
+    onGoalsOpenChange,
+}: ServerCardProps) {
     const owner = getServerOwner(group.server)
     const names = group.characters.map(getCharacterName).join(", ")
 
@@ -50,11 +58,12 @@ export const ServerCard = ({
             ownerLabel={group.name}
             taskGroups={taskGroups}
             periods={periods}
-            counts={counts[owner]}
-            entries={entries[owner]}
-            ignored={ignored[owner]}
+            counts={counts}
+            entries={entries}
+            ignored={ignored}
             wide
-            minimized={minimized.includes(owner)}
+            minimized={minimized}
+            goalsOpen={goalsOpen}
             icon={
                 <Icon boxSize="5" color="app.info">
                     <LuServer />
@@ -69,6 +78,7 @@ export const ServerCard = ({
             onEntriesChange={onEntriesChange}
             onMinimizedChange={onMinimizedChange}
             onIgnoredChange={onIgnoredChange}
+            onGoalsOpenChange={onGoalsOpenChange}
         />
     )
-}
+})
