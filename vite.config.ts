@@ -74,7 +74,9 @@ const sharePreviews = (): Plugin => {
                 tags(SITE_NAME, "og/default.png", ""),
             )
         },
-        closeBundle() {
+        // Not closeBundle: that also runs after a failed build, where its
+        // missing index.html error would hide the real one.
+        writeBundle() {
             const indexPath = join(outDir, "index.html")
             const html = readFileSync(indexPath, "utf-8")
             const block = html.slice(

@@ -77,7 +77,11 @@ test.describe("levels", () => {
             .getByRole("button", { name: "Lv3" })
             .click()
 
-        await expect(page.getByText(`${all - 1} shown`)).toBeVisible()
+        // The list and map re-render on a deferred value: ~0.25s in Chromium,
+        // ~1.7s in Firefox, past 5s while other tests share the machine.
+        await expect(page.getByText(`${all - 1} shown`)).toBeVisible({
+            timeout: 20_000,
+        })
     })
 })
 

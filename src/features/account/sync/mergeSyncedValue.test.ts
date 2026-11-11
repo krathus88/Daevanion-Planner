@@ -121,6 +121,7 @@ describe("mergeSyncedValue: tracker", () => {
             counts: { a: { t: { period: 3, count: 0 } } },
             entries: {},
             minimized: [],
+            goalsOpen: [],
             ignored: {},
             energy: {},
             notes: {},
