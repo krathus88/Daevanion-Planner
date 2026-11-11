@@ -23,6 +23,11 @@ export default defineConfig({
             name: "chromium",
             use: { ...devices["Desktop Chrome"] },
         },
+        // Locally `npm run test:e2e:firefox`; CI runs both browsers side by side.
+        {
+            name: "firefox",
+            use: { ...devices["Desktop Firefox"] },
+        },
     ],
     webServer: {
         command: `${vite} build && ${vite} preview --port 4174 --strictPort`,

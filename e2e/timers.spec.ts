@@ -146,6 +146,10 @@ test.describe("pinning", () => {
 test.describe("corrupt saved data", () => {
     test("doesn't take the page down", async ({ page }) => {
         await page.goto("/timers")
+        // Firefox aborts a reload while the app is still starting.
+        await expect(
+            page.getByRole("heading", { name: "Timers" }),
+        ).toBeVisible()
         await page.evaluate(() => {
             localStorage.setItem("daevanion:timers:v1:settings", "{ not json")
         })

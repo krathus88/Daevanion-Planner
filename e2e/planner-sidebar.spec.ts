@@ -396,6 +396,17 @@ test.describe("all boards panels", () => {
         await panel
             .getByRole("button", { name: "Optimizer priorities" })
             .click()
+        // Firefox now and then drops a click on a section inside one that's
+        // still opening, so let the opening animation end first (looping ones
+        // never do).
+        await page.waitForFunction(() => {
+            return document.getAnimations().every((animation) => {
+                return (
+                    animation.effect?.getTiming().iterations === Infinity ||
+                    animation.playState === "finished"
+                )
+            })
+        })
         await panel.getByRole("button", { name: "Stat priorities" }).click()
 
         const handle = panel.getByRole("button", { name: "Drag Max MP" })

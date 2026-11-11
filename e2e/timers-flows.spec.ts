@@ -12,6 +12,8 @@ const readSettings = (page: Page) => {
 
 const openWith = async (page: Page, settings: object) => {
     await page.goto("/timers")
+    // Firefox aborts a reload while the app is still starting.
+    await expect(page.getByRole("heading", { name: "Timers" })).toBeVisible()
     await page.evaluate(
         ([key, value]) => {
             localStorage.setItem(key as string, JSON.stringify(value))

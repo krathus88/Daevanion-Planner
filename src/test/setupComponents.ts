@@ -21,6 +21,14 @@ if (typeof window.matchMedia !== "function") {
     })
 }
 
+// jsdom applies Chakra's CSS but never runs animations, so an element waiting
+// for its exit animation's animationend (a closing dialog) would stay mounted.
+// With no animations, Chakra's presence logic removes it at once.
+const noAnimations = document.createElement("style")
+noAnimations.textContent =
+    "*, *::before, *::after { animation-name: none !important; }"
+document.head.append(noAnimations)
+
 afterEach(() => {
     cleanup()
     localStorage.clear()

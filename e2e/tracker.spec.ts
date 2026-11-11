@@ -22,6 +22,8 @@ const addCharacter = async (page: Page, name: string) => {
 // them saved.
 const openWithCharacters = async (page: Page, names: string[]) => {
     await page.goto("/tracker")
+    // Firefox aborts a reload while the app is still starting.
+    await expect(page.getByRole("heading", { name: "Tracker" })).toBeVisible()
     await page.evaluate(
         ([key, value]) => {
             localStorage.setItem(key, value)

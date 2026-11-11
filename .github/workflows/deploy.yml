@@ -14,8 +14,8 @@ concurrency:
     group: pages
     cancel-in-progress: true
 
-# Unit and end-to-end tests run side by side; the site is built and deployed
-# only once both pass.
+# Unit tests and end-to-end tests (in Chromium and in Firefox) run side by
+# side; the site is built and deployed only once all of them pass.
 jobs:
     test:
         name: Unit tests
@@ -34,8 +34,14 @@ jobs:
               run: npm test
 
     e2e:
-        name: E2E tests
+        name: E2E tests (${{ matrix.browser }})
         runs-on: ubuntu-latest
+        strategy:
+            # One browser failing still lets the other finish, to tell a
+            # browser-specific failure from a broken page.
+            fail-fast: false
+            matrix:
+                browser: [chromium, firefox]
         steps:
             - uses: actions/checkout@v4
 
@@ -47,16 +53,16 @@ jobs:
             - run: npm ci
 
             - name: Install Playwright browser
-              run: npx playwright install --with-deps chromium
+              run: npx playwright install --with-deps ${{ matrix.browser }}
 
             - name: End-to-end tests
-              run: npm run test:e2e
+              run: npx playwright test --project=${{ matrix.browser }}
 
             - name: Upload test report
               if: ${{ failure() }}
               uses: actions/upload-artifact@v4
               with:
-                  name: playwright-report
+                  name: playwright-report-${{ matrix.browser }}
                   path: |
                       playwright-report
                       test-results
