@@ -36,6 +36,14 @@ jobs:
     e2e:
         name: E2E tests (${{ matrix.browser }})
         runs-on: ubuntu-latest
+        # Playwright's image has the browsers and their system packages, so
+        # nothing comes from apt (Ubuntu's mirrors were once unreachable from
+        # the runners for hours). Its tag must match the Playwright version in
+        # package-lock.json: bump both together. User 1001 is the runner's, so
+        # the checkout stays writable and Firefox doesn't run as root.
+        container:
+            image: mcr.microsoft.com/playwright:v1.65.0-resolute
+            options: --user 1001 --ipc=host
         strategy:
             # One browser failing still lets the other finish, to tell a
             # browser-specific failure from a broken page.
@@ -51,9 +59,6 @@ jobs:
                   cache: npm
 
             - run: npm ci
-
-            - name: Install Playwright browser
-              run: npx playwright install --with-deps ${{ matrix.browser }}
 
             - name: End-to-end tests
               run: npx playwright test --project=${{ matrix.browser }}
