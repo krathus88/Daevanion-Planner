@@ -49,6 +49,9 @@ const withCharacters = () => {
         ignored: START_IGNORED,
         energy: {},
         notes: {},
+        cubeKeys: {},
+        arena: {},
+        declined: [],
         membership: true,
     })
 }
@@ -682,9 +685,10 @@ describe("TrackerPage", () => {
             screen.getByRole("button", { name: `Spend 80: ${label}` }),
         )
 
+        // Recharged of its cap, then the extra from items.
         expect(
             screen.getByRole("button", { name: `${label}: 760, edit` }),
-        ).toBeInTheDocument()
+        ).toHaveTextContent("760/840 +0")
         expect(within(aria).getByText("0/16")).toBeInTheDocument()
 
         await userEvent.click(

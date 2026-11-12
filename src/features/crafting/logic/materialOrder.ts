@@ -69,12 +69,63 @@ const getKind = (data: CraftingData, id: number) => {
         : 0
 }
 
+const tierCache = new WeakMap<CraftingData, Map<number, number>>()
+
+// How far up the gear chain an item is: 0 for anything not gear, else one
+// above the highest gear it's made from (Splendent White Dragon Lord, made
+// from Artisan's Splendent Orichalcum and the transfers before it, outranks
+// it).
+export const getGearTier = (data: CraftingData, id: number): number => {
+    let tiers = tierCache.get(data)
+
+    if (!tiers) {
+        tiers = new Map()
+        tierCache.set(data, tiers)
+    }
+
+    const known = tiers.get(id)
+
+    if (known !== undefined) {
+        return known
+    }
+
+    if (getKind(data, id) !== 0) {
+        return 0
+    }
+
+    // Set first: a recipe loop can't recurse forever.
+    tiers.set(id, 1)
+
+    let below = 0
+
+    for (const [material] of data.recipes.get(id)?.materials ?? []) {
+        below = Math.max(below, getGearTier(data, material))
+    }
+
+    const combo = data.recipes.get(id)?.combo
+
+    // A combo item comes from its base's craft: one above it.
+    if (combo) {
+        below = Math.max(below, getGearTier(data, combo.base))
+    }
+
+    tiers.set(id, below + 1)
+
+    return below + 1
+}
+
+// Highest tier gear first; the rest keep their order (sort is stable).
+export const compareGearTiers = (data: CraftingData, a: number, b: number) => {
+    return getGearTier(data, b) - getGearTier(data, a)
+}
+
 const compareItems = (data: CraftingData, a: CraftingItem, b: CraftingItem) => {
     const kind = getKind(data, a.id) - getKind(data, b.id)
+    const tier = compareGearTiers(data, a.id, b.id)
     const family = getSortFamily(data, a.id) - getSortFamily(data, b.id)
     const grade = getGradeRank(a.grade) - getGradeRank(b.grade)
 
-    return kind || family || grade || a.id - b.id
+    return kind || tier || family || grade || a.id - b.id
 }
 
 // Whose materials All materials lists: every craft's down the chain, or only
@@ -130,7 +181,7 @@ const getCraftRows = (
 }
 
 // Every item the plan uses but the main craft (or, for "craft", only what the
-// main craft itself uses): gear, then crafted materials,
+// main craft itself uses): gear (highest tier first), then crafted materials,
 // then gathered or bought ones; within those by family (a crafted material by
 // the family it's made from), then highest grade first. The order doesn't depend on the bag or Buy
 // instead, so rows never jump when those change.

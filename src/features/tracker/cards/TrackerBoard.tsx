@@ -14,6 +14,7 @@ import { ResetCountdowns } from "./ResetCountdowns"
 import { ServerCard } from "./ServerCard"
 import type {
     CountChangeHandler,
+    CubeKeysChangeHandler,
     EnergyChangeHandler,
     EntriesChangeHandler,
     IgnoredChangeHandler,
@@ -26,6 +27,7 @@ type TrackerBoardProps = {
     counts: TrackerData["counts"]
     entries: TrackerData["entries"]
     energy: TrackerData["energy"]
+    cubeKeys: TrackerData["cubeKeys"]
     notes: TrackerData["notes"]
     membership: boolean
     minimized: string[]
@@ -33,9 +35,12 @@ type TrackerBoardProps = {
     goalsOpen: string[]
     ignored: TrackerData["ignored"]
     periods: ResetPeriods
+    // The character the companion app says is being played.
+    playingId?: string
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onEnergyChange: EnergyChangeHandler
+    onCubeKeysChange: CubeKeysChangeHandler
     onNoteChange: NoteChangeHandler
     onMinimizedChange: (owners: readonly string[], minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
@@ -50,15 +55,18 @@ export const TrackerBoard = ({
     counts,
     entries,
     energy,
+    cubeKeys,
     notes,
     membership,
     minimized,
     goalsOpen,
     ignored,
     periods,
+    playingId,
     onCountChange,
     onEntriesChange,
     onEnergyChange,
+    onCubeKeysChange,
     onNoteChange,
     onMinimizedChange,
     onIgnoredChange,
@@ -132,15 +140,18 @@ export const TrackerBoard = ({
                             counts={counts[character.id]}
                             entries={entries[character.id]}
                             energy={energy[character.id]}
+                            cubeKeys={cubeKeys[character.id]}
                             note={notes[character.id]}
                             membership={membership}
                             minimized={minimized.includes(character.id)}
                             goalsOpen={goalsOpen.includes(character.id)}
                             ignored={ignored[character.id]}
+                            playing={character.id === playingId}
                             periods={periods}
                             onCountChange={onCountChange}
                             onEntriesChange={onEntriesChange}
                             onEnergyChange={onEnergyChange}
+                            onCubeKeysChange={onCubeKeysChange}
                             onNoteChange={onNoteChange}
                             onMinimizedChange={handleCardMinimized}
                             onIgnoredChange={onIgnoredChange}

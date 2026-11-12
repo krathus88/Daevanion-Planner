@@ -1,4 +1,4 @@
-import { Button, Flex, Icon, Text } from "@chakra-ui/react"
+import { Box, Button, Flex, Icon, Text } from "@chakra-ui/react"
 import { OdyleEnergy } from "@assets/tracker"
 import { HOVER_REVEAL } from "@common/hoverReveal"
 import { IconImage } from "@common/IconImage"
@@ -12,6 +12,7 @@ import {
 import { Tooltip } from "@ui/tooltip"
 import { useState, type ChangeEvent, type FocusEvent } from "react"
 import { LuTriangleAlert } from "react-icons/lu"
+import { CompanionLocked } from "@account/CompanionLocked"
 
 type OdyleEnergyRowProps = {
     left: EnergyLeft
@@ -19,6 +20,8 @@ type OdyleEnergyRowProps = {
     // What a reward cube takes (more with the membership).
     cubeCost: number
     ownerLabel: string
+    // Filled by the companion app: no edits or cube button.
+    locked?: boolean
     onChange: (left: EnergyLeft) => void
 }
 
@@ -48,16 +51,17 @@ const LEVEL_STYLE = {
     },
 } as const
 
-// One line straight on a character's card, above its task boxes: not a task,
-// so no box, tile or progress. It shows the total; clicking it shows the
+// Straight on a character's card, above its task boxes: not a task, so no
+// box, tile or progress. Its icon and the total; clicking the total shows the
 // recharged energy and the extra from items as fields, typed to match the
-// game, until focus leaves the row. The cube button, left of the total and
-// shown on hover, takes the recharged energy first.
+// game, until focus leaves it. The cube button, right of the total and shown
+// on hover, takes the recharged energy first.
 export const OdyleEnergyRow = ({
     left,
     cap,
     cubeCost,
     ownerLabel,
+    locked = false,
     onChange,
 }: OdyleEnergyRowProps) => {
     const [editing, setEditing] = useState(false)
@@ -93,69 +97,43 @@ export const OdyleEnergyRow = ({
         <Flex
             // For the cube button, shown on hover.
             className="group"
-            px="1"
             flexWrap="wrap"
             alignItems="center"
-            justifyContent="space-between"
-            columnGap="2"
-            rowGap="1"
+            gap="1"
             onBlur={handleBlur}
         >
-            <Flex alignItems="center" gap="2">
-                <IconImage icon={OdyleEnergy} />
+            <Tooltip content="Odyle Energy" openDelay={300}>
+                <Box flexShrink="0">
+                    <IconImage icon={OdyleEnergy} />
+                </Box>
+            </Tooltip>
 
-                <Text textStyle="label" whiteSpace="nowrap">
-                    Odyle Energy
-                </Text>
-            </Flex>
+            {editing ? (
+                <>
+                    <WholeNumberInput
+                        {...FIELD}
+                        value={String(left.base)}
+                        autoFocus
+                        aria-label={`Energy: ${label}`}
+                        onChange={handleBaseChange}
+                    />
 
-            <Flex alignItems="center" gap="1">
-                {/* Shown while the row is hovered (always on touch screens). */}
-                <Tooltip
-                    content="Opens a reward cube: spends recharged energy first, then extra"
-                    openDelay={300}
-                >
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        me="1"
-                        color="app.accent"
-                        fontWeight="semibold"
-                        _hover={{ bg: "app.accentMuted", color: "app.accent" }}
-                        _canHover={HOVER_REVEAL}
-                        disabled={total < cubeCost}
-                        aria-label={`Spend ${cubeCost}: ${label}`}
-                        onClick={handleSpend}
+                    <Text textStyle="caption">/{cap} +</Text>
+
+                    <Tooltip
+                        content={`Extra energy from items, up to ${EXTRA_CAP}`}
+                        openDelay={300}
                     >
-                        −{cubeCost}
-                    </Button>
-                </Tooltip>
-
-                {editing ? (
-                    <>
                         <WholeNumberInput
                             {...FIELD}
-                            value={String(left.base)}
-                            autoFocus
-                            aria-label={`Energy: ${label}`}
-                            onChange={handleBaseChange}
+                            value={String(left.bonus)}
+                            aria-label={`Extra energy: ${label}`}
+                            onChange={handleBonusChange}
                         />
-
-                        <Text textStyle="caption">/{cap} +</Text>
-
-                        <Tooltip
-                            content={`Extra energy from items, up to ${EXTRA_CAP}`}
-                            openDelay={300}
-                        >
-                            <WholeNumberInput
-                                {...FIELD}
-                                value={String(left.bonus)}
-                                aria-label={`Extra energy: ${label}`}
-                                onChange={handleBonusChange}
-                            />
-                        </Tooltip>
-                    </>
-                ) : (
+                    </Tooltip>
+                </>
+            ) : (
+                <CompanionLocked locked={locked} side="end">
                     <Tooltip
                         content={level.hint ?? "Click to edit"}
                         openDelay={300}
@@ -164,6 +142,7 @@ export const OdyleEnergyRow = ({
                             variant="ghost"
                             size="xs"
                             h="6"
+                            minW="0"
                             px="1"
                             gap="1"
                             color={level.color}
@@ -177,11 +156,54 @@ export const OdyleEnergyRow = ({
                                     <LuTriangleAlert />
                                 </Icon>
                             )}
-                            {total}
+                            {/* Like a task's entries: recharged of its cap,
+                            then the extra from items (red once at 2000). */}
+                            <Text
+                                as="span"
+                                fontVariantNumeric="tabular-nums"
+                                whiteSpace="nowrap"
+                            >
+                                {left.base}
+                                <Text as="span" color="app.subtle">
+                                    /{cap}
+                                </Text>
+                                <Text
+                                    as="span"
+                                    color={
+                                        left.bonus >= EXTRA_CAP
+                                            ? "app.dangerFaint"
+                                            : "app.successFaint"
+                                    }
+                                >
+                                    {` +${left.bonus}`}
+                                </Text>
+                            </Text>
                         </Button>
                     </Tooltip>
-                )}
-            </Flex>
+                </CompanionLocked>
+            )}
+
+            {!locked && (
+                // Shown while the row is hovered (always on touch screens).
+                <Tooltip
+                    content="Opens a reward cube: spends recharged energy first, then extra"
+                    openDelay={300}
+                >
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color="app.accent"
+                        fontWeight="semibold"
+                        _hover={{ bg: "app.accentMuted", color: "app.accent" }}
+                        _canHover={HOVER_REVEAL}
+                        disabled={total < cubeCost}
+                        aria-label={`Spend ${cubeCost}: ${label}`}
+                        onClick={handleSpend}
+                    >
+                        −{cubeCost}
+                    </Button>
+                </Tooltip>
+            )}
         </Flex>
     )
 }

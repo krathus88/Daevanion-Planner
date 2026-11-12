@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+    asGameEdit,
+    isGameEdit,
     isUnsynced,
     markEdited,
     markSynced,
@@ -18,11 +20,21 @@ afterEach(() => {
 
 describe("readSyncMeta", () => {
     it("starts empty", () => {
-        expect(readSyncMeta()).toEqual({ times: {}, pending: [], synced: {} })
+        expect(readSyncMeta()).toEqual({
+            times: {},
+            pending: [],
+            synced: {},
+            game: [],
+        })
     })
 
     it("reads back what was written", () => {
-        const meta = { times: { a: 1 }, pending: ["a"], synced: { a: 1 } }
+        const meta = {
+            times: { a: 1 },
+            pending: ["a"],
+            synced: { a: 1 },
+            game: ["a"],
+        }
 
         writeSyncMeta(meta)
 
@@ -59,6 +71,23 @@ describe("meta helpers", () => {
         expect(meta.times.a).toBe(2)
     })
 
+    it("keeps a key a game edit only while every pending edit was one", () => {
+        const meta = readSyncMeta()
+
+        markEdited(meta, "a", 1, true)
+        markEdited(meta, "a", 2, true)
+        expect(isGameEdit(meta, "a")).toBe(true)
+
+        // A hand edit makes it the user's, even if the game edits it again.
+        markEdited(meta, "a", 3)
+        markEdited(meta, "a", 4, true)
+        expect(isGameEdit(meta, "a")).toBe(false)
+
+        markSynced(meta, "a", 5)
+        markEdited(meta, "a", 6, true)
+        expect(isGameEdit(meta, "a")).toBe(true)
+    })
+
     it("markSynced clears the queue and records the version", () => {
         const meta = readSyncMeta()
 
@@ -69,6 +98,7 @@ describe("meta helpers", () => {
             times: { a: 5 },
             pending: [],
             synced: { a: 5 },
+            game: [],
         })
     })
 
@@ -77,6 +107,7 @@ describe("meta helpers", () => {
             times: {},
             pending: ["edited"],
             synced: { edited: 1, clean: 1 },
+            game: [],
         }
 
         expect(isUnsynced(meta, "edited")).toBe(true)
@@ -120,6 +151,18 @@ describe("setStoredItem", () => {
         setStoredItem(TIMERS_KEY, '{"colors":{"a":1}}')
 
         expect(readSyncMeta().pending).toEqual([TIMERS_KEY])
+    })
+
+    it("marks saves made while applying game data as game edits", () => {
+        asGameEdit(() => {
+            setStoredItem(PETS_KEY, "1")
+        })
+
+        expect(isGameEdit(readSyncMeta(), PETS_KEY)).toBe(true)
+
+        setStoredItem(PETS_KEY, "2")
+
+        expect(isGameEdit(readSyncMeta(), PETS_KEY)).toBe(false)
     })
 
     it("tells listeners about edits until they unsubscribe", () => {

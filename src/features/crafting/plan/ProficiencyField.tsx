@@ -1,3 +1,4 @@
+import { CompanionLocked } from "@account/CompanionLocked"
 import { Flex, NativeSelect, Text } from "@chakra-ui/react"
 import { WholeNumberInput } from "@common/WholeNumberInput"
 import {
@@ -6,12 +7,15 @@ import {
     RANK_NAMES,
     type ProfessionId,
 } from "@crafting/config/professions"
+import { formatMastery } from "@crafting/logic/recipeLabels"
 import { useState, type ChangeEvent } from "react"
 
 type ProficiencyFieldProps = {
     profession: ProfessionId
     // The game's level number (61 is Professional Lv. 11); null is unset.
     value: number | null
+    // Filled by the companion app: just the game's level.
+    locked?: boolean
     onChange: (profession: ProfessionId, level: number | null) => void
 }
 
@@ -26,6 +30,7 @@ const getRank = (value: number) => {
 export const ProficiencyField = ({
     profession,
     value,
+    locked = false,
     onChange,
 }: ProficiencyFieldProps) => {
     // Remembers the rank picked while the level is still empty.
@@ -67,34 +72,47 @@ export const ProficiencyField = ({
         >
             <Text textStyle="caption">{name}</Text>
 
-            <Flex gap="1.5">
-                <NativeSelect.Root w="32" size="xs">
-                    <NativeSelect.Field
-                        value={rank}
-                        aria-label={`${name} rank`}
-                        onChange={handleRankChange}
+            {locked && value !== null ? (
+                <CompanionLocked locked>
+                    <Text
+                        color="app.fg"
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        whiteSpace="nowrap"
                     >
-                        {RANK_NAMES.map((rankName, index) => (
-                            <option key={rankName} value={index}>
-                                {rankName}
-                            </option>
-                        ))}
-                    </NativeSelect.Field>
+                        {formatMastery(value)}
+                    </Text>
+                </CompanionLocked>
+            ) : (
+                <Flex gap="1.5">
+                    <NativeSelect.Root w="32" size="xs">
+                        <NativeSelect.Field
+                            value={rank}
+                            aria-label={`${name} rank`}
+                            onChange={handleRankChange}
+                        >
+                            {RANK_NAMES.map((rankName, index) => (
+                                <option key={rankName} value={index}>
+                                    {rankName}
+                                </option>
+                            ))}
+                        </NativeSelect.Field>
 
-                    <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                        <NativeSelect.Indicator />
+                    </NativeSelect.Root>
 
-                <WholeNumberInput
-                    w="16"
-                    size="xs"
-                    fallback={null}
-                    value={level ?? ""}
-                    textAlign="right"
-                    placeholder="Lv."
-                    aria-label={`${name} level`}
-                    onChange={handleLevelChange}
-                />
-            </Flex>
+                    <WholeNumberInput
+                        w="16"
+                        size="xs"
+                        fallback={null}
+                        value={level ?? ""}
+                        textAlign="right"
+                        placeholder="Lv."
+                        aria-label={`${name} level`}
+                        onChange={handleLevelChange}
+                    />
+                </Flex>
+            )}
         </Flex>
     )
 }

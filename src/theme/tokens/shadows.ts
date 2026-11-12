@@ -12,6 +12,9 @@ export const shadows = defineTokens.shadows({
         glow: { value: "0 0 10px rgba(224, 173, 76, 0.75)" },
         dot: { value: "0 0 8px 2px rgba(224, 173, 76, 0.7)" },
     },
+    success: {
+        dot: { value: "0 0 8px 2px rgba(95, 211, 154, 0.7)" },
+    },
     board: {
         edge: { value: "0 0 7px rgba(255, 204, 102, 0.28)" },
         start: {

@@ -3,6 +3,7 @@ import { NumberField } from "@common/NumberField"
 import type { CraftStep, PriceState } from "@crafting/logic/craftPlan"
 import { formatSuccess, type SuccessInfo } from "@crafting/logic/successChance"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
+import { BagCountField } from "./BagCountField"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
 import { ListedPriceText } from "./ListedPriceText"
 import { PriceLoading } from "./PriceLoading"
@@ -56,12 +57,7 @@ export const CraftStepFields = ({
     return (
         <Grid templateColumns={STEP_FIELD_COLUMNS} alignItems="end" gap="3">
             {!isTarget && (
-                <NumberField
-                    value={owned}
-                    label="In the bag"
-                    max={MAX_AMOUNT}
-                    onChange={handleOwnedChange}
-                />
+                <BagCountField owned={owned} onChange={handleOwnedChange} />
             )}
 
             {/* Transfer Crafting is guaranteed to succeed. */}

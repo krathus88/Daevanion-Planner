@@ -1,7 +1,10 @@
+import { applyToCrafting } from "@account/game/applyToCrafting"
+import { readGameSnapshots } from "@account/game/gameSync"
 import { useAuth } from "@account/hooks/useAuth"
 import type { ProfessionId } from "@crafting/config/professions"
 import {
     setBought,
+    setCharacter,
     setOwned,
     setPrice,
     setProficiency,
@@ -23,8 +26,40 @@ export const useCraftingSettings = () => {
         readCraftingSettings,
     )
 
+    // The companion app's inventories are per server and character: owned
+    // follows both.
     const changeServer = (server: string) => {
-        writeCraftingSettings(setServer(readCraftingSettings(), server))
+        writeCraftingSettings(
+            applyToCrafting(
+                setServer(readCraftingSettings(), server),
+                readGameSnapshots(),
+            ),
+        )
+    }
+
+    const changeCharacter = (character: string | null) => {
+        writeCraftingSettings(
+            applyToCrafting(
+                setCharacter(readCraftingSettings(), character),
+                readGameSnapshots(),
+            ),
+        )
+    }
+
+    // The character the companion app sees being played, on its server.
+    const selectPlaying = (server: string, character: string) => {
+        const current = readCraftingSettings()
+
+        if (current.server === server && current.character === character) {
+            return
+        }
+
+        writeCraftingSettings(
+            applyToCrafting(
+                setCharacter(setServer(current, server), character),
+                readGameSnapshots(),
+            ),
+        )
     }
 
     const changeOwned = (id: number, owned: number) => {
@@ -64,6 +99,8 @@ export const useCraftingSettings = () => {
         settings: settings,
         sharing: auth.status === "signedIn",
         changeServer: changeServer,
+        changeCharacter: changeCharacter,
+        selectPlaying: selectPlaying,
         changeOwned: changeOwned,
         changePrice: changePrice,
         changeSuccess: changeSuccess,

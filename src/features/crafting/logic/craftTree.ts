@@ -15,6 +15,7 @@ import {
     type PlanMaterial,
     type PriceState,
 } from "./craftPlan"
+import { compareGearTiers, getGearTier } from "./materialOrder"
 import { isTradable } from "./tradable"
 import { getCraftCost } from "./unitCost"
 
@@ -111,5 +112,12 @@ export const getTreeLines = (
         })
     }
 
-    return lines
+    // Gear first, highest tier first (the piece a transfer upgrades before
+    // the base gear it also takes); the rest in the recipe's order.
+    return lines.sort((a, b) => {
+        const gearA = getGearTier(data, a.item.id) > 0 ? 0 : 1
+        const gearB = getGearTier(data, b.item.id) > 0 ? 0 : 1
+
+        return gearA - gearB || compareGearTiers(data, a.item.id, b.item.id)
+    })
 }

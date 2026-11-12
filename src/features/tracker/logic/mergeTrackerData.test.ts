@@ -125,6 +125,9 @@ describe("mergeTrackerData", () => {
             ignored: {},
             energy: {},
             notes: {},
+            cubeKeys: {},
+            arena: {},
+            declined: [],
             membership: true,
         })
     })
@@ -151,6 +154,40 @@ describe("mergeTrackerData", () => {
             b: { period: 5, base: 200, bonus: 0 },
             c: { period: 1, base: 10, bonus: 0 },
         })
+    })
+
+    it("takes each character's Hidden Cube keys from the newer side", () => {
+        const merged = mergeTrackerData(
+            { cubeKeys: { a: 34 } },
+            { cubeKeys: { a: 35, b: 7 } },
+        )
+
+        expect(merged.cubeKeys).toEqual({ a: 34, b: 7 })
+    })
+
+    it("takes each character's arena record seen last", () => {
+        const record = (at: number) => {
+            return { seen: { period: 5, at: at, modes: { "2": [17, at] } } }
+        }
+        const merged = mergeTrackerData(
+            { arena: { a: record(1), b: record(9) } },
+            { arena: { a: record(5), c: record(3) } },
+        )
+
+        expect(merged.arena).toEqual({
+            a: record(5),
+            b: record(9),
+            c: record(3),
+        })
+    })
+
+    it("keeps characters declined on either side", () => {
+        const merged = mergeTrackerData(
+            { declined: ["siel:a"] },
+            { declined: ["siel:b", "siel:a"] },
+        )
+
+        expect(merged.declined).toEqual(["siel:a", "siel:b"])
     })
 
     it("takes each character's note from the newer side", () => {

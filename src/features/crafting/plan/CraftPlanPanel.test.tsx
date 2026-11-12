@@ -61,6 +61,7 @@ const setup = (
             recipe={recipe}
             count={count}
             settings={settings}
+            proficiencyLocked={false}
             {...handlers}
         />,
     )

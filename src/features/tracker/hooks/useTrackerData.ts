@@ -1,8 +1,12 @@
+import type { NewGameCharacter } from "@account/game/gameCharacters"
+import { ARENA_TASKS } from "@account/game/gameIds"
+import { reapplyGameSnapshot } from "@account/game/gameSync"
 import { requestPersistentStorage } from "@planner/storage/persistStorage"
 import type { EntriesLeft } from "@tracker/logic/taskEntries"
 import type { EnergyLeft } from "@tracker/logic/odyleEnergy"
 import {
     addCharacter,
+    declineGameCharacter,
     addTask,
     getRemovedPresets,
     getTasks,
@@ -12,9 +16,11 @@ import {
     removeTask,
     restorePreset,
     restoreStarterTasks,
+    confirmArenaWeek,
     setCount,
     setEntries,
     setGoalsOpen,
+    setCubeKeys,
     setEnergy,
     setIgnored,
     setMembership,
@@ -42,10 +48,18 @@ export const useTrackerData = () => {
         period: number,
         count: number,
     ) => {
+        const next = setCount(readTrackerData(), owner, task, period, count)
+
+        // An arena count entered in a week the companion couldn't work out
+        // sets where that week began.
         writeTrackerData(
-            setCount(readTrackerData(), owner, task, period, count),
+            ARENA_TASKS[task.id] ? confirmArenaWeek(next, owner, period) : next,
         )
         requestPersistentStorage()
+    }
+
+    const confirmArena = (owner: string, period: number) => {
+        writeTrackerData(confirmArenaWeek(readTrackerData(), owner, period))
     }
 
     const changeEntries = (
@@ -63,6 +77,27 @@ export const useTrackerData = () => {
     const createCharacter = (fields: CharacterFields) => {
         writeTrackerData(addCharacter(readTrackerData(), fields))
         requestPersistentStorage()
+    }
+
+    // A character the companion app sent: added, then filled from its
+    // snapshot at once.
+    const addGameCharacter = (character: NewGameCharacter) => {
+        createCharacter({
+            name: character.name,
+            classId: character.classId,
+            server: character.server,
+        })
+        reapplyGameSnapshot(character.key)
+    }
+
+    const declineCharacter = (character: NewGameCharacter) => {
+        writeTrackerData(
+            declineGameCharacter(
+                readTrackerData(),
+                character.server,
+                character.name,
+            ),
+        )
     }
 
     const changeCharacter = (id: string, changes: Partial<CharacterFields>) => {
@@ -124,6 +159,10 @@ export const useTrackerData = () => {
         requestPersistentStorage()
     }
 
+    const changeCubeKeys = (characterId: string, count: number) => {
+        writeTrackerData(setCubeKeys(readTrackerData(), characterId, count))
+    }
+
     const changeNote = (characterId: string, note: CharacterNote) => {
         writeTrackerData(setNote(readTrackerData(), characterId, note))
     }
@@ -138,6 +177,9 @@ export const useTrackerData = () => {
         characters: data.characters,
         tasks: tasks,
         energy: data.energy,
+        cubeKeys: data.cubeKeys,
+        arena: data.arena,
+        declined: data.declined,
         notes: data.notes,
         membership: data.membership,
         counts: data.counts,
@@ -150,10 +192,14 @@ export const useTrackerData = () => {
         changeMinimized: changeMinimized,
         changeMembership: changeMembership,
         changeEnergy: changeEnergy,
+        changeCubeKeys: changeCubeKeys,
         changeNote: changeNote,
         changeIgnored: changeIgnored,
         changeGoalsOpen: changeGoalsOpen,
         changeCount: changeCount,
+        confirmArena: confirmArena,
+        addGameCharacter: addGameCharacter,
+        declineCharacter: declineCharacter,
         changeEntries: changeEntries,
         createCharacter: createCharacter,
         changeCharacter: changeCharacter,

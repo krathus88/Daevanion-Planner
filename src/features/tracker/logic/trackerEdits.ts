@@ -1,5 +1,7 @@
+import { ARENA_TASKS } from "@account/game/gameIds"
 import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
 import {
+    MAX_CUBE_KEYS,
     MAX_LONG_NOTE,
     MAX_SHORT_NOTE,
     MAX_TASK_CAP,
@@ -11,8 +13,14 @@ import type {
     TrackerReset,
     TrackerTask,
 } from "@tracker/types"
+import {
+    isArenaWeekUnknown,
+    startFromCounts,
+    type ArenaTotals,
+} from "./arenaWeeks"
 import { addIgnored, insertPreset } from "./presetTasks"
 import { clampEnergy, getEnergyCap, type EnergyLeft } from "./odyleEnergy"
+import { readCount } from "./resetPeriods"
 import { clampEntries, type EntriesLeft } from "./taskEntries"
 
 export type TaskFields = {
@@ -203,6 +211,8 @@ export const removeCharacter = (data: TrackerData, id: string): TrackerData => {
         minimized: data.minimized.filter((owner) => owner !== id),
         goalsOpen: data.goalsOpen.filter((owner) => owner !== id),
         energy: dropKey(data.energy, id),
+        cubeKeys: dropKey(data.cubeKeys, id),
+        arena: dropKey(data.arena, id),
         notes: dropKey(data.notes, id),
     }
 }
@@ -353,6 +363,24 @@ export const setEnergy = (
     }
 }
 
+// A character's Hidden Cube keys, kept to whole numbers within the cap.
+export const setCubeKeys = (
+    data: TrackerData,
+    characterId: string,
+    count: number,
+): TrackerData => {
+    return {
+        ...data,
+        cubeKeys: {
+            ...data.cubeKeys,
+            [characterId]: Math.min(
+                MAX_CUBE_KEYS,
+                Math.max(0, Math.round(count)),
+            ),
+        },
+    }
+}
+
 // Saves a character's note, trimmed; an empty one removes it.
 export const setNote = (
     data: TrackerData,
@@ -404,4 +432,54 @@ export const setMinimized = (
         ...data,
         minimized: minimized ? [...others, ...owners] : others,
     }
+}
+
+// A character's arena week the companion couldn't work out, taken from the
+// tracker's own counts (entered or confirmed by the user): from then on the
+// game fills it again. Nothing changes when the week is known.
+export const confirmArenaWeek = (
+    data: TrackerData,
+    characterId: string,
+    period: number,
+): TrackerData => {
+    const record = data.arena[characterId]
+
+    if (record === undefined || !isArenaWeekUnknown(record, period)) {
+        return data
+    }
+
+    const counts: Record<string, ArenaTotals> = {}
+
+    for (const [taskId, source] of Object.entries(ARENA_TASKS)) {
+        const count = readCount(data.counts[characterId]?.[taskId], period)
+        const mode = (counts[source.mode] ??= { played: 0, won: 0 })
+
+        mode[source.counts] = count
+    }
+
+    return {
+        ...data,
+        arena: {
+            ...data.arena,
+            [characterId]: startFromCounts(record, counts),
+        },
+    }
+}
+
+// How a character the companion app sent is named in `declined`.
+const getDeclineKey = (server: string, name: string) => {
+    return `${server}:${name.trim().toLowerCase()}`
+}
+
+// The user chose not to add a character the companion app sent.
+export const declineGameCharacter = (
+    data: TrackerData,
+    server: string,
+    name: string,
+): TrackerData => {
+    const key = getDeclineKey(server, name)
+
+    return data.declined.includes(key)
+        ? data
+        : { ...data, declined: [...data.declined, key] }
 }

@@ -37,6 +37,8 @@ type CraftPlanPanelProps = {
     recipe: Recipe
     count: number
     settings: PlanSettings
+    // The chosen character's crafting levels come from the companion app.
+    proficiencyLocked: boolean
     onCountChange: (count: number) => void
     onOwnedChange: (itemId: number, owned: number) => void
     onSuccessChange: (itemId: number, success: number | null) => void
@@ -56,6 +58,7 @@ export const CraftPlanPanel = ({
     recipe,
     count,
     settings,
+    proficiencyLocked,
     onCountChange,
     onOwnedChange,
     onSuccessChange,
@@ -126,6 +129,7 @@ export const CraftPlanPanel = ({
                                     value={
                                         settings.proficiency[profession] ?? null
                                     }
+                                    locked={proficiencyLocked}
                                     onChange={onProficiencyChange}
                                 />
                             ))}

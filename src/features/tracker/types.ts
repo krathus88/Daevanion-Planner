@@ -48,6 +48,23 @@ export type CharacterNote = {
     long: string
 }
 
+// Lifetime arena record per mode (the game's mode numbers): [wins, losses].
+export type ArenaModes = Record<string, [number, number]>
+
+// An arena record as seen in one weekly reset period, and when (ms).
+export type ArenaSighting = {
+    period: number
+    at: number
+    modes: ArenaModes
+}
+
+// What the companion has seen of a character's arena record: the last
+// sighting, and this week's starting record once known (see arenaWeeks).
+export type ArenaRecord = {
+    seen: ArenaSighting
+    base?: ArenaSighting
+}
+
 export type TrackerData = {
     characters: TrackerCharacter[]
     // Null until the user edits the list; the starter list is used instead.
@@ -67,6 +84,15 @@ export type TrackerData = {
     ignored: Record<string, string[]>
     // Odyle Energy by character id (not a task: it sits on the card itself).
     energy: Record<string, TaskEntries>
+    // Hidden Cube keys in each character's inventory, by character id
+    // (missing: never set). Like energy, it sits on the card.
+    cubeKeys: Record<string, number>
+    // Arena records by character id, filled by the companion app: the game
+    // sends lifetime wins per mode, so each week's start is kept to count it.
+    arena: Record<string, ArenaRecord>
+    // Characters the companion app sent that the user chose not to add, as
+    // "<server id>:<name in lower case>": not asked about again.
+    declined: string[]
     // A note per character id: the short one shows on the card, the long one
     // (or the short) on the note button's hover. Characters without one are left out.
     notes: Record<string, CharacterNote>

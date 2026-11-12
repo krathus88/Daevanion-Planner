@@ -32,3 +32,8 @@ playwright-report
 .tanstack
 
 CLAUDE.md
+# Packet captures (private: account ids, tokens)
+captures/
+
+# Companion builds
+companion/*.exe

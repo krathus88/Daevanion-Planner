@@ -19,6 +19,7 @@ describe("parseCraftingSettings", () => {
         const settings = makeCraftingSettings({
             server: "israphel",
             owned: { 1: 5 },
+            character: "Testchar",
             prices: {
                 siel: { 1: { value: 0, at: 5 }, 2: { value: null, at: 6 } },
                 israphel: { 1: { value: 40000, at: 7 } },
@@ -36,6 +37,7 @@ describe("parseCraftingSettings", () => {
             parseCraftingSettings({
                 server: "nowhere",
                 owned: { 1: 5, 2: -1, 3: 1.5, 4: "x" },
+                character: 5,
                 prices: {
                     siel: {
                         1: { value: 10, at: 1 },
@@ -57,6 +59,7 @@ describe("parseCraftingSettings", () => {
         ).toEqual({
             server: "siel",
             owned: { 1: 5 },
+            character: null,
             prices: { siel: { 1: { value: 10, at: 1 } } },
             bought: [10],
             success: { 1: 50 },

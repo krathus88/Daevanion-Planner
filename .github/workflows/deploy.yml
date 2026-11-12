@@ -14,8 +14,9 @@ concurrency:
     group: pages
     cancel-in-progress: true
 
-# Unit tests and end-to-end tests (in Chromium and in Firefox) run side by
-# side; the site is built and deployed only once all of them pass.
+# Unit tests, end-to-end tests (in Chromium and in Firefox) and the companion's
+# Go tests run side by side; the site is built and deployed only once all of
+# them pass.
 jobs:
     test:
         name: Unit tests
@@ -74,9 +75,29 @@ jobs:
                   if-no-files-found: ignore
                   retention-days: 7
 
+    # The companion app fills the site from the game: a broken companion holds
+    # the site back too. Windows, as the capture and login use its APIs.
+    go:
+        name: Go tests
+        runs-on: windows-latest
+        defaults:
+            run:
+                working-directory: companion
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: companion/go.mod
+                  cache: false
+
+            - run: go vet ./...
+
+            - run: go test ./...
+
     build:
         name: Build
-        needs: [test, e2e]
+        needs: [test, e2e, go]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7

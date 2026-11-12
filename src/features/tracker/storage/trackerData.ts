@@ -12,6 +12,8 @@ import {
     STARTER_IDS,
 } from "@tracker/logic/presetTasks"
 import type {
+    ArenaModes,
+    ArenaSighting,
     TaskCount,
     TaskEntries,
     TrackerCharacter,
@@ -36,9 +38,14 @@ const EMPTY_DATA: TrackerData = {
     goalsOpen: [],
     ignored: {},
     energy: {},
+    cubeKeys: {},
+    arena: {},
+    declined: [],
     notes: {},
     membership: true,
 }
+
+export const MAX_CUBE_KEYS = 9999
 
 const isWholeNumber = (value: unknown, min: number): value is number => {
     return typeof value === "number" && Number.isInteger(value) && value >= min
@@ -143,6 +150,72 @@ const pickEnergy = (value: unknown) => {
     }
 
     return energy
+}
+
+// Hidden Cube keys by character id; bad entries are dropped one by one.
+const pickCubeKeys = (value: unknown) => {
+    const keys: TrackerData["cubeKeys"] = {}
+
+    if (!isRecord(value)) {
+        return keys
+    }
+
+    for (const [characterId, count] of Object.entries(value)) {
+        if (isWholeNumber(count, 0) && count <= MAX_CUBE_KEYS) {
+            keys[characterId] = count
+        }
+    }
+
+    return keys
+}
+
+const pickArenaSighting = (value: unknown): ArenaSighting | null => {
+    if (
+        !isRecord(value) ||
+        !isWholeNumber(value.period, 0) ||
+        !isWholeNumber(value.at, 0) ||
+        !isRecord(value.modes)
+    ) {
+        return null
+    }
+
+    const modes: ArenaModes = {}
+
+    for (const [mode, record] of Object.entries(value.modes)) {
+        if (
+            Array.isArray(record) &&
+            record.length === 2 &&
+            isWholeNumber(record[0], 0) &&
+            isWholeNumber(record[1], 0)
+        ) {
+            modes[mode] = [record[0], record[1]]
+        }
+    }
+
+    return { period: value.period, at: value.at, modes: modes }
+}
+
+// Arena records by character id; bad ones are dropped one by one.
+const pickArena = (value: unknown) => {
+    const arena: TrackerData["arena"] = {}
+
+    if (!isRecord(value)) {
+        return arena
+    }
+
+    for (const [characterId, record] of Object.entries(value)) {
+        const seen = isRecord(record) ? pickArenaSighting(record.seen) : null
+
+        if (!isRecord(record) || seen === null) {
+            continue
+        }
+
+        const base = pickArenaSighting(record.base)
+
+        arena[characterId] = base ? { seen: seen, base: base } : { seen: seen }
+    }
+
+    return arena
 }
 
 // Notes by character id; empty ones are dropped, overlong ones cut.
@@ -292,6 +365,9 @@ export const parseTrackerData = (value: unknown): TrackerData => {
             getNewIgnoredPresets(known),
         ),
         energy: pickEnergy(value.energy),
+        cubeKeys: pickCubeKeys(value.cubeKeys),
+        arena: pickArena(value.arena),
+        declined: pickStrings(value.declined),
         notes: pickNotes(value.notes),
         // Saves from before it existed assume the membership.
         membership: value.membership !== false,

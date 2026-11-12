@@ -30,6 +30,8 @@ export type EnergyChangeHandler = (
     left: EnergyLeft,
 ) => void
 
+export type CubeKeysChangeHandler = (characterId: string, count: number) => void
+
 export type NoteChangeHandler = (
     characterId: string,
     note: CharacterNote,

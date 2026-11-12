@@ -1,3 +1,5 @@
+import { CompanionLocked } from "@account/CompanionLocked"
+import { useCompanionLocked } from "@account/companionLockedContext"
 import { Badge, Flex, Grid, Text } from "@chakra-ui/react"
 import { WholeNumberInput } from "@common/WholeNumberInput"
 import { ItemName } from "@crafting/ItemName"
@@ -52,6 +54,7 @@ export const MaterialRow = ({
     onItemSelect,
 }: MaterialRowProps) => {
     const itemId = material.item.id
+    const locked = useCompanionLocked()
 
     const handleOwnedChange = (event: ChangeEvent<HTMLInputElement>) => {
         const text = event.target.value
@@ -141,14 +144,29 @@ export const MaterialRow = ({
                 <Text color="app.subtle">/ {formatCount(material.need)}</Text>
             </Flex>
 
-            <WholeNumberInput
-                size="xs"
-                gridArea="bag"
-                value={owned}
-                textAlign="right"
-                aria-label="In the bag"
-                onChange={handleOwnedChange}
-            />
+            {locked ? (
+                <Flex gridArea="bag" justifyContent="flex-end">
+                    <CompanionLocked locked>
+                        <Text
+                            color="app.fg"
+                            fontWeight="semibold"
+                            fontVariantNumeric="tabular-nums"
+                            aria-label={`In the bag: ${owned}`}
+                        >
+                            {formatCount(owned)}
+                        </Text>
+                    </CompanionLocked>
+                </Flex>
+            ) : (
+                <WholeNumberInput
+                    size="xs"
+                    gridArea="bag"
+                    value={owned}
+                    textAlign="right"
+                    aria-label="In the bag"
+                    onChange={handleOwnedChange}
+                />
+            )}
 
             {!tradable && (
                 <Text

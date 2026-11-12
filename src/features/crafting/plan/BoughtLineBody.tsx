@@ -1,8 +1,7 @@
 import { Flex, Grid, Text } from "@chakra-ui/react"
-import { NumberField } from "@common/NumberField"
 import type { TreeLine } from "@crafting/logic/craftTree"
 import { formatCount } from "@crafting/logic/formatKinah"
-import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
+import { BagCountField } from "./BagCountField"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
 import { STEP_FIELD_COLUMNS } from "./stepFieldColumns"
 
@@ -37,12 +36,7 @@ export const BoughtLineBody = ({
             </Text>
 
             <Grid templateColumns={STEP_FIELD_COLUMNS} alignItems="end" gap="3">
-                <NumberField
-                    value={owned}
-                    label="In the bag"
-                    max={MAX_AMOUNT}
-                    onChange={handleOwnedChange}
-                />
+                <BagCountField owned={owned} onChange={handleOwnedChange} />
 
                 {/* Where a crafted line has its Success %. */}
                 <Flex />

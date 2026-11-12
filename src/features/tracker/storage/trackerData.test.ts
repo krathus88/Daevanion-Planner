@@ -35,6 +35,9 @@ const DATA: TrackerData = {
     ignored: { a: ["t"] },
     energy: { a: { period: 9, base: 400, bonus: 40 } },
     notes: { a: { short: "Alt for keys", long: "" } },
+    cubeKeys: {},
+    arena: {},
+    declined: [],
     membership: false,
 }
 
@@ -93,10 +96,30 @@ describe("parseTrackerData", () => {
                 b: { short: "  ", long: "" },
                 c: "nope",
             },
+            cubeKeys: { a: 34, b: -1, c: 1.5, d: "x", e: 10000 },
+            arena: {
+                a: {
+                    seen: {
+                        period: 5,
+                        at: 2,
+                        modes: { "2": [18, 21], x: [1] },
+                    },
+                    base: "x",
+                },
+                b: { seen: { period: -1, at: 2, modes: {} } },
+            },
+            declined: ["siel:kryx", 5],
             membership: false,
         })
 
-        expect(parsed).toEqual(DATA)
+        expect(parsed).toEqual({
+            ...DATA,
+            cubeKeys: { a: 34 },
+            declined: ["siel:kryx"],
+            arena: {
+                a: { seen: { period: 5, at: 2, modes: { "2": [18, 21] } } },
+            },
+        })
     })
 
     it("fills in what older saves lack", () => {
@@ -271,6 +294,9 @@ describe("readTrackerData", () => {
             ignored: {},
             energy: {},
             notes: {},
+            cubeKeys: {},
+            arena: {},
+            declined: [],
             membership: true,
         })
     })

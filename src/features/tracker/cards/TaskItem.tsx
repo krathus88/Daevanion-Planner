@@ -1,9 +1,13 @@
 import { Flex } from "@chakra-ui/react"
+import { ARENA_TASKS } from "@account/game/gameIds"
 import { readCount } from "@tracker/logic/resetPeriods"
 import { getTaskControl, isTaskDone } from "@tracker/logic/trackerCards"
 import { readEntries, type EntriesLeft } from "@tracker/logic/taskEntries"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
+import { useArenaUnknown, useIsLocked } from "@tracker/context/companionLocks"
 import type { TaskCount, TaskEntries, TrackerTask } from "@tracker/types"
+import { ArenaWeekWarning } from "./ArenaWeekWarning"
+import { LockedTaskCount } from "./LockedTaskCount"
 import { IgnoreToggle } from "./IgnoreToggle"
 import type {
     CountChangeHandler,
@@ -55,14 +59,19 @@ export const TaskItem = ({
         onIgnoredChange(owner, task.id, next)
     }
 
+    const locked = useIsLocked(owner, task.id)
+    const arena = useArenaUnknown()
+    const arenaUnknown =
+        arena.owners.has(owner) && ARENA_TASKS[task.id] !== undefined
     const control = getTaskControl(task)
     const label = `${getTaskTitle(task)}, ${ownerLabel}`
     const current = readCount(count, period)
     const isDone = !ignored && isTaskDone(task, count, entries, period)
     // Wide controls go under the name, or beside it in a tile wide enough for
     // both (all tiles in a box share a width, so they switch together); pips
-    // always sit beside it.
-    const isStacked = control === "entries" || control === "stepper"
+    // always sit beside it, like a locked task's number.
+    const isStacked =
+        !locked && (control === "entries" || control === "stepper")
 
     return (
         <Flex
@@ -83,7 +92,9 @@ export const TaskItem = ({
                 minH="10"
                 flex="1"
                 flexDir={isStacked ? "column" : "row"}
-                flexWrap="wrap"
+                // A locked number is short: it stays on the name's line,
+                // the name giving way, so every tile's sits at the same spot.
+                flexWrap={locked ? "nowrap" : "wrap"}
                 alignItems={isStacked ? "flex-start" : "center"}
                 justifyContent="space-between"
                 columnGap="3"
@@ -100,37 +111,67 @@ export const TaskItem = ({
                                   "& > :first-of-type": { minWidth: "32" },
                               },
                           }
-                        : undefined
+                        : locked
+                          ? { "& > :first-of-type": { minWidth: "0" } }
+                          : undefined
                 }
             >
-                <TaskName task={task} done={isDone} ignored={ignored} />
+                <TaskName
+                    task={task}
+                    done={isDone}
+                    ignored={ignored}
+                    warning={
+                        arenaUnknown && (
+                            <ArenaWeekWarning
+                                label={label}
+                                onConfirm={() => arena.onConfirm(owner, period)}
+                            />
+                        )
+                    }
+                />
 
-                {control === "entries" && (
-                    <TaskEntriesCounter
-                        left={readEntries(task, entries, period)}
+                {locked ? (
+                    <LockedTaskCount
+                        entries={
+                            control === "entries"
+                                ? readEntries(task, entries, period)
+                                : undefined
+                        }
+                        count={current}
                         cap={task.cap}
                         bonusCap={task.bonusCap ?? 0}
                         label={label}
-                        onChange={handleEntriesChange}
                     />
-                )}
+                ) : (
+                    <>
+                        {control === "entries" && (
+                            <TaskEntriesCounter
+                                left={readEntries(task, entries, period)}
+                                cap={task.cap}
+                                bonusCap={task.bonusCap ?? 0}
+                                label={label}
+                                onChange={handleEntriesChange}
+                            />
+                        )}
 
-                {control === "pips" && (
-                    <TaskPips
-                        count={current}
-                        cap={task.cap}
-                        label={label}
-                        onChange={handleCountChange}
-                    />
-                )}
+                        {control === "pips" && (
+                            <TaskPips
+                                count={current}
+                                cap={task.cap}
+                                label={label}
+                                onChange={handleCountChange}
+                            />
+                        )}
 
-                {control === "stepper" && (
-                    <TaskStepper
-                        count={current}
-                        cap={task.cap}
-                        label={label}
-                        onChange={handleCountChange}
-                    />
+                        {control === "stepper" && (
+                            <TaskStepper
+                                count={current}
+                                cap={task.cap}
+                                label={label}
+                                onChange={handleCountChange}
+                            />
+                        )}
+                    </>
                 )}
             </Flex>
 

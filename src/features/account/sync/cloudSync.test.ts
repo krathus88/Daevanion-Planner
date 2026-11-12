@@ -8,6 +8,8 @@ const remote = vi.hoisted(() => {
         rows: new Map<string, { value: unknown; updated_at: string }>(),
         uploads: [] as { key: string; value: unknown }[],
         failNext: null as string | null,
+        // The Realtime listener the page has open, if any.
+        live: null as ((payload: unknown) => void) | null,
         takeFailure() {
             const message = this.failNext
 
@@ -83,6 +85,27 @@ vi.mock("@account/supabaseClient", () => {
             from: () => {
                 return { select: select, upsert: upsert }
             },
+            channel: () => {
+                const channel = {
+                    on: (
+                        _type: string,
+                        _filter: unknown,
+                        listener: (payload: unknown) => void,
+                    ) => {
+                        remote.live = listener
+
+                        return channel
+                    },
+                    subscribe: () => {
+                        return channel
+                    },
+                }
+
+                return channel
+            },
+            removeChannel: async () => {
+                remote.live = null
+            },
         },
     }
 })
@@ -145,6 +168,7 @@ beforeEach(() => {
     remote.rows.clear()
     remote.uploads.length = 0
     remote.failNext = null
+    remote.live = null
     auth.current = { status: "signedIn", userId: "user-1" }
     auth.listeners.clear()
     localStorage.clear()
@@ -537,5 +561,146 @@ describe("cloudSync: failures and accounts", () => {
         await waitForState(sync, "synced")
 
         expect(remote.uploads).toHaveLength(1)
+    })
+})
+
+describe("cloudSync: game snapshots", () => {
+    const GAME_KEY = "daevanion:game:v1:1301:Testchar"
+    const snapshot = {
+        v: 1,
+        character: { name: "Testchar", server: 1301, class: 30 },
+        pets: { "1192": [2, 49] },
+        petsAt: Date.parse(NEW),
+    }
+
+    it("applies a snapshot after the pull, over the account's older copy", async () => {
+        // The snapshot downloads before the pets it updates.
+        setRemote(GAME_KEY, snapshot, NEW)
+        setRemote(PETS_KEY, { levels: { "1192": 1 }, souls: { "1192": 10 } })
+
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+        await vi.waitFor(() => {
+            expect(readJson(PETS_KEY)).toMatchObject({
+                levels: { "1192": 2 },
+                souls: { "1192": 79 },
+            })
+        })
+        // The game data goes up as an edit; the snapshot itself never does.
+        expect(remote.uploads.map((upload) => upload.key)).not.toContain(
+            GAME_KEY,
+        )
+    })
+
+    it("takes another device's copy over game-only edits, then reapplies the game", async () => {
+        const petsAt = Date.parse(NEW)
+        const gameSnapshot = { ...snapshot, petsAt: petsAt }
+
+        // This device applied the snapshot (pending, game only); another
+        // device uploaded its own copy meanwhile.
+        localStorage.setItem(GAME_KEY, JSON.stringify(gameSnapshot))
+        localStorage.setItem(
+            "daevanion:game-applied:v4",
+            JSON.stringify({ [GAME_KEY]: petsAt }),
+        )
+        localStorage.setItem(
+            PETS_KEY,
+            JSON.stringify({ levels: { "1192": 2 }, souls: { "1192": 79 } }),
+        )
+        localStorage.setItem(
+            META_KEY,
+            JSON.stringify({
+                times: { [PETS_KEY]: petsAt + 1000, [GAME_KEY]: petsAt },
+                pending: [PETS_KEY],
+                synced: { [PETS_KEY]: Date.parse(OLD), [GAME_KEY]: petsAt },
+                game: [PETS_KEY],
+            }),
+        )
+        setRemote(GAME_KEY, gameSnapshot, NEW)
+        setRemote(
+            PETS_KEY,
+            { levels: { "1192": 1, "77": 3 }, souls: { "1192": 10 } },
+            "2026-06-01T00:00:00.500Z",
+        )
+
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+
+        // The game's list wins again: applied on top of the account's copy.
+        expect(readJson(PETS_KEY)).toMatchObject({
+            levels: { "1192": 2 },
+            souls: { "1192": 79 },
+        })
+    })
+
+    it("still asks when a hand edit is pending", async () => {
+        localStorage.setItem(PETS_KEY, JSON.stringify({ levels: { "5": 1 } }))
+        localStorage.setItem(
+            META_KEY,
+            JSON.stringify({
+                times: { [PETS_KEY]: Date.parse(NEW) + 1000 },
+                pending: [PETS_KEY],
+                synced: { [PETS_KEY]: Date.parse(OLD) },
+                game: [],
+            }),
+        )
+        setRemote(PETS_KEY, { levels: { "6": 1 } }, NEW)
+
+        const sync = await load()
+
+        await waitForState(sync, "conflict")
+    })
+
+    it("takes the account's snapshot even when this device has another", async () => {
+        localStorage.setItem(GAME_KEY, JSON.stringify({ ...snapshot, v: 0 }))
+        setRemote(GAME_KEY, snapshot, NEW)
+
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+
+        expect(readJson(GAME_KEY)).toEqual(snapshot)
+    })
+
+    it("gets the companion app's uploads while the page stays open", async () => {
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+        setRemote(GAME_KEY, snapshot, NEW)
+        remote.live?.({ eventType: "INSERT", new: { key: GAME_KEY }, old: {} })
+
+        await vi.waitFor(() => {
+            expect(readJson(GAME_KEY)).toEqual(snapshot)
+        }, 3000)
+        expect(readJson(PETS_KEY)).toMatchObject({ levels: { "1192": 2 } })
+    })
+
+    it("leaves the page's own uploads alone", async () => {
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+        setRemote(PETS_KEY, { levels: { "1192": 3 }, souls: {} }, NEW)
+        remote.live?.({ eventType: "UPDATE", new: { key: PETS_KEY }, old: {} })
+        await new Promise((resolve) => {
+            setTimeout(resolve, 1500)
+        })
+
+        expect(readJson(PETS_KEY)).toBeNull()
+    })
+
+    it("stops listening on sign out", async () => {
+        const sync = await load()
+
+        await waitForState(sync, "synced")
+        expect(remote.live).not.toBeNull()
+
+        auth.current = { status: "signedOut" }
+        for (const listener of auth.listeners) {
+            listener()
+        }
+
+        expect(remote.live).toBeNull()
     })
 })

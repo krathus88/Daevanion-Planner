@@ -9,6 +9,7 @@ import { PinnedToggleButton } from "@timers/pinned/PinnedToggleButton"
 import { Brand } from "./Brand"
 import { NavDrawer } from "./NavDrawer"
 import { PageNav } from "./PageNav"
+import { useFollowPlayedClass } from "./useFollowPlayedClass"
 
 export const Header = () => {
     const plannerMatch = useMatch({
@@ -36,6 +37,7 @@ export const Header = () => {
                 : null
 
     useClassFavicon(classId)
+    useFollowPlayedClass(currentPage === "planner")
 
     return (
         <Box

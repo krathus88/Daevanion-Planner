@@ -1,3 +1,5 @@
+import { CompanionLocked } from "@account/CompanionLocked"
+import { useCompanionLocked } from "@account/companionLockedContext"
 import { Flex, SegmentGroup, Text } from "@chakra-ui/react"
 import { LEVEL_COLORS, PET_LEVELS } from "@pets/logic/petLevels"
 
@@ -21,6 +23,8 @@ type LevelPickerProps = {
 }
 
 export const LevelPicker = ({ value, onChange }: LevelPickerProps) => {
+    const locked = useCompanionLocked()
+
     const handleValueChange = (details: SegmentGroup.ValueChangeDetails) => {
         onChange(Number(details.value))
     }
@@ -33,17 +37,19 @@ export const LevelPicker = ({ value, onChange }: LevelPickerProps) => {
         <Flex flexDir="column" alignItems="flex-end" gap="1">
             <Text textStyle="label">Your Insight level</Text>
 
-            <SegmentGroup.Root
-                size="xs"
-                value={String(value)}
-                css={{ "--segment-indicator-bg": indicatorBg }}
-                aria-label="Your Insight level"
-                onValueChange={handleValueChange}
-            >
-                <SegmentGroup.Indicator />
+            <CompanionLocked locked={locked}>
+                <SegmentGroup.Root
+                    size="xs"
+                    value={String(value)}
+                    css={{ "--segment-indicator-bg": indicatorBg }}
+                    aria-label="Your Insight level"
+                    onValueChange={handleValueChange}
+                >
+                    <SegmentGroup.Indicator />
 
-                <SegmentGroup.Items items={items} />
-            </SegmentGroup.Root>
+                    <SegmentGroup.Items items={items} />
+                </SegmentGroup.Root>
+            </CompanionLocked>
         </Flex>
     )
 }

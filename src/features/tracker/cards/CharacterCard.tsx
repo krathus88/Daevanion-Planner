@@ -1,6 +1,9 @@
-import { Flex, Image, Text } from "@chakra-ui/react"
+import { Box, Flex, Image, Text } from "@chakra-ui/react"
+import { GlowDot } from "@common/GlowDot"
 import { CLASS_ICONS, CLASS_NAMES } from "@config/classPresets/classInfo"
+import { CUBE_KEYS_LOCK, ENERGY_LOCK } from "@account/game/companionLocks"
 import { getServer } from "@timers/config/servers"
+import { useIsLocked } from "@tracker/context/companionLocks"
 import { getCharacterLink } from "@tracker/logic/characterLink"
 import { getCharacterName } from "@tracker/logic/characterName"
 import {
@@ -17,12 +20,15 @@ import type {
     TaskEntries,
     TrackerCharacter,
 } from "@tracker/types"
+import { Tooltip } from "@ui/tooltip"
 import { memo } from "react"
+import { HiddenCubeKeysRow } from "./HiddenCubeKeysRow"
 import { NoteButton } from "./NoteButton"
 import { OdyleEnergyRow } from "./OdyleEnergyRow"
 import { TaskCard } from "./TaskCard"
 import type {
     CountChangeHandler,
+    CubeKeysChangeHandler,
     EnergyChangeHandler,
     EntriesChangeHandler,
     IgnoredChangeHandler,
@@ -37,6 +43,7 @@ type CharacterCardProps = {
     counts?: Record<string, TaskCount>
     entries?: Record<string, TaskEntries>
     energy?: TaskEntries
+    cubeKeys?: number
     note?: CharacterNote
     // The account's membership: Odyle Energy's cap and cube cost.
     membership: boolean
@@ -44,10 +51,13 @@ type CharacterCardProps = {
     // Whether its One-off box is open.
     goalsOpen: boolean
     ignored?: string[]
+    // The companion app says this character is being played.
+    playing?: boolean
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onEnergyChange: EnergyChangeHandler
+    onCubeKeysChange: CubeKeysChangeHandler
     onNoteChange: NoteChangeHandler
     onMinimizedChange: (owner: string, minimized: boolean) => void
     onIgnoredChange: IgnoredChangeHandler
@@ -62,25 +72,34 @@ export const CharacterCard = memo(function CharacterCard({
     counts,
     entries,
     energy,
+    cubeKeys,
     note,
     membership,
     minimized,
     goalsOpen,
     ignored,
+    playing,
     periods,
     onCountChange,
     onEntriesChange,
     onEnergyChange,
+    onCubeKeysChange,
     onNoteChange,
     onMinimizedChange,
     onIgnoredChange,
     onGoalsOpenChange,
 }: CharacterCardProps) {
     const name = getCharacterName(character)
+    const energyLocked = useIsLocked(character.id, ENERGY_LOCK)
+    const keysLocked = useIsLocked(character.id, CUBE_KEYS_LOCK)
     const energyCap = getEnergyCap(membership)
 
     const handleEnergyChange = (left: EnergyLeft) => {
         onEnergyChange(character.id, periods.energy, left)
+    }
+
+    const handleCubeKeysChange = (count: number) => {
+        onCubeKeysChange(character.id, count)
     }
 
     const handleNoteSave = (next: CharacterNote) => {
@@ -100,16 +119,34 @@ export const CharacterCard = memo(function CharacterCard({
             minimized={minimized}
             goalsOpen={goalsOpen}
             titleHref={getCharacterLink(character) ?? undefined}
-            // Odyle Energy, then the note's short line, above the task boxes.
+            // Odyle Energy and Hidden Cube keys on one line, then the
+            // note's short line, above the task boxes.
             top={
                 <Flex flexDir="column" gap="2">
-                    <OdyleEnergyRow
-                        left={readEnergy(energy, periods.energy, energyCap)}
-                        cap={energyCap}
-                        cubeCost={getCubeCost(membership)}
-                        ownerLabel={name}
-                        onChange={handleEnergyChange}
-                    />
+                    <Flex
+                        px="1"
+                        flexWrap="wrap"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        columnGap="4"
+                        rowGap="1"
+                    >
+                        <OdyleEnergyRow
+                            left={readEnergy(energy, periods.energy, energyCap)}
+                            cap={energyCap}
+                            cubeCost={getCubeCost(membership)}
+                            ownerLabel={name}
+                            locked={energyLocked}
+                            onChange={handleEnergyChange}
+                        />
+
+                        <HiddenCubeKeysRow
+                            count={cubeKeys}
+                            ownerLabel={name}
+                            locked={keysLocked}
+                            onChange={handleCubeKeysChange}
+                        />
+                    </Flex>
 
                     {note?.short && (
                         // On the task boxes' background, without their border.
@@ -134,13 +171,29 @@ export const CharacterCard = memo(function CharacterCard({
                 />
             }
             icon={
-                <Image
-                    src={CLASS_ICONS[character.classId]}
-                    boxSize="8"
-                    objectFit="contain"
-                    alt=""
-                    aria-hidden="true"
-                />
+                <Box pos="relative" flexShrink="0">
+                    <Image
+                        src={CLASS_ICONS[character.classId]}
+                        boxSize="8"
+                        objectFit="contain"
+                        alt=""
+                        aria-hidden="true"
+                    />
+
+                    {playing && (
+                        <Tooltip content="Playing now (companion app)">
+                            <Box
+                                pos="absolute"
+                                top="-0.5"
+                                right="-0.5"
+                                aria-label="Playing now"
+                                role="img"
+                            >
+                                <GlowDot tone="success" />
+                            </Box>
+                        </Tooltip>
+                    )}
+                </Box>
             }
             subtitle={
                 <Text as="span" textStyle="caption">

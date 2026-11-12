@@ -100,6 +100,24 @@ const mergeEnergy = (
     return merged
 }
 
+// Per character, the record seen last.
+const mergeArena = (
+    newer: TrackerData["arena"],
+    older: TrackerData["arena"],
+) => {
+    const merged = { ...newer }
+
+    for (const [characterId, record] of Object.entries(older)) {
+        const current = merged[characterId]
+
+        if (!current || record.seen.at > current.seen.at) {
+            merged[characterId] = record
+        }
+    }
+
+    return merged
+}
+
 // Characters and tasks by id, counts and entries one by one. A list removed on one side
 // comes back from the other, like saved plans.
 export const mergeTrackerData = (newer: unknown, older: unknown) => {
@@ -123,6 +141,11 @@ export const mergeTrackerData = (newer: unknown, older: unknown) => {
         goalsOpen: newerData.goalsOpen,
         ignored: newerData.ignored,
         energy: mergeEnergy(newerData.energy, olderData.energy),
+        // Per character, the newer side's count.
+        cubeKeys: { ...olderData.cubeKeys, ...newerData.cubeKeys },
+        arena: mergeArena(newerData.arena, olderData.arena),
+        // Declined on either side stays declined.
+        declined: [...new Set([...newerData.declined, ...olderData.declined])],
         // Per character, the newer side's note.
         notes: { ...olderData.notes, ...newerData.notes },
         membership: newerData.membership,

@@ -1,0 +1,72 @@
+name: Companion app
+
+# Tests the companion on every change to it; a `companion-v*` tag also
+# builds the .exe and publishes it as a GitHub release, with its SHA-256:
+# running companions update to the newest release and check the .exe
+# against it (internal/update).
+on:
+    push:
+        branches: [main]
+        paths: [companion/**, .github/workflows/companion.yml]
+        tags: [companion-v*]
+    pull_request:
+        paths: [companion/**, .github/workflows/companion.yml]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        name: Go tests
+        # The capture and login storage use Windows APIs.
+        runs-on: windows-latest
+        defaults:
+            run:
+                working-directory: companion
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: companion/go.mod
+                  cache: false
+
+            - run: go vet ./...
+
+            - run: go test ./...
+
+    release:
+        name: Build and release
+        needs: test
+        if: startsWith(github.ref, 'refs/tags/companion-v')
+        runs-on: windows-latest
+        permissions:
+            contents: write
+        defaults:
+            run:
+                working-directory: companion
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: companion/go.mod
+                  cache: false
+
+            - name: Build
+              shell: bash
+              run: |
+                  version="${GITHUB_REF_NAME#companion-}"
+                  go build -trimpath -ldflags "-s -w -H windowsgui -X main.version=$version" \
+                      -o "Daevanion-Companion.exe" ./cmd/companion
+                  sha256sum Daevanion-Companion.exe > Daevanion-Companion.exe.sha256
+
+            - name: Publish
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release create "$GITHUB_REF_NAME" Daevanion-Companion.exe Daevanion-Companion.exe.sha256 \
+                      --title "Companion ${GITHUB_REF_NAME#companion-}" \
+                      --notes "Runs beside AION 2 and keeps your Daevanion Planner up to date. Needs Npcap (npcap.com)."

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { makeCraftingSettings } from "@test/craftingFixture"
 import {
     setBought,
+    setCharacter,
     setOwned,
     setPrice,
     setProficiency,
@@ -14,6 +15,13 @@ describe("settings edits", () => {
         expect(setServer(makeCraftingSettings(), "israphel").server).toBe(
             "israphel",
         )
+    })
+
+    it("picks the character whose soulbound items count", () => {
+        const settings = setCharacter(makeCraftingSettings(), "Testchar")
+
+        expect(settings.character).toBe("Testchar")
+        expect(setCharacter(settings, null).character).toBeNull()
     })
 
     it("saves bag counts and drops zero", () => {

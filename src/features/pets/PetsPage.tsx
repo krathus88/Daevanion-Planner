@@ -1,3 +1,6 @@
+import { CompanionLockedContext } from "@account/companionLockedContext"
+import { useCompanionFills } from "@account/hooks/useCompanionFills"
+import { useCompanionStatus } from "@account/hooks/useCompanionStatus"
 import { Container, Flex, Grid, Heading, Link, Text } from "@chakra-ui/react"
 import {
     PET_CATEGORY_IDS,
@@ -42,6 +45,8 @@ const NO_FARM_SPOTS: ReturnType<typeof getFarmSpots> = {
 }
 
 export const PetsPage = () => {
+    // While the companion app runs, levels and souls come from the game.
+    const petsLocked = useCompanionFills(useCompanionStatus(), "pets")
     const search = route.useSearch()
     const navigate = route.useNavigate()
     const atlas = route.useLoaderData()
@@ -356,56 +361,95 @@ export const PetsPage = () => {
     const tabCounts = { ...mapCounts, ...spotCounts, ...focusCounts }
 
     return (
-        <Container as="main" py={{ base: "4", md: "6" }} maxW="8xl" flex="1">
-            <Flex flexDir="column" gap="5">
-                <Flex flexDir="column" gap="1">
-                    <Heading size="lg">Pets</Heading>
+        <CompanionLockedContext value={petsLocked}>
+            <Container
+                as="main"
+                py={{ base: "4", md: "6" }}
+                maxW="8xl"
+                flex="1"
+            >
+                <Flex flexDir="column" gap="5">
+                    <Flex flexDir="column" gap="1">
+                        <Heading size="lg">Pets</Heading>
 
-                    <Text textStyle="hint">
-                        Find which maps spawn the monsters that drop a pet's
-                        soul, and how many there are. Global client, patch{" "}
-                        {atlas.patch}. The Insight levels you set stay on this
-                        device.
-                    </Text>
-                </Flex>
+                        <Text textStyle="hint">
+                            Find which maps spawn the monsters that drop a pet's
+                            soul, and how many there are. Global client, patch{" "}
+                            {atlas.patch}. The Insight levels you set stay on
+                            this device.
+                        </Text>
+                    </Flex>
 
-                {!tipDismissed && <LevelTip onDismiss={dismissTip} />}
+                    {!tipDismissed && <LevelTip onDismiss={dismissTip} />}
 
-                <Grid
-                    templateColumns={{ base: "minmax(0, 1fr)", lg: "auto 1fr" }}
-                    alignItems="start"
-                    gap="4"
-                >
-                    {listMinimized ? (
-                        <PetFinderMinimized
-                            count={pets.length}
-                            onExpand={handleListExpand}
-                        />
-                    ) : (
-                        <PetFinder
-                            atlas={atlas}
-                            pets={pets}
-                            levels={deferredLevels}
-                            souls={deferredSouls}
-                            query={query}
-                            category={category}
-                            hiddenLevels={hiddenLevels}
-                            selectedPetId={selectedPet?.id}
-                            onQueryChange={setQuery}
-                            onCategoryChange={setCategory}
-                            onLevelHiddenChange={changeLevelHidden}
-                            onPetSelect={handlePetSelect}
-                            onLevelChange={changeLevel}
-                            onMinimize={handleListMinimize}
-                        />
-                    )}
+                    <Grid
+                        templateColumns={{
+                            base: "minmax(0, 1fr)",
+                            lg: "auto 1fr",
+                        }}
+                        alignItems="start"
+                        gap="4"
+                    >
+                        {listMinimized ? (
+                            <PetFinderMinimized
+                                count={pets.length}
+                                onExpand={handleListExpand}
+                            />
+                        ) : (
+                            <PetFinder
+                                atlas={atlas}
+                                pets={pets}
+                                levels={deferredLevels}
+                                souls={deferredSouls}
+                                query={query}
+                                category={category}
+                                hiddenLevels={hiddenLevels}
+                                selectedPetId={selectedPet?.id}
+                                onQueryChange={setQuery}
+                                onCategoryChange={setCategory}
+                                onLevelHiddenChange={changeLevelHidden}
+                                onPetSelect={handlePetSelect}
+                                onLevelChange={changeLevel}
+                                onMinimize={handleListMinimize}
+                            />
+                        )}
 
-                    <Flex minW="0" flexDir="column" gap="4">
-                        {minimized ? (
-                            selectedPet ? (
-                                <PetMinimized
+                        <Flex minW="0" flexDir="column" gap="4">
+                            {minimized ? (
+                                selectedPet ? (
+                                    <PetMinimized
+                                        pet={selectedPet}
+                                        source={source}
+                                        mapId={mapId}
+                                        level={getPetLevel(
+                                            levels,
+                                            selectedPet.id,
+                                        )}
+                                        souls={getPetSouls(
+                                            levels,
+                                            souls,
+                                            selectedPet.id,
+                                        )}
+                                        focusedSpot={focusedSpot}
+                                        onExpand={handleExpand}
+                                        onClose={handlePetClear}
+                                    />
+                                ) : (
+                                    <FarmSpotsMinimized
+                                        spots={farmSpots}
+                                        mapId={mapId}
+                                        focusedSpot={focusedSpot}
+                                        levels={levels}
+                                        onExpand={handleExpand}
+                                        onPetSelect={handleFarmPetSelect}
+                                        onLevelChange={changeLevel}
+                                    />
+                                )
+                            ) : selectedPet ? (
+                                <PetDetails
                                     pet={selectedPet}
-                                    source={source}
+                                    sources={sources}
+                                    neighbors={neighbors}
                                     mapId={mapId}
                                     level={getPetLevel(levels, selectedPet.id)}
                                     souls={getPetSouls(
@@ -414,95 +458,69 @@ export const PetsPage = () => {
                                         selectedPet.id,
                                     )}
                                     focusedSpot={focusedSpot}
-                                    onExpand={handleExpand}
+                                    showOthers={showOthers}
+                                    levels={levels}
+                                    onMapChange={handleMapChange}
+                                    onSpotSelect={handlePetSpotSelect}
+                                    onPetSelect={handleFarmPetSelect}
+                                    onLevelChange={changeLevel}
+                                    onSoulsChange={handleSoulsChange}
+                                    onMinimize={handleMinimize}
                                     onClose={handlePetClear}
                                 />
                             ) : (
-                                <FarmSpotsMinimized
+                                <FarmSpotsPanel
                                     spots={farmSpots}
                                     mapId={mapId}
                                     focusedSpot={focusedSpot}
                                     levels={levels}
-                                    onExpand={handleExpand}
+                                    requiredCategories={requiredCategories}
+                                    onSpotFocus={handleSpotFocus}
+                                    onRequiredChange={handleRequiredChange}
                                     onPetSelect={handleFarmPetSelect}
                                     onLevelChange={changeLevel}
+                                    onMinimize={handleMinimize}
                                 />
-                            )
-                        ) : selectedPet ? (
-                            <PetDetails
-                                pet={selectedPet}
-                                sources={sources}
-                                neighbors={neighbors}
+                            )}
+
+                            <PetMapPanel
                                 mapId={mapId}
-                                level={getPetLevel(levels, selectedPet.id)}
-                                souls={getPetSouls(
-                                    levels,
-                                    souls,
-                                    selectedPet.id,
-                                )}
-                                focusedSpot={focusedSpot}
-                                showOthers={showOthers}
-                                levels={levels}
+                                pins={focusedSpot ? focusPins : spotPins}
+                                focusPins={focusPins}
+                                focusKey={focusKey}
+                                counts={tabCounts}
+                                total={focusTotal}
+                                selectedPetId={selectedPet?.id}
                                 onMapChange={handleMapChange}
-                                onSpotSelect={handlePetSpotSelect}
-                                onPetSelect={handleFarmPetSelect}
-                                onLevelChange={changeLevel}
-                                onSoulsChange={handleSoulsChange}
-                                onMinimize={handleMinimize}
-                                onClose={handlePetClear}
+                                onPinSelect={handlePinSelect}
                             />
-                        ) : (
-                            <FarmSpotsPanel
-                                spots={farmSpots}
-                                mapId={mapId}
-                                focusedSpot={focusedSpot}
-                                levels={levels}
-                                requiredCategories={requiredCategories}
-                                onSpotFocus={handleSpotFocus}
-                                onRequiredChange={handleRequiredChange}
-                                onPetSelect={handleFarmPetSelect}
-                                onLevelChange={changeLevel}
-                                onMinimize={handleMinimize}
-                            />
-                        )}
+                        </Flex>
+                    </Grid>
 
-                        <PetMapPanel
-                            mapId={mapId}
-                            pins={focusedSpot ? focusPins : spotPins}
-                            focusPins={focusPins}
-                            focusKey={focusKey}
-                            counts={tabCounts}
-                            total={focusTotal}
-                            selectedPetId={selectedPet?.id}
-                            onMapChange={handleMapChange}
-                            onPinSelect={handlePinSelect}
-                        />
-                    </Flex>
-                </Grid>
-
-                <Text textStyle="hint">
-                    Spawn data from the{" "}
-                    <Link
-                        href="https://pristine-zone-6q93xmk.shipstatic.com/"
-                        color="app.muted"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        AION 2 Pet Atlas
-                    </Link>
-                    ; map art and area names from the{" "}
-                    <Link
-                        href="https://github.com/aion2-interactive-map/aion2-interactive-map"
-                        color="app.muted"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        AION2 Interactive Map
-                    </Link>{" "}
-                    (CC BY-NC 4.0). Pet portraits © NCSOFT. A listed monster can
-                    drop the soul; drops are not guaranteed.
-                </Text>
-            </Flex>
-        </Container>
+                    <Text textStyle="hint">
+                        Spawn data from the{" "}
+                        <Link
+                            href="https://pristine-zone-6q93xmk.shipstatic.com/"
+                            color="app.muted"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            AION 2 Pet Atlas
+                        </Link>
+                        ; map art and area names from the{" "}
+                        <Link
+                            href="https://github.com/aion2-interactive-map/aion2-interactive-map"
+                            color="app.muted"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            AION2 Interactive Map
+                        </Link>{" "}
+                        (CC BY-NC 4.0). Pet portraits © NCSOFT. A listed monster
+                        can drop the soul; drops are not guaranteed.
+                    </Text>
+                </Flex>
+            </Container>
+        </CompanionLockedContext>
     )
 }

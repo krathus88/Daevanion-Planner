@@ -1,6 +1,7 @@
 import type { BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import type { BoardState } from "@planner/hooks/useBoardState"
+import type { GameReadings } from "@planner/hooks/useGameCheck"
 import type { ScreenshotResult } from "@planner/hooks/useGameScreenshots"
 import { compareWithGame } from "@planner/logic/gameGaps"
 import { readPlannedCells } from "@planner/storage/boardStorage"
@@ -22,9 +23,14 @@ export const groupResults = (results: ScreenshotResult[]) => {
 }
 
 // A board's gaps against what it shows in the current view; the open board
-// uses its live state, others what was last saved.
-export const getBoardGaps = (board: BoardState, boardId: BoardId) => {
-    const acquired = board.gameCheck.readings[boardId]
+// uses its live state, others what was last saved. Readings just added aren't
+// in board.gameCheck until the next render: pass them in.
+export const getBoardGaps = (
+    board: BoardState,
+    boardId: BoardId,
+    readings: GameReadings = board.gameCheck.readings,
+) => {
+    const acquired = readings[boardId]
 
     if (!acquired) {
         return null
@@ -39,8 +45,12 @@ export const getBoardGaps = (board: BoardState, boardId: BoardId) => {
 }
 
 // Whether a board read differs from what it shows in the current view.
-export const differsFromGame = (board: BoardState, boardId: BoardId) => {
-    const gaps = getBoardGaps(board, boardId)
+export const differsFromGame = (
+    board: BoardState,
+    boardId: BoardId,
+    readings?: GameReadings,
+) => {
+    const gaps = getBoardGaps(board, boardId, readings)
 
     return gaps !== null && (gaps.missing.length > 0 || gaps.extra.length > 0)
 }

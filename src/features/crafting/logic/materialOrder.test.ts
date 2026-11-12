@@ -8,7 +8,8 @@ import {
     SWORD,
 } from "@test/craftingFixture"
 import { buildCraftPlan } from "./craftPlan"
-import { getMaterialIndex } from "./materialOrder"
+import { getTreeLines, indexPlan } from "./craftTree"
+import { getGearTier, getMaterialIndex } from "./materialOrder"
 
 const data = makeCraftingData()
 
@@ -127,5 +128,73 @@ describe("getMaterialIndex", () => {
             "Sapphire Gemstone",
             "Hardener",
         ])
+    })
+})
+
+// A transfer like Splendent White Dragon Lord Greatsword: it takes the piece
+// before it in the chain and lower base gear (Artisan's Splendent
+// Orichalcum), listed low id first.
+const BASE_GEAR = 500
+const CHAIN_GEAR = 900
+const TRANSFER = 990
+const gearData = makeCraftingData(
+    [
+        { id: BASE_GEAR, category: "greatsword", materials: [[ORE, 5]] },
+        {
+            id: CHAIN_GEAR,
+            category: "greatsword",
+            materials: [
+                [BASE_GEAR, 1],
+                [ORE, 5],
+            ],
+        },
+        {
+            id: TRANSFER,
+            category: "greatsword",
+            materials: [
+                [BASE_GEAR, 1],
+                [ORE, 2],
+                [CHAIN_GEAR, 1],
+            ],
+        },
+    ],
+    [
+        [ORE, "Ore", "common"],
+        [BASE_GEAR, "Base Greatsword", "heroic"],
+        [CHAIN_GEAR, "Chain Greatsword", "heroic"],
+        [TRANSFER, "Transfer Greatsword", "heroic"],
+    ],
+)
+
+describe("gear tiers", () => {
+    it("ranks gear by how far up the chain it is", () => {
+        expect(getGearTier(gearData, ORE)).toBe(0)
+        expect(getGearTier(gearData, BASE_GEAR)).toBe(1)
+        expect(getGearTier(gearData, CHAIN_GEAR)).toBe(2)
+        expect(getGearTier(gearData, TRANSFER)).toBe(3)
+    })
+
+    it("lists the highest tier gear first in All materials", () => {
+        const settings = makeSettings()
+        const plan = buildCraftPlan(gearData, settings, TRANSFER, 1)
+
+        expect(
+            getMaterialIndex(gearData, settings, plan, "craft").map((row) => {
+                return row.material.item.id
+            }),
+        ).toEqual([CHAIN_GEAR, BASE_GEAR, ORE])
+    })
+
+    it("lists the highest tier gear first in the main craft", () => {
+        const settings = makeSettings()
+        const plan = buildCraftPlan(gearData, settings, TRANSFER, 1)
+        const recipe = gearData.recipes.get(TRANSFER)
+
+        expect(recipe).toBeDefined()
+        expect(
+            getTreeLines(gearData, settings, indexPlan(plan), recipe!).map(
+                (line) => line.item.id,
+            ),
+        ).toEqual([CHAIN_GEAR, BASE_GEAR, ORE])
     })
 })

@@ -27,6 +27,13 @@ export const setServer = (
     return { ...settings, server: server }
 }
 
+export const setCharacter = (
+    settings: CraftingSettings,
+    character: string | null,
+): CraftingSettings => {
+    return { ...settings, character: character }
+}
+
 export const setOwned = (
     settings: CraftingSettings,
     id: number,

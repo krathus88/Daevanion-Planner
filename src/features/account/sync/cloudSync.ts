@@ -1,12 +1,19 @@
 import { readAuth, subscribeToAuth } from "@account/auth"
+import { isGameKey } from "@account/game/gameSnapshot"
+import {
+    applyGameSnapshots,
+    reapplyGameSnapshotsSince,
+} from "@account/game/gameSync"
 import { supabase } from "@account/supabaseClient"
 import { isRecord } from "@planner/storage/isRecord"
 import { bumpStorageRevision } from "@planner/storage/storageRevision"
+import { subscribeToAccountRows, type AccountRowChange } from "./accountChanges"
 import { toAccountValue, withDeviceFields } from "./deviceFields"
 import { jsonEquals } from "./jsonEquals"
 import { mergeSyncedValue } from "./mergeSyncedValue"
 import { isPlannerKey, isSyncedKey } from "./syncedKeys"
 import {
+    isGameEdit,
     isUnsynced,
     markEdited,
     markSynced,
@@ -51,6 +58,8 @@ type UploadRow = RemoteValue & {
 const TABLE = "user_data"
 // Waits for a pause in editing, so a burst of clicks is one upload.
 const PUSH_DELAY = 2000
+// The companion app uploads a few rows at once: one pull for them all.
+const LIVE_PULL_DELAY = 1000
 const CHUNK_SIZE = 50
 
 let status: SyncStatus = { state: "off" }
@@ -60,6 +69,7 @@ let running = false
 let queued = false
 let needsPull = false
 let pushTimer: number | undefined
+let livePullTimer: number | undefined
 // Downloads that wait with the conflicts, so a choice applies them together.
 let heldDownloads: RemoteValue[] = []
 const listeners = new Set<() => void>()
@@ -133,9 +143,11 @@ const applyRemote = (rows: RemoteValue[]) => {
     for (const row of rows) {
         const remoteTime = Date.parse(row.updated_at)
 
-        // Edited here while the download ran: this copy is newer.
+        // Edited here while the download ran: this copy is newer (unless
+        // only the game's data changed, which the account's copy has too).
         if (
             meta.pending.includes(row.key) &&
+            !isGameEdit(meta, row.key) &&
             (meta.times[row.key] ?? 0) > remoteTime
         ) {
             continue
@@ -207,6 +219,7 @@ const pull = async () => {
     const now = Date.now()
     const downloads: RemoteValue[] = []
     const conflicts: SyncConflict[] = []
+    let reapplySince = Infinity
 
     for (const key of listLocalKeys()) {
         if (!remoteTimes.has(key)) {
@@ -218,8 +231,19 @@ const pull = async () => {
         const device = readLocal(row.key)
         const remoteTime = Date.parse(row.updated_at)
 
-        if (device === null || !isUnsynced(meta, row.key)) {
+        // Game snapshots come only from the companion app: the account's
+        // copy always wins.
+        if (
+            device === null ||
+            isGameKey(row.key) ||
+            !isUnsynced(meta, row.key)
+        ) {
             downloads.push(row)
+        } else if (isGameEdit(meta, row.key)) {
+            // Only the companion's data changed here, which the other device
+            // applied too: take its copy, then the snapshots it may lack.
+            downloads.push(row)
+            reapplySince = Math.min(reapplySince, meta.synced[row.key] ?? 0)
         } else if (sameInAccount(row.key, device.value, row.value)) {
             markSynced(meta, row.key, remoteTime)
         } else {
@@ -243,6 +267,14 @@ const pull = async () => {
     }
 
     applyRemote(downloads)
+
+    if (reapplySince !== Infinity) {
+        reapplyGameSnapshotsSince(reapplySince)
+    }
+
+    // Only once everything is written: a snapshot applied midway would be
+    // overwritten by the account's older copy of the same data.
+    applyGameSnapshots()
 
     return true
 }
@@ -360,6 +392,25 @@ const schedulePush = () => {
     }, PUSH_DELAY)
 }
 
+// The companion app's uploads, as they land (Supabase Realtime), and on each
+// (re)connect whatever landed while away.
+const schedulePull = () => {
+    if (userId === null) {
+        return
+    }
+
+    window.clearTimeout(livePullTimer)
+    livePullTimer = window.setTimeout(() => {
+        void run(true)
+    }, LIVE_PULL_DELAY)
+}
+
+const handleAccountChange = (change: AccountRowChange) => {
+    if (isGameKey(change.key)) {
+        schedulePull()
+    }
+}
+
 const handleAuthChange = () => {
     const auth = readAuth()
     const next = auth.status === "signedIn" ? auth.userId : null
@@ -371,6 +422,7 @@ const handleAuthChange = () => {
     userId = next
     heldDownloads = []
     window.clearTimeout(pushTimer)
+    window.clearTimeout(livePullTimer)
     setStatus({ state: "off" })
 
     if (userId !== null) {
@@ -396,9 +448,11 @@ const start = () => {
     }
 
     started = true
+    applyGameSnapshots()
     subscribeToAuth(handleAuthChange)
     subscribeToLocalChanges(schedulePush)
     document.addEventListener("visibilitychange", handleVisibilityChange)
+    subscribeToAccountRows(handleAccountChange, schedulePull)
     handleAuthChange()
 }
 
@@ -484,6 +538,7 @@ export const resolveSyncConflict = (choice: SyncChoice) => {
         bumpStorageRevision()
     }
 
+    applyGameSnapshots()
     setStatus({ state: "syncing" })
     void run(false)
 }

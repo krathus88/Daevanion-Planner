@@ -2,15 +2,18 @@ import { Box, Flex, Icon, Text } from "@chakra-ui/react"
 import { IconImage } from "@common/IconImage"
 import { getTaskIcon, getTaskIconGlow } from "@tracker/config/taskIcons"
 import type { TrackerTask } from "@tracker/types"
+import type { ReactNode } from "react"
 import { LuCheck } from "react-icons/lu"
 
 type TaskNameProps = {
     task: TrackerTask
     done: boolean
     ignored: boolean
+    // A warning beside the name (ArenaWeekWarning).
+    warning?: ReactNode
 }
 
-export const TaskName = ({ task, done, ignored }: TaskNameProps) => {
+export const TaskName = ({ task, done, ignored, warning }: TaskNameProps) => {
     const icon = getTaskIcon(task.id)
 
     // The minimum width wraps a wide control under the name on phones,
@@ -39,6 +42,8 @@ export const TaskName = ({ task, done, ignored }: TaskNameProps) => {
                     </Text>
                 )}
             </Flex>
+
+            {warning}
 
             {done && (
                 <Icon boxSize="4" flexShrink="0" color="app.success">

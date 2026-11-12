@@ -4,6 +4,8 @@ import { MAX_TASK_CAP } from "@tracker/storage/trackerData"
 import type { TrackerData, TrackerTask } from "@tracker/types"
 import {
     addCharacter,
+    confirmArenaWeek,
+    declineGameCharacter,
     addTask,
     getTasks,
     getRemovedPresets,
@@ -14,6 +16,7 @@ import {
     restorePreset,
     restoreStarterTasks,
     setCount,
+    setCubeKeys,
     setEntries,
     setEnergy,
     setGoalsOpen,
@@ -57,6 +60,9 @@ const data = (overrides: Partial<TrackerData> = {}): TrackerData => {
         ignored: {},
         energy: {},
         notes: {},
+        cubeKeys: {},
+        arena: {},
+        declined: [],
         membership: true,
         ...overrides,
     }
@@ -367,6 +373,81 @@ describe("setEnergy", () => {
         const withEnergy = setEnergy(data(), "a", 7, { base: 10, bonus: 0 })
 
         expect(removeCharacter(withEnergy, "a").energy).toEqual({})
+    })
+})
+
+describe("setCubeKeys", () => {
+    it("saves a character's keys as a whole number within the cap", () => {
+        expect(setCubeKeys(data(), "a", 34).cubeKeys).toEqual({ a: 34 })
+        expect(setCubeKeys(data(), "a", -2).cubeKeys).toEqual({ a: 0 })
+        expect(setCubeKeys(data(), "a", 12.6).cubeKeys).toEqual({ a: 13 })
+        expect(setCubeKeys(data(), "a", 99999).cubeKeys).toEqual({ a: 9999 })
+    })
+
+    it("is dropped with its character", () => {
+        expect(
+            removeCharacter(setCubeKeys(data(), "a", 3), "a").cubeKeys,
+        ).toEqual({})
+    })
+})
+
+describe("confirmArenaWeek", () => {
+    // Seen this week (period 5) at 18-21 in 5v5 and 1-0 in 1v1, start unknown.
+    const ARENA: TrackerData["arena"] = {
+        a: {
+            seen: { period: 5, at: 2, modes: { "1": [1, 0], "2": [18, 21] } },
+        },
+    }
+
+    it("works the week's start back from the counts shown", () => {
+        const counted = data({
+            arena: ARENA,
+            counts: {
+                a: {
+                    "arena-participation": { period: 5, count: 2 },
+                    "arena-wins": { period: 5, count: 1 },
+                    "arena-1v1-wins": { period: 5, count: 1 },
+                    "arena-1v1-participation": { period: 5, count: 1 },
+                },
+            },
+        })
+        const next = confirmArenaWeek(counted, "a", 5)
+
+        expect(next.arena.a.base).toEqual({
+            period: 5,
+            at: 2,
+            modes: { "1": [0, 0], "2": [17, 20] },
+        })
+    })
+
+    it("counts last week's numbers as none this week", () => {
+        const next = confirmArenaWeek(
+            data({
+                arena: ARENA,
+                counts: { a: { "arena-wins": { period: 4, count: 3 } } },
+            }),
+            "a",
+            5,
+        )
+
+        expect(next.arena.a.base?.modes).toEqual(ARENA.a.seen.modes)
+    })
+
+    it("changes nothing in a week whose start is known", () => {
+        const known = data({
+            arena: { a: { ...ARENA.a, base: ARENA.a.seen } },
+        })
+
+        expect(confirmArenaWeek(known, "a", 5)).toBe(known)
+    })
+})
+
+describe("declineGameCharacter", () => {
+    it("remembers a declined character once, by server and name", () => {
+        const once = declineGameCharacter(data(), "siel", " Kryx ")
+
+        expect(once.declined).toEqual(["siel:kryx"])
+        expect(declineGameCharacter(once, "siel", "KRYX")).toBe(once)
     })
 })
 

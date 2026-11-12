@@ -104,6 +104,7 @@ export const makeCraftingSettings = (
     return {
         server: "siel",
         owned: {},
+        character: null,
         prices: {},
         bought: [],
         success: {},

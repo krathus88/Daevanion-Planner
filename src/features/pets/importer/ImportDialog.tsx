@@ -1,3 +1,5 @@
+import { CompanionLocked } from "@account/CompanionLocked"
+import { useCompanionLocked } from "@account/companionLockedContext"
 import {
     Button,
     CloseButton,
@@ -32,6 +34,7 @@ type ImportDialogProps = {
 // Sets pet levels and souls from screenshots of the game's Pets grid, after a review.
 export const ImportDialog = ({ atlas }: ImportDialogProps) => {
     const { levels, souls, changeSouls } = usePetCollection()
+    const locked = useCompanionLocked()
     const readFile = async (file: File) => {
         const prints = await loadPetPrints(atlas.pets, COLLECTION_LAYOUT)
 
@@ -110,6 +113,26 @@ export const ImportDialog = ({ atlas }: ImportDialogProps) => {
         return !excluded.includes(change.pet.id)
     })
     const hasResults = readings.length > 0 || skippedFiles.length > 0
+
+    // The companion app reads the levels from the game instead.
+    if (locked) {
+        return (
+            <CompanionLocked locked>
+                <IconButton
+                    minW="6"
+                    h="6"
+                    variant="ghost"
+                    size="xs"
+                    color="app.muted"
+                    aria-label="Import levels from screenshots"
+                >
+                    <Icon boxSize="4">
+                        <LuImageUp />
+                    </Icon>
+                </IconButton>
+            </CompanionLocked>
+        )
+    }
 
     return (
         <Dialog.Root

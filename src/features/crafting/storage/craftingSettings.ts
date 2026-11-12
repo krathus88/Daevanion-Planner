@@ -16,6 +16,7 @@ const MAX_PROFICIENCY = 200
 const EMPTY_SETTINGS: CraftingSettings = {
     server: DEFAULT_SERVER_ID,
     owned: {},
+    character: null,
     prices: {},
     bought: [],
     success: {},
@@ -124,6 +125,10 @@ export const parseCraftingSettings = (value: unknown): CraftingSettings => {
     return {
         server: isServerId(value.server) ? value.server : DEFAULT_SERVER_ID,
         owned: pickNumbers(value.owned, isOwned),
+        character:
+            typeof value.character === "string" && value.character !== ""
+                ? value.character
+                : null,
         prices: pickPrices(value.prices),
         bought: Array.isArray(value.bought)
             ? [

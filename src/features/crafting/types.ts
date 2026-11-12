@@ -13,6 +13,9 @@ export type CraftingSettings = {
     server: string
     // Items already in the bag.
     owned: Record<string, number>
+    // The character (by its in-game name, on `server`) whose soulbound items
+    // count as owned; the companion app's data fills `owned`.
+    character: string | null
     // Kinah per item, per server id.
     prices: Record<string, Record<string, LocalPrice>>
     // Craftable items the user buys instead of crafting.
