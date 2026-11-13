@@ -93,14 +93,15 @@ describe("withCorridorView", () => {
         expect(next[0].tasks).toEqual([
             expect.objectContaining({
                 id: "corridors:1001",
-                name: "Reshanta's Root",
-                subtitle: "Abyss corridor",
+                name: "Abyss Corridor",
+                subtitle: "Reshanta's Root",
                 reset: "siege",
                 cap: 1,
             }),
             expect.objectContaining({
                 id: "corridors:1002",
-                name: "Sulfur Tree Island",
+                name: "Abyss Corridor",
+                subtitle: "Sulfur Tree Island",
                 cap: 1,
             }),
         ])

@@ -232,7 +232,7 @@ describe("TrackerPage", () => {
 
         const aria = screen.getByRole("article", { name: "Aria" })
 
-        expect(within(aria).getByText("0/16")).toBeInTheDocument()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
 
         await userEvent.click(
             within(aria).getByRole("button", {
@@ -240,7 +240,7 @@ describe("TrackerPage", () => {
             }),
         )
 
-        expect(within(aria).getByText("1/16")).toBeInTheDocument()
+        expect(within(aria).getByText("1/11")).toBeInTheDocument()
     })
 
     it("ticks a task with a cap of 1", async () => {
@@ -408,11 +408,11 @@ describe("TrackerPage", () => {
                 a: [...STARTS_IGNORED, "arena-wins"],
             })
         })
-        expect(within(aria).getByText("0/15")).toBeInTheDocument()
+        expect(within(aria).getByText("0/10")).toBeInTheDocument()
         // Other characters still count it.
         expect(
             within(screen.getByRole("article", { name: "Bran" })).getByText(
-                "0/16",
+                "0/11",
             ),
         ).toBeInTheDocument()
 
@@ -708,7 +708,7 @@ describe("TrackerPage", () => {
         expect(
             screen.getByRole("button", { name: `${label}: 760, edit` }),
         ).toHaveTextContent("760/840 +0")
-        expect(within(aria).getByText("0/16")).toBeInTheDocument()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
 
         await userEvent.click(
             screen.getByRole("button", { name: `${label}: 760, edit` }),
@@ -737,7 +737,7 @@ describe("TrackerPage", () => {
         expect(
             screen.getByRole("button", { name: `Spend 80: ${label}` }),
         ).toBeDisabled()
-        expect(within(aria).getByText("0/16")).toBeInTheDocument()
+        expect(within(aria).getByText("0/11")).toBeInTheDocument()
     })
 
     it("keeps Odyle Energy on a minimized card", async () => {

@@ -227,6 +227,28 @@ describe("ignored tasks", () => {
     })
 })
 
+describe("one-off goals", () => {
+    const groups = getTaskGroups(
+        [task({ id: "a" }), task({ id: "goal", reset: "once", cap: 600 })],
+        false,
+    )
+    const periods = { energy: 1, daily: 5, weekly: 1, siege: 1, once: 0 }
+
+    it("are left out of the progress and the minimized summary", () => {
+        const counts = { goal: { period: 0, count: 10 } }
+
+        expect(getCardProgress(groups, counts, {}, [], periods)).toEqual({
+            done: 0,
+            total: 1,
+        })
+        expect(
+            getPendingTasks(groups, counts, {}, [], periods).map(
+                (item) => item.task.id,
+            ),
+        ).toEqual(["a"])
+    })
+})
+
 describe("getCardProgress", () => {
     it("counts tasks at their cap this period, and entry tasks at 0 left", () => {
         const groups = getTaskGroups(

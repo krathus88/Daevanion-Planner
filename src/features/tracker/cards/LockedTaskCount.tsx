@@ -15,7 +15,7 @@ type LockedTaskCountProps = {
 // total: entries left of the cap and bonus tickets ("5/14 +2"), or the count
 // done ("1/4"). No buttons: the game's value can't be changed here. Colors
 // match the editable counters: full entries accent, a done count green,
-// capped bonus tickets red.
+// capped bonus tickets red. The count and bonus are larger than the cap.
 export const LockedTaskCount = ({
     entries,
     count,
@@ -45,6 +45,7 @@ export const LockedTaskCount = ({
                 <Text
                     as="span"
                     color={isFull ? fullColor : "app.fg"}
+                    fontSize="md"
                     fontWeight="semibold"
                 >
                     {value.base}
@@ -60,6 +61,7 @@ export const LockedTaskCount = ({
                                 ? "app.dangerFaint"
                                 : "app.successFaint"
                         }
+                        fontSize="md"
                         fontWeight="semibold"
                     >
                         {` +${value.bonus}`}

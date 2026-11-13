@@ -77,6 +77,7 @@ export const HiddenCubeKeysRow = ({
                             minW="0"
                             px="1"
                             color={count === undefined ? "app.muted" : "app.fg"}
+                            fontSize="sm"
                             fontWeight="normal"
                             aria-label={`${label}: ${count ?? "not set"}, edit`}
                             onClick={handleEdit}

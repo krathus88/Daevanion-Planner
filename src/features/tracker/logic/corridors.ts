@@ -58,8 +58,8 @@ const getCorridorRows = (task: TrackerTask, artifacts: readonly string[]) => {
         return {
             ...task,
             id: getCorridorTaskId(artifact),
-            name: getCorridorName(artifact),
-            subtitle: "Abyss corridor",
+            name: "Abyss Corridor",
+            subtitle: getCorridorName(artifact),
             cap: 1,
         }
     })

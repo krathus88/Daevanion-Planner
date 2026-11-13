@@ -15,8 +15,8 @@ const NIGHTMARE = STARTER_TASKS.find((task) => task.id === "nightmare")!
 const CORRIDOR = {
     ...STARTER_TASKS.find((task) => task.id === "corridors")!,
     id: "corridors:1001",
-    name: "Reshanta's Root",
-    subtitle: "Abyss corridor",
+    name: "Abyss Corridor",
+    subtitle: "Reshanta's Root",
 }
 
 const renderCorridor = (unknown: boolean) => {
@@ -159,7 +159,7 @@ describe("TaskItem", () => {
 
         await userEvent.click(
             screen.getByRole("button", {
-                name: /Reshanta's Root \(Abyss corridor\), Testchar: no data/,
+                name: /Abyss Corridor \(Reshanta's Root\), Testchar: no data/,
             }),
         )
 
@@ -168,7 +168,7 @@ describe("TaskItem", () => {
         ).toBeInTheDocument()
         // Its pip stays usable.
         expect(
-            screen.getByRole("group", { name: /^Reshanta's Root/ }),
+            screen.getByRole("group", { name: /^Abyss Corridor \(Reshanta's Root\)/ }),
         ).toBeInTheDocument()
     })
 
@@ -177,7 +177,7 @@ describe("TaskItem", () => {
 
         expect(screen.queryByRole("button", { name: /no data/ })).toBeNull()
         expect(
-            screen.getByLabelText(/^Reshanta's Root.*Testchar: /),
+            screen.getByLabelText(/^Abyss Corridor \(Reshanta's Root\).*Testchar: /),
         ).toHaveTextContent("0/1")
         expect(screen.queryByRole("group")).toBeNull()
     })

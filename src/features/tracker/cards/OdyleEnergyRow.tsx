@@ -157,13 +157,16 @@ export const OdyleEnergyRow = ({
                                 </Icon>
                             )}
                             {/* Like a task's entries: recharged of its cap,
-                            then the extra from items (red once at 2000). */}
+                            then the extra from items (red once at 2000), both
+                            larger than the cap. */}
                             <Text
                                 as="span"
                                 fontVariantNumeric="tabular-nums"
                                 whiteSpace="nowrap"
                             >
-                                {left.base}
+                                <Text as="span" fontSize="sm">
+                                    {left.base}
+                                </Text>
                                 <Text as="span" color="app.subtle">
                                     /{cap}
                                 </Text>
@@ -174,6 +177,7 @@ export const OdyleEnergyRow = ({
                                             ? "app.dangerFaint"
                                             : "app.successFaint"
                                     }
+                                    fontSize="sm"
                                 >
                                     {` +${left.bonus}`}
                                 </Text>

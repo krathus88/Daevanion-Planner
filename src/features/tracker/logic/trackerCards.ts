@@ -220,6 +220,7 @@ export type PendingTask = {
 }
 
 // What a minimized card still lists: the tasks not done yet, not ignored.
+// One-off goals never reset, so they aren't "left" for the day or week.
 export const getPendingTasks = (
     groups: readonly TaskGroup[],
     counts: Record<string, TaskCount> | undefined,
@@ -230,6 +231,10 @@ export const getPendingTasks = (
     const pending: PendingTask[] = []
 
     for (const group of groups) {
+        if (group.reset === "once") {
+            continue
+        }
+
         const period = periods[group.reset]
 
         for (const task of group.tasks) {
@@ -297,7 +302,8 @@ export const getGroupProgress = (
     return { done: done, total: total }
 }
 
-// Done tasks out of a card's tasks that aren't ignored.
+// Done tasks out of a card's tasks that aren't ignored, one-off goals left
+// out (their own box still turns green when all are done).
 export const getCardProgress = (
     groups: readonly TaskGroup[],
     counts: Record<string, TaskCount> | undefined,
@@ -309,6 +315,10 @@ export const getCardProgress = (
     let total = 0
 
     for (const group of groups) {
+        if (group.reset === "once") {
+            continue
+        }
+
         const progress = getGroupProgress(
             group,
             counts,
