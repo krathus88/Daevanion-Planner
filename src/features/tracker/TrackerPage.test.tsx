@@ -824,8 +824,12 @@ describe("TrackerPage", () => {
         await userEvent.keyboard("{Escape}")
         // A query, not the element: the dialog leaves with its portal, whose
         // node still holds it, so waiting on the element never ended (CI).
-        await waitForElementToBeRemoved(() => {
-            return screen.queryByRole("dialog", { name: "Characters" })
+        // waitFor, not waitForElementToBeRemoved: that one fails when the
+        // dialog is already gone by the time it starts (CI).
+        await waitFor(() => {
+            expect(
+                screen.queryByRole("dialog", { name: "Characters" }),
+            ).not.toBeInTheDocument()
         })
         await userEvent.click(
             screen.getByRole("button", {

@@ -83,6 +83,10 @@ type app struct {
 	recording bool
 	// A check for updates the user asked for is under way.
 	checkingUpdates bool
+	// A newer version found while running, and whether it's being
+	// installed.
+	updateAvailable string
+	updating        bool
 	// The settings saved in the data folder (settings.go).
 	settings settings
 }
@@ -130,6 +134,8 @@ func (a *app) state() desktop.State {
 		Version:          version,
 		CanUpdate:        update.IsRelease(version),
 		CheckingUpdates:  a.checkingUpdates,
+		UpdateAvailable:  a.updateAvailable,
+		Updating:         a.updating,
 	}
 }
 
@@ -368,12 +374,27 @@ func main() {
 	}
 
 	updatesFound := make(chan foundUpdate, 1)
-	answers := make(chan updateAnswer, 1)
 	ready := make(chan readyUpdate, 1)
-	asking := false
-	declined := ""
+	// A newer release found while running: the settings window offers it
+	// (Update now), else it installs at the next start.
+	var available *update.Release
+	offerUpdate := func(release update.Release) {
+		if available == nil || available.Version != release.Version {
+			logf("Version %s is out: Update now in the settings, or it installs at the next start.", release.Version)
+		}
+		available = &release
+		state0.mu.Lock()
+		state0.updateAvailable = release.Version
+		state0.mu.Unlock()
+		updateTip()
+	}
 	beginUpdate := func(release update.Release) {
 		updating = true
+		state0.mu.Lock()
+		state0.updateAvailable = release.Version
+		state0.updating = true
+		state0.mu.Unlock()
+		updateTip()
 		logf("Updating to %s...", release.Version)
 		tray.ShowWidget(desktop.WidgetBusy, "Updating to "+release.Version+"…")
 		downloadUpdate(release, ready)
@@ -428,6 +449,10 @@ func main() {
 				if start {
 					updateTip()
 					checkForUpdate(checked)
+				}
+			case desktop.CommandUpdateNow:
+				if available != nil && !updating {
+					beginUpdate(*available)
 				}
 			case desktop.CommandOpenRecordings:
 				if dir, err := recordingsDir(); err == nil {
@@ -492,12 +517,11 @@ func main() {
 
 		case found := <-updatesFound:
 			switch {
-			case updating || asking || found.release.Version == declined:
+			case updating:
 			case found.atLaunch:
 				beginUpdate(found.release)
 			default:
-				asking = true
-				askToUpdate(found.release, answers)
+				offerUpdate(found.release)
 			}
 
 		case result := <-checked:
@@ -511,21 +535,9 @@ func main() {
 				showNote(desktop.WidgetWaiting, "Couldn't check for updates", time.Now())
 			case !result.newer:
 				showNote(desktop.WidgetDone, "Up to date ("+version+")", time.Now())
-			case !updating && !asking:
-				// Asked for: asks again even after a No.
-				asking = true
-				askToUpdate(result.release, answers)
-			}
-
-		case answer := <-answers:
-			asking = false
-			if !answer.yes {
-				declined = answer.release.Version
-				logf("Update to %s put off until the next start.", answer.release.Version)
-				break
-			}
-			if !updating {
-				beginUpdate(answer.release)
+			case !updating:
+				offerUpdate(result.release)
+				showNote(desktop.WidgetDone, "Version "+result.release.Version+" is out", time.Now())
 			}
 
 		case done := <-ready:
@@ -540,6 +552,10 @@ func main() {
 				os.Remove(done.path)
 				logf("Couldn't update to %s: %v", done.release.Version, err)
 				updating = false
+				state0.mu.Lock()
+				state0.updating = false
+				state0.mu.Unlock()
+				updateTip()
 				showNote(desktop.WidgetWaiting, "Couldn't update: see the log", time.Now())
 				break
 			}

@@ -134,6 +134,7 @@ const (
 	hitSlider
 	hitTracker
 	hitCheckUpdates
+	hitUpdateNow
 	// Type chips: All, then shop.Types.
 	hitType0
 	hitTypeLast = hitType0 + 5
@@ -399,15 +400,21 @@ func (s *settingsWindow) layout() []element {
 		add(element{kind: kindButton, hit: hitRecord, r: s.box(right-130, middle(y, setButtonH), 130, setButtonH), text: label, style: style, enabled: true})
 		y += setCardH + setGap
 		updates := "Version " + st.Version + ". Checks by itself at start and every 6 hours."
-		if !st.CanUpdate {
+		hit, label, style, enabled := hitCheckUpdates, "Check now", stylePlain, st.CanUpdate && !st.CheckingUpdates
+		switch {
+		case !st.CanUpdate:
 			updates = "Version " + st.Version + ": a test build, which never updates."
-		}
-		label = "Check now"
-		if st.CheckingUpdates {
+		case st.Updating:
+			updates = "Updating to " + st.UpdateAvailable + ". It restarts in a few seconds."
+			hit, label, style, enabled = hitUpdateNow, "Updating…", stylePrimary, false
+		case st.UpdateAvailable != "":
+			updates = "Version " + st.UpdateAvailable + " is out (you have " + st.Version + "). It installs by itself at the next start."
+			hit, label, style, enabled = hitUpdateNow, "Update now", stylePrimary, true
+		case st.CheckingUpdates:
 			label = "Checking…"
 		}
 		card(y, "Updates", updates, 136)
-		add(element{kind: kindButton, hit: hitCheckUpdates, r: s.box(right-130, middle(y, setButtonH), 130, setButtonH), text: label, enabled: st.CanUpdate && !st.CheckingUpdates})
+		add(element{kind: kindButton, hit: hit, r: s.box(right-130, middle(y, setButtonH), 130, setButtonH), text: label, style: style, enabled: enabled})
 		y += setCardH + setGap + 4
 		add(element{kind: kindButton, hit: hitOpenRecordings, r: s.box(setPad, y, 140, setButtonH), text: "Open recordings", enabled: true})
 		add(element{kind: kindButton, hit: hitOpenLog, r: s.box(setPad+148, y, 100, setButtonH), text: "Open log", enabled: true})
@@ -790,6 +797,8 @@ func (s *settingsWindow) click(hit int) {
 		Open(TrackerURL)
 	case hitCheckUpdates:
 		t.on(Choice{Command: CommandCheckUpdates})
+	case hitUpdateNow:
+		t.on(Choice{Command: CommandUpdateNow})
 	default:
 		switch {
 		case hit >= hitType0 && hit <= hitTypeLast:

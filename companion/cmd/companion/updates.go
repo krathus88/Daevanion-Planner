@@ -12,20 +12,15 @@ import (
 )
 
 // How often a running companion looks for a new version. At launch it
-// looks at once and updates without asking.
+// looks at once and updates without asking; later it only offers the update
+// in the settings window.
 const updateInterval = 6 * time.Hour
 
 // A newer release, found at launch (installed without asking) or later
-// (asked first).
+// (offered in the settings window).
 type foundUpdate struct {
 	release  update.Release
 	atLaunch bool
-}
-
-// The answer to "update now?".
-type updateAnswer struct {
-	release update.Release
-	yes     bool
 }
 
 // A downloaded (and checked) release, ready to swap in.
@@ -80,15 +75,6 @@ func checkForUpdate(checked chan<- checkResult) {
 		defer cancel()
 		release, ok, err := update.Latest(ctx, update.ReleasesURL)
 		checked <- checkResult{release: release, newer: err == nil && ok && update.Newer(version, release.Version), err: err}
-	}()
-}
-
-// askToUpdate asks on its own goroutine: the box waits for the user.
-func askToUpdate(release update.Release, answers chan<- updateAnswer) {
-	go func() {
-		yes := desktop.Ask("Daevanion Companion update",
-			"Daevanion Companion "+release.Version+" is out (you have "+version+").\n\nUpdate now? It restarts in a few seconds. Otherwise it updates the next time it starts.")
-		answers <- updateAnswer{release: release, yes: yes}
 	}()
 }
 

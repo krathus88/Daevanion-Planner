@@ -127,6 +127,8 @@ const (
 	CommandShopSource
 	// Look for a newer version now.
 	CommandCheckUpdates
+	// Install the newer version found (State.UpdateAvailable) now.
+	CommandUpdateNow
 )
 
 // Choice is a command and, for settings, its new value.
@@ -169,6 +171,10 @@ type State struct {
 	Version         string
 	CanUpdate       bool
 	CheckingUpdates bool
+	// A newer version found while running ("" if none), and whether it's
+	// being installed.
+	UpdateAvailable string
+	Updating        bool
 }
 
 // Tray is the notification area icon.
