@@ -226,10 +226,11 @@ const (
 )
 
 // ParseStacks finds the item stacks in 1156 or 1b56. Each stack is
-// u8 flag (0/1), u32 stack id, u8 0, u8 slot, u16 0, u32 item id, u64 count,
+// u8 flag (0/1), u32 stack id, u8 0, u16 slot, u8 0, u32 item id, u64 count,
 // u8 storage, then extra data whose length depends on the item, so stacks
 // are found by that shape rather than read one after another. Checked on
-// real captures: every change matched the stack id it had at login.
+// real captures: every change matched the stack id it had at login. Slots
+// go past 255 on some servers (Kryx's bag on the world server, 2026-11-13).
 func ParseStacks(body []byte) []Stack {
 	var stacks []Stack
 	var starts []int
@@ -238,7 +239,7 @@ func ParseStacks(body []byte) []Stack {
 		if item < 100_000_000 || item > 999_999_999 {
 			continue
 		}
-		if body[p-9] > 1 || body[p-4] != 0 || body[p-2] != 0 || body[p-1] != 0 {
+		if body[p-9] > 1 || body[p-4] != 0 || body[p-1] != 0 {
 			continue
 		}
 		count := binary.LittleEndian.Uint64(body[p+4:])

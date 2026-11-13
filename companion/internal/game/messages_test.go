@@ -102,6 +102,27 @@ func TestParseStacks(t *testing.T) {
 	}
 }
 
+func TestParseStacksReadsSlotsPast255(t *testing.T) {
+	// Kryx's login on the world server (2026-11-13): a stack in slot 295
+	// (27 01), then 19 Hidden Cube keys in slot 296.
+	body := join(h("10 02 ea 01"),
+		h("00 2b 19 0a 00 00 27 01 00"), u32(531860001), u64(2), h("01 1a 00 00"),
+		h("00 9e 7a 08 00 00 28 01 00"), u32(630900003), u64(19), h("01 1b 00 00"))
+	stacks := ParseStacks(body)
+	want := []Stack{
+		{ID: 0x000a192b, Item: 531860001, Count: 2, Storage: StorageBag},
+		{ID: 0x00087a9e, Item: 630900003, Count: 19, Storage: StorageBag},
+	}
+	if len(stacks) != len(want) {
+		t.Fatalf("got %+v", stacks)
+	}
+	for i := range want {
+		if stacks[i] != want[i] {
+			t.Fatalf("stack %d: got %+v want %+v", i, stacks[i], want[i])
+		}
+	}
+}
+
 func TestParseStacksFindsSoulbound(t *testing.T) {
 	// A ring before and after soulbinding: the owner and server 1301 appear.
 	before := join(h("01 00 8c 15 00 00 1e 00 00"), u32(310330015), u64(1),
