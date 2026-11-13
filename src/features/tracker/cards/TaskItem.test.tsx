@@ -7,10 +7,36 @@ import { STARTER_TASKS } from "@tracker/config/starterTasks"
 import {
     ArenaUnknownContext,
     CompanionLocksContext,
+    CorridorsUnknownContext,
 } from "@tracker/context/companionLocks"
 import { TaskItem } from "./TaskItem"
 
 const NIGHTMARE = STARTER_TASKS.find((task) => task.id === "nightmare")!
+const CORRIDOR = {
+    ...STARTER_TASKS.find((task) => task.id === "corridors")!,
+    id: "corridors:1001",
+    name: "Reshanta's Root",
+    subtitle: "Abyss corridor",
+}
+
+const renderCorridor = (unknown: boolean) => {
+    renderWithChakra(
+        <CompanionLocksContext value={{ a: new Set(["corridors"]) }}>
+            <CorridorsUnknownContext value={unknown}>
+                <TaskItem
+                    task={CORRIDOR}
+                    owner="a"
+                    ownerLabel="Testchar"
+                    period={0}
+                    ignored={false}
+                    onCountChange={vi.fn()}
+                    onEntriesChange={vi.fn()}
+                    onIgnoredChange={vi.fn()}
+                />
+            </CorridorsUnknownContext>
+        </CompanionLocksContext>,
+    )
+}
 
 const renderItem = (locks: Record<string, ReadonlySet<string>>) => {
     renderWithChakra(
@@ -125,5 +151,34 @@ describe("TaskItem", () => {
                 name: /isn't filled from the game$/,
             }),
         ).toBeNull()
+    })
+
+    // Login sends no corridor entrances: unknown until the Abyss.
+    it("warns on a corridor row whose entrances are unknown, and keeps it manual", async () => {
+        renderCorridor(true)
+
+        await userEvent.click(
+            screen.getByRole("button", {
+                name: /Reshanta's Root \(Abyss corridor\), Testchar: no data/,
+            }),
+        )
+
+        expect(
+            await screen.findByText(/Go to the Abyss on Testchar/),
+        ).toBeInTheDocument()
+        // Its pip stays usable.
+        expect(
+            screen.getByRole("group", { name: /^Reshanta's Root/ }),
+        ).toBeInTheDocument()
+    })
+
+    it("locks a corridor row with the Corridors task once known", () => {
+        renderCorridor(false)
+
+        expect(screen.queryByRole("button", { name: /no data/ })).toBeNull()
+        expect(
+            screen.getByLabelText(/^Reshanta's Root.*Testchar: /),
+        ).toHaveTextContent("0/1")
+        expect(screen.queryByRole("group")).toBeNull()
     })
 })

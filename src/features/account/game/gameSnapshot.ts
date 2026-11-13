@@ -67,8 +67,9 @@ export type GameSnapshot = {
     arena?: Record<string, [number, number]>
     arenaAt?: number
     // Abyss corridor entrances the character may still use (counter ids, see
-    // gameIds CORRIDORS), read with the counters: missing with corridorsAt
-    // set means none.
+    // gameIds CORRIDORS), as known at corridorsAt (only once the character
+    // entered the Abyss: login sends none): missing with corridorsAt set
+    // means none.
     corridors?: string[]
     corridorsAt?: number
     // Artifact id → faction holding it (0 none, 1 Elyos, 2 Asmodians), and

@@ -180,6 +180,7 @@ export const useTrackerData = () => {
         cubeKeys: data.cubeKeys,
         arena: data.arena,
         corridorHolds: data.corridorHolds,
+        corridorsLeft: data.corridorsLeft,
         declined: data.declined,
         notes: data.notes,
         membership: data.membership,

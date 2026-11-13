@@ -25,3 +25,12 @@ export const ArenaUnknownContext = createContext<ArenaUnknown>({
 export const useArenaUnknown = () => {
     return useContext(ArenaUnknownContext)
 }
+
+// A character card's: the companion runs but hasn't read this character's
+// corridor entrances since the siege (see getCorridorView): its corridor
+// rows warn and stay manual.
+export const CorridorsUnknownContext = createContext(false)
+
+export const useCorridorsUnknown = () => {
+    return useContext(CorridorsUnknownContext)
+}

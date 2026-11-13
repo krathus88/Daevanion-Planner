@@ -37,6 +37,8 @@ type TrackerBoardProps = {
     ignored: TrackerData["ignored"]
     // Corridors each server's faction holds (the Corridors task's size).
     corridorHolds: TrackerData["corridorHolds"]
+    // Corridor entrances each character has left (read since the siege?).
+    corridorsLeft: TrackerData["corridorsLeft"]
     companionRunning: boolean
     periods: ResetPeriods
     // The character the companion app says is being played.
@@ -66,6 +68,7 @@ export const TrackerBoard = ({
     goalsOpen,
     ignored,
     corridorHolds,
+    corridorsLeft,
     companionRunning,
     periods,
     playingId,
@@ -141,6 +144,7 @@ export const TrackerBoard = ({
                     {characters.map((character) => {
                         const corridors = getCorridorView(
                             corridorHolds[character.server],
+                            corridorsLeft[character.id],
                             periods.siege,
                             companionRunning,
                         )
@@ -160,8 +164,8 @@ export const TrackerBoard = ({
                                 goalsOpen={goalsOpen.includes(character.id)}
                                 ignored={ignored[character.id]}
                                 playing={character.id === playingId}
-                                corridorCap={corridors?.cap}
-                                corridorSubtitle={corridors?.subtitle}
+                                corridors={corridors?.artifacts}
+                                corridorsUnknown={corridors?.unknown}
                                 periods={periods}
                                 onCountChange={onCountChange}
                                 onEntriesChange={onEntriesChange}

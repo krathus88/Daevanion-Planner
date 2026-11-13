@@ -74,6 +74,16 @@ export const CORRIDORS = [
     { artifact: "1003", counter: "10000003", name: "Siel's Wings" },
 ]
 
+// Each held corridor is its own row of the Corridors task (see
+// tracker/logic/corridors): its id, counted 0/1.
+export const getCorridorTaskId = (artifact: string) => {
+    return `${CORRIDOR_TASK}:${artifact}`
+}
+
+export const isCorridorTask = (taskId: string) => {
+    return taskId === CORRIDOR_TASK || taskId.startsWith(`${CORRIDOR_TASK}:`)
+}
+
 // The game's faction numbers in artifact owners.
 export const FACTION_NUMBERS = { elyos: 1, asmodians: 2 } as const
 

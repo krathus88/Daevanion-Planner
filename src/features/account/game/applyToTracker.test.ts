@@ -319,10 +319,14 @@ describe("applyToTracker", () => {
                 }),
             )
 
+            const period = getResetPeriods(SIEGE_END).siege
+
             expect(next.corridorsLeft.a.artifacts).toEqual(["1002"])
-            expect(next.counts.a.corridors).toEqual({
-                period: getResetPeriods(SIEGE_END).siege,
-                count: 1,
+            // One row per held corridor: Reshanta's Root used, Sulfur Tree
+            // Island still open.
+            expect(next.counts.a).toEqual({
+                "corridors:1001": { period, count: 1 },
+                "corridors:1002": { period, count: 0 },
             })
             // The other character's entrances weren't read: left alone.
             expect(next.counts.b).toBeUndefined()
@@ -345,7 +349,8 @@ describe("applyToTracker", () => {
                 }),
             )
 
-            expect(next.counts.b.corridors.count).toBe(2)
+            expect(next.counts.b["corridors:1001"].count).toBe(1)
+            expect(next.counts.b["corridors:1002"].count).toBe(1)
         })
 
         it("ignores entrances read before the siege ended", () => {

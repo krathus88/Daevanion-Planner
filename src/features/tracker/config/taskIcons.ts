@@ -1,3 +1,4 @@
+import { CORRIDOR_TASK, isCorridorTask } from "@account/game/gameIds"
 import {
     ArtifactSiege,
     DimensionalInvasion,
@@ -56,8 +57,9 @@ const TASK_ICONS: Record<string, string> = {
     "shards-abyss": StigmaShard,
 }
 
+// Each corridor row (see logic/corridors) shows the Corridors task's icon.
 export const getTaskIcon = (taskId: string) => {
-    return TASK_ICONS[taskId]
+    return TASK_ICONS[isCorridorTask(taskId) ? CORRIDOR_TASK : taskId]
 }
 
 // Ticket icons that look alike get a glow to tell them apart at a glance:

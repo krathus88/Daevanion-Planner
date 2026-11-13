@@ -51,6 +51,11 @@ type Character struct {
 	// entrances it used by entering (the game clears them 130 s later).
 	Zone    int
 	Entered map[uint32]bool
+	// Corridor entrances open, by counter id, once known (CorridorsAt): the
+	// game opens them on entering the Abyss. Login's counter list has them
+	// all closed, used or not, so a list with none open says nothing.
+	Corridors   map[uint32]bool
+	CorridorsAt time.Time
 }
 
 // Progress counters that changed this long before they were read are left
@@ -273,6 +278,16 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 		return func(c *Character, now time.Time) {
 			c.Counters = counters
 			c.CountersAt = now
+			open := make(map[uint32]bool)
+			for id, counter := range counters {
+				if game.IsCorridorCounter(id) && counter.Open {
+					open[id] = true
+				}
+			}
+			if len(open) > 0 {
+				c.Corridors = open
+				c.CorridorsAt = now
+			}
 		}
 	case game.TypeCounterChange:
 		counter, ok := game.ParseCounterChange(m.Body)
@@ -292,6 +307,13 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 					c.Entered = copyMap(c.Entered)
 					delete(c.Entered, counter.ID)
 				}
+				c.Corridors = copyMap(c.Corridors)
+				if counter.Open {
+					c.Corridors[counter.ID] = true
+				} else {
+					delete(c.Corridors, counter.ID)
+				}
+				c.CorridorsAt = now
 			}
 			if c.Counters == nil {
 				return
@@ -569,7 +591,8 @@ type Snapshot struct {
 	Arena   map[string][2]uint64 `json:"arena,omitempty"`
 	ArenaAt int64                `json:"arenaAt,omitempty"`
 	// Abyss corridor entrances the character may still use (counter ids),
-	// read with the counters (corridorsAt): none left is an empty list.
+	// as known at corridorsAt (missing until the character entered the
+	// Abyss this run): none left is an empty list.
 	Corridors   []string `json:"corridors,omitempty"`
 	CorridorsAt int64    `json:"corridorsAt,omitempty"`
 	// Artifact id → faction holding it (0 none, 1 Elyos, 2 Asmodians), and
@@ -616,6 +639,8 @@ func (s Snapshot) Keep(previous Snapshot) Snapshot {
 	}
 	if s.Counters == nil {
 		s.Counters, s.CountersAt = previous.Counters, previous.CountersAt
+	}
+	if s.CorridorsAt == 0 {
 		s.Corridors, s.CorridorsAt = previous.Corridors, previous.CorridorsAt
 	}
 	if s.Artifacts == nil {
@@ -703,13 +728,16 @@ func (c *Character) Snapshot() Snapshot {
 			}
 		}
 		s.CountersAt = millis(c.CountersAt)
-		for id, counter := range c.Counters {
-			if game.IsCorridorCounter(id) && counter.Open && !c.Entered[id] {
+	}
+
+	if !c.CorridorsAt.IsZero() {
+		for id := range c.Corridors {
+			if !c.Entered[id] {
 				s.Corridors = append(s.Corridors, strconv.FormatUint(uint64(id), 10))
 			}
 		}
 		sort.Strings(s.Corridors)
-		s.CorridorsAt = s.CountersAt
+		s.CorridorsAt = millis(c.CorridorsAt)
 	}
 
 	if c.Artifacts != nil {

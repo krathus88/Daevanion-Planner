@@ -8,78 +8,124 @@ import {
 } from "./corridors"
 
 const hold = { period: 7, at: 1000, artifacts: ["1001", "1002"] }
+const readAfter = { period: 7, at: 2000, artifacts: ["1002"] }
 
 describe("getCorridorView", () => {
-    it("names the corridors held this siege", () => {
-        expect(getCorridorView(hold, 7, false)).toEqual({
-            cap: 2,
-            subtitle: "Reshanta's Root · Sulfur Tree Island",
+    it("lists the corridors held this siege", () => {
+        expect(getCorridorView(hold, readAfter, 7, true)).toEqual({
+            artifacts: ["1001", "1002"],
+            unknown: false,
         })
-        expect(getCorridorView({ ...hold, artifacts: [] }, 7, true)).toEqual({
-            cap: 0,
-            subtitle: "None held",
+        expect(
+            getCorridorView({ ...hold, artifacts: [] }, undefined, 7, true),
+        ).toEqual({ artifacts: [], unknown: false })
+    })
+
+    // Login sends no entrances: the game sends them only in the Abyss.
+    it("is unknown until the entrances are read after the siege", () => {
+        expect(getCorridorView(hold, undefined, 7, true)).toEqual({
+            artifacts: ["1001", "1002"],
+            unknown: true,
+        })
+        expect(
+            getCorridorView(hold, { ...readAfter, at: 500 }, 7, true)?.unknown,
+        ).toBe(true)
+    })
+
+    it("knows nothing since the siege without its holdings", () => {
+        expect(getCorridorView(hold, readAfter, 8, true)).toEqual({
+            artifacts: null,
+            unknown: true,
+        })
+        expect(getCorridorView(undefined, undefined, 8, true)).toEqual({
+            artifacts: null,
+            unknown: true,
         })
     })
 
-    it("assumes none since the siege while the companion runs", () => {
-        expect(getCorridorView(hold, 8, true)?.cap).toBe(0)
-        expect(getCorridorView(undefined, 8, true)?.cap).toBe(0)
+    it("never warns without the companion", () => {
+        expect(getCorridorView(hold, undefined, 7, false)).toEqual({
+            artifacts: ["1001", "1002"],
+            unknown: false,
+        })
     })
 
     it("leaves the task as set up without the companion", () => {
-        expect(getCorridorView(hold, 8, false)).toBeNull()
-        expect(getCorridorView(undefined, 8, false)).toBeNull()
+        expect(getCorridorView(hold, undefined, 8, false)).toBeNull()
+        expect(getCorridorView(undefined, undefined, 8, false)).toBeNull()
     })
 })
 
 describe("withCorridorView", () => {
-    it("changes only the Corridors task", () => {
-        const groups: TaskGroup[] = [
-            {
-                reset: "siege",
-                label: "Artifact Siege",
-                tasks: [
-                    {
-                        id: "corridors",
-                        name: "Corridors",
-                        subtitle: "Artifact Siege",
-                        reset: "siege",
-                        cap: 1,
-                        shared: false,
-                    },
-                ],
-            },
-            {
-                reset: "daily",
-                label: "Daily",
-                tasks: [
-                    {
-                        id: "x",
-                        name: "X",
-                        reset: "daily",
-                        cap: 1,
-                        shared: false,
-                    },
-                ],
-            },
-        ]
-        const next = withCorridorView(groups, { cap: 2, subtitle: "Both" })
+    const groups: TaskGroup[] = [
+        {
+            reset: "siege",
+            label: "Artifact Siege",
+            tasks: [
+                {
+                    id: "corridors",
+                    name: "Corridors",
+                    subtitle: "Artifact Siege",
+                    reset: "siege",
+                    cap: 1,
+                    shared: false,
+                },
+            ],
+        },
+        {
+            reset: "daily",
+            label: "Daily",
+            tasks: [
+                {
+                    id: "x",
+                    name: "X",
+                    reset: "daily",
+                    cap: 1,
+                    shared: false,
+                },
+            ],
+        },
+    ]
 
-        expect(next[0].tasks[0]).toMatchObject({ cap: 2, subtitle: "Both" })
+    it("gives each held corridor its own 0/1 row", () => {
+        const next = withCorridorView(groups, ["1001", "1002"])
+
+        expect(next[0].tasks).toEqual([
+            expect.objectContaining({
+                id: "corridors:1001",
+                name: "Reshanta's Root",
+                subtitle: "Abyss corridor",
+                reset: "siege",
+                cap: 1,
+            }),
+            expect.objectContaining({
+                id: "corridors:1002",
+                name: "Sulfur Tree Island",
+                cap: 1,
+            }),
+        ])
         expect(next[1]).toBe(groups[1])
+    })
+
+    it("says when none is held", () => {
+        expect(withCorridorView(groups, [])[0].tasks).toEqual([
+            expect.objectContaining({
+                id: "corridors",
+                cap: 0,
+                subtitle: "None held",
+            }),
+        ])
+    })
+
+    it("leaves the task as set up while the holdings are unknown", () => {
         expect(withCorridorView(groups, null)).toBe(groups)
+        expect(withCorridorView(groups, undefined)).toBe(groups)
     })
 })
 
 describe("getCorridorsUsed", () => {
-    it("counts held corridors no longer open", () => {
-        expect(
-            getCorridorsUsed(hold, {
-                period: 7,
-                at: 2000,
-                artifacts: ["1002"],
-            }),
-        ).toBe(1)
+    it("lists held corridors no longer open", () => {
+        expect(getCorridorsUsed(hold, readAfter)).toEqual(["1001"])
     })
 
     it("is unknown without entrances read since the siege", () => {

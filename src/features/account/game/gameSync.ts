@@ -25,15 +25,16 @@ import {
 // old snapshot never overwrites what was edited after it. Bump the version
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
-// corridors), so
+// corridors; v7: one row per corridor), so
 // each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v6"
+const APPLIED_KEY = "daevanion:game-applied:v7"
 const OLD_APPLIED_KEYS = [
     "daevanion:game-applied",
     "daevanion:game-applied:v2",
     "daevanion:game-applied:v3",
     "daevanion:game-applied:v4",
     "daevanion:game-applied:v5",
+    "daevanion:game-applied:v6",
 ]
 
 type StoredSnapshot = {

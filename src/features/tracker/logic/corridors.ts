@@ -1,12 +1,20 @@
-import { CORRIDOR_TASK, CORRIDORS } from "@account/game/gameIds"
+import {
+    CORRIDOR_TASK,
+    CORRIDORS,
+    getCorridorTaskId,
+} from "@account/game/gameIds"
 import type { TaskGroup } from "@tracker/logic/trackerCards"
 import type { CorridorRecord, TrackerTask } from "@tracker/types"
 
-// How a character's Corridors task looks this siege period: one entrance per
-// corridor its server's faction holds, named on the task's second line.
+// How a character's Corridors task looks this siege period.
 export type CorridorView = {
-    cap: number
-    subtitle: string
+    // The corridors its server's faction holds (artifact ids), each its own
+    // 0/1 row; null while none are known since the siege (the task stays as
+    // set up).
+    artifacts: readonly string[] | null
+    // While the companion runs: its entrances weren't read since the siege
+    // (the game sends them on entering the Abyss), so the rows warn.
+    unknown: boolean
 }
 
 export const getCorridorName = (artifact: string) => {
@@ -15,37 +23,54 @@ export const getCorridorName = (artifact: string) => {
     return corridor?.name ?? `Corridor ${artifact}`
 }
 
-// Holdings sent since this period's siege set the task. Without them, while
-// the companion runs, none are assumed until the game says (user's rule):
-// a siege can be lost. Otherwise the task stays as the user set it up.
+// Holdings sent since this period's siege set the rows. Without them, while
+// the companion runs, nothing is known until the game says (a siege can be
+// lost). Otherwise the task stays as the user set it up.
 export const getCorridorView = (
     hold: CorridorRecord | undefined,
+    left: CorridorRecord | undefined,
     siegePeriod: number,
     companionRunning: boolean,
 ): CorridorView | null => {
-    if (hold !== undefined && hold.period === siegePeriod) {
+    const held = hold !== undefined && hold.period === siegePeriod
+
+    if (!held && !companionRunning) {
+        return null
+    }
+
+    return {
+        artifacts: held ? hold.artifacts : null,
+        unknown:
+            companionRunning &&
+            (!held ||
+                (hold.artifacts.length > 0 &&
+                    getCorridorsUsed(hold, left) === null)),
+    }
+}
+
+// The rows a Corridors task shows for a view: one per held corridor.
+const getCorridorRows = (task: TrackerTask, artifacts: readonly string[]) => {
+    if (artifacts.length === 0) {
+        return [{ ...task, cap: 0, subtitle: "None held" }]
+    }
+
+    return artifacts.map((artifact): TrackerTask => {
         return {
-            cap: hold.artifacts.length,
-            subtitle:
-                hold.artifacts.length > 0
-                    ? hold.artifacts.map(getCorridorName).join(" · ")
-                    : "None held",
+            ...task,
+            id: getCorridorTaskId(artifact),
+            name: getCorridorName(artifact),
+            subtitle: "Abyss corridor",
+            cap: 1,
         }
-    }
-
-    if (companionRunning) {
-        return { cap: 0, subtitle: "None known since the siege" }
-    }
-
-    return null
+    })
 }
 
 // The groups with the Corridors task shown as the view says.
 export const withCorridorView = (
     groups: TaskGroup[],
-    view: CorridorView | null,
+    artifacts: readonly string[] | null | undefined,
 ) => {
-    if (view === null) {
+    if (artifacts === null || artifacts === undefined) {
         return groups
     }
 
@@ -56,17 +81,17 @@ export const withCorridorView = (
 
         return {
             ...group,
-            tasks: group.tasks.map((task): TrackerTask => {
+            tasks: group.tasks.flatMap((task) => {
                 return task.id === CORRIDOR_TASK
-                    ? { ...task, cap: view.cap, subtitle: view.subtitle }
-                    : task
+                    ? getCorridorRows(task, artifacts)
+                    : [task]
             }),
         }
     })
 }
 
-// Entrances used: held corridors the character no longer has, once its
-// entrances were read after that siege ended. Null while unknown.
+// The held corridors whose entrance is used: no longer open, once the
+// character's entrances were read after that siege ended. Null while unknown.
 export const getCorridorsUsed = (
     hold: CorridorRecord | undefined,
     left: CorridorRecord | undefined,
@@ -77,5 +102,5 @@ export const getCorridorsUsed = (
 
     return hold.artifacts.filter((artifact) => {
         return !left.artifacts.includes(artifact)
-    }).length
+    })
 }

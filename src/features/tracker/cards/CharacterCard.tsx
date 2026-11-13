@@ -3,7 +3,10 @@ import { GlowDot } from "@common/GlowDot"
 import { CLASS_ICONS, CLASS_NAMES } from "@config/classPresets/classInfo"
 import { CUBE_KEYS_LOCK, ENERGY_LOCK } from "@account/game/companionLocks"
 import { getServer } from "@timers/config/servers"
-import { useIsLocked } from "@tracker/context/companionLocks"
+import {
+    CorridorsUnknownContext,
+    useIsLocked,
+} from "@tracker/context/companionLocks"
 import { getCharacterLink } from "@tracker/logic/characterLink"
 import { getCharacterName } from "@tracker/logic/characterName"
 import { withCorridorView } from "@tracker/logic/corridors"
@@ -54,10 +57,10 @@ type CharacterCardProps = {
     ignored?: string[]
     // The companion app says this character is being played.
     playing?: boolean
-    // How its Corridors task looks this siege (getCorridorView), as plain
-    // values so the memo holds; missing: as set up.
-    corridorCap?: number
-    corridorSubtitle?: string
+    // How its Corridors task looks this siege (getCorridorView): the held
+    // corridors (missing: as set up), and whether its entrances are unknown.
+    corridors?: readonly string[] | null
+    corridorsUnknown?: boolean
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
@@ -84,8 +87,8 @@ export const CharacterCard = memo(function CharacterCard({
     goalsOpen,
     ignored,
     playing,
-    corridorCap,
-    corridorSubtitle,
+    corridors,
+    corridorsUnknown = false,
     periods,
     onCountChange,
     onEntriesChange,
@@ -100,12 +103,7 @@ export const CharacterCard = memo(function CharacterCard({
     const energyLocked = useIsLocked(character.id, ENERGY_LOCK)
     const keysLocked = useIsLocked(character.id, CUBE_KEYS_LOCK)
     const energyCap = getEnergyCap(membership)
-    const groups = withCorridorView(
-        taskGroups,
-        corridorCap === undefined
-            ? null
-            : { cap: corridorCap, subtitle: corridorSubtitle ?? "" },
-    )
+    const groups = withCorridorView(taskGroups, corridors)
 
     const handleEnergyChange = (left: EnergyLeft) => {
         onEnergyChange(character.id, periods.energy, left)
@@ -120,105 +118,111 @@ export const CharacterCard = memo(function CharacterCard({
     }
 
     return (
-        <TaskCard
-            title={name}
-            owner={character.id}
-            ownerLabel={name}
-            taskGroups={groups}
-            periods={periods}
-            counts={counts}
-            entries={entries}
-            ignored={ignored}
-            minimized={minimized}
-            goalsOpen={goalsOpen}
-            titleHref={getCharacterLink(character) ?? undefined}
-            // Odyle Energy and Hidden Cube keys on one line, then the
-            // note's short line, above the task boxes.
-            top={
-                <Flex flexDir="column" gap="2">
-                    <Flex
-                        px="1"
-                        flexWrap="wrap"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        columnGap="4"
-                        rowGap="1"
-                    >
-                        <OdyleEnergyRow
-                            left={readEnergy(energy, periods.energy, energyCap)}
-                            cap={energyCap}
-                            cubeCost={getCubeCost(membership)}
-                            ownerLabel={name}
-                            locked={energyLocked}
-                            onChange={handleEnergyChange}
-                        />
-
-                        <HiddenCubeKeysRow
-                            count={cubeKeys}
-                            ownerLabel={name}
-                            locked={keysLocked}
-                            onChange={handleCubeKeysChange}
-                        />
-                    </Flex>
-
-                    {note?.short && (
-                        // On the task boxes' background, without their border.
-                        <Text
-                            px="3"
-                            py="1.5"
-                            bg="app.subcard"
-                            borderRadius="md"
-                            textStyle="hint"
-                            whiteSpace="pre-wrap"
+        <CorridorsUnknownContext value={corridorsUnknown}>
+            <TaskCard
+                title={name}
+                owner={character.id}
+                ownerLabel={name}
+                taskGroups={groups}
+                periods={periods}
+                counts={counts}
+                entries={entries}
+                ignored={ignored}
+                minimized={minimized}
+                goalsOpen={goalsOpen}
+                titleHref={getCharacterLink(character) ?? undefined}
+                // Odyle Energy and Hidden Cube keys on one line, then the
+                // note's short line, above the task boxes.
+                top={
+                    <Flex flexDir="column" gap="2">
+                        <Flex
+                            px="1"
+                            flexWrap="wrap"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            columnGap="4"
+                            rowGap="1"
                         >
-                            {note.short}
-                        </Text>
-                    )}
-                </Flex>
-            }
-            titleAction={
-                <NoteButton
-                    ownerLabel={name}
-                    note={note}
-                    onSave={handleNoteSave}
-                />
-            }
-            icon={
-                <Box pos="relative" flexShrink="0">
-                    <Image
-                        src={CLASS_ICONS[character.classId]}
-                        boxSize="8"
-                        objectFit="contain"
-                        alt=""
-                        aria-hidden="true"
-                    />
+                            <OdyleEnergyRow
+                                left={readEnergy(
+                                    energy,
+                                    periods.energy,
+                                    energyCap,
+                                )}
+                                cap={energyCap}
+                                cubeCost={getCubeCost(membership)}
+                                ownerLabel={name}
+                                locked={energyLocked}
+                                onChange={handleEnergyChange}
+                            />
 
-                    {playing && (
-                        <Tooltip content="Playing now (companion app)">
-                            <Box
-                                pos="absolute"
-                                top="-0.5"
-                                right="-0.5"
-                                aria-label="Playing now"
-                                role="img"
+                            <HiddenCubeKeysRow
+                                count={cubeKeys}
+                                ownerLabel={name}
+                                locked={keysLocked}
+                                onChange={handleCubeKeysChange}
+                            />
+                        </Flex>
+
+                        {note?.short && (
+                            // On the task boxes' background, without their border.
+                            <Text
+                                px="3"
+                                py="1.5"
+                                bg="app.subcard"
+                                borderRadius="md"
+                                textStyle="hint"
+                                whiteSpace="pre-wrap"
                             >
-                                <GlowDot tone="success" />
-                            </Box>
-                        </Tooltip>
-                    )}
-                </Box>
-            }
-            subtitle={
-                <Text as="span" textStyle="caption">
-                    {CLASS_NAMES[character.classId]} ·{" "}
-                    {getServer(character.server).name}
-                </Text>
-            }
-            onCountChange={onCountChange}
-            onEntriesChange={onEntriesChange}
-            onMinimizedChange={onMinimizedChange}
-            onIgnoredChange={onIgnoredChange}
-            onGoalsOpenChange={onGoalsOpenChange}
-        />
+                                {note.short}
+                            </Text>
+                        )}
+                    </Flex>
+                }
+                titleAction={
+                    <NoteButton
+                        ownerLabel={name}
+                        note={note}
+                        onSave={handleNoteSave}
+                    />
+                }
+                icon={
+                    <Box pos="relative" flexShrink="0">
+                        <Image
+                            src={CLASS_ICONS[character.classId]}
+                            boxSize="8"
+                            objectFit="contain"
+                            alt=""
+                            aria-hidden="true"
+                        />
+
+                        {playing && (
+                            <Tooltip content="Playing now (companion app)">
+                                <Box
+                                    pos="absolute"
+                                    top="-0.5"
+                                    right="-0.5"
+                                    aria-label="Playing now"
+                                    role="img"
+                                >
+                                    <GlowDot tone="success" />
+                                </Box>
+                            </Tooltip>
+                        )}
+                    </Box>
+                }
+                subtitle={
+                    <Text as="span" textStyle="caption">
+                        {CLASS_NAMES[character.classId]} ·{" "}
+                        {getServer(character.server).name}
+                    </Text>
+                }
+                onCountChange={onCountChange}
+                onEntriesChange={onEntriesChange}
+                onMinimizedChange={onMinimizedChange}
+                onIgnoredChange={onIgnoredChange}
+                onGoalsOpenChange={onGoalsOpenChange}
+            />
+        </CorridorsUnknownContext>
     )
 })

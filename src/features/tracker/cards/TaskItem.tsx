@@ -1,12 +1,21 @@
 import { Flex } from "@chakra-ui/react"
-import { ARENA_TASKS } from "@account/game/gameIds"
+import {
+    ARENA_TASKS,
+    CORRIDOR_TASK,
+    isCorridorTask,
+} from "@account/game/gameIds"
 import { readCount } from "@tracker/logic/resetPeriods"
 import { getTaskControl, isTaskDone } from "@tracker/logic/trackerCards"
 import { readEntries, type EntriesLeft } from "@tracker/logic/taskEntries"
 import { getTaskTitle } from "@tracker/logic/taskTitle"
-import { useArenaUnknown, useIsLocked } from "@tracker/context/companionLocks"
+import {
+    useArenaUnknown,
+    useCorridorsUnknown,
+    useIsLocked,
+} from "@tracker/context/companionLocks"
 import type { TaskCount, TaskEntries, TrackerTask } from "@tracker/types"
 import { ArenaWeekWarning } from "./ArenaWeekWarning"
+import { CorridorsWarning } from "./CorridorsWarning"
 import { LockedTaskCount } from "./LockedTaskCount"
 import { IgnoreToggle } from "./IgnoreToggle"
 import type {
@@ -59,7 +68,12 @@ export const TaskItem = ({
         onIgnoredChange(owner, task.id, next)
     }
 
-    const locked = useIsLocked(owner, task.id)
+    const corridor = isCorridorTask(task.id)
+    const corridorUnknown = useCorridorsUnknown() && corridor
+    // Corridor rows share the Corridors task's lock.
+    const locked =
+        useIsLocked(owner, corridor ? CORRIDOR_TASK : task.id) &&
+        !corridorUnknown
     const arena = useArenaUnknown()
     const arenaUnknown =
         arena.owners.has(owner) && ARENA_TASKS[task.id] !== undefined
@@ -121,12 +135,18 @@ export const TaskItem = ({
                     done={isDone}
                     ignored={ignored}
                     warning={
-                        arenaUnknown && (
+                        (arenaUnknown && (
                             <ArenaWeekWarning
                                 label={label}
                                 onConfirm={() => arena.onConfirm(owner, period)}
                             />
-                        )
+                        )) ||
+                        (corridorUnknown && (
+                            <CorridorsWarning
+                                label={label}
+                                ownerLabel={ownerLabel}
+                            />
+                        ))
                     }
                 />
 

@@ -502,6 +502,38 @@ func TestCorridors(t *testing.T) {
 	}
 }
 
+// Login's counter list has every entrance closed, used or not (Krathus's
+// recording, 2026-11-13 16:54): unknown until the Abyss opens them.
+func TestCorridorsUnknownAtLogin(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	tr.Handle("a", counters(corridor(10000001, false), corridor(10000002, false)), now)
+	if got := tr.All()[0]; got.Corridors != nil || got.CorridorsAt != 0 {
+		t.Fatalf("at login %+v at %d", got.Corridors, got.CorridorsAt)
+	}
+	// Entering the Abyss opens the held ones.
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000001, true))), now)
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000002, true))), now)
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000003, false))), now)
+	if got := tr.All()[0]; len(got.Corridors) != 2 || got.CorridorsAt == 0 {
+		t.Fatalf("in the Abyss %+v", got.Corridors)
+	}
+	// Logging in again sends them all closed: what the Abyss said stays.
+	later := now.Add(time.Minute)
+	tr.Handle("a", counters(corridor(10000001, false), corridor(10000002, false)), later)
+	if got := tr.All()[0]; len(got.Corridors) != 2 || got.CorridorsAt != now.UnixMilli() {
+		t.Fatalf("after logging in again %+v at %d", got.Corridors, got.CorridorsAt)
+	}
+}
+
+func TestKeepCorridors(t *testing.T) {
+	previous := Snapshot{Version: SnapshotVersion, Corridors: []string{"10000001"}, CorridorsAt: 5}
+	got := Snapshot{Version: SnapshotVersion, Counters: map[string][2]uint64{}, CountersAt: 9}.Keep(previous)
+	if len(got.Corridors) != 1 || got.CorridorsAt != 5 {
+		t.Fatalf("kept %+v at %d", got.Corridors, got.CorridorsAt)
+	}
+}
+
 func TestArtifacts(t *testing.T) {
 	tr := NewTracker()
 	tr.Handle("a", character("Testchar", 30), now)

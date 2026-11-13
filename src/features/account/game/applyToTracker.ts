@@ -20,6 +20,7 @@ import {
     CHARACTER_STORAGE,
     CORRIDOR_TASK,
     CORRIDORS,
+    getCorridorTaskId,
     CRAFT_TASKS,
     DUTY_TASK,
     EMERGENCY_SUPPLY,
@@ -347,8 +348,8 @@ const applyArena = (
 // Abyss corridors. The corridors a faction holds after a siege are its
 // server's (any character there can tell); each character then has one
 // entrance per corridor, used on entering (the companion drops it then). The
-// task counts the used ones, for every character on the server whose
-// entrances were read since the siege.
+// task has a 0/1 row per held corridor (getCorridorTaskId), set for every
+// character on the server whose entrances were read since the siege.
 const applyCorridors = (
     data: TrackerData,
     character: TrackerCharacter,
@@ -412,13 +413,19 @@ const applyCorridors = (
             left[other.id],
         )
 
-        if (used !== null) {
+        // Each held corridor is its own row, done once its entrance is used.
+        for (const artifact of used === null ? [] : hold.artifacts) {
             next = {
                 ...next,
-                counts: setOwnerItem(next.counts, other.id, task.id, {
-                    period: hold.period,
-                    count: used,
-                }),
+                counts: setOwnerItem(
+                    next.counts,
+                    other.id,
+                    getCorridorTaskId(artifact),
+                    {
+                        period: hold.period,
+                        count: used?.includes(artifact) ? 1 : 0,
+                    },
+                ),
             }
         }
     }
