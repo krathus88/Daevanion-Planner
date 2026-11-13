@@ -1,11 +1,11 @@
 import { Button, Flex, Input, Text } from "@chakra-ui/react"
+import { ClassPicker } from "@common/ClassPicker"
 import { DEFAULT_CLASS_ID, type ClassId } from "@config/classPresets/classInfo"
 import { ServerSelect } from "@timers/bosses/ServerSelect"
 import { useTimerSettings } from "@timers/hooks/useTimerSettings"
 import type { CharacterFields } from "@tracker/logic/trackerEdits"
 import { useState, type ChangeEvent, type FormEvent } from "react"
 import { LuPlus } from "react-icons/lu"
-import { CharacterClassSelect } from "./CharacterClassSelect"
 
 type AddCharacterFormProps = {
     onCreate: (fields: CharacterFields) => void
@@ -47,6 +47,13 @@ export const AddCharacterForm = ({ onCreate }: AddCharacterFormProps) => {
             <Text textStyle="label">Add a character</Text>
 
             <Flex flexWrap="wrap" alignItems="center" gap="2">
+                <ClassPicker
+                    value={classId}
+                    portalled={false}
+                    label="New character class"
+                    onChange={setClassId}
+                />
+
                 <Input
                     size="sm"
                     value={name}
@@ -56,12 +63,6 @@ export const AddCharacterForm = ({ onCreate }: AddCharacterFormProps) => {
                     placeholder="Name"
                     aria-label="New character name"
                     onChange={handleNameChange}
-                />
-
-                <CharacterClassSelect
-                    value={classId}
-                    label="New character class"
-                    onChange={setClassId}
                 />
 
                 <ServerSelect

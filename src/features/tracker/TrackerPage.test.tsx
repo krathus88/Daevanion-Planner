@@ -5,7 +5,7 @@ import {
     within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { STARTER_TASKS, STARTS_IGNORED } from "./config/starterTasks"
 import { STARTER_IDS } from "./logic/presetTasks"
@@ -51,6 +51,8 @@ const withCharacters = () => {
         notes: {},
         cubeKeys: {},
         arena: {},
+        corridorHolds: {},
+        corridorsLeft: {},
         declined: [],
         membership: true,
     })
@@ -61,6 +63,19 @@ afterEach(() => {
 })
 
 describe("TrackerPage", () => {
+    // jsdom lacks what Chakra's Select uses to place and scroll its list.
+    beforeAll(() => {
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                observe() {}
+                unobserve() {}
+                disconnect() {}
+            },
+        )
+        Element.prototype.scrollTo = () => {}
+    })
+
     it("asks for a character first", async () => {
         renderWithChakra(<TrackerPage />)
 
@@ -74,9 +89,13 @@ describe("TrackerPage", () => {
             within(dialog).getByLabelText("New character name"),
             "Aria",
         )
-        await userEvent.selectOptions(
-            within(dialog).getByLabelText("New character class"),
-            "Ranger",
+        await userEvent.click(
+            within(dialog).getByRole("combobox", {
+                name: "New character class",
+            }),
+        )
+        await userEvent.click(
+            within(dialog).getByRole("option", { name: "Ranger" }),
         )
         await userEvent.selectOptions(
             within(dialog).getByLabelText("New character server"),

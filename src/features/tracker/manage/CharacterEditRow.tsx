@@ -1,15 +1,14 @@
 import { Input } from "@chakra-ui/react"
+import { ClassPicker } from "@common/ClassPicker"
 import { HOVER_REVEAL } from "@common/hoverReveal"
 import { ConfirmButton } from "@common/ConfirmButton"
-import { IconImage } from "@common/IconImage"
-import { CLASS_ICONS, type ClassId } from "@config/classPresets/classInfo"
+import type { ClassId } from "@config/classPresets/classInfo"
 import { ServerSelect } from "@timers/bosses/ServerSelect"
 import { getCharacterName } from "@tracker/logic/characterName"
 import type { CharacterFields } from "@tracker/logic/trackerEdits"
 import type { TrackerCharacter } from "@tracker/types"
 import type { ChangeEvent } from "react"
 import { LuTrash2 } from "react-icons/lu"
-import { CharacterClassSelect } from "./CharacterClassSelect"
 import { SortableRow } from "./SortableRow"
 
 type CharacterEditRowProps = {
@@ -45,7 +44,12 @@ export const CharacterEditRow = ({
 
     return (
         <SortableRow id={character.id} index={index} label={name}>
-            <IconImage icon={CLASS_ICONS[character.classId]} />
+            <ClassPicker
+                value={character.classId}
+                portalled={false}
+                label={`Class of ${name}`}
+                onChange={handleClassChange}
+            />
 
             <Input
                 size="sm"
@@ -55,12 +59,6 @@ export const CharacterEditRow = ({
                 maxLength={40}
                 aria-label={`Name of ${name}`}
                 onChange={handleNameChange}
-            />
-
-            <CharacterClassSelect
-                value={character.classId}
-                label={`Class of ${name}`}
-                onChange={handleClassChange}
             />
 
             <ServerSelect

@@ -29,6 +29,7 @@ export const TrackerPage = () => {
         energy,
         cubeKeys,
         arena,
+        corridorHolds,
         declined,
         notes,
         membership,
@@ -161,6 +162,8 @@ export const TrackerPage = () => {
                                 minimized={minimized}
                                 goalsOpen={goalsOpen}
                                 ignored={ignored}
+                                corridorHolds={corridorHolds}
+                                companionRunning={companion.state === "running"}
                                 periods={periods}
                                 playingId={findPlayingId(companion, characters)}
                                 onCountChange={changeCount}

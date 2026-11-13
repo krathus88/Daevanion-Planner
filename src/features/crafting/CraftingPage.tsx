@@ -11,7 +11,11 @@ import { useCraftingSettings } from "@crafting/hooks/useCraftingSettings"
 import { useGameCharacters } from "@crafting/hooks/useGameCharacters"
 import { useMarketPrices } from "@crafting/hooks/useMarketPrices"
 import { useSharedPrices } from "@crafting/hooks/useSharedPrices"
-import { getPlanItemIds } from "@crafting/logic/planItems"
+import {
+    getPlanItemIds,
+    getTreeItemIds,
+    pickOwned,
+} from "@crafting/logic/planItems"
 import { pickPrices } from "@crafting/logic/prices"
 import {
     filterRecipeEntries,
@@ -63,6 +67,10 @@ export const CraftingPage = () => {
     const playing = getPlayingCharacter(companion)
     const playingName = playing?.name ?? null
     const playingServer = playing?.server ?? null
+    const treeIds =
+        search.item !== undefined && data.recipes.has(search.item)
+            ? getTreeItemIds(data, search.item)
+            : []
     // Aion2Market's prices for the open item's whole recipe tree.
     const marketPrices = useMarketPrices(
         search.item !== undefined && data.recipes.has(search.item)
@@ -134,7 +142,9 @@ export const CraftingPage = () => {
     const recipe =
         search.item === undefined ? undefined : data.recipes.get(search.item)
     const planSettings: PlanSettings = {
-        owned: settings.owned,
+        // Only the open tree's bag counts: picking up anything else leaves
+        // the plan as it is.
+        owned: pickOwned(settings.owned, treeIds),
         prices: pickPrices(settings.prices[server.id], sharedPrices),
         marketPrices: marketPrices.prices,
         pendingPrices: marketPrices.pending,

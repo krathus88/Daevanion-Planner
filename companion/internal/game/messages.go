@@ -28,6 +28,12 @@ const (
 	// Entry and Odyle Energy counters, then changes to one.
 	TypeCounters      = "0b61"
 	TypeCounterChange = "0c61"
+	// Zone change: u32 sequence, u32 map (ParseZone).
+	TypeZone = "2136"
+	// Artifact owners (ParseArtifacts): at each Abyss load, and every ~10 s
+	// on the world server with Outer Reshanta's group too.
+	TypeArtifacts      = "05e3"
+	TypeArtifactsWorld = "07e3"
 	// Supply requests, then one card delivered.
 	TypeSupply         = "56e2"
 	TypeSupplyDelivery = "3ee2"
@@ -56,6 +62,12 @@ const (
 	// Arena stats per mode (ParseArena): lifetime wins and losses, at login
 	// and after every match (which reloads the character).
 	TypeArena = "2ae3"
+	// Rotating shops (the Black Cloud Merchant: pets, skins, Theostones): a
+	// tab's items when it's opened (ParseShopTab), then one bought
+	// (ParseShopBuy). Opening the shop itself or closing it sends nothing: the
+	// window is the client's own.
+	TypeShopTab = "9156"
+	TypeShopBuy = "9556"
 )
 
 // Profession numbers: 1 Blacksmithing, 2 Armorsmithing, 3 Handicrafting,
@@ -277,6 +289,93 @@ type Counter struct {
 	// Recharged amount and bonus (tickets, extra energy).
 	Value uint64
 	Bonus uint64
+	// Its first field is set (flag 1). An Abyss corridor's entrance
+	// (CorridorCounters) is open while it is (u64 130000 so far).
+	Open bool
+}
+
+// CorridorCounters are the Abyss corridor entrances' counters, one per
+// corridor (10000001 Reshanta's Root, 10000002 Sulfur Tree Island, checked
+// 2026-11-13); open while the character may still enter it.
+const (
+	FirstCorridorCounter = 10000001
+	LastCorridorCounter  = 10000012
+)
+
+// IsCorridorCounter says whether a counter is a corridor entrance.
+func IsCorridorCounter(id uint32) bool {
+	return id >= FirstCorridorCounter && id <= LastCorridorCounter
+}
+
+// IsCorridorMap says whether a map is an Abyss corridor's instance
+// (503001 Sulfur Tree Island, 503003 Reshanta's Root).
+func IsCorridorMap(id int) bool {
+	return id >= 503000 && id < 504000
+}
+
+// ParseZone reads 2136, sent on each zone change: u32 sequence, u32 map
+// (20 Lower Reshanta, 1010 Verteron, 503003 a corridor), then position.
+func ParseZone(body []byte) (int, bool) {
+	r := newReader(body)
+	r.skip(4)
+	id := int(r.u32())
+	return id, r.ok && id > 0
+}
+
+// Artifacts is who holds the Abyss artifacts.
+type Artifacts struct {
+	// Artifact id (1001-1003 Lower Reshanta, 2001-2003 Outer) → faction
+	// holding it: 0 none, 1 Elyos, 2 Asmodians.
+	Owners map[int]int
+	// When the last Artifact Siege ended (ms); 0 when not sent.
+	SiegeEnd int64
+}
+
+// ParseArtifacts reads the artifact owners from 05e3 and 07e3, by shape: both
+// end in u8 n, then n 17-byte entries (u32 artifact, u32 object, u8 faction,
+// 8 bytes), and Lower Reshanta's group (1001) is followed by the last
+// siege's end and the next siege's start (u64 ms each). 05e3 reads u8 groups,
+// u32 group, u8 3, u8 1, the two times, then the entries; 07e3's header
+// isn't decoded (2026-11-13, Kryx in and out of Lower Reshanta).
+func ParseArtifacts(body []byte) (Artifacts, bool) {
+	const entry = 17
+	start := -1
+	for n := 1; n <= 16; n++ {
+		at := len(body) - 1 - n*entry
+		if at >= 0 && int(body[at]) == n {
+			start = at + 1
+			break
+		}
+	}
+	if start < 0 {
+		return Artifacts{}, false
+	}
+	out := Artifacts{Owners: map[int]int{}}
+	for at := start; at+entry <= len(body); at += entry {
+		r := newReader(body[at : at+entry])
+		id := int(r.u32())
+		r.skip(4)
+		faction := int(r.u8())
+		if id < 1000 || id > 9999 || faction > 2 {
+			return Artifacts{}, false
+		}
+		out.Owners[id] = faction
+	}
+	// Group 1001, then within a few bytes the siege end.
+	for at := 0; at+4 <= start; at++ {
+		if body[at] != 0xe9 || body[at+1] != 0x03 || body[at+2] != 0 || body[at+3] != 0 {
+			continue
+		}
+		for skip := 4; skip <= 8 && at+skip+8 <= start; skip++ {
+			r := newReader(body[at+skip : at+skip+8])
+			if v := int64(r.u64()); v > 1_700_000_000_000 && v < 2_100_000_000_000 {
+				out.SiegeEnd = v
+				break
+			}
+		}
+		break
+	}
+	return out, true
 }
 
 // ParseCounters reads 0b61: varint n, then n counters.
@@ -527,7 +626,7 @@ func (r *reader) counter() (Counter, bool) {
 		r.ok = false
 		return Counter{}, false
 	}
-	counter := Counter{ID: r.u32()}
+	counter := Counter{ID: r.u32(), Open: flags&1 != 0}
 	if flags&1 != 0 {
 		r.u64()
 	}
@@ -734,4 +833,64 @@ func ParseArena(body []byte) (map[int]ArenaMode, bool) {
 		return nil, false
 	}
 	return modes, true
+}
+
+// ShopItem is one item on sale in a rotating shop's tab.
+type ShopItem struct {
+	// The tab's number for it; a purchase names it.
+	Entry uint32
+	Item  int
+	// 0-3: 10, 20, 30 or 50% off.
+	Discount int
+	// Bought already (the game's Sold Out banner).
+	SoldOut bool
+}
+
+// ShopTab is a rotating shop's open tab (101 Special, 104 Pets as seen at
+// the Black Cloud Merchant).
+type ShopTab struct {
+	ID    int
+	Items []ShopItem
+}
+
+// ParseShopTab reads 9156: u8 tab, u8 count, then per item u32 entry, u32
+// item, u64 count, u8 discount, u8 (0x5d so far), u64 price, u64 price after
+// the discount, and after items 1, 5, 9 … one more byte: 2 bits for each of
+// that item and the next three, low bits first, 01 on sale, 11 sold out
+// (Congealed Drana and Basilisk went 55 → 57 once bought, recordings
+// 2026-11-13 13:14 and 13:57), then 12 bytes (a time) not read. Checked on
+// Kryx's Special and Pets tabs, 2026-11-13.
+func ParseShopTab(body []byte) (ShopTab, bool) {
+	r := newReader(body)
+	tab := ShopTab{ID: int(r.u8())}
+	count := int(r.u8())
+	if !r.ok || count == 0 || count > 64 {
+		return ShopTab{}, false
+	}
+	var flags byte
+	for k := 0; k < count; k++ {
+		entry := r.u32()
+		item := int(r.u32())
+		r.skip(8)
+		discount := int(r.u8())
+		r.skip(17)
+		if k%4 == 0 {
+			flags = r.u8()
+		}
+		if !r.ok || item < 100000000 || discount > 3 {
+			return ShopTab{}, false
+		}
+		soldOut := flags>>(2*(k%4))&2 != 0
+		tab.Items = append(tab.Items, ShopItem{Entry: entry, Item: item, Discount: discount, SoldOut: soldOut})
+	}
+	return tab, true
+}
+
+// ParseShopBuy reads 9556: u16 (0 so far), u8 tab, u32 entry bought.
+func ParseShopBuy(body []byte) (tab int, entry uint32, ok bool) {
+	r := newReader(body)
+	r.skip(2)
+	tab = int(r.u8())
+	entry = r.u32()
+	return tab, entry, r.ok
 }

@@ -37,6 +37,8 @@ const DATA: TrackerData = {
     notes: { a: { short: "Alt for keys", long: "" } },
     cubeKeys: {},
     arena: {},
+    corridorHolds: {},
+    corridorsLeft: {},
     declined: [],
     membership: false,
 }
@@ -296,6 +298,8 @@ describe("readTrackerData", () => {
             notes: {},
             cubeKeys: {},
             arena: {},
+            corridorHolds: {},
+            corridorsLeft: {},
             declined: [],
             membership: true,
         })
@@ -330,12 +334,32 @@ describe("writeTrackerData", () => {
     it("hands back the object it wrote, so unchanged parts keep their identity", () => {
         writeTrackerData(DATA)
 
-        const next = { ...DATA, counts: { ...DATA.counts, b: {} } }
+        const next = {
+            ...DATA,
+            counts: { ...DATA.counts, b: { t: { period: 4, count: 1 } } },
+        }
 
         writeTrackerData(next)
 
-        expect(readTrackerData()).toBe(next)
+        expect(readTrackerData().counts.b).toBe(next.counts.b)
         expect(readTrackerData().counts.a).toBe(DATA.counts.a)
+    })
+
+    it("keeps the old objects for a rebuilt copy with the same values", () => {
+        writeTrackerData(DATA)
+
+        const before = readTrackerData()
+        const rebuilt = JSON.parse(JSON.stringify(DATA)) as typeof DATA
+
+        rebuilt.counts.a.t.count = 3
+        writeTrackerData(rebuilt)
+
+        const after = readTrackerData()
+
+        expect(after).not.toBe(before)
+        expect(after.counts.a).not.toBe(before.counts.a)
+        expect(after.characters).toBe(before.characters)
+        expect(after.tasks).toBe(before.tasks)
     })
 
     it("hears other tabs", () => {

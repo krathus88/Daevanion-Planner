@@ -55,6 +55,18 @@ describe("readPetCollection", () => {
         expect(readPetCollection()).toBe(readPetCollection())
     })
 
+    it("moves placeholder pet ids to the pets' real ids", () => {
+        // Young Tog was -1025 and is 1122; Krao Seal Guardian (-1014, 1107)
+        // already has a value under its real id, which wins.
+        const stored = readStored({
+            levels: { [-1025]: 1, [-1014]: 2, 1107: 1, 1163: 3 },
+            souls: { [-1025]: 12, [-1014]: 40, 1107: 7 },
+        })
+
+        expect(stored.levels).toEqual({ 1122: 1, 1107: 1, 1163: 3 })
+        expect(stored.souls).toEqual({ 1122: 12, 1107: 7 })
+    })
+
     it("drops unknown levels", () => {
         expect(readStored({ levels: { 1: 2, 2: 9, 3: "x" } }).levels).toEqual({
             1: 2,

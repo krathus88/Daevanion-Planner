@@ -1,3 +1,4 @@
+import { getCurrentPetId } from "@pets/config/petIdChanges"
 import { isPetMapId, type PetMapId } from "@pets/config/petMaps"
 import { loadPetAtlas } from "@pets/data/petAtlas"
 import { PetsPage } from "@pets/PetsPage"
@@ -15,7 +16,9 @@ type PetsSearch = {
 export const Route = createFileRoute("/pets")({
     validateSearch: (search: Record<string, unknown>): PetsSearch => {
         return {
-            pet: Number.isInteger(search.pet) ? Number(search.pet) : undefined,
+            pet: Number.isInteger(search.pet)
+                ? getCurrentPetId(Number(search.pet))
+                : undefined,
             map: isPetMapId(search.map) ? search.map : undefined,
             spot:
                 typeof search.spot === "string" && search.spot

@@ -27,7 +27,7 @@ describe("getNewGameCharacters", () => {
     const LINES = [
         "1301:30:Kryx",
         "1301:6:Krathus",
-        "1301:14:Newbie",
+        "1301:42:Newbie",
         "1302:10:Faraway",
     ].join("\n")
 

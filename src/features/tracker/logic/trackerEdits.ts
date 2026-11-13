@@ -213,6 +213,7 @@ export const removeCharacter = (data: TrackerData, id: string): TrackerData => {
         energy: dropKey(data.energy, id),
         cubeKeys: dropKey(data.cubeKeys, id),
         arena: dropKey(data.arena, id),
+        corridorsLeft: dropKey(data.corridorsLeft, id),
         notes: dropKey(data.notes, id),
     }
 }

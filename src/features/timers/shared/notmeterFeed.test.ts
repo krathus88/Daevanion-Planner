@@ -248,7 +248,7 @@ describe("the feed store", () => {
     })
 
     it("keeps the last good reports when a read fails", async () => {
-        vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] })
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] })
         respond(FEED)
 
         const module = await load()

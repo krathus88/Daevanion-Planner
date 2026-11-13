@@ -65,6 +65,24 @@ func watchForUpdates(found chan<- foundUpdate) {
 	}()
 }
 
+// checkResult is a check the user asked for (the settings window's Check
+// now).
+type checkResult struct {
+	release update.Release
+	newer   bool
+	err     error
+}
+
+// checkForUpdate looks for a newer release on its own goroutine.
+func checkForUpdate(checked chan<- checkResult) {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		release, ok, err := update.Latest(ctx, update.ReleasesURL)
+		checked <- checkResult{release: release, newer: err == nil && ok && update.Newer(version, release.Version), err: err}
+	}()
+}
+
 // askToUpdate asks on its own goroutine: the box waits for the user.
 func askToUpdate(release update.Release, answers chan<- updateAnswer) {
 	go func() {

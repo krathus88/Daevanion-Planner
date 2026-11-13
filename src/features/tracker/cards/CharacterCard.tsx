@@ -6,6 +6,7 @@ import { getServer } from "@timers/config/servers"
 import { useIsLocked } from "@tracker/context/companionLocks"
 import { getCharacterLink } from "@tracker/logic/characterLink"
 import { getCharacterName } from "@tracker/logic/characterName"
+import { withCorridorView } from "@tracker/logic/corridors"
 import {
     getCubeCost,
     getEnergyCap,
@@ -53,6 +54,10 @@ type CharacterCardProps = {
     ignored?: string[]
     // The companion app says this character is being played.
     playing?: boolean
+    // How its Corridors task looks this siege (getCorridorView), as plain
+    // values so the memo holds; missing: as set up.
+    corridorCap?: number
+    corridorSubtitle?: string
     periods: ResetPeriods
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
@@ -79,6 +84,8 @@ export const CharacterCard = memo(function CharacterCard({
     goalsOpen,
     ignored,
     playing,
+    corridorCap,
+    corridorSubtitle,
     periods,
     onCountChange,
     onEntriesChange,
@@ -93,6 +100,12 @@ export const CharacterCard = memo(function CharacterCard({
     const energyLocked = useIsLocked(character.id, ENERGY_LOCK)
     const keysLocked = useIsLocked(character.id, CUBE_KEYS_LOCK)
     const energyCap = getEnergyCap(membership)
+    const groups = withCorridorView(
+        taskGroups,
+        corridorCap === undefined
+            ? null
+            : { cap: corridorCap, subtitle: corridorSubtitle ?? "" },
+    )
 
     const handleEnergyChange = (left: EnergyLeft) => {
         onEnergyChange(character.id, periods.energy, left)
@@ -111,7 +124,7 @@ export const CharacterCard = memo(function CharacterCard({
             title={name}
             owner={character.id}
             ownerLabel={name}
-            taskGroups={taskGroups}
+            taskGroups={groups}
             periods={periods}
             counts={counts}
             entries={entries}

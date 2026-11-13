@@ -3,6 +3,7 @@ import {
     writeCraftingSettings,
 } from "@crafting/storage/craftingSettings"
 import { asGameEdit } from "@account/sync/syncMeta"
+import { keepUnchanged } from "@common/keepUnchanged"
 import { isRecord } from "@planner/storage/isRecord"
 import {
     readPetCollection,
@@ -23,14 +24,16 @@ import {
 // Which snapshot time each game key was last applied at, on this device: an
 // old snapshot never overwrites what was edited after it. Bump the version
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
-// the duty board; v4: progress counters; v5: arena records), so
+// the duty board; v4: progress counters; v5: arena records; v6: Abyss
+// corridors), so
 // each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v5"
+const APPLIED_KEY = "daevanion:game-applied:v6"
 const OLD_APPLIED_KEYS = [
     "daevanion:game-applied",
     "daevanion:game-applied:v2",
     "daevanion:game-applied:v3",
     "daevanion:game-applied:v4",
+    "daevanion:game-applied:v5",
 ]
 
 type StoredSnapshot = {
@@ -61,8 +64,28 @@ const writeApplied = (applied: Record<string, number>) => {
     }
 }
 
+type ParsedRow = { raw: string; snapshot: GameSnapshot | null }
+
+const parseSnapshot = (raw: string) => {
+    try {
+        return parseGameSnapshot(JSON.parse(raw))
+    } catch {
+        // Not JSON: skip it.
+        return null
+    }
+}
+
+// Each game row's text as last read, and what it parsed to. Every reader
+// shares it, so a snapshot is parsed once per change, not once per reader
+// and render.
+let parsedRows = new Map<string, ParsedRow>()
+let storedCache: StoredSnapshot[] = []
+
+// Every stored snapshot: the same array until a game row changes, so readers
+// can cache what they build from it (never sort it in place).
 const listSnapshots = () => {
-    const stored: StoredSnapshot[] = []
+    const rows = new Map<string, ParsedRow>()
+    let changed = false
 
     for (let index = 0; index < window.localStorage.length; index++) {
         const key = window.localStorage.key(index)
@@ -71,20 +94,31 @@ const listSnapshots = () => {
             continue
         }
 
-        try {
-            const snapshot = parseGameSnapshot(
-                JSON.parse(window.localStorage.getItem(key) ?? "null"),
-            )
+        const raw = window.localStorage.getItem(key) ?? ""
+        const before = parsedRows.get(key)
 
-            if (snapshot !== null) {
-                stored.push({ key: key, snapshot: snapshot })
-            }
-        } catch {
-            // Not JSON: skip it.
+        if (before !== undefined && before.raw === raw) {
+            rows.set(key, before)
+        } else {
+            rows.set(key, { raw: raw, snapshot: parseSnapshot(raw) })
+            changed = true
         }
     }
 
-    return stored
+    if (!changed && rows.size === parsedRows.size) {
+        return storedCache
+    }
+
+    parsedRows = rows
+    storedCache = []
+
+    for (const [key, row] of rows) {
+        if (row.snapshot !== null) {
+            storedCache.push({ key: key, snapshot: row.snapshot })
+        }
+    }
+
+    return storedCache
 }
 
 // Every character's latest snapshot on this device.
@@ -92,36 +126,24 @@ export const readGameSnapshots = () => {
     return listSnapshots().map((item) => item.snapshot)
 }
 
-// Every game row's key and text, joined: readers parse only when it changes.
-const readGameRaw = () => {
-    const raw: string[] = []
-
-    for (let index = 0; index < window.localStorage.length; index++) {
-        const key = window.localStorage.key(index)
-
-        if (key !== null && isGameKey(key)) {
-            raw.push(key, window.localStorage.getItem(key) ?? "")
-        }
-    }
-
-    return raw.join("\u0000")
+let charactersCache: { stored: StoredSnapshot[] | null; characters: string } = {
+    stored: null,
+    characters: "",
 }
-
-let charactersCache = { raw: "", characters: "" }
 
 // The characters the companion has sent: `<server number>:<class
 // number>:<name>` lines, sorted, as one string so useSyncExternalStore sees
 // the same list as the same value. Read on every render: parsed only when a
 // snapshot changed.
 export const readGameCharacters = () => {
-    const raw = readGameRaw()
+    const stored = listSnapshots()
 
-    if (raw === charactersCache.raw) {
+    if (stored === charactersCache.stored) {
         return charactersCache.characters
     }
 
     // By server and name, as the keys sort: the class sits between them.
-    const sorted = listSnapshots().sort((a, b) => a.key.localeCompare(b.key))
+    const sorted = [...stored].sort((a, b) => a.key.localeCompare(b.key))
     const lines = sorted.map(({ key, snapshot }) => {
         const who = key.slice(GAME_KEY_PREFIX.length)
         const at = who.indexOf(":")
@@ -130,7 +152,7 @@ export const readGameCharacters = () => {
     })
     const characters = lines.join("\n")
 
-    charactersCache = { raw: raw, characters: characters }
+    charactersCache = { stored: stored, characters: characters }
 
     return characters
 }
@@ -138,19 +160,22 @@ export const readGameCharacters = () => {
 // What each character's snapshot holds, as `<server number>:<name>:<section>`
 // lines (crafts as `crafts.<recipe id>`), sorted, as one string so
 // useSyncExternalStore sees the same content as the same value.
-let sectionsCache = { raw: "", sections: "" }
+let sectionsCache: { stored: StoredSnapshot[] | null; sections: string } = {
+    stored: null,
+    sections: "",
+}
 
 export const readGameSections = () => {
-    // Read on every render: parse only when a snapshot changed.
-    const joined = readGameRaw()
+    // Read on every render: rebuilt only when a snapshot changed.
+    const stored = listSnapshots()
 
-    if (joined === sectionsCache.raw) {
+    if (stored === sectionsCache.stored) {
         return sectionsCache.sections
     }
 
     const lines: string[] = []
 
-    for (const { key, snapshot } of listSnapshots()) {
+    for (const { key, snapshot } of stored) {
         const who = key.slice(GAME_KEY_PREFIX.length)
         const sections = [
             snapshot.pets && "pets",
@@ -159,6 +184,7 @@ export const readGameSections = () => {
             snapshot.supply && "supply",
             snapshot.duty && "duty",
             snapshot.arena && "arena",
+            snapshot.corridorsAt !== undefined && "corridors",
             snapshot.professions && "professions",
             ...Object.keys(snapshot.crafts ?? {}).map((id) => `crafts.${id}`),
         ]
@@ -172,7 +198,7 @@ export const readGameSections = () => {
 
     const sections = lines.sort((a, b) => a.localeCompare(b)).join("\n")
 
-    sectionsCache = { raw: joined, sections: sections }
+    sectionsCache = { stored: stored, sections: sections }
 
     return sections
 }
@@ -187,22 +213,23 @@ export type GameBoards = {
     boards: Record<string, number[]>
 }
 
-let boardsCache: { raw: string; boards: GameBoards[] } = {
-    raw: "",
+let boardsCache: { stored: StoredSnapshot[] | null; boards: GameBoards[] } = {
+    stored: null,
     boards: [],
 }
 
 // Every character's boards, by server and name; the same array until a
-// snapshot changes, so useSyncExternalStore can read it on every render.
+// character's boards change (items and counters change far more often), so
+// useSyncExternalStore can read it on every render.
 export const readGameBoards = () => {
-    const raw = readGameRaw()
+    const stored = listSnapshots()
 
-    if (raw === boardsCache.raw) {
+    if (stored === boardsCache.stored) {
         return boardsCache.boards
     }
 
     const boards: GameBoards[] = []
-    const sorted = listSnapshots().sort((a, b) => a.key.localeCompare(b.key))
+    const sorted = [...stored].sort((a, b) => a.key.localeCompare(b.key))
 
     for (const { snapshot } of sorted) {
         if (snapshot.boards) {
@@ -216,9 +243,12 @@ export const readGameBoards = () => {
         }
     }
 
-    boardsCache = { raw: raw, boards: boards }
+    boardsCache = {
+        stored: stored,
+        boards: keepUnchanged(boardsCache.boards, boards),
+    }
 
-    return boards
+    return boardsCache.boards
 }
 
 // Calls back when a snapshot arrives or changes.
@@ -302,12 +332,17 @@ const applyFresh = () => {
         return
     }
 
-    let tracker = readTrackerData()
-    const trackerBefore = tracker
+    // Applying rebuilds parts even when their values stay the same: keep
+    // those, so only what the game changed re-renders (and nothing is
+    // written when nothing changed).
+    const trackerBefore = readTrackerData()
+    let tracker = trackerBefore
 
     for (const item of fresh) {
         tracker = applyToTracker(tracker, item.snapshot)
     }
+
+    tracker = keepUnchanged(trackerBefore, tracker)
 
     if (tracker !== trackerBefore) {
         writeTrackerData(tracker)
@@ -321,7 +356,12 @@ const applyFresh = () => {
         newestPets !== null &&
         fresh.some((item) => item.snapshot === newestPets)
     ) {
-        writePetCollection(applyToPets(readPetCollection(), newestPets))
+        const pets = readPetCollection()
+        const nextPets = keepUnchanged(pets, applyToPets(pets, newestPets))
+
+        if (nextPets !== pets) {
+            writePetCollection(nextPets)
+        }
     }
 
     if (
@@ -332,12 +372,18 @@ const applyFresh = () => {
             )
         })
     ) {
-        writeCraftingSettings(
+        const settings = readCraftingSettings()
+        const nextSettings = keepUnchanged(
+            settings,
             applyToCrafting(
-                readCraftingSettings(),
+                settings,
                 stored.map((item) => item.snapshot),
             ),
         )
+
+        if (nextSettings !== settings) {
+            writeCraftingSettings(nextSettings)
+        }
     }
 
     const next = { ...applied }

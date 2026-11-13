@@ -127,6 +127,8 @@ describe("mergeSyncedValue: tracker", () => {
             notes: {},
             cubeKeys: {},
             arena: {},
+            corridorHolds: {},
+            corridorsLeft: {},
             declined: [],
             membership: true,
         })

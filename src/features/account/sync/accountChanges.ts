@@ -1,5 +1,9 @@
 import { readAuth, subscribeToAuth } from "@account/auth"
 import { supabase } from "@account/supabaseClient"
+import {
+    isPageVisible,
+    subscribeToPageVisibility,
+} from "@common/pageVisibility"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 
 // A change to one of the user's user_data rows, as Supabase Realtime tells
@@ -30,12 +34,15 @@ const readKey = (row: Record<string, unknown>) => {
     return typeof row.key === "string" ? row.key : null
 }
 
-// One channel per signed-in user, open while anyone watches: each change is
-// one Realtime message, however many parts of the page listen.
+// One channel per signed-in user, open while anyone watches and the page is
+// visible: each change is one Realtime message, however many parts of the
+// page listen. Shown again, it reconnects and the watchers catch up.
 const update = () => {
     const auth = readAuth()
     const user =
-        auth.status === "signedIn" && watchers.size > 0 ? auth.userId : null
+        auth.status === "signedIn" && watchers.size > 0 && isPageVisible()
+            ? auth.userId
+            : null
 
     if (user === watchedUser) {
         return
@@ -100,6 +107,7 @@ export const subscribeToAccountRows = (
     if (!started) {
         started = true
         subscribeToAuth(update)
+        subscribeToPageVisibility(update)
     }
 
     const watcher = { onChange: onChange, onConnect: onConnect }

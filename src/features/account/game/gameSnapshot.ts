@@ -66,6 +66,16 @@ export type GameSnapshot = {
     // Arena mode (gameIds ARENA_TASKS) → lifetime [wins, losses].
     arena?: Record<string, [number, number]>
     arenaAt?: number
+    // Abyss corridor entrances the character may still use (counter ids, see
+    // gameIds CORRIDORS), read with the counters: missing with corridorsAt
+    // set means none.
+    corridors?: string[]
+    corridorsAt?: number
+    // Artifact id → faction holding it (0 none, 1 Elyos, 2 Asmodians), and
+    // when the last Artifact Siege ended (ms).
+    artifacts?: Record<string, number>
+    siegeEnd?: number
+    artifactsAt?: number
 }
 
 const isCount = (value: unknown): value is number => {
@@ -112,7 +122,7 @@ const pickTriples = (value: unknown) => {
     return triples
 }
 
-const pickLevels = (value: unknown) => {
+const pickLevels = (value: unknown, min = 1) => {
     const levels: Record<string, number> = {}
 
     if (!isRecord(value)) {
@@ -120,7 +130,7 @@ const pickLevels = (value: unknown) => {
     }
 
     for (const [id, level] of Object.entries(value)) {
-        if (isCount(level) && level > 0) {
+        if (isCount(level) && level >= min) {
             levels[id] = level
         }
     }
@@ -235,6 +245,13 @@ export const parseGameSnapshot = (value: unknown): GameSnapshot | null => {
         progressAt: pickTime(value.progressAt),
         arena: pickPairs(value.arena),
         arenaAt: pickTime(value.arenaAt),
+        corridors: Array.isArray(value.corridors)
+            ? value.corridors.filter((id) => typeof id === "string")
+            : undefined,
+        corridorsAt: pickTime(value.corridorsAt),
+        artifacts: pickLevels(value.artifacts, 0),
+        siegeEnd: pickTime(value.siegeEnd),
+        artifactsAt: pickTime(value.artifactsAt),
     }
 }
 
@@ -251,5 +268,7 @@ export const getSnapshotTime = (snapshot: GameSnapshot) => {
         snapshot.dutyAt ?? 0,
         snapshot.progressAt ?? 0,
         snapshot.arenaAt ?? 0,
+        snapshot.corridorsAt ?? 0,
+        snapshot.artifactsAt ?? 0,
     )
 }

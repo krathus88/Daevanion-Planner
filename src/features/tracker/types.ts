@@ -65,6 +65,16 @@ export type ArenaRecord = {
     base?: ArenaSighting
 }
 
+// Abyss corridors the companion app saw: a server's after a siege (`at` =
+// when that siege ended), or a character's entrances left (`at` = when
+// read). Artifact ids (gameIds CORRIDORS); `period` is the siege reset
+// period they belong to.
+export type CorridorRecord = {
+    period: number
+    at: number
+    artifacts: string[]
+}
+
 export type TrackerData = {
     characters: TrackerCharacter[]
     // Null until the user edits the list; the starter list is used instead.
@@ -90,6 +100,10 @@ export type TrackerData = {
     // Arena records by character id, filled by the companion app: the game
     // sends lifetime wins per mode, so each week's start is kept to count it.
     arena: Record<string, ArenaRecord>
+    // Corridors each server's faction holds since the last siege, by server id.
+    corridorHolds: Record<string, CorridorRecord>
+    // Corridor entrances each character has left, by character id.
+    corridorsLeft: Record<string, CorridorRecord>
     // Characters the companion app sent that the user chose not to add, as
     // "<server id>:<name in lower case>": not asked about again.
     declined: string[]

@@ -3,6 +3,7 @@ package winres
 import (
 	"bytes"
 	"encoding/binary"
+	"strings"
 	"testing"
 	"unicode/utf16"
 )
@@ -97,5 +98,12 @@ func TestObjectLayout(t *testing.T) {
 	size := binary.LittleEndian.Uint32(section[entry+4:])
 	if string(section[data:data+size]) != "small" {
 		t.Fatalf("first resource %q", section[data:data+size])
+	}
+}
+
+func TestManifestAsksForCommonControls6(t *testing.T) {
+	m := Manifest()
+	if m.Type != TypeManifest || m.ID != 1 || !strings.Contains(string(m.Data), `name="Microsoft.Windows.Common-Controls" version="6.0.0.0"`) {
+		t.Fatalf("got %d %d %s", m.Type, m.ID, m.Data)
 	}
 }

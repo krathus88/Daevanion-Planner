@@ -1,6 +1,6 @@
 // Package winres builds a COFF object holding Windows resources (.rsrc), the
 // kind of .syso file `go build` links into an .exe. It covers what the
-// companion needs: an icon group and version info.
+// companion needs: an icon group, version info and the manifest.
 package winres
 
 import (
@@ -15,6 +15,7 @@ const (
 	TypeIcon      = 3
 	TypeGroupIcon = 14
 	TypeVersion   = 16
+	TypeManifest  = 24
 	language      = 0x0409
 )
 
@@ -138,6 +139,29 @@ func Version(info VersionInfo) Resource {
 	vars := node("VarFileInfo", nil, 0, true, node("Translation", translation, 4, false))
 
 	return Resource{Type: TypeVersion, ID: 1, Data: node("VS_VERSION_INFO", fixed, uint16(len(fixed)), false, strings, vars)}
+}
+
+// manifest asks for Common Controls 6, so buttons, checkboxes and edit boxes
+// draw in the current Windows style instead of the Windows 95 one, and says
+// the app knows Windows 10 and 11.
+const manifest = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
+    </dependentAssembly>
+  </dependency>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+    </application>
+  </compatibility>
+</assembly>
+`
+
+// Manifest builds the RT_MANIFEST resource (id 1, the one an .exe reads).
+func Manifest() Resource {
+	return Resource{Type: TypeManifest, ID: 1, Data: []byte(manifest)}
 }
 
 func itoa(n int) string {

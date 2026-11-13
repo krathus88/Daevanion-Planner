@@ -6,12 +6,15 @@ import { SERVERS } from "@timers/config/servers"
 // The game's numbers for things, read from real captures (client revision
 // 3535, Nov 2026). A patch can change them; unknown ones are left alone.
 
-// Class numbers seen on real characters. The rest of the pattern (Assassin
-// 14, Ranger 18, Sorcerer 22, Spirit Master 26) is a guess, so it isn't used:
-// characters of those classes are matched by name but not created.
+// Class numbers seen on real characters (4 x the class index in board ids,
+// plus 2).
 export const GAME_CLASSES: Record<number, ClassId> = {
     6: "gladiator",
     10: "templar",
+    14: "ranger",
+    18: "assassin",
+    22: "spirit-master",
+    26: "sorcerer",
     30: "cleric",
     34: "chanter",
 }
@@ -56,6 +59,23 @@ export const GAME_BOARDS: Record<string, BoardId> = {
 }
 
 export const ENERGY_COUNTER = "60000001"
+
+// The tracker task the Abyss corridors fill.
+export const CORRIDOR_TASK = "corridors"
+
+// Abyss corridors: the artifact whose holder's faction gets it (one entrance
+// per character after each Artifact Siege) and the counter that is its
+// entrance. Reshanta's Root and Sulfur Tree Island were checked in a
+// recording (2026-11-13: entering each used that counter); Siel's Wings is
+// assumed to follow the same numbering.
+export const CORRIDORS = [
+    { artifact: "1001", counter: "10000001", name: "Reshanta's Root" },
+    { artifact: "1002", counter: "10000002", name: "Sulfur Tree Island" },
+    { artifact: "1003", counter: "10000003", name: "Siel's Wings" },
+]
+
+// The game's faction numbers in artifact owners.
+export const FACTION_NUMBERS = { elyos: 1, asmodians: 2 } as const
 
 // Tracker tasks the game counts: task id → counter id ([entries, bonus]).
 export const TASK_COUNTERS: Record<string, string> = {

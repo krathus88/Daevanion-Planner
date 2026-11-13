@@ -2,6 +2,7 @@ import { getTaskOwner } from "@tracker/logic/taskOwners"
 import type { TrackerCharacter, TrackerData, TrackerTask } from "@tracker/types"
 import {
     ARENA_TASKS,
+    CORRIDOR_TASK,
     CRAFT_TASKS,
     DUTY_TASK,
     getServerId,
@@ -57,6 +58,7 @@ export const getCompanionLocks = (
                     task.recharge !== undefined) ||
                 (section === "supply" && task.id === SUPPLY_TASK) ||
                 (section === "duty" && task.id === DUTY_TASK) ||
+                (section === "corridors" && task.id === CORRIDOR_TASK) ||
                 (section === "arena" &&
                     ARENA_TASKS[task.id] !== undefined &&
                     arena[character.id]?.base?.period === week) ||

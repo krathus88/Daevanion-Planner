@@ -1,4 +1,5 @@
 import { setStoredItem } from "@account/sync/syncMeta"
+import { keepUnchanged } from "@common/keepUnchanged"
 import { isRecord } from "@planner/storage/isRecord"
 import {
     isTimerColor,
@@ -191,7 +192,12 @@ export const readTimerSettings = () => {
     const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
-        cached = { raw: raw, settings: parse(raw) }
+        // Parts the change left alone keep their identity: only what changed
+        // re-renders.
+        cached = {
+            raw: raw,
+            settings: keepUnchanged(cached?.settings, parse(raw)),
+        }
     }
 
     return cached.settings

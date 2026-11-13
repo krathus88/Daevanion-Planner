@@ -1,9 +1,10 @@
 import { fireEvent, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useState } from "react"
-import { describe, expect, it, vi } from "vitest"
+import { beforeAll, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { CardGrid } from "./CardGrid"
+import { ClassPicker } from "./ClassPicker"
 import { IconImage } from "./IconImage"
 import { ConfirmButton } from "./ConfirmButton"
 import { NumberedStep } from "./NumberedStep"
@@ -565,5 +566,73 @@ describe("IconImage", () => {
         const { container } = renderWithChakra(<IconImage />)
 
         expect(container.querySelector("img")).toBeNull()
+    })
+})
+
+describe("ClassPicker", () => {
+    // jsdom lacks what Chakra's Select uses to place and scroll its list.
+    beforeAll(() => {
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                observe() {}
+                unobserve() {}
+                disconnect() {}
+            },
+        )
+        Element.prototype.scrollTo = () => {}
+    })
+
+    it("shows the class with its icon and lists every class", async () => {
+        const onChange = vi.fn()
+
+        renderWithChakra(
+            <ClassPicker value="cleric" label="Class" onChange={onChange} />,
+        )
+
+        const trigger = screen.getByRole("combobox", { name: "Class" })
+
+        expect(trigger).toHaveTextContent("Cleric")
+        expect(trigger.querySelector("img")).not.toBeNull()
+
+        await userEvent.click(trigger)
+
+        const options = screen.getAllByRole("option")
+
+        expect(options.map((option) => option.textContent)).toEqual([
+            "Templar",
+            "Gladiator",
+            "Assassin",
+            "Ranger",
+            "Sorcerer",
+            "Spirit Master",
+            "Chanter",
+            "Cleric",
+        ])
+        expect(options[5].querySelector("img")).not.toBeNull()
+
+        await userEvent.click(
+            screen.getByRole("option", { name: "Spirit Master" }),
+        )
+
+        expect(onChange).toHaveBeenCalledWith("spirit-master")
+    })
+
+    it("doesn't report picking the class it already shows", async () => {
+        const onChange = vi.fn()
+
+        renderWithChakra(
+            <ClassPicker
+                value="cleric"
+                portalled={false}
+                label="Class"
+                onChange={onChange}
+            />,
+        )
+
+        await userEvent.click(screen.getByRole("combobox", { name: "Class" }))
+        await userEvent.click(screen.getByRole("option", { name: "Cleric" }))
+
+        expect(onChange).not.toHaveBeenCalled()
     })
 })

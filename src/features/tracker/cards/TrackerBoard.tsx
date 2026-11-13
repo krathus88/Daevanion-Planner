@@ -1,5 +1,6 @@
 import { Button, Flex } from "@chakra-ui/react"
 import { CardGrid } from "@common/CardGrid"
+import { getCorridorView } from "@tracker/logic/corridors"
 import type { ResetPeriods } from "@tracker/logic/resetPeriods"
 import {
     getCardOwners,
@@ -34,6 +35,9 @@ type TrackerBoardProps = {
     // Owners whose One-off box is open.
     goalsOpen: string[]
     ignored: TrackerData["ignored"]
+    // Corridors each server's faction holds (the Corridors task's size).
+    corridorHolds: TrackerData["corridorHolds"]
+    companionRunning: boolean
     periods: ResetPeriods
     // The character the companion app says is being played.
     playingId?: string
@@ -61,6 +65,8 @@ export const TrackerBoard = ({
     minimized,
     goalsOpen,
     ignored,
+    corridorHolds,
+    companionRunning,
     periods,
     playingId,
     onCountChange,
@@ -132,32 +138,42 @@ export const TrackerBoard = ({
 
             {ownGroups.length > 0 && (
                 <CardGrid title="Characters">
-                    {characters.map((character) => (
-                        <CharacterCard
-                            key={character.id}
-                            character={character}
-                            taskGroups={ownGroups}
-                            counts={counts[character.id]}
-                            entries={entries[character.id]}
-                            energy={energy[character.id]}
-                            cubeKeys={cubeKeys[character.id]}
-                            note={notes[character.id]}
-                            membership={membership}
-                            minimized={minimized.includes(character.id)}
-                            goalsOpen={goalsOpen.includes(character.id)}
-                            ignored={ignored[character.id]}
-                            playing={character.id === playingId}
-                            periods={periods}
-                            onCountChange={onCountChange}
-                            onEntriesChange={onEntriesChange}
-                            onEnergyChange={onEnergyChange}
-                            onCubeKeysChange={onCubeKeysChange}
-                            onNoteChange={onNoteChange}
-                            onMinimizedChange={handleCardMinimized}
-                            onIgnoredChange={onIgnoredChange}
-                            onGoalsOpenChange={onGoalsOpenChange}
-                        />
-                    ))}
+                    {characters.map((character) => {
+                        const corridors = getCorridorView(
+                            corridorHolds[character.server],
+                            periods.siege,
+                            companionRunning,
+                        )
+
+                        return (
+                            <CharacterCard
+                                key={character.id}
+                                character={character}
+                                taskGroups={ownGroups}
+                                counts={counts[character.id]}
+                                entries={entries[character.id]}
+                                energy={energy[character.id]}
+                                cubeKeys={cubeKeys[character.id]}
+                                note={notes[character.id]}
+                                membership={membership}
+                                minimized={minimized.includes(character.id)}
+                                goalsOpen={goalsOpen.includes(character.id)}
+                                ignored={ignored[character.id]}
+                                playing={character.id === playingId}
+                                corridorCap={corridors?.cap}
+                                corridorSubtitle={corridors?.subtitle}
+                                periods={periods}
+                                onCountChange={onCountChange}
+                                onEntriesChange={onEntriesChange}
+                                onEnergyChange={onEnergyChange}
+                                onCubeKeysChange={onCubeKeysChange}
+                                onNoteChange={onNoteChange}
+                                onMinimizedChange={handleCardMinimized}
+                                onIgnoredChange={onIgnoredChange}
+                                onGoalsOpenChange={onGoalsOpenChange}
+                            />
+                        )
+                    })}
                 </CardGrid>
             )}
         </Flex>

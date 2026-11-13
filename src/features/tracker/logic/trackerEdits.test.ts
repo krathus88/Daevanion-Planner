@@ -62,6 +62,8 @@ const data = (overrides: Partial<TrackerData> = {}): TrackerData => {
         notes: {},
         cubeKeys: {},
         arena: {},
+        corridorHolds: {},
+        corridorsLeft: {},
         declined: [],
         membership: true,
         ...overrides,

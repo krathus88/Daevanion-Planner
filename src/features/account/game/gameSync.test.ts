@@ -95,7 +95,7 @@ describe("applyGameSnapshots", () => {
     it("applies a newer snapshot of the same character", () => {
         store(snapshot(Date.UTC(2026, 10, 11), 15))
         applyGameSnapshots()
-        store(snapshot(Date.UTC(2026, 10, 11, 1), 30))
+        store(snapshot(Date.UTC(2026, 10, 11, 0, 30), 30))
         applyGameSnapshots()
 
         expect(energyOf()).toBe(30)
@@ -164,9 +164,52 @@ describe("applyGameSnapshots", () => {
         ])
         expect(readGameBoards()).toBe(boards)
 
+        // Only the items changed: the boards stay the same array.
+        store({
+            ...snapshot(1, 1),
+            items: { "1": { "610530001": 8 } },
+            boards: { "1": [33] },
+            boardsAt: 5,
+        })
+
+        expect(readGameBoards()).toBe(boards)
+
         store({ ...snapshot(1, 1), boards: { "1": [33, 34] }, boardsAt: 6 })
 
         expect(readGameBoards()[0].boards["1"]).toEqual([33, 34])
+    })
+
+    it("leaves the tracker, pets and crafting objects alone when a snapshot changes nothing they show", () => {
+        store(snapshot(Date.UTC(2026, 10, 11), 15))
+        applyGameSnapshots()
+
+        const tracker = readTrackerData()
+        const pets = readPetCollection()
+        const crafting = readCraftingSettings()
+
+        // Newer, same values (and the same energy recharge period).
+        store(snapshot(Date.UTC(2026, 10, 11, 0, 30), 15))
+        applyGameSnapshots()
+
+        expect(readTrackerData()).toBe(tracker)
+        expect(readPetCollection()).toBe(pets)
+        expect(readCraftingSettings()).toBe(crafting)
+    })
+
+    it("gives only the changed character's energy a new object", () => {
+        store(snapshot(Date.UTC(2026, 10, 11), 15))
+        applyGameSnapshots()
+
+        const before = readTrackerData()
+
+        store(snapshot(Date.UTC(2026, 10, 11, 0, 30), 30))
+        applyGameSnapshots()
+
+        const after = readTrackerData()
+
+        expect(energyOf()).toBe(30)
+        expect(after.characters).toBe(before.characters)
+        expect(after.counts).toBe(before.counts)
     })
 
     it("lists what each snapshot holds", () => {

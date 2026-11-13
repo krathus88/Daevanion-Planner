@@ -426,3 +426,102 @@ func TestArena(t *testing.T) {
 		t.Fatalf("Keep dropped the arena stats: %+v", kept)
 	}
 }
+
+// Pets are account-wide: the newest collection read, whoever's it was.
+func TestPetsIsTheNewestCollection(t *testing.T) {
+	tr := NewTracker()
+	if tr.Pets() != nil {
+		t.Fatal("pets before any were read")
+	}
+	tr.Handle("a", character("First", 6), now)
+	tr.Handle("a", pets(1, 3), now)
+	tr.Handle("a", msg(game.TypeSwitch, nil), now)
+	tr.Handle("a", character("Second", 30), now.Add(time.Minute))
+	if got := tr.Pets()[1192]; got != (game.Pet{Level: 1, Souls: 3}) {
+		t.Fatalf("got %+v", got)
+	}
+	tr.Handle("a", pets(2, 7), now.Add(2*time.Minute))
+	if got := tr.Pets()[1192]; got != (game.Pet{Level: 2, Souls: 7}) {
+		t.Fatalf("got %+v", got)
+	}
+}
+
+// Started mid-session: souls bought before the game resends the collection
+// wait in LateGains; the collection replaces them.
+func TestLateGains(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Kryx", 30), now)
+	gain := msg(game.TypePetSouls, join([]byte{1}, u32(1163), u32(5)))
+	tr.Handle("a", gain, now)
+	tr.Handle("a", gain, now)
+	if tr.Pets() != nil || tr.LateGains()[1163] != 10 {
+		t.Fatalf("got %v %v", tr.Pets(), tr.LateGains())
+	}
+	tr.Handle("a", pets(1, 3), now)
+	if tr.LateGains() != nil {
+		t.Fatalf("kept %v after the collection", tr.LateGains())
+	}
+}
+
+// Corridor entrances, as in Kryx's recording (2026-11-13 13:42-13:51).
+func corridor(id uint32, open bool) []byte {
+	if !open {
+		return join([]byte{0}, u32(id))
+	}
+	return join([]byte{1}, u32(id), u64(130000))
+}
+
+func zone(id uint32) wire.Message {
+	return msg(game.TypeZone, join(u32(5), u32(id), make([]byte, 20)))
+}
+
+func TestCorridors(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	tr.Handle("a", counters(corridor(10000001, true), corridor(10000002, true), corridor(10000003, false)), now)
+	if got := tr.All()[0]; len(got.Corridors) != 2 || got.Corridors[0] != "10000001" || got.CorridorsAt == 0 {
+		t.Fatalf("at login %+v", got.Corridors)
+	}
+	// Lower Reshanta sends nothing; entering Reshanta's Root sends its
+	// entrance again: used from then on.
+	tr.Handle("a", zone(20), now)
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000002, true))), now)
+	if got := tr.All()[0].Corridors; len(got) != 2 {
+		t.Fatalf("used outside a corridor: %v", got)
+	}
+	tr.Handle("a", zone(503003), now)
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000001, true))), now)
+	if got := tr.All()[0].Corridors; len(got) != 1 || got[0] != "10000002" {
+		t.Fatalf("after entering %v", got)
+	}
+	// 130 s later the game clears it.
+	tr.Handle("a", msg(game.TypeCounterChange, join([]byte{0}, corridor(10000001, false))), now)
+	got := tr.All()[0]
+	if len(got.Corridors) != 1 || got.Corridors[0] != "10000002" || got.Counters["10000001"] != [2]uint64{} {
+		t.Fatalf("after clearing %+v", got)
+	}
+}
+
+func TestArtifacts(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	body := join([]byte{1}, u32(1001), []byte{3, 1}, u64(1794514404000), u64(1794686400000), []byte{3},
+		u32(1001), u32(1), []byte{1}, make([]byte, 8),
+		u32(1002), u32(2), []byte{1}, make([]byte, 8),
+		u32(1003), u32(3), []byte{2}, make([]byte, 8))
+	tr.Handle("a", msg(game.TypeArtifacts, body), now)
+	got := tr.All()[0]
+	if got.Artifacts["1001"] != 1 || got.Artifacts["1003"] != 2 || got.SiegeEnd != 1794514404000 || got.ArtifactsAt == 0 {
+		t.Fatalf("got %+v", got)
+	}
+	// Kept when a later snapshot lacks them.
+	if kept := (Snapshot{Version: SnapshotVersion}).Keep(got); kept.Artifacts["1002"] != 1 || kept.SiegeEnd == 0 {
+		t.Fatalf("kept %+v", kept)
+	}
+	// The same owners again aren't news.
+	tr.TakeChanged()
+	tr.Handle("a", msg(game.TypeArtifacts, body), now.Add(10*time.Second))
+	if tr.All()[0].ArtifactsAt != got.ArtifactsAt {
+		t.Fatal("restamped unchanged owners")
+	}
+}

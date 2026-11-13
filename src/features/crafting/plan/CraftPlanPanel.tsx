@@ -23,6 +23,7 @@ import { getCraftCost, getThisCraftCost } from "@crafting/logic/unitCost"
 import type { PlanSettings } from "@crafting/types"
 import { PlanContext } from "@crafting/context/planContext"
 import { getCraftedFrom } from "@crafting/logic/craftedFrom"
+import { memo } from "react"
 import { AllMaterials } from "./AllMaterials"
 import { ComboCard } from "./ComboCard"
 import { CraftedFromLinks } from "./CraftedFromLinks"
@@ -52,7 +53,10 @@ type CraftPlanPanelProps = {
     onItemSelect: (itemId: number) => void
 }
 
-export const CraftPlanPanel = ({
+// memo: the Crafting page re-renders whenever its settings change, e.g. the
+// companion app's pickups; the plan rebuilds only when its own inputs do
+// (its bag counts are just the open tree's, `pickOwned`).
+export const CraftPlanPanel = memo(function CraftPlanPanel({
     data,
     item,
     recipe,
@@ -66,7 +70,7 @@ export const CraftPlanPanel = ({
     onBoughtChange,
     onProficiencyChange,
     onItemSelect,
-}: CraftPlanPanelProps) => {
+}: CraftPlanPanelProps) {
     const handleCountChange = (value: number | null) => {
         onCountChange(value ?? 1)
     }
@@ -204,4 +208,4 @@ export const CraftPlanPanel = ({
             </Flex>
         </PlanContext.Provider>
     )
-}
+})

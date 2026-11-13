@@ -382,3 +382,74 @@ func TestParseArena(t *testing.T) {
 		t.Fatal("read a cut message")
 	}
 }
+
+// Kryx's Black Cloud Merchant Pets tab (2026-11-13 13:15:41).
+const shopPetsTab = "680a54d50100c6cadf1f0100000000000000005da086010000000000905f0100000000005511d5010098cadf1f0100000000000000015da08601000000000080380100000000007cd501000fcbdf1f0100000000000000025da08601000000000070110100000000006fd50100cfcadf1f0100000000000000025da0860100000000007011010000000000e3d4010067cadf1f0100000000000000035da08601000000000050c30000000000005518d501009fcadf1f0100000000000000005da086010000000000905f0100000000001ad50100a1cadf1f0100000000000000025da086010000000000701101000000000029d5010057cadf1f0100000000000000015da086010000000000803801000000000008d501008ecadf1f0100000000000000035da08601000000000050c30000000000000533d50100ddcadf1f0100000000000000035da08601000000000050c3000000000000004335d5a101000000000000"
+
+func TestParseShopTab(t *testing.T) {
+	tab, ok := ParseShopTab(h(shopPetsTab))
+	if !ok || tab.ID != 104 || len(tab.Items) != 10 {
+		t.Fatalf("got %+v %v", tab, ok)
+	}
+	if tab.Items[0] != (ShopItem{Entry: 120148, Item: 534760134, Discount: 0}) {
+		t.Fatalf("first %+v", tab.Items[0])
+	}
+	if tab.Items[4] != (ShopItem{Entry: 120035, Item: 534760039, Discount: 3}) || tab.Items[9].Item != 534760157 {
+		t.Fatalf("got %+v", tab.Items)
+	}
+	for _, item := range tab.Items {
+		if item.SoldOut {
+			t.Fatalf("sold out: %+v", item)
+		}
+	}
+	// The same tab after buying Basilisk (13:57:28): its flags 55 → 57.
+	bought, ok := ParseShopTab(h(strings.Replace(shopPetsTab, "905f0100000000005511d501", "905f0100000000005711d501", 1)))
+	if !ok || !bought.Items[0].SoldOut || bought.Items[1].SoldOut || bought.Items[4].SoldOut {
+		t.Fatalf("after buying %+v", bought.Items)
+	}
+	if _, ok := ParseShopTab(h(shopPetsTab[:200])); ok {
+		t.Fatal("read a cut tab")
+	}
+}
+
+// Buying Basilisk from that tab.
+func TestParseShopBuy(t *testing.T) {
+	tab, entry, ok := ParseShopBuy(h("00006854d50100"))
+	if !ok || tab != 104 || entry != 120148 {
+		t.Fatalf("got %d %d %v", tab, entry, ok)
+	}
+}
+
+// Kryx in Lower Reshanta (05e3) and on the world server (07e3), 2026-11-13:
+// Elyos hold 1001 and 1002, Asmodians 1003; the last siege ended
+// 2026-11-12 20:13:24 UTC.
+func TestParseArtifacts(t *testing.T) {
+	for _, body := range []string{
+		"01e90300000301a0c264d1a10100000036a5dba101000003e9030000f1c81000010000000000000000ea030000f3c81000010000000000000000eb030000f5c81000020000000000000000",
+		"00000200d10700000300000000000000000001e90300000300a0c264d1a10100000036a5dba101000006d1070000b0ca100000b0ca100000000000d2070000b1ca100000b1ca100000000000d3070000b2ca100000b2ca100000000000e9030000f1c8100001f1c8100000000000ea030000f3c8100001f3c8100000000000eb030000f5c8100002f5c8100000000000",
+	} {
+		got, ok := ParseArtifacts(h(body))
+		if !ok || got.Owners[1001] != 1 || got.Owners[1002] != 1 || got.Owners[1003] != 2 || got.SiegeEnd != 1794514404000 {
+			t.Fatalf("got %+v %v", got, ok)
+		}
+	}
+	if _, ok := ParseArtifacts(h("0102")); ok {
+		t.Fatal("read nothing as owners")
+	}
+}
+
+func TestParseZone(t *testing.T) {
+	if id, ok := ParseZone(h("05000000dbac0700397c2900000000009b68cd41")); !ok || id != 503003 {
+		t.Fatalf("got %d %v", id, ok)
+	}
+}
+
+func TestParseCorridorCounter(t *testing.T) {
+	c, ok := ParseCounterChange(h("000181969800d0fb01000000000003"))
+	if !ok || c.ID != 10000001 || !c.Open || !IsCorridorCounter(c.ID) {
+		t.Fatalf("got %+v", c)
+	}
+	if c, _ := ParseCounterChange(h("00008196980003")); c.Open {
+		t.Fatal("cleared entrance still open")
+	}
+}

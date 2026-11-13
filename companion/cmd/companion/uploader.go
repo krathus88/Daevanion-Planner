@@ -5,12 +5,46 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
 	"daevanion-companion/internal/account"
+	"daevanion-companion/internal/game"
 	"daevanion-companion/internal/state"
 )
+
+// accountPets is the pet collection in the account's rows (the newest, as
+// pets are account-wide), or nil before they're read: a companion started
+// mid-session gets the game's only at the next zone change.
+func (u *uploader) accountPets() map[int]game.Pet {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return newestPets(u.sent)
+}
+
+// newestPets reads the newest pets section among the snapshots.
+func newestPets(snapshots map[string]state.Snapshot) map[int]game.Pet {
+	var newest *state.Snapshot
+	for key := range snapshots {
+		s := snapshots[key]
+		if s.Pets != nil && (newest == nil || s.PetsAt > newest.PetsAt) {
+			newest = &s
+		}
+	}
+	if newest == nil {
+		return nil
+	}
+	pets := make(map[int]game.Pet, len(newest.Pets))
+	for id, value := range newest.Pets {
+		n, err := strconv.Atoi(id)
+		if err != nil {
+			continue
+		}
+		pets[n] = game.Pet{Level: value[0], Souls: value[1]}
+	}
+	return pets
+}
 
 // uploader sends snapshots one batch at a time, keeping only the newest
 // snapshot of each character while a batch is on its way. Logged out, it

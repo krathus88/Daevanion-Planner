@@ -1,5 +1,6 @@
 import { setStoredItem } from "@account/sync/syncMeta"
 import { CRAFTING_KEY } from "@account/sync/syncedKeys"
+import { keepUnchanged } from "@common/keepUnchanged"
 import { isProfessionId } from "@crafting/config/professions"
 import type { CraftingSettings, LocalPrice } from "@crafting/types"
 import { isRecord } from "@planner/storage/isRecord"
@@ -173,7 +174,12 @@ export const readCraftingSettings = () => {
     const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
-        cached = { raw: raw, settings: parse(raw) }
+        // Parts the change left alone keep their identity: only what changed
+        // re-renders.
+        cached = {
+            raw: raw,
+            settings: keepUnchanged(cached?.settings, parse(raw)),
+        }
     }
 
     return cached.settings

@@ -23,6 +23,8 @@ const data = (overrides: Partial<TrackerData> = {}): TrackerData => {
         notes: {},
         cubeKeys: {},
         arena: {},
+        corridorHolds: {},
+        corridorsLeft: {},
         declined: [],
         membership: true,
         ...overrides,
@@ -270,6 +272,98 @@ describe("applyToTracker", () => {
         expect(next.counts["server:siel"]).toBeUndefined()
     })
 
+    describe("Abyss corridors", () => {
+        // Thursday's siege ended at 21:13 server time; Elyos (Siel) took
+        // Reshanta's Root and Sulfur Tree Island.
+        const SIEGE_END = Date.UTC(2026, 10, 12, 20, 13, 24)
+        const LATER = SIEGE_END + 3_600_000
+        const artifacts = { "1001": 1, "1002": 1, "1003": 2, "2001": 0 }
+        const twoOnSiel = data({
+            characters: [
+                {
+                    id: "a",
+                    name: "Testchar",
+                    classId: "cleric",
+                    server: "siel",
+                },
+                { id: "b", name: "Alt", classId: "templar", server: "siel" },
+            ],
+        })
+
+        it("keeps the corridors the server's faction holds", () => {
+            const next = applyToTracker(
+                twoOnSiel,
+                snapshot({
+                    artifacts: artifacts,
+                    siegeEnd: SIEGE_END,
+                    artifactsAt: LATER,
+                }),
+            )
+
+            expect(next.corridorHolds.siel).toEqual({
+                period: getResetPeriods(SIEGE_END).siege,
+                at: SIEGE_END,
+                artifacts: ["1001", "1002"],
+            })
+        })
+
+        it("counts the entrances used since the siege", () => {
+            const next = applyToTracker(
+                twoOnSiel,
+                snapshot({
+                    artifacts: artifacts,
+                    siegeEnd: SIEGE_END,
+                    artifactsAt: LATER,
+                    corridors: ["10000002"],
+                    corridorsAt: LATER,
+                }),
+            )
+
+            expect(next.corridorsLeft.a.artifacts).toEqual(["1002"])
+            expect(next.counts.a.corridors).toEqual({
+                period: getResetPeriods(SIEGE_END).siege,
+                count: 1,
+            })
+            // The other character's entrances weren't read: left alone.
+            expect(next.counts.b).toBeUndefined()
+        })
+
+        it("counts another character once its server's corridors come in", () => {
+            const left = applyToTracker(
+                twoOnSiel,
+                snapshot({
+                    character: { name: "Alt", server: 1301, class: 33 },
+                    corridorsAt: LATER,
+                }),
+            )
+            const next = applyToTracker(
+                left,
+                snapshot({
+                    artifacts: artifacts,
+                    siegeEnd: SIEGE_END,
+                    artifactsAt: LATER,
+                }),
+            )
+
+            expect(next.counts.b.corridors.count).toBe(2)
+        })
+
+        it("ignores entrances read before the siege ended", () => {
+            const next = applyToTracker(
+                twoOnSiel,
+                snapshot({
+                    artifacts: artifacts,
+                    siegeEnd: SIEGE_END,
+                    artifactsAt: LATER,
+                    corridors: [],
+                    corridorsAt: SIEGE_END - 60_000,
+                }),
+            )
+
+            expect(next.counts.a).toBeUndefined()
+        })
+    })
+
     it("leaves a character it doesn't know for the user to add", () => {
         const before = data()
         const next = applyToTracker(
@@ -291,7 +385,7 @@ describe("applyToTracker", () => {
             applyToTracker(
                 before,
                 snapshot({
-                    character: { name: "Other", server: 1301, class: 14 },
+                    character: { name: "Other", server: 1301, class: 42 },
                 }),
             ),
         ).toBe(before)

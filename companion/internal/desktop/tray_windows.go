@@ -1,6 +1,6 @@
 // Package desktop is the companion's Windows shell side: the notification
-// area (tray) icon and its menu, starting with Windows, message boxes and
-// running only once.
+// area (tray) icon and its settings window, starting with Windows, message
+// boxes and running only once.
 package desktop
 
 import (
@@ -26,12 +26,7 @@ var (
 	postMessage           = user32.NewProc("PostMessageW")
 	postQuitMessage       = user32.NewProc("PostQuitMessage")
 	registerWindowMessage = user32.NewProc("RegisterWindowMessageW")
-	createPopupMenu       = user32.NewProc("CreatePopupMenu")
-	appendMenu            = user32.NewProc("AppendMenuW")
-	trackPopupMenu        = user32.NewProc("TrackPopupMenu")
-	destroyMenu           = user32.NewProc("DestroyMenu")
 	setForegroundWindow   = user32.NewProc("SetForegroundWindow")
-	getCursorPos          = user32.NewProc("GetCursorPos")
 	loadImage             = user32.NewProc("LoadImageW")
 	loadIcon              = user32.NewProc("LoadIconW")
 	getSystemMetrics      = user32.NewProc("GetSystemMetrics")
@@ -54,14 +49,6 @@ const (
 	nifMessage = 0x01
 	nifIcon    = 0x02
 	nifTip     = 0x04
-
-	mfString    = 0x0000
-	mfGrayed    = 0x0001
-	mfChecked   = 0x0008
-	mfSeparator = 0x0800
-
-	tpmRightButton = 0x0002
-	tpmReturnCmd   = 0x0100
 
 	imageIcon   = 1
 	smCxSmIcon  = 49
@@ -116,7 +103,7 @@ type notifyIconData struct {
 	BalloonIcon     uintptr
 }
 
-// Command is a menu choice.
+// Command is something done in the settings window.
 type Command int
 
 const (
@@ -128,14 +115,39 @@ const (
 	CommandRecord
 	CommandOpenRecordings
 	CommandExit
+	// The shop panel's delay changed: Value is the seconds.
+	CommandShopHide
+	// The overlays' background opacity changed: Value is the percent.
+	CommandOverlayOpacity
+	// The shop panel's type filter: Value 0 is all, k is shop.Types[k-1].
+	CommandShopType
+	// Hide Insight level Value (1-3) toggled.
+	CommandShopLevel
+	// Show only shop.Sources[Value] toggled.
+	CommandShopSource
+	// Look for a newer version now.
+	CommandCheckUpdates
 )
 
-// Menu is what the tray menu shows; the tray asks for it each time it opens.
-type Menu struct {
-	// A first, greyed line: what the companion is doing.
-	Status   string
+// Choice is a command and, for settings, its new value.
+type Choice struct {
+	Command Command
+	Value   int
+}
+
+// State is what the settings window shows; it asks for it each time it
+// opens and on Refresh.
+type State struct {
+	// The first line: what the companion is doing.
+	Status string
+	// A character is being played (the status dot turns green).
+	Playing  bool
 	LoggedIn bool
-	// Who is logged in, for "Log out (name)".
+	// A login is waiting for the browser.
+	LoggingIn bool
+	// False offline (-offline): nothing to log in to.
+	CanLogIn bool
+	// Who is logged in.
 	Account string
 	// Whether it starts with Windows; StartupAvailable is false when it
 	// runs from `go run`, whose .exe is temporary.
@@ -143,6 +155,20 @@ type Menu struct {
 	StartupAvailable bool
 	// Whether the game's messages are being recorded.
 	Recording bool
+	// How long the shop panel stays after the last shop message.
+	ShopHideSeconds int
+	// The overlays' background opacity, in percent.
+	OverlayOpacity int
+	// The shop panel's filters (shop.Filter): the types shown (none: all),
+	// hidden Insight levels, and the sources shown (none: all).
+	ShopTypes        []string
+	ShopHiddenLevels []int
+	ShopSources      []string
+	// The running version, whether it can update itself (release builds),
+	// and whether a check asked for is under way.
+	Version         string
+	CanUpdate       bool
+	CheckingUpdates bool
 }
 
 // Tray is the notification area icon.
@@ -150,8 +176,8 @@ type Tray struct {
 	hwnd           uintptr
 	icon           uintptr
 	taskbarCreated uint32
-	menu           func() Menu
-	on             func(Command)
+	state          func() State
+	on             func(Choice)
 	done           chan struct{}
 
 	mu  sync.Mutex
@@ -159,6 +185,10 @@ type Tray struct {
 	// The widget's state, handed to the tray's thread.
 	widgetState WidgetState
 	widgetText  string
+	// The shop panel's view (nil: hidden), handed over the same way.
+	shopView *ShopView
+	// The opacity preview's sample.
+	shopPreview *ShopView
 }
 
 // One tray per process: the window procedure finds it here.
@@ -178,13 +208,13 @@ func copyWide(dst []uint16, s string) {
 	copy(dst, src)
 }
 
-// NewTray adds the icon. menu is called for the menu's content and on for
-// each choice, both on the tray's own thread: keep them quick.
-func NewTray(tip string, menu func() Menu, on func(Command)) (*Tray, error) {
+// NewTray adds the icon. state is called for the settings window's content
+// and on for each choice, both on the tray's own thread: keep them quick.
+func NewTray(tip string, state func() State, on func(Choice)) (*Tray, error) {
 	if current != nil {
 		return nil, errors.New("the tray icon is already shown")
 	}
-	t := &Tray{menu: menu, on: on, tip: tip, done: make(chan struct{})}
+	t := &Tray{state: state, on: on, tip: tip, done: make(chan struct{})}
 	ready := make(chan error, 1)
 	go t.loop(ready)
 	if err := <-ready; err != nil {
@@ -220,6 +250,7 @@ func (t *Tray) loop(ready chan<- error) {
 	t.hwnd = hwnd
 	// Without it the companion still runs, just without the widget.
 	newWidget(instance)
+	newShopPanel(instance)
 	taskbar, _, _ := registerWindowMessage.Call(uintptr(unsafe.Pointer(wide("TaskbarCreated"))))
 	t.taskbarCreated = uint32(taskbar)
 
@@ -233,6 +264,8 @@ func (t *Tray) loop(ready chan<- error) {
 		ready <- err
 		return
 	}
+	// Without it, a click on the icon does nothing.
+	newSettingsWindow(instance, t.icon)
 	ready <- nil
 
 	var m msg
@@ -240,6 +273,12 @@ func (t *Tray) loop(ready chan<- error) {
 		r, _, _ := getMessage.Call(uintptr(unsafe.Pointer(&m)), 0, 0, 0)
 		if r == 0 || int32(r) == -1 {
 			return
+		}
+		// Tab and Enter between the settings window's controls.
+		if s := currentSettings; s != nil {
+			if handled, _, _ := isDialogMessage.Call(s.hwnd, uintptr(unsafe.Pointer(&m))); handled != 0 {
+				continue
+			}
 		}
 		translateMessage.Call(uintptr(unsafe.Pointer(&m)))
 		dispatchMessage.Call(uintptr(unsafe.Pointer(&m)))
@@ -284,64 +323,42 @@ func (t *Tray) ShowWidget(state WidgetState, text string) {
 	postMessage.Call(t.hwnd, wmWidget, 0, 0)
 }
 
+// ShowShopPets puts up the shop panel with this view, or hides it for nil.
+func (t *Tray) ShowShopPets(view *ShopView) {
+	t.mu.Lock()
+	t.shopView = view
+	t.mu.Unlock()
+	postMessage.Call(t.hwnd, wmShopPanel, 0, 0)
+}
+
+// SetOverlayOpacity sets the overlays' background opacity (percent) and
+// redraws those shown.
+func (t *Tray) SetOverlayOpacity(percent int) {
+	postMessage.Call(t.hwnd, wmOverlay, uintptr(max(0, min(100, percent))), 0)
+}
+
+// SetShopPreview is the sample the opacity preview shows in the shop panel.
+func (t *Tray) SetShopPreview(view *ShopView) {
+	t.mu.Lock()
+	t.shopPreview = view
+	t.mu.Unlock()
+}
+
+func (t *Tray) previewSample() *ShopView {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.shopPreview
+}
+
+// Refresh redraws the settings window from State (when it's open).
+func (t *Tray) Refresh() {
+	postMessage.Call(t.hwnd, wmRefresh, 0, 0)
+}
+
 // Close removes the icon and waits for its thread to end.
 func (t *Tray) Close() {
 	postMessage.Call(t.hwnd, wmClose, 0, 0)
 	<-t.done
-}
-
-func (t *Tray) showMenu() {
-	state := t.menu()
-	menu, _, _ := createPopupMenu.Call()
-	if menu == 0 {
-		return
-	}
-	defer destroyMenu.Call(menu)
-	add := func(flags uint32, id Command, text string) {
-		appendMenu.Call(menu, uintptr(flags), uintptr(id), uintptr(unsafe.Pointer(wide(text))))
-	}
-
-	if state.Status != "" {
-		add(mfString|mfGrayed, CommandNone, state.Status)
-		add(mfSeparator, CommandNone, "")
-	}
-	if state.LoggedIn {
-		label := "Log out"
-		if state.Account != "" {
-			label += " (" + state.Account + ")"
-		}
-		add(mfString, CommandLogOut, label)
-	} else {
-		add(mfString, CommandLogIn, "Log in with Discord")
-	}
-	startup := uint32(mfString)
-	if state.Startup {
-		startup |= mfChecked
-	}
-	if !state.StartupAvailable {
-		startup |= mfGrayed
-	}
-	add(startup, CommandStartup, "Start with Windows")
-	add(mfString, CommandOpenLog, "Open log")
-	add(mfSeparator, CommandNone, "")
-	record := uint32(mfString)
-	if state.Recording {
-		record |= mfChecked
-	}
-	add(record, CommandRecord, "Record game data")
-	add(mfString, CommandOpenRecordings, "Open recordings")
-	add(mfSeparator, CommandNone, "")
-	add(mfString, CommandExit, "Exit")
-
-	var p point
-	getCursorPos.Call(uintptr(unsafe.Pointer(&p)))
-	// Without this the menu stays open when clicking elsewhere.
-	setForegroundWindow.Call(t.hwnd)
-	chosen, _, _ := trackPopupMenu.Call(menu, tpmRightButton|tpmReturnCmd, uintptr(p.X), uintptr(p.Y), 0, t.hwnd, 0)
-	postMessage.Call(t.hwnd, wmNull, 0, 0)
-	if Command(chosen) != CommandNone {
-		t.on(Command(chosen))
-	}
 }
 
 func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
@@ -351,7 +368,9 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 	case message == wmTrayIcon:
 		switch lParam & 0xffff {
 		case wmLButtonUp, wmRButtonUp:
-			t.showMenu()
+			if currentSettings != nil {
+				currentSettings.show(t.state())
+			}
 		}
 		return 0
 	case message == wmWidget:
@@ -362,9 +381,32 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			currentWidget.show(state, text)
 		}
 		return 0
+	case message == wmOverlay:
+		overlayBackground = OpacityByte(int(wParam))
+		redrawOverlays()
+		return 0
+	case message == wmRefresh:
+		if currentSettings != nil {
+			currentSettings.refresh(t.state())
+		}
+		return 0
+	case message == wmShopPanel:
+		t.mu.Lock()
+		view := t.shopView
+		t.mu.Unlock()
+		if currentShopPanel != nil {
+			currentShopPanel.show(view)
+		}
+		return 0
 	case message == wmClose:
 		if currentWidget != nil {
 			destroyWindow.Call(currentWidget.hwnd)
+		}
+		if currentShopPanel != nil {
+			destroyWindow.Call(currentShopPanel.hwnd)
+		}
+		if currentSettings != nil {
+			destroyWindow.Call(currentSettings.hwnd)
 		}
 		destroyWindow.Call(hwnd)
 		return 0

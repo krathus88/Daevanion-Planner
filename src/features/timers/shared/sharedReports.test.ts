@@ -16,6 +16,7 @@ const db = vi.hoisted(() => {
         lastUpsert: null as unknown,
         lastDelete: [] as unknown[][],
         removed: 0,
+        created: 0,
         changeHandler: null as ((payload: unknown) => void) | null,
         subscribed: null as ((status: string) => void) | null,
     }
@@ -86,6 +87,8 @@ vi.mock("@account/supabaseClient", () => {
                 return table
             },
             channel: () => {
+                db.created++
+
                 return channel
             },
             removeChannel: async () => {
@@ -94,6 +97,33 @@ vi.mock("@account/supabaseClient", () => {
         },
     }
 })
+
+const page = vi.hoisted(() => {
+    return { visible: true, listeners: new Set<() => void>() }
+})
+
+vi.mock("@common/pageVisibility", () => {
+    return {
+        isPageVisible: () => {
+            return page.visible
+        },
+        subscribeToPageVisibility: (onChange: () => void) => {
+            page.listeners.add(onChange)
+
+            return () => {
+                page.listeners.delete(onChange)
+            }
+        },
+    }
+})
+
+const setVisible = (visible: boolean) => {
+    page.visible = visible
+
+    for (const listener of page.listeners) {
+        listener()
+    }
+}
 
 const ROW: Row = {
     server: "siel",
@@ -133,6 +163,9 @@ beforeEach(() => {
     db.lastUpsert = null
     db.lastDelete = []
     db.removed = 0
+    db.created = 0
+    page.visible = true
+    page.listeners.clear()
     db.changeHandler = null
     db.subscribed = null
 })
@@ -324,5 +357,50 @@ describe("writeSharedReport", () => {
         await module.writeSharedReport("siel", "gartua", null)
 
         expect(module.readSharedReports()["siel/gartua"]).toBeUndefined()
+    })
+})
+
+describe("a hidden page", () => {
+    it("closes the channel and keeps the reports", async () => {
+        db.rows = [ROW]
+
+        const module = await load()
+
+        await watch(module)
+        setVisible(false)
+
+        expect(db.removed).toBe(1)
+        expect(module.readSharedReports()["siel/gartua"]).toBeDefined()
+    })
+
+    it("reconnects and reloads once shown again", async () => {
+        const module = await load()
+        const onChange = vi.fn()
+
+        await watch(module, onChange)
+        setVisible(false)
+        db.rows = [ROW]
+        setVisible(true)
+
+        expect(db.created).toBe(2)
+
+        db.subscribed?.("SUBSCRIBED")
+        await vi.waitFor(() => {
+            expect(module.readSharedReports()["siel/gartua"]).toBeDefined()
+        })
+    })
+
+    it("opens no channel until shown", async () => {
+        page.visible = false
+
+        const module = await load()
+
+        module.subscribeToSharedReports(["siel"], () => {})
+
+        expect(db.created).toBe(0)
+
+        setVisible(true)
+
+        expect(db.created).toBe(1)
     })
 })

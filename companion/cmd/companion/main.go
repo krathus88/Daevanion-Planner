@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -30,8 +31,10 @@ import (
 	"daevanion-companion/internal/netio"
 	"daevanion-companion/internal/pipeline"
 	"daevanion-companion/internal/record"
+	"daevanion-companion/internal/shop"
 	"daevanion-companion/internal/state"
 	"daevanion-companion/internal/update"
+	"daevanion-companion/internal/wire"
 )
 
 // version is set at build time.
@@ -78,6 +81,10 @@ type app struct {
 	loggingIn bool
 	playing   string
 	recording bool
+	// A check for updates the user asked for is under way.
+	checkingUpdates bool
+	// The settings saved in the data folder (settings.go).
+	settings settings
 }
 
 func (a *app) status() string {
@@ -101,17 +108,28 @@ func (a *app) status() string {
 	}
 }
 
-func (a *app) menu() desktop.Menu {
+func (a *app) state() desktop.State {
 	status := a.status()
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return desktop.Menu{
+	return desktop.State{
 		Status:           status,
+		Playing:          a.playing != "",
 		LoggedIn:         a.loggedIn,
+		LoggingIn:        a.loggingIn,
+		CanLogIn:         !a.offline,
 		Account:          a.account,
+		ShopHideSeconds:  a.settings.ShopHideSeconds,
+		OverlayOpacity:   a.settings.OverlayOpacity,
+		ShopTypes:        a.settings.ShopTypes,
+		ShopHiddenLevels: a.settings.ShopHiddenLevels,
+		ShopSources:      a.settings.ShopSources,
 		Startup:          desktop.StartsWithWindows(),
 		StartupAvailable: desktop.CanStartWithWindows(),
 		Recording:        a.recording,
+		Version:          version,
+		CanUpdate:        update.IsRelease(version),
+		CheckingUpdates:  a.checkingUpdates,
 	}
 }
 
@@ -161,7 +179,7 @@ func main() {
 		fail("Couldn't list network adapters: %v", err)
 	}
 
-	state0 := &app{offline: *offline}
+	state0 := &app{offline: *offline, settings: loadSettings()}
 	var up *uploader
 	if !*offline {
 		up = newUploader()
@@ -173,8 +191,8 @@ func main() {
 		}
 	}
 
-	commands := make(chan desktop.Command, 8)
-	tray, err := desktop.NewTray("Daevanion Companion", state0.menu, func(c desktop.Command) {
+	commands := make(chan desktop.Choice, 8)
+	tray, err := desktop.NewTray("Daevanion Companion", state0.state, func(c desktop.Choice) {
 		select {
 		case commands <- c:
 		default:
@@ -187,10 +205,17 @@ func main() {
 	if desktop.WidgetError != nil {
 		logf("Couldn't make the connection widget: %v", desktop.WidgetError)
 	}
+	tray.SetOverlayOpacity(state0.settings.OverlayOpacity)
+	tray.SetShopPreview(shopSample())
+	// The tray tip and the settings window, after the state changed.
 	updateTip := func() {
 		tray.SetTip("Daevanion Companion: " + state0.status())
+		tray.Refresh()
 	}
 	updateTip()
+	if up != nil && !state0.loggedIn {
+		go askToLogIn(commands)
+	}
 
 	packets := make(chan netio.Packet, 8192)
 	opened := 0
@@ -227,7 +252,6 @@ func main() {
 			return err
 		}
 		recorder, recordingPath = r, path
-		p.OnMessage = recorder.Message
 		state0.mu.Lock()
 		state0.recording = true
 		state0.mu.Unlock()
@@ -238,7 +262,6 @@ func main() {
 		if recorder == nil {
 			return
 		}
-		p.OnMessage = nil
 		recorder.Close()
 		logf("Recorded %d messages to %s", recorder.Count, recordingPath)
 		recorder = nil
@@ -249,6 +272,58 @@ func main() {
 	if *recordTo != "" {
 		if err := startRecording(*recordTo); err != nil {
 			fail("Couldn't start the recording: %v", err)
+		}
+	}
+
+	// The shop panel: pets on sale in the open shop tab that still need
+	// souls. It follows the shop's messages, and the souls right after each
+	// batch of packets that changed them (shopSouls), so a pet bought in one
+	// tab shows its new souls in the next.
+	shopWatch := shop.Watch{HideAfter: state0.settings.shopHideAfter()}
+	var shownShop *desktop.ShopView
+	shopSouls := false
+	updateShop := func(now time.Time) {
+		items := shopWatch.Items(now)
+		var pets map[int]game.Pet
+		if items != nil {
+			pets = tracker.Pets()
+			// Started mid-session: the account's copy, plus what was
+			// bought since.
+			if pets == nil && up != nil {
+				pets = shop.WithGains(up.accountPets(), tracker.LateGains())
+			}
+		}
+		next := shopPets(items, pets, state0.settings.shopFilter())
+		if !reflect.DeepEqual(next, shownShop) {
+			tray.ShowShopPets(next)
+			shownShop = next
+		}
+	}
+	p.OnMessage = func(conn string, m wire.Message, at time.Time) {
+		if recorder != nil {
+			recorder.Message(conn, m, at)
+		}
+		switch m.Type() {
+		case game.TypeShopTab:
+			tab, ok := game.ParseShopTab(m.Body)
+			if !ok {
+				logf("Couldn't read a shop tab (%d bytes)", len(m.Body))
+				return
+			}
+			shopWatch.Tab(tab, time.Now())
+			updateShop(time.Now())
+		case game.TypeShopBuy:
+			if tab, entry, ok := game.ParseShopBuy(m.Body); ok {
+				shopWatch.Bought(tab, entry, time.Now())
+				// Shown with the souls it gave, after this batch.
+				shopSouls = true
+			}
+		case game.TypePets, game.TypePetSouls:
+			shopSouls = true
+		case game.TypeCharacter, game.TypeLogin, game.TypeSwitch:
+			// A zone change, login or switch: no shop stays open through it.
+			shopWatch.Close()
+			updateShop(time.Now())
 		}
 	}
 
@@ -303,6 +378,7 @@ func main() {
 		tray.ShowWidget(desktop.WidgetBusy, "Updating to "+release.Version+"…")
 		downloadUpdate(release, ready)
 	}
+	checked := make(chan checkResult, 1)
 	watchForUpdates(updatesFound)
 	// No call yet: the first tick, a second in, knows whether the game is
 	// already running, so "Not connected" doesn't flash before "Connected".
@@ -321,8 +397,8 @@ func main() {
 			quit()
 			return
 
-		case command := <-commands:
-			switch command {
+		case choice := <-commands:
+			switch choice.Command {
 			case desktop.CommandExit:
 				quit()
 				return
@@ -341,10 +417,34 @@ func main() {
 					showNote(desktop.WidgetBusy, "Recording game data", time.Now())
 				}
 				updateTip()
+			case desktop.CommandCheckUpdates:
+				// Test builds never update: the button is off there.
+				state0.mu.Lock()
+				start := !state0.checkingUpdates && update.IsRelease(version)
+				if start {
+					state0.checkingUpdates = true
+				}
+				state0.mu.Unlock()
+				if start {
+					updateTip()
+					checkForUpdate(checked)
+				}
 			case desktop.CommandOpenRecordings:
 				if dir, err := recordingsDir(); err == nil {
 					desktop.Open(dir)
 				}
+			case desktop.CommandShopHide, desktop.CommandOverlayOpacity, desktop.CommandShopType, desktop.CommandShopLevel, desktop.CommandShopSource:
+				state0.mu.Lock()
+				changeSetting(&state0.settings, choice)
+				saved := state0.settings
+				state0.mu.Unlock()
+				shopWatch.HideAfter = saved.shopHideAfter()
+				tray.SetOverlayOpacity(saved.OverlayOpacity)
+				if err := saveSettings(saved); err != nil {
+					logf("Couldn't save the settings: %v", err)
+				}
+				updateTip()
+				updateShop(time.Now())
 			case desktop.CommandStartup:
 				on := !desktop.StartsWithWindows()
 				if err := desktop.SetStartWithWindows(on); err != nil {
@@ -352,6 +452,7 @@ func main() {
 				} else {
 					logf("Start with Windows: %v", on)
 				}
+				updateTip()
 			case desktop.CommandLogIn:
 				state0.mu.Lock()
 				busy := up == nil || state0.loggedIn || state0.loggingIn
@@ -397,6 +498,23 @@ func main() {
 			default:
 				asking = true
 				askToUpdate(found.release, answers)
+			}
+
+		case result := <-checked:
+			state0.mu.Lock()
+			state0.checkingUpdates = false
+			state0.mu.Unlock()
+			updateTip()
+			switch {
+			case result.err != nil:
+				logf("Couldn't check for updates: %v", result.err)
+				showNote(desktop.WidgetWaiting, "Couldn't check for updates", time.Now())
+			case !result.newer:
+				showNote(desktop.WidgetDone, "Up to date ("+version+")", time.Now())
+			case !updating && !asking:
+				// Asked for: asks again even after a No.
+				asking = true
+				askToUpdate(result.release, answers)
 			}
 
 		case answer := <-answers:
@@ -471,6 +589,10 @@ func main() {
 
 		case packet := <-packets:
 			p.Packet(packet)
+			if shopSouls {
+				shopSouls = false
+				updateShop(time.Now())
+			}
 			// The next tick shows it.
 			lastPacket = time.Now()
 
@@ -479,6 +601,7 @@ func main() {
 				recorder.Flush()
 			}
 			showConnection(now)
+			updateShop(now)
 			current := tracker.Current()
 			name := ""
 			if current != nil {
@@ -539,6 +662,31 @@ func connectionText(connected bool, playing *game.Character) (desktop.WidgetStat
 	}
 }
 
+// shopPets is what the shop panel shows for the open tab's items: nil
+// (hidden) when no tab selling pets is open, else the pets the filter lets
+// through, or why none.
+func shopPets(items []game.ShopItem, pets map[int]game.Pet, filter shop.Filter) *desktop.ShopView {
+	if !shop.HasPets(items) {
+		return nil
+	}
+	view := &desktop.ShopView{Pets: []desktop.ShopPet{}}
+	for _, line := range shop.Lines(items, pets, filter) {
+		view.Pets = append(view.Pets, desktop.ShopPet{Name: line.Name, Icon: line.Icon, Level: line.Level, Souls: line.Souls, Maps: line.Maps, Bought: line.Bought})
+	}
+	if len(view.Pets) == 0 {
+		view.Empty = shop.EmptyText(items, pets)
+	}
+	return view
+}
+
+// shopSample is what the opacity preview shows in the shop panel: four pets
+// from a Pets tab, one each of most kinds of line.
+func shopSample() *desktop.ShopView {
+	items := []game.ShopItem{{Item: 534760134}, {Item: 534760088}, {Item: 534760078}, {Item: 534760143}}
+	pets := map[int]game.Pet{1163: {Level: 1}, 1089: {Level: 1, Souls: 12}}
+	return shopPets(items, pets, shop.Filter{})
+}
+
 func snapshotKey(s state.Snapshot) string {
 	return fmt.Sprintf("%s%d:%s", KeyPrefix, s.Character.Server, s.Character.Name)
 }
@@ -594,6 +742,15 @@ func setUpStartup() {
 	}
 	if desktop.StartsWithWindows() {
 		desktop.SetStartWithWindows(true)
+	}
+}
+
+// askToLogIn offers the Discord login at launch when there's no saved one,
+// so it needn't be found in the tray menu. Yes works like the menu's Log in.
+func askToLogIn(commands chan<- desktop.Choice) {
+	logIn := desktop.Ask("Daevanion Companion", "Log in with Discord so the companion can send your game data to Daevanion Planner?\n\nYou can also log in later from its icon in the notification area, by the clock.")
+	if logIn {
+		commands <- desktop.Choice{Command: desktop.CommandLogIn}
 	}
 }
 

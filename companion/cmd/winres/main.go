@@ -1,5 +1,5 @@
-// Command winres writes the companion's Windows resources (its icon and the
-// name Explorer and Task Manager show) as a .syso object that `go build`
+// Command winres writes the companion's Windows resources (its icon, the
+// name Explorer and Task Manager show, and the manifest) as a .syso object that `go build`
 // links into the .exe:
 //
 //	go run ./cmd/winres
@@ -28,7 +28,7 @@ func main() {
 		Description: "Daevanion Companion",
 		Product:     "Daevanion Companion",
 		File:        "Daevanion-Companion.exe",
-	}))
+	}), winres.Manifest())
 	out := "cmd/companion/rsrc_windows_amd64.syso"
 	if err := os.WriteFile(out, winres.Object(resources), 0o644); err != nil {
 		fail(err)

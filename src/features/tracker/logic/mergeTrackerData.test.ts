@@ -127,6 +127,8 @@ describe("mergeTrackerData", () => {
             notes: {},
             cubeKeys: {},
             arena: {},
+            corridorHolds: {},
+            corridorsLeft: {},
             declined: [],
             membership: true,
         })
@@ -214,5 +216,22 @@ describe("mergeTrackerData", () => {
         expect(mergeTrackerData({}, { membership: false }).membership).toBe(
             true,
         )
+    })
+
+    it("keeps the corridor records seen last", () => {
+        const older = {
+            corridorHolds: {
+                siel: { period: 7, at: 2000, artifacts: ["1001"] },
+            },
+            corridorsLeft: { a: { period: 7, at: 3000, artifacts: [] } },
+        }
+        const newer = {
+            corridorHolds: { siel: { period: 6, at: 1000, artifacts: [] } },
+            corridorsLeft: { a: { period: 7, at: 4000, artifacts: ["1001"] } },
+        }
+        const merged = mergeTrackerData(newer, older)
+
+        expect(merged.corridorHolds.siel.artifacts).toEqual(["1001"])
+        expect(merged.corridorsLeft.a.at).toBe(4000)
     })
 })

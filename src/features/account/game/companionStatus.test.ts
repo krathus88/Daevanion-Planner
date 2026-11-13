@@ -208,6 +208,42 @@ describe("subscribeToCompanionStatus", () => {
         })
     })
 
+    it("disconnects while the tab is hidden and reads the row again when shown", async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+
+        let visibility: DocumentVisibilityState = "visible"
+        const setVisibility = (next: DocumentVisibilityState) => {
+            visibility = next
+            document.dispatchEvent(new Event("visibilitychange"))
+        }
+
+        vi.spyOn(document, "visibilityState", "get").mockImplementation(() => {
+            return visibility
+        })
+
+        const companion = await watch({ v: 1, running: true, at: Date.now() })
+
+        setVisibility("hidden")
+
+        expect(mocks.live).toBeNull()
+
+        // Unrefreshed while hidden: the status holds instead of going stale.
+        await vi.advanceTimersByTimeAsync(5 * 60_000)
+
+        expect(companion.readCompanionStatusNow().state).toBe("running")
+
+        mocks.row = { v: 1, running: true, at: Date.now() }
+        setVisibility("visible")
+        mocks.connect?.("SUBSCRIBED")
+        await vi.waitFor(() => {
+            expect(mocks.reads).toBe(2)
+        })
+
+        expect(companion.readCompanionStatusNow().state).toBe("running")
+        companion.unsubscribe()
+        vi.restoreAllMocks()
+    })
+
     it("stops listening once no page shows it", async () => {
         const companion = await watch(null)
 

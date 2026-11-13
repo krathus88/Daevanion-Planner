@@ -1,6 +1,10 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import type { BossReport } from "@timers/storage/timerSettings"
 import { supabase } from "@account/supabaseClient"
+import {
+    isPageVisible,
+    subscribeToPageVisibility,
+} from "@common/pageVisibility"
 
 type ReportRow = {
     server: string
@@ -37,7 +41,11 @@ const toSharedReport = (row: ReportRow): SharedReport => {
 }
 
 let reports: SharedReports = {}
+// The scopes the page shows, and the open channel: only while the page is
+// visible, so a hidden tab keeps no connection.
+let wanted: string[] | null = null
 let watching: { scopes: string[]; channel: RealtimeChannel } | null = null
+let stopWatchingPage: (() => void) | null = null
 const listeners = new Set<() => void>()
 
 const emit = () => {
@@ -64,9 +72,7 @@ const removeRow = (scope: string, bossId: string) => {
 
 const isWatched = (scope: unknown) => {
     return (
-        typeof scope === "string" &&
-        watching !== null &&
-        watching.scopes.includes(scope)
+        typeof scope === "string" && wanted !== null && wanted.includes(scope)
     )
 }
 
@@ -98,13 +104,20 @@ const stop = () => {
     }
 }
 
-const watch = (scopes: string[]) => {
-    if (watching?.scopes.join() === scopes.join()) {
+// Opens the channel for the scopes wanted while the page is visible, and
+// closes it otherwise. Reports stay while hidden; reconnecting reloads them.
+const update = () => {
+    const scopes = isPageVisible() ? wanted : null
+
+    if ((watching?.scopes ?? null) === scopes) {
         return
     }
 
     stop()
-    reports = {}
+
+    if (scopes === null) {
+        return
+    }
 
     // Unfiltered: Supabase can't filter deletes, and the table is tiny.
     const channel = supabase
@@ -140,14 +153,23 @@ export const subscribeToSharedReports = (
     scopes: string[],
     onChange: () => void,
 ) => {
-    watch(scopes)
+    if (wanted?.join() !== scopes.join()) {
+        wanted = scopes
+        reports = {}
+    }
+
+    stopWatchingPage ??= subscribeToPageVisibility(update)
+    update()
     listeners.add(onChange)
 
     return () => {
         listeners.delete(onChange)
 
         if (listeners.size === 0) {
-            stop()
+            stopWatchingPage?.()
+            stopWatchingPage = null
+            wanted = null
+            update()
             reports = {}
         }
     }

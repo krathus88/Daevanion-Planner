@@ -1,4 +1,6 @@
 import { setStoredItem } from "@account/sync/syncMeta"
+import { keepUnchanged } from "@common/keepUnchanged"
+import { getCurrentPetId } from "@pets/config/petIdChanges"
 import {
     isPetLevel,
     isPetSouls,
@@ -51,18 +53,34 @@ const pickHiddenLevels = (value: Record<string, unknown>) => {
     return PET_LEVELS.filter((level) => stored.includes(level))
 }
 
+// Keys by pet id as it is now: an old placeholder id moves to the pet's real
+// id, unless that id has its own value already (then the old one is dropped).
+const renamePetIds = (record: Record<string, unknown>) => {
+    const renamed: Record<string, unknown> = {}
+
+    for (const [id, value] of Object.entries(record)) {
+        const current = String(getCurrentPetId(Number(id)))
+
+        if (current === id || !(current in record)) {
+            renamed[current] = value
+        }
+    }
+
+    return renamed
+}
+
 const pickLevels = (value: Record<string, unknown>) => {
     const levels: Record<string, number> = {}
 
     if (isRecord(value.levels)) {
-        for (const [id, level] of Object.entries(value.levels)) {
+        for (const [id, level] of Object.entries(renamePetIds(value.levels))) {
             if (isPetLevel(level)) {
                 levels[id] = level
             }
         }
     } else if (isRecord(value.souls)) {
         // Older saves kept soul counts; keep the level they reached.
-        for (const [id, souls] of Object.entries(value.souls)) {
+        for (const [id, souls] of Object.entries(renamePetIds(value.souls))) {
             const level = typeof souls === "number" ? levelFromSouls(souls) : 0
 
             if (level > 0) {
@@ -83,7 +101,7 @@ const pickSouls = (
     const souls: Record<string, number> = {}
 
     if (isRecord(value.souls)) {
-        for (const [id, count] of Object.entries(value.souls)) {
+        for (const [id, count] of Object.entries(renamePetIds(value.souls))) {
             if (
                 isPetSouls(count) &&
                 levelFromSouls(count) === (levels[id] ?? 0)
@@ -139,7 +157,12 @@ export const readPetCollection = () => {
     const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
-        cached = { raw: raw, collection: parse(raw) }
+        // Parts the change left alone keep their identity: only what changed
+        // re-renders.
+        cached = {
+            raw: raw,
+            collection: keepUnchanged(cached?.collection, parse(raw)),
+        }
     }
 
     return cached.collection

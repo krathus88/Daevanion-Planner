@@ -179,6 +179,7 @@ export const useTrackerData = () => {
         energy: data.energy,
         cubeKeys: data.cubeKeys,
         arena: data.arena,
+        corridorHolds: data.corridorHolds,
         declined: data.declined,
         notes: data.notes,
         membership: data.membership,

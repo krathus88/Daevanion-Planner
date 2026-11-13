@@ -1,4 +1,5 @@
 import { setStoredItem } from "@account/sync/syncMeta"
+import { keepUnchanged } from "@common/keepUnchanged"
 import { isClassId } from "@config/classPresets/classInfo"
 import { isRecord } from "@planner/storage/isRecord"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
@@ -14,6 +15,7 @@ import {
 import type {
     ArenaModes,
     ArenaSighting,
+    CorridorRecord,
     TaskCount,
     TaskEntries,
     TrackerCharacter,
@@ -40,6 +42,8 @@ const EMPTY_DATA: TrackerData = {
     energy: {},
     cubeKeys: {},
     arena: {},
+    corridorHolds: {},
+    corridorsLeft: {},
     declined: [],
     notes: {},
     membership: true,
@@ -218,6 +222,32 @@ const pickArena = (value: unknown) => {
     return arena
 }
 
+// Corridor records by server or character id; bad ones are dropped.
+const pickCorridors = (value: unknown) => {
+    const records: Record<string, CorridorRecord> = {}
+
+    if (!isRecord(value)) {
+        return records
+    }
+
+    for (const [id, record] of Object.entries(value)) {
+        if (
+            isRecord(record) &&
+            isWholeNumber(record.period, 0) &&
+            isWholeNumber(record.at, 0) &&
+            Array.isArray(record.artifacts)
+        ) {
+            records[id] = {
+                period: record.period,
+                at: record.at,
+                artifacts: pickStrings(record.artifacts),
+            }
+        }
+    }
+
+    return records
+}
+
 // Notes by character id; empty ones are dropped, overlong ones cut.
 const pickNotes = (value: unknown) => {
     const notes: TrackerData["notes"] = {}
@@ -367,6 +397,8 @@ export const parseTrackerData = (value: unknown): TrackerData => {
         energy: pickEnergy(value.energy),
         cubeKeys: pickCubeKeys(value.cubeKeys),
         arena: pickArena(value.arena),
+        corridorHolds: pickCorridors(value.corridorHolds),
+        corridorsLeft: pickCorridors(value.corridorsLeft),
         declined: pickStrings(value.declined),
         notes: pickNotes(value.notes),
         // Saves from before it existed assume the membership.
@@ -402,7 +434,9 @@ export const readTrackerData = () => {
     const raw = readRaw()
 
     if (!cached || cached.raw !== raw) {
-        cached = { raw: raw, data: parse(raw) }
+        // Parts the change left alone keep their identity: only what changed
+        // re-renders.
+        cached = { raw: raw, data: keepUnchanged(cached?.data, parse(raw)) }
     }
 
     return cached.data
@@ -418,7 +452,7 @@ export const writeTrackerData = (data: TrackerData) => {
     // Keep the object written rather than parse it back: edits copy only
     // what they change, so every other character's counts stay the same
     // objects and their cards don't re-render.
-    cached = { raw: readRaw(), data: data }
+    cached = { raw: readRaw(), data: keepUnchanged(cached?.data, data) }
 
     window.dispatchEvent(new Event(CHANGE_EVENT))
 }

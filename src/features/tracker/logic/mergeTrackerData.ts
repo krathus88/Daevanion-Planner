@@ -1,5 +1,5 @@
 import { parseTrackerData } from "@tracker/storage/trackerData"
-import type { TaskCount, TrackerData } from "@tracker/types"
+import type { CorridorRecord, TaskCount, TrackerData } from "@tracker/types"
 
 // The newer side's entries in its order, then the older side's missing ones.
 const mergeById = <T extends { id: string }>(
@@ -118,6 +118,24 @@ const mergeArena = (
     return merged
 }
 
+// Per server or character, the record seen last.
+const mergeCorridors = (
+    newer: Record<string, CorridorRecord>,
+    older: Record<string, CorridorRecord>,
+) => {
+    const merged = { ...newer }
+
+    for (const [id, record] of Object.entries(older)) {
+        const current = merged[id]
+
+        if (!current || record.at > current.at) {
+            merged[id] = record
+        }
+    }
+
+    return merged
+}
+
 // Characters and tasks by id, counts and entries one by one. A list removed on one side
 // comes back from the other, like saved plans.
 export const mergeTrackerData = (newer: unknown, older: unknown) => {
@@ -144,6 +162,14 @@ export const mergeTrackerData = (newer: unknown, older: unknown) => {
         // Per character, the newer side's count.
         cubeKeys: { ...olderData.cubeKeys, ...newerData.cubeKeys },
         arena: mergeArena(newerData.arena, olderData.arena),
+        corridorHolds: mergeCorridors(
+            newerData.corridorHolds,
+            olderData.corridorHolds,
+        ),
+        corridorsLeft: mergeCorridors(
+            newerData.corridorsLeft,
+            olderData.corridorsLeft,
+        ),
         // Declined on either side stays declined.
         declined: [...new Set([...newerData.declined, ...olderData.declined])],
         // Per character, the newer side's note.

@@ -7,6 +7,7 @@
 import { existsSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import sharp from "sharp"
+import { PET_ID_CHANGES } from "../src/features/pets/config/petIdChanges.ts"
 import {
     PET_MAP_IDS,
     PET_MAPS,
@@ -452,10 +453,12 @@ const buildSpots = (
     })
 }
 
-type PetIcon = { icon: string; url: string }
+type PetIcon = { icon: string; url: string; id: number }
 
-// The pet list links each portrait as /icons/aion2/pets/<id>_<Portrait>.png.
-// The Atlas gives pets without a client id a negative id, so match by name too.
+// The pet list links each portrait as /icons/aion2/pets/<id>_<Portrait>.png,
+// by the game's own pet id (it agrees with every Atlas id, and with a game
+// recording). The Atlas gives pets without a client id a negative id, so
+// match by name too: those pets take gegebase's id (getPetId).
 const readPetIcons = async () => {
     const html = await fetchText(`${ICON_SITE}/games/aion2/pets`)
     const byId = new Map<number, PetIcon>()
@@ -467,6 +470,7 @@ const readPetIcons = async () => {
         const entry = {
             icon: portrait.toLowerCase().replaceAll("_", "-"),
             url: `${ICON_SITE}${path}`,
+            id: Number(id),
         }
 
         byId.set(Number(id), entry)
@@ -477,6 +481,28 @@ const readPetIcons = async () => {
     }
 
     return { byId: byId, byName: byName }
+}
+
+// A pet's game id: the Atlas's, or for its placeholder (negative) ids
+// gegebase's by name. Each change must be in PET_ID_CHANGES, so saves made
+// with the placeholder keep working.
+const getPetId = (
+    pet: { id: number; name: string },
+    icons: Awaited<ReturnType<typeof readPetIcons>>,
+) => {
+    const real = pet.id < 0 ? icons.byName.get(pet.name)?.id : undefined
+
+    if (real === undefined || real < 0) {
+        return pet.id
+    }
+
+    if (PET_ID_CHANGES[pet.id] !== real) {
+        throw new Error(
+            `${pet.name} is now ${real}: add ${pet.id} → ${real} to PET_ID_CHANGES.`,
+        )
+    }
+
+    return real
 }
 
 const saveIcon = async ({ icon, url }: PetIcon) => {
@@ -651,14 +677,14 @@ const main = async () => {
             name: extra.name,
             category: "special",
             source: "special",
-            icon: { icon: extra.icon, url: "" },
+            icon: { icon: extra.icon, url: "", id: extra.id },
             monsters: [] as number[],
         }
     })
     const pets = atlas.pets
         .map((pet) => {
             return {
-                id: pet.id,
+                id: getPetId(pet, icons),
                 name: pet.name,
                 category: CATEGORY_IDS[pet.category],
                 source: SOURCE_IDS[pet.sourceKind],
@@ -668,6 +694,12 @@ const main = async () => {
         })
         .concat(extraPets)
         .sort((a, b) => a.name.localeCompare(b.name))
+
+    const petIds = new Set(pets.map((pet) => pet.id))
+
+    if (petIds.size !== pets.length) {
+        throw new Error("Two pets share an id.")
+    }
 
     for (const pet of pets) {
         if (!pet.category || !pet.source) {

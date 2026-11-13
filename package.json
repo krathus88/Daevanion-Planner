@@ -18,6 +18,7 @@
         "og:banners": "node scripts/generateOgBanners.ts",
         "pets:data": "node scripts/buildPetAtlas.ts",
         "pets:tiles": "node scripts/buildPetMapTiles.ts",
+        "pets:shop": "node scripts/buildShopPets.ts",
         "crafting:data": "node scripts/buildCraftingData.ts",
         "typegen": "npx @chakra-ui/cli typegen ./src/theme/index.ts",
         "knip": "knip",

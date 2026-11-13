@@ -1,5 +1,9 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { supabase } from "@account/supabaseClient"
+import {
+    isPageVisible,
+    subscribeToPageVisibility,
+} from "@common/pageVisibility"
 
 type PriceRow = {
     server: string
@@ -22,7 +26,11 @@ const COLUMNS = "server, item_id, price, updated_at"
 const EMPTY: SharedPrices = {}
 
 let prices: SharedPrices = EMPTY
+// The server the page shows, and the open channel: only while the page is
+// visible, so a hidden tab keeps no connection.
+let wanted: string | null = null
 let watching: { server: string; channel: RealtimeChannel } | null = null
+let stopWatchingPage: (() => void) | null = null
 const listeners = new Set<() => void>()
 
 const emit = () => {
@@ -49,7 +57,7 @@ const removeRow = (itemId: number) => {
 }
 
 const isWatched = (server: unknown) => {
-    return watching !== null && watching.server === server
+    return wanted !== null && wanted === server
 }
 
 const load = async (server: string) => {
@@ -79,13 +87,20 @@ const stop = () => {
     }
 }
 
-const watch = (server: string) => {
-    if (isWatched(server)) {
+// Opens the channel for the server wanted while the page is visible, and
+// closes it otherwise. Prices stay while hidden; reconnecting reloads them.
+const update = () => {
+    const server = isPageVisible() ? wanted : null
+
+    if ((watching?.server ?? null) === server) {
         return
     }
 
     stop()
-    prices = EMPTY
+
+    if (server === null) {
+        return
+    }
 
     // Unfiltered: Supabase can't filter deletes (they carry only the key,
     // server and item), and prices change rarely.
@@ -126,14 +141,23 @@ export const subscribeToSharedPrices = (
     server: string,
     onChange: () => void,
 ) => {
-    watch(server)
+    if (wanted !== server) {
+        wanted = server
+        prices = EMPTY
+    }
+
+    stopWatchingPage ??= subscribeToPageVisibility(update)
+    update()
     listeners.add(onChange)
 
     return () => {
         listeners.delete(onChange)
 
         if (listeners.size === 0) {
-            stop()
+            stopWatchingPage?.()
+            stopWatchingPage = null
+            wanted = null
+            update()
             prices = EMPTY
         }
     }

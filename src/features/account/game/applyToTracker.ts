@@ -1,9 +1,12 @@
+import { getServer } from "@timers/config/servers"
 import { getArenaWeek, updateArenaRecord } from "@tracker/logic/arenaWeeks"
+import { getCorridorsUsed } from "@tracker/logic/corridors"
 import { getEnergyPeriod } from "@tracker/logic/odyleEnergy"
 import { getResetPeriods } from "@tracker/logic/resetPeriods"
 import { getTaskOwner } from "@tracker/logic/taskOwners"
 import { getTasks, setCubeKeys } from "@tracker/logic/trackerEdits"
 import type {
+    CorridorRecord,
     TaskCount,
     TaskEntries,
     TrackerCharacter,
@@ -15,10 +18,13 @@ import {
     ARENA_WON,
     BAG_STORAGE,
     CHARACTER_STORAGE,
+    CORRIDOR_TASK,
+    CORRIDORS,
     CRAFT_TASKS,
     DUTY_TASK,
     EMERGENCY_SUPPLY,
     ENERGY_COUNTER,
+    FACTION_NUMBERS,
     getServerId,
     HIDDEN_CUBE_KEY,
     SUPPLY_TASK,
@@ -338,6 +344,88 @@ const applyArena = (
     return next
 }
 
+// Abyss corridors. The corridors a faction holds after a siege are its
+// server's (any character there can tell); each character then has one
+// entrance per corridor, used on entering (the companion drops it then). The
+// task counts the used ones, for every character on the server whose
+// entrances were read since the siege.
+const applyCorridors = (
+    data: TrackerData,
+    character: TrackerCharacter,
+    snapshot: GameSnapshot,
+) => {
+    const task = getTasks(data).find((item) => item.id === CORRIDOR_TASK)
+    const server = getServer(character.server)
+    let holds = data.corridorHolds
+    let left = data.corridorsLeft
+
+    if (snapshot.artifacts && snapshot.siegeEnd !== undefined && server) {
+        const faction = FACTION_NUMBERS[server.faction]
+        const hold: CorridorRecord = {
+            period: getResetPeriods(snapshot.siegeEnd).siege,
+            at: snapshot.siegeEnd,
+            artifacts: CORRIDORS.filter((corridor) => {
+                return snapshot.artifacts?.[corridor.artifact] === faction
+            }).map((corridor) => corridor.artifact),
+        }
+        const before = holds[character.server]
+
+        if (before === undefined || before.at <= hold.at) {
+            holds = { ...holds, [character.server]: hold }
+        }
+    }
+
+    if (snapshot.corridorsAt !== undefined) {
+        const open = snapshot.corridors ?? []
+        const record: CorridorRecord = {
+            period: getResetPeriods(snapshot.corridorsAt).siege,
+            at: snapshot.corridorsAt,
+            artifacts: CORRIDORS.filter((corridor) => {
+                return open.includes(corridor.counter)
+            }).map((corridor) => corridor.artifact),
+        }
+        const before = left[character.id]
+
+        if (before === undefined || before.at <= record.at) {
+            left = { ...left, [character.id]: record }
+        }
+    }
+
+    if (holds === data.corridorHolds && left === data.corridorsLeft) {
+        return data
+    }
+
+    let next: TrackerData = {
+        ...data,
+        corridorHolds: holds,
+        corridorsLeft: left,
+    }
+    const hold = holds[character.server]
+
+    if (task === undefined || hold === undefined) {
+        return next
+    }
+
+    for (const other of data.characters) {
+        const used = getCorridorsUsed(
+            other.server === character.server ? hold : undefined,
+            left[other.id],
+        )
+
+        if (used !== null) {
+            next = {
+                ...next,
+                counts: setOwnerItem(next.counts, other.id, task.id, {
+                    period: hold.period,
+                    count: used,
+                }),
+            }
+        }
+    }
+
+    return next
+}
+
 // The game's values replace what the tracker had: the game is the real data.
 export const applyToTracker = (
     data: TrackerData,
@@ -355,5 +443,7 @@ export const applyToTracker = (
     const withDuty = applyDuty(withSupply, character, snapshot)
     const withArena = applyArena(withDuty, character, snapshot)
 
-    return applyCrafts(withArena, character, snapshot)
+    const withCrafts = applyCrafts(withArena, character, snapshot)
+
+    return applyCorridors(withCrafts, character, snapshot)
 }

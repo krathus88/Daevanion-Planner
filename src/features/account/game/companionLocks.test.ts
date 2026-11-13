@@ -36,6 +36,10 @@ const locked = (sections: string[], week = 5) => {
 }
 
 describe("getCompanionLocks", () => {
+    it("locks the Corridors task once the entrances are read", () => {
+        expect(locked(["1301:kryx:corridors"])).toEqual({ a: ["corridors"] })
+    })
+
     it("locks what each section fills, under its owner", () => {
         expect(
             locked([

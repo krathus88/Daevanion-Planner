@@ -56,6 +56,11 @@ var Labels = map[string]string{
 	game.TypeDuty:             "duty board",
 	game.TypeProgress:         "progress counters",
 	game.TypeArena:            "arena stats",
+	game.TypeShopTab:          "shop tab",
+	game.TypeShopBuy:          "shop purchase",
+	game.TypeZone:             "zone",
+	game.TypeArtifacts:        "artifact owners",
+	game.TypeArtifactsWorld:   "artifact owners",
 }
 
 // Recorder writes one line per message: time, type, size, connection and

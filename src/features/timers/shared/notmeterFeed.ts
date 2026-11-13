@@ -1,3 +1,4 @@
+import { pollWhileVisible } from "@common/pageVisibility"
 import { isRecord } from "@planner/storage/isRecord"
 import { FIELD_BOSSES } from "@timers/config/fieldBosses"
 import { NOTMETER_BOSS_CODES } from "@timers/config/notmeterBosses"
@@ -152,7 +153,7 @@ export const fetchNotmeterFeed = async (): Promise<NotmeterFeedResult> => {
 }
 
 let feed: NotmeterFeed = { reports: {}, error: null }
-let timer: ReturnType<typeof setInterval> | null = null
+let stopPolling: (() => void) | null = null
 const listeners = new Set<() => void>()
 
 const emit = () => {
@@ -162,10 +163,6 @@ const emit = () => {
 }
 
 const refresh = async () => {
-    if (document.hidden) {
-        return
-    }
-
     const result = await fetchNotmeterFeed()
 
     if (listeners.size === 0) {
@@ -182,10 +179,6 @@ const refresh = async () => {
     emit()
 }
 
-const handleVisibilityChange = () => {
-    void refresh()
-}
-
 export const readNotmeterFeed = () => {
     return feed
 }
@@ -193,22 +186,18 @@ export const readNotmeterFeed = () => {
 export const subscribeToNotmeterFeed = (onChange: () => void) => {
     listeners.add(onChange)
 
-    if (!timer) {
-        timer = setInterval(handleVisibilityChange, REFRESH_MS)
-        document.addEventListener("visibilitychange", handleVisibilityChange)
-        void refresh()
+    if (!stopPolling) {
+        stopPolling = pollWhileVisible(() => {
+            void refresh()
+        }, REFRESH_MS)
     }
 
     return () => {
         listeners.delete(onChange)
 
-        if (listeners.size === 0 && timer) {
-            clearInterval(timer)
-            timer = null
-            document.removeEventListener(
-                "visibilitychange",
-                handleVisibilityChange,
-            )
+        if (listeners.size === 0 && stopPolling) {
+            stopPolling()
+            stopPolling = null
             feed = { reports: {}, error: null }
         }
     }

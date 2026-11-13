@@ -5,7 +5,8 @@ import (
 	"unsafe"
 )
 
-// The widget: a small box in the bottom right corner, above everything and
+// The widget: a small box in the bottom right corner of the monitor showing
+// the game (the main one without it), above everything and
 // letting clicks through, saying what the companion is up to (its game
 // connection, an update). Some states stay up, others show for a moment and
 // fade. It lives on the tray's thread.
@@ -38,32 +39,29 @@ func (s WidgetState) color() uintptr {
 var (
 	gdi32 = syscall.NewLazyDLL("gdi32.dll")
 
-	setLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
-	showWindow                 = user32.NewProc("ShowWindow")
-	setWindowPos               = user32.NewProc("SetWindowPos")
-	setWindowRgn               = user32.NewProc("SetWindowRgn")
-	invalidateRect             = user32.NewProc("InvalidateRect")
-	beginPaint                 = user32.NewProc("BeginPaint")
-	endPaint                   = user32.NewProc("EndPaint")
-	fillRect                   = user32.NewProc("FillRect")
-	drawText                   = user32.NewProc("DrawTextW")
-	getDC                      = user32.NewProc("GetDC")
-	releaseDC                  = user32.NewProc("ReleaseDC")
-	setTimer                   = user32.NewProc("SetTimer")
-	killTimer                  = user32.NewProc("KillTimer")
-	systemParametersInfo       = user32.NewProc("SystemParametersInfoW")
-	getDpiForSystem            = user32.NewProc("GetDpiForSystem")
-	getClientRect              = user32.NewProc("GetClientRect")
-	setDpiAwarenessContext     = user32.NewProc("SetProcessDpiAwarenessContext")
-	createSolidBrush           = gdi32.NewProc("CreateSolidBrush")
-	createRoundRectRgn         = gdi32.NewProc("CreateRoundRectRgn")
-	createFont                 = gdi32.NewProc("CreateFontW")
-	selectObject               = gdi32.NewProc("SelectObject")
-	deleteObject               = gdi32.NewProc("DeleteObject")
-	setBkMode                  = gdi32.NewProc("SetBkMode")
-	setTextColor               = gdi32.NewProc("SetTextColor")
-	ellipse                    = gdi32.NewProc("Ellipse")
-	getStockObject             = gdi32.NewProc("GetStockObject")
+	showWindow             = user32.NewProc("ShowWindow")
+	setWindowPos           = user32.NewProc("SetWindowPos")
+	invalidateRect         = user32.NewProc("InvalidateRect")
+	beginPaint             = user32.NewProc("BeginPaint")
+	endPaint               = user32.NewProc("EndPaint")
+	fillRect               = user32.NewProc("FillRect")
+	drawText               = user32.NewProc("DrawTextW")
+	getDC                  = user32.NewProc("GetDC")
+	releaseDC              = user32.NewProc("ReleaseDC")
+	setTimer               = user32.NewProc("SetTimer")
+	killTimer              = user32.NewProc("KillTimer")
+	systemParametersInfo   = user32.NewProc("SystemParametersInfoW")
+	getDpiForSystem        = user32.NewProc("GetDpiForSystem")
+	getClientRect          = user32.NewProc("GetClientRect")
+	setDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
+	createSolidBrush       = gdi32.NewProc("CreateSolidBrush")
+	createFont             = gdi32.NewProc("CreateFontW")
+	selectObject           = gdi32.NewProc("SelectObject")
+	deleteObject           = gdi32.NewProc("DeleteObject")
+	setBkMode              = gdi32.NewProc("SetBkMode")
+	setTextColor           = gdi32.NewProc("SetTextColor")
+	ellipse                = gdi32.NewProc("Ellipse")
+	getStockObject         = gdi32.NewProc("GetStockObject")
 )
 
 const (
@@ -73,7 +71,6 @@ const (
 	wsExToolWindow     = 0x00000080
 	wsExLayered        = 0x00080000
 	wsExNoActivate     = 0x08000000
-	lwaAlpha           = 0x2
 	swHide             = 0
 	swShowNoActivate   = 4
 	swpNoActivate      = 0x0010
@@ -92,7 +89,6 @@ const (
 	antialiasedQuality = 4
 	timerHold          = 1
 	timerFade          = 2
-	widgetAlpha        = 235
 	connectedHoldMs    = 3000
 	fadeStepMs         = 30
 	fadeStep           = 24
@@ -123,6 +119,11 @@ type widget struct {
 	state WidgetState
 	text  string
 	alpha int
+	// Where it sits, in screen pixels.
+	x, y, w, h int32
+	// A sample shown by the settings window's opacity preview; what show
+	// asks for meanwhile waits in state and text.
+	preview string
 }
 
 // One widget per process, like the tray.
@@ -160,12 +161,20 @@ func newWidget(instance uintptr) *widget {
 		WidgetError = err
 		return nil
 	}
+	w.makeFont()
+	currentWidget = w
+	return w
+}
+
+// makeFont (re)makes the font at the widget's scale.
+func (w *widget) makeFont() {
+	if w.font != 0 {
+		deleteObject.Call(w.font)
+	}
 	// Grayscale smoothing, not ClearType: ClearType's colored edges look
 	// blurry on the dark box, and wrong on OLED and other panels whose
 	// subpixels aren't in RGB stripes.
 	w.font, _, _ = createFont.Call(uintptr(-w.px(15)), 0, 0, 0, fwNormal, 0, 0, 0, 1, 0, 0, antialiasedQuality, 0, uintptr(unsafe.Pointer(wide("Segoe UI"))))
-	currentWidget = w
-	return w
 }
 
 // textWidth measures the text in the widget's font.
@@ -187,63 +196,86 @@ func (w *widget) show(state WidgetState, text string) {
 	}
 	w.state = state
 	w.text = text
+	if w.preview == "" {
+		w.apply()
+	}
+}
+
+// apply shows the state asked for last.
+func (w *widget) apply() {
 	killTimer.Call(w.hwnd, timerHold)
 	killTimer.Call(w.hwnd, timerFade)
-	if state == WidgetHidden {
+	if w.state == WidgetHidden {
 		w.alpha = 0
 		showWindow.Call(w.hwnd, swHide)
 		return
 	}
-
-	width := w.px(16) + w.px(8) + w.px(10) + w.textWidth(text) + w.px(16)
-	height := w.px(36)
-	var area rect
-	systemParametersInfo.Call(spiGetWorkArea, 0, uintptr(unsafe.Pointer(&area)), 0)
-	x := area.Right - width - w.px(16)
-	y := area.Bottom - height - w.px(16)
-	setWindowPos.Call(w.hwnd, hwndTopmost, uintptr(x), uintptr(y), uintptr(width), uintptr(height), swpNoActivate)
-	region, _, _ := createRoundRectRgn.Call(0, 0, uintptr(width+1), uintptr(height+1), uintptr(w.px(12)), uintptr(w.px(12)))
-	// The window owns the region from here on.
-	setWindowRgn.Call(w.hwnd, region, 1)
-
-	w.alpha = widgetAlpha
-	setLayeredWindowAttributes.Call(w.hwnd, 0, uintptr(w.alpha), lwaAlpha)
-	invalidateRect.Call(w.hwnd, 0, 1)
-	showWindow.Call(w.hwnd, swShowNoActivate)
-	if state == WidgetDone {
+	w.put(w.text)
+	if w.state == WidgetDone {
 		setTimer.Call(w.hwnd, timerHold, connectedHoldMs, 0)
 	}
 }
 
-func (w *widget) paint() {
-	var ps paintStruct
-	dc, _, _ := beginPaint.Call(w.hwnd, uintptr(unsafe.Pointer(&ps)))
-	defer endPaint.Call(w.hwnd, uintptr(unsafe.Pointer(&ps)))
+// put places the box for text in the corner and shows it at full strength.
+func (w *widget) put(text string) {
+	// Monitors can have different scales: size the box for the one it goes on.
+	area, scale := workArea(widgetMonitor())
+	if scale > 0 && scale != w.scale {
+		w.scale = scale
+		w.makeFont()
+	}
+	w.w = w.px(16) + w.px(8) + w.px(10) + w.textWidth(text) + w.px(16)
+	w.h = w.px(36)
+	w.x = area.Right - w.w - w.px(16)
+	w.y = area.Bottom - w.h - w.px(16)
+	setWindowPos.Call(w.hwnd, hwndTopmost, uintptr(w.x), uintptr(w.y), uintptr(w.w), uintptr(w.h), swpNoActivate)
+	w.alpha = 255
+	w.render()
+	showWindow.Call(w.hwnd, swShowNoActivate)
+}
 
-	var client rect
-	getClientRect.Call(w.hwnd, uintptr(unsafe.Pointer(&client)))
-	background, _, _ := createSolidBrush.Call(colorBackground)
-	fillRect.Call(dc, uintptr(unsafe.Pointer(&client)), background)
-	deleteObject.Call(background)
+// render draws the box at its current fade.
+func (w *widget) render() {
+	text, state := w.text, w.state
+	if w.preview != "" {
+		text, state = w.preview, WidgetDone
+	}
+	renderOverlay(w.hwnd, w.x, w.y, w.w, w.h, w.px(10), byte(max(0, min(255, w.alpha))), nil, func(dc uintptr, client rect) {
+		dot, _, _ := createSolidBrush.Call(state.color())
+		oldBrush, _, _ := selectObject.Call(dc, dot)
+		pen, _, _ := getStockObject.Call(nullPen)
+		oldPen, _, _ := selectObject.Call(dc, pen)
+		middle := (client.Bottom - client.Top) / 2
+		size := w.px(8)
+		left := w.px(16)
+		ellipse.Call(dc, uintptr(left), uintptr(middle-size/2), uintptr(left+size+1), uintptr(middle+size/2+1))
+		selectObject.Call(dc, oldPen)
+		selectObject.Call(dc, oldBrush)
+		deleteObject.Call(dot)
 
-	dot, _, _ := createSolidBrush.Call(w.state.color())
-	oldBrush, _, _ := selectObject.Call(dc, dot)
-	pen, _, _ := getStockObject.Call(nullPen)
-	oldPen, _, _ := selectObject.Call(dc, pen)
-	middle := (client.Bottom - client.Top) / 2
-	size := w.px(8)
-	left := w.px(16)
-	ellipse.Call(dc, uintptr(left), uintptr(middle-size/2), uintptr(left+size+1), uintptr(middle+size/2+1))
-	selectObject.Call(dc, oldPen)
-	selectObject.Call(dc, oldBrush)
-	deleteObject.Call(dot)
+		oldFont, _, _ := selectObject.Call(dc, w.font)
+		setTextColor.Call(dc, colorText)
+		textRect := rect{Left: left + size + w.px(10), Top: 0, Right: client.Right, Bottom: client.Bottom}
+		drawText.Call(dc, uintptr(unsafe.Pointer(wide(text))), ^uintptr(0), uintptr(unsafe.Pointer(&textRect)), dtLeft|dtVCenter|dtSingleLine|dtNoPrefix)
+		selectObject.Call(dc, oldFont)
+	})
+}
 
-	oldFont, _, _ := selectObject.Call(dc, w.font)
-	setBkMode.Call(dc, bkTransparent)
-	setTextColor.Call(dc, colorText)
-	textRect := rect{Left: left + size + w.px(10), Top: 0, Right: client.Right, Bottom: client.Bottom}
-	drawText.Call(dc, uintptr(unsafe.Pointer(wide(w.text))), ^uintptr(0), uintptr(unsafe.Pointer(&textRect)), dtLeft|dtVCenter|dtSingleLine|dtNoPrefix)
-	selectObject.Call(dc, oldFont)
+// startPreview shows text in the box, held, until endPreview.
+func (w *widget) startPreview(text string) {
+	killTimer.Call(w.hwnd, timerHold)
+	killTimer.Call(w.hwnd, timerFade)
+	w.preview = text
+	w.put(text)
+}
+
+// endPreview puts back what was asked for meanwhile.
+func (w *widget) endPreview() {
+	if w.preview == "" {
+		return
+	}
+	w.preview = ""
+	w.apply()
 }
 
 func (w *widget) tick(id uintptr) {
@@ -259,7 +291,7 @@ func (w *widget) tick(id uintptr) {
 			showWindow.Call(w.hwnd, swHide)
 			return
 		}
-		setLayeredWindowAttributes.Call(w.hwnd, 0, uintptr(w.alpha), lwaAlpha)
+		w.render()
 	}
 }
 
@@ -267,9 +299,6 @@ func widgetProc(hwnd, message, wParam, lParam uintptr) uintptr {
 	w := currentWidget
 	if w != nil && hwnd == w.hwnd {
 		switch message {
-		case wmPaint:
-			w.paint()
-			return 0
 		case wmTimer:
 			w.tick(wParam)
 			return 0

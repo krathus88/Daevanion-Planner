@@ -4,6 +4,10 @@ import {
     subscribeToAccountRows,
     type AccountRowChange,
 } from "@account/sync/accountChanges"
+import {
+    isPageVisible,
+    subscribeToPageVisibility,
+} from "@common/pageVisibility"
 import { isRecord } from "@planner/storage/isRecord"
 import type { GameCharacter } from "./gameSnapshot"
 
@@ -81,6 +85,12 @@ const setStatus = (next: CompanionStatus) => {
 const show = () => {
     window.clearTimeout(staleTimer)
 
+    // Hidden, the channel is closed and the row goes unrefreshed: keep the
+    // status as it was until the reconnect reads the row again.
+    if (!isPageVisible()) {
+        return
+    }
+
     if (readAuth().status !== "signedIn" || row === undefined) {
         setStatus(UNKNOWN)
 
@@ -139,12 +149,21 @@ const handleAuthChange = () => {
     show()
 }
 
+// Shown again while signed in, the channel reconnects and reads the row.
+// Signed out meanwhile, nothing reconnects: show that now.
+const handleShown = () => {
+    if (isPageVisible() && readAuth().status !== "signedIn") {
+        show()
+    }
+}
+
 export const readCompanionStatusNow = () => {
     return status
 }
 
 // No polling: the companion's minute updates arrive over Supabase Realtime
-// while a page shows the status and the user is logged in.
+// while a page shows the status, the tab is visible and the user is logged
+// in.
 export const subscribeToCompanionStatus = (onChange: () => void) => {
     listeners.add(onChange)
 
@@ -157,13 +176,12 @@ export const subscribeToCompanionStatus = (onChange: () => void) => {
             void fetchStatus()
         })
         const stopAuth = subscribeToAuth(handleAuthChange)
+        const stopPage = subscribeToPageVisibility(handleShown)
 
-        // A timer in a hidden tab can run late.
-        document.addEventListener("visibilitychange", show)
         unwatch = () => {
             stopRows()
             stopAuth()
-            document.removeEventListener("visibilitychange", show)
+            stopPage()
             window.clearTimeout(staleTimer)
             row = undefined
             watchedUser = null

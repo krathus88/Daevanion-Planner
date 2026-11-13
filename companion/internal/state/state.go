@@ -4,6 +4,7 @@ package state
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"time"
@@ -43,6 +44,13 @@ type Character struct {
 	// Lifetime arena record by mode.
 	Arena   map[int]game.ArenaMode
 	ArenaAt time.Time
+	// Who holds the Abyss artifacts, as last sent.
+	Artifacts   *game.Artifacts
+	ArtifactsAt time.Time
+	// The map the character is on (game.ParseZone), and the corridor
+	// entrances it used by entering (the game clears them 130 s later).
+	Zone    int
+	Entered map[uint32]bool
 }
 
 // Progress counters that changed this long before they were read are left
@@ -77,6 +85,10 @@ type Tracker struct {
 	changed     map[string]bool
 	// The character named last: the one being played.
 	current *Character
+	// Souls gained (pet id → souls) while no character had the collection
+	// (a companion started mid-session): added to the account's copy until
+	// the game sends the collection again.
+	lateGains map[int]int
 	// Called for things worth a status line.
 	Log func(format string, args ...any)
 }
@@ -173,6 +185,7 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 		return func(c *Character, now time.Time) {
 			c.Pets = pets
 			c.PetsAt = now
+			t.lateGains = nil
 		}
 	case game.TypePetSouls:
 		gains, ok := game.ParsePetSouls(m.Body)
@@ -181,8 +194,14 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 		}
 		return func(c *Character, now time.Time) {
 			// Without the collection there is nothing to add to; the next
-			// zone change sends it.
+			// zone change sends it. Kept meanwhile for LateGains.
 			if c.Pets == nil {
+				if t.lateGains == nil {
+					t.lateGains = map[int]int{}
+				}
+				for _, gain := range gains {
+					t.lateGains[gain.Pet] += gain.Amount
+				}
 				return
 			}
 			pets := copyMap(c.Pets)
@@ -223,6 +242,28 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			c.Stacks = next
 			c.ItemsAt = now
 		}
+	case game.TypeZone:
+		zone, ok := game.ParseZone(m.Body)
+		if !ok {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			c.Zone = zone
+		}
+	case game.TypeArtifacts, game.TypeArtifactsWorld:
+		artifacts, ok := game.ParseArtifacts(m.Body)
+		if !ok {
+			t.Log("Couldn't read the artifact owners (%d bytes)", len(m.Body))
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			// 07e3 comes every ~10 s: only a change is news.
+			if c.Artifacts != nil && reflect.DeepEqual(*c.Artifacts, artifacts) {
+				return
+			}
+			c.Artifacts = &artifacts
+			c.ArtifactsAt = now
+		}
 	case game.TypeCounters:
 		counters, ok := game.ParseCounters(m.Body)
 		if !ok {
@@ -239,6 +280,19 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			return nil
 		}
 		return func(c *Character, now time.Time) {
+			// Entering a corridor sends its entrance again: the ticket is
+			// gone from then on (user-told), though the game clears it only
+			// 130 s later.
+			if game.IsCorridorCounter(counter.ID) {
+				switch {
+				case counter.Open && game.IsCorridorMap(c.Zone):
+					c.Entered = copyMap(c.Entered)
+					c.Entered[counter.ID] = true
+				case !counter.Open && c.Entered[counter.ID]:
+					c.Entered = copyMap(c.Entered)
+					delete(c.Entered, counter.ID)
+				}
+			}
 			if c.Counters == nil {
 				return
 			}
@@ -422,6 +476,27 @@ func (t *Tracker) Current() *game.Character {
 	return &info
 }
 
+// Pets is the newest pet collection read this run (pets are account-wide,
+// so any character's), or nil before the game has sent one. Read only.
+func (t *Tracker) Pets() map[int]game.Pet {
+	var newest *Character
+	for _, c := range t.characters {
+		if c.Pets != nil && (newest == nil || c.PetsAt.After(newest.PetsAt)) {
+			newest = c
+		}
+	}
+	if newest == nil {
+		return nil
+	}
+	return newest.Pets
+}
+
+// LateGains is the souls gained since the companion started, by pet, while
+// it had no collection to add them to (Pets is nil then). Read only.
+func (t *Tracker) LateGains() map[int]int {
+	return t.lateGains
+}
+
 // TakeChanged returns snapshots of the characters changed since the last call.
 func (t *Tracker) TakeChanged() []Snapshot {
 	var out []Snapshot
@@ -493,6 +568,15 @@ type Snapshot struct {
 	// Arena mode (1 1v1, 2 5v5) → lifetime [wins, losses].
 	Arena   map[string][2]uint64 `json:"arena,omitempty"`
 	ArenaAt int64                `json:"arenaAt,omitempty"`
+	// Abyss corridor entrances the character may still use (counter ids),
+	// read with the counters (corridorsAt): none left is an empty list.
+	Corridors   []string `json:"corridors,omitempty"`
+	CorridorsAt int64    `json:"corridorsAt,omitempty"`
+	// Artifact id → faction holding it (0 none, 1 Elyos, 2 Asmodians), and
+	// when the last Artifact Siege ended (ms).
+	Artifacts   map[string]int `json:"artifacts,omitempty"`
+	SiegeEnd    int64          `json:"siegeEnd,omitempty"`
+	ArtifactsAt int64          `json:"artifactsAt,omitempty"`
 }
 
 // SnapshotCharacter names the character.
@@ -532,6 +616,10 @@ func (s Snapshot) Keep(previous Snapshot) Snapshot {
 	}
 	if s.Counters == nil {
 		s.Counters, s.CountersAt = previous.Counters, previous.CountersAt
+		s.Corridors, s.CorridorsAt = previous.Corridors, previous.CorridorsAt
+	}
+	if s.Artifacts == nil {
+		s.Artifacts, s.SiegeEnd, s.ArtifactsAt = previous.Artifacts, previous.SiegeEnd, previous.ArtifactsAt
 	}
 	if s.Supply == nil {
 		s.Supply, s.SupplyAt = previous.Supply, previous.SupplyAt
@@ -615,6 +703,22 @@ func (c *Character) Snapshot() Snapshot {
 			}
 		}
 		s.CountersAt = millis(c.CountersAt)
+		for id, counter := range c.Counters {
+			if game.IsCorridorCounter(id) && counter.Open && !c.Entered[id] {
+				s.Corridors = append(s.Corridors, strconv.FormatUint(uint64(id), 10))
+			}
+		}
+		sort.Strings(s.Corridors)
+		s.CorridorsAt = s.CountersAt
+	}
+
+	if c.Artifacts != nil {
+		s.Artifacts = make(map[string]int, len(c.Artifacts.Owners))
+		for id, faction := range c.Artifacts.Owners {
+			s.Artifacts[strconv.Itoa(id)] = faction
+		}
+		s.SiegeEnd = c.Artifacts.SiegeEnd
+		s.ArtifactsAt = millis(c.ArtifactsAt)
 	}
 
 	if c.Supply != nil {
