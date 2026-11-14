@@ -3,6 +3,7 @@ package desktop
 import (
 	"encoding/binary"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"daevanion-companion/internal/pipeline"
@@ -111,14 +112,24 @@ var (
 	})
 )
 
-// gameWindow is the game's biggest visible window, or 0.
+// gameWindow is the game's biggest visible window, or 0. The window found
+// is trusted for gameSearchEvery while it stays usable, and followed
+// (follow_windows.go).
 func gameWindow() uintptr {
+	now := time.Now()
+	if now.Sub(gameSearchAt) < gameSearchEvery && usableWindow(followHwnd) {
+		return followHwnd
+	}
+	gameSearchAt = now
 	pid := gamePID()
 	if pid == 0 {
 		return 0
 	}
 	searchPID, searchBest, searchArea = pid, 0, 0
 	enumWindows.Call(enumProc, 0)
+	if searchBest != 0 {
+		follow(pid, searchBest)
+	}
 	return searchBest
 }
 

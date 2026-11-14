@@ -88,11 +88,12 @@ func renderOverlay(hwnd uintptr, x, y, w, h, radius int32, background, fade byte
 // soul popup's when lParam is 1, else the widget's and shop panel's.
 const wmOverlay = 0x8000 + 5
 
-// redrawOverlays draws the shown overlays again (after an opacity change).
+// redrawOverlays lays out and draws the shown overlays again (after an
+// opacity change, or the game window moved).
 func redrawOverlays() {
 	if w := currentWidget; w != nil {
 		if visible, _, _ := isWindowVisible.Call(w.hwnd); visible != 0 {
-			w.render()
+			w.follow()
 		}
 	}
 	if p := currentShopPanel; p != nil {

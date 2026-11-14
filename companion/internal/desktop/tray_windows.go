@@ -438,6 +438,9 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		}
 		redrawOverlays()
 		return 0
+	case message == wmTimer && wParam == timerFollow:
+		followTick(hwnd)
+		return 0
 	case message == wmRefresh:
 		if currentSettings != nil {
 			currentSettings.refresh(t.state())
@@ -475,6 +478,7 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		destroyWindow.Call(hwnd)
 		return 0
 	case message == wmDestroy:
+		unfollow()
 		d := t.data(0)
 		shellNotifyIcon.Call(nimDelete, uintptr(unsafe.Pointer(&d)))
 		postQuitMessage.Call(0)

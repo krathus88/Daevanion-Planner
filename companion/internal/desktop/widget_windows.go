@@ -218,6 +218,26 @@ func (w *widget) apply() {
 
 // put places the box for text in the corner and shows it at full strength.
 func (w *widget) put(text string) {
+	w.layout(text)
+	w.alpha = 255
+	w.render()
+	showWindow.Call(w.hwnd, swShowNoActivate)
+}
+
+// follow places the shown box again, at its current fade (the game window
+// moved).
+func (w *widget) follow() {
+	text := w.text
+	if w.preview != "" {
+		text = w.preview
+	}
+	w.layout(text)
+	w.render()
+}
+
+// layout sizes the box for text and moves it to the corner of the monitor
+// showing the game.
+func (w *widget) layout(text string) {
 	// Monitors can have different scales: size the box for the one it goes on.
 	area, scale := workArea(widgetMonitor())
 	if scale > 0 && scale != w.scale {
@@ -229,9 +249,6 @@ func (w *widget) put(text string) {
 	w.x = area.Right - w.w - w.px(16)
 	w.y = area.Bottom - w.h - w.px(16)
 	setWindowPos.Call(w.hwnd, hwndTopmost, uintptr(w.x), uintptr(w.y), uintptr(w.w), uintptr(w.h), swpNoActivate)
-	w.alpha = 255
-	w.render()
-	showWindow.Call(w.hwnd, swShowNoActivate)
 }
 
 // render draws the box at its current fade.
