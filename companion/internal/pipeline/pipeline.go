@@ -35,6 +35,11 @@ func New(tracker *state.Tracker) *Pipeline {
 	return &Pipeline{tracker: tracker, streams: make(map[netio.Flow]*stream)}
 }
 
+// Reset drops every stream: the next packets are read as if joining midway.
+func (p *Pipeline) Reset() {
+	p.streams = make(map[netio.Flow]*stream)
+}
+
 // Packet handles one captured frame.
 func (p *Pipeline) Packet(packet netio.Packet) {
 	segment, ok := netio.ParseSegment(packet.Link, packet.Data)

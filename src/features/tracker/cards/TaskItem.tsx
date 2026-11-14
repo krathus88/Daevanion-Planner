@@ -1,8 +1,11 @@
 import { Flex } from "@chakra-ui/react"
+import { getUnknownLockId } from "@account/game/companionLocks"
 import {
     ARENA_TASKS,
     CORRIDOR_TASK,
     isCorridorTask,
+    SHOP_NAMES,
+    SHOP_TASKS,
 } from "@account/game/gameIds"
 import { readCount } from "@tracker/logic/resetPeriods"
 import { getTaskControl, isTaskDone } from "@tracker/logic/trackerCards"
@@ -11,12 +14,14 @@ import { getTaskTitle } from "@tracker/logic/taskTitle"
 import {
     useArenaUnknown,
     useCorridorsUnknown,
+    useIsEditing,
     useIsLocked,
 } from "@tracker/context/companionLocks"
 import type { TaskCount, TaskEntries, TrackerTask } from "@tracker/types"
 import { ArenaWeekWarning } from "./ArenaWeekWarning"
 import { CorridorsWarning } from "./CorridorsWarning"
 import { LockedTaskCount } from "./LockedTaskCount"
+import { ShopDataWarning } from "./ShopDataWarning"
 import { IgnoreToggle } from "./IgnoreToggle"
 import type {
     CountChangeHandler,
@@ -70,13 +75,20 @@ export const TaskItem = ({
 
     const corridor = isCorridorTask(task.id)
     const corridorUnknown = useCorridorsUnknown() && corridor
-    // Corridor rows share the Corridors task's lock.
+    // Corridor rows share the Corridors task's lock. A task just edited keeps
+    // its controls until the user leaves the card.
+    const editing = useIsEditing(task.id)
     const locked =
         useIsLocked(owner, corridor ? CORRIDOR_TASK : task.id) &&
-        !corridorUnknown
+        !corridorUnknown &&
+        !editing
+    // A shop goal locked before the character opened that shop.
+    const shopUnknown = useIsLocked(owner, getUnknownLockId(task.id))
+    const shop = SHOP_TASKS[task.id]
     const arena = useArenaUnknown()
     const arenaUnknown =
-        arena.owners.has(owner) && ARENA_TASKS[task.id] !== undefined
+        ARENA_TASKS[task.id] !== undefined &&
+        (arena.tasks.get(owner)?.has(task.id) ?? false)
     const control = getTaskControl(task)
     const label = `${getTaskTitle(task)}, ${ownerLabel}`
     const current = readCount(count, period)
@@ -138,13 +150,22 @@ export const TaskItem = ({
                         (arenaUnknown && (
                             <ArenaWeekWarning
                                 label={label}
-                                onConfirm={() => arena.onConfirm(owner, period)}
+                                onConfirm={() => {
+                                    arena.onConfirm(owner, task.id, period)
+                                }}
                             />
                         )) ||
                         (corridorUnknown && (
                             <CorridorsWarning
                                 label={label}
                                 ownerLabel={ownerLabel}
+                            />
+                        )) ||
+                        (shopUnknown && shop !== undefined && (
+                            <ShopDataWarning
+                                label={label}
+                                ownerLabel={ownerLabel}
+                                shopName={SHOP_NAMES[shop.shop] ?? "shop"}
                             />
                         ))
                     }
@@ -161,6 +182,7 @@ export const TaskItem = ({
                         cap={task.cap}
                         bonusCap={task.bonusCap ?? 0}
                         label={label}
+                        unknown={shopUnknown}
                     />
                 ) : (
                     <>

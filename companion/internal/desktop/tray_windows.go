@@ -117,7 +117,8 @@ const (
 	CommandExit
 	// The shop panel's delay changed: Value is the seconds.
 	CommandShopHide
-	// The overlays' background opacity changed: Value is the percent.
+	// The widget's and shop panel's background opacity changed: Value is the
+	// percent.
 	CommandOverlayOpacity
 	// The shop panel's type filter: Value 0 is all, k is shop.Types[k-1].
 	CommandShopType
@@ -129,6 +130,12 @@ const (
 	CommandCheckUpdates
 	// Install the newer version found (State.UpdateAvailable) now.
 	CommandUpdateNow
+	// The soul popup turned on or off.
+	CommandSoulPopup
+	// Open the network adapters again.
+	CommandReconnect
+	// The soul popup's background opacity changed: Value is the percent.
+	CommandSoulOpacity
 )
 
 // Choice is a command and, for settings, its new value.
@@ -159,13 +166,17 @@ type State struct {
 	Recording bool
 	// How long the shop panel stays after the last shop message.
 	ShopHideSeconds int
-	// The overlays' background opacity, in percent.
+	// The widget's and shop panel's background opacity, and the soul
+	// popup's, in percent.
 	OverlayOpacity int
+	SoulOpacity    int
 	// The shop panel's filters (shop.Filter): the types shown (none: all),
 	// hidden Insight levels, and the sources shown (none: all).
 	ShopTypes        []string
 	ShopHiddenLevels []int
 	ShopSources      []string
+	// Whether the soul popup shows soul gains.
+	SoulPopup bool
 	// The running version, whether it can update itself (release builds),
 	// and whether a check asked for is under way.
 	Version         string
@@ -195,6 +206,9 @@ type Tray struct {
 	shopView *ShopView
 	// The opacity preview's sample.
 	shopPreview *ShopView
+	// The soul popup's view (nil: hidden) and its preview sample.
+	soulView    *SoulView
+	soulPreview *SoulView
 }
 
 // One tray per process: the window procedure finds it here.
@@ -257,6 +271,7 @@ func (t *Tray) loop(ready chan<- error) {
 	// Without it the companion still runs, just without the widget.
 	newWidget(instance)
 	newShopPanel(instance)
+	newSoulPopup(instance)
 	taskbar, _, _ := registerWindowMessage.Call(uintptr(unsafe.Pointer(wide("TaskbarCreated"))))
 	t.taskbarCreated = uint32(taskbar)
 
@@ -343,6 +358,12 @@ func (t *Tray) SetOverlayOpacity(percent int) {
 	postMessage.Call(t.hwnd, wmOverlay, uintptr(max(0, min(100, percent))), 0)
 }
 
+// SetSoulOpacity sets the soul popup's background opacity (percent) and
+// redraws it when shown.
+func (t *Tray) SetSoulOpacity(percent int) {
+	postMessage.Call(t.hwnd, wmOverlay, uintptr(max(0, min(100, percent))), 1)
+}
+
 // SetShopPreview is the sample the opacity preview shows in the shop panel.
 func (t *Tray) SetShopPreview(view *ShopView) {
 	t.mu.Lock()
@@ -354,6 +375,28 @@ func (t *Tray) previewSample() *ShopView {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.shopPreview
+}
+
+// ShowSouls puts up the soul popup with this view, or fades it out for nil.
+func (t *Tray) ShowSouls(view *SoulView) {
+	t.mu.Lock()
+	t.soulView = view
+	t.mu.Unlock()
+	postMessage.Call(t.hwnd, wmSoulPopup, 0, 0)
+}
+
+// SetSoulPreview is the sample the opacity preview shows in the soul popup
+// (nil: none, the popup is off).
+func (t *Tray) SetSoulPreview(view *SoulView) {
+	t.mu.Lock()
+	t.soulPreview = view
+	t.mu.Unlock()
+}
+
+func (t *Tray) soulPreviewSample() *SoulView {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.soulPreview
 }
 
 // Refresh redraws the settings window from State (when it's open).
@@ -388,7 +431,11 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		}
 		return 0
 	case message == wmOverlay:
-		overlayBackground = OpacityByte(int(wParam))
+		if lParam == 1 {
+			soulBackground = OpacityByte(int(wParam))
+		} else {
+			overlayBackground = OpacityByte(int(wParam))
+		}
 		redrawOverlays()
 		return 0
 	case message == wmRefresh:
@@ -404,12 +451,23 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			currentShopPanel.show(view)
 		}
 		return 0
+	case message == wmSoulPopup:
+		t.mu.Lock()
+		view := t.soulView
+		t.mu.Unlock()
+		if currentSoulPopup != nil {
+			currentSoulPopup.show(view)
+		}
+		return 0
 	case message == wmClose:
 		if currentWidget != nil {
 			destroyWindow.Call(currentWidget.hwnd)
 		}
 		if currentShopPanel != nil {
 			destroyWindow.Call(currentShopPanel.hwnd)
+		}
+		if currentSoulPopup != nil {
+			destroyWindow.Call(currentSoulPopup.hwnd)
 		}
 		if currentSettings != nil {
 			destroyWindow.Call(currentSettings.hwnd)

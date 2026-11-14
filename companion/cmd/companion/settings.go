@@ -16,12 +16,16 @@ import (
 type settings struct {
 	// How long the shop panel stays after the last shop message.
 	ShopHideSeconds int `json:"shopHideSeconds"`
-	// The overlays' background opacity, in percent.
+	// The corner widget's and shop panel's background opacity, in percent.
 	OverlayOpacity int `json:"overlayOpacity"`
+	// The soul popup's background opacity, in percent.
+	SoulOpacity int `json:"soulOpacity"`
 	// The shop panel's filters (shop.Filter).
 	ShopTypes        []string `json:"shopTypes"`
 	ShopHiddenLevels []int    `json:"shopHiddenLevels"`
 	ShopSources      []string `json:"shopSources"`
+	// The soul popup shows soul gains (on unless turned off).
+	SoulPopup bool `json:"soulPopup"`
 }
 
 const settingsFile = "settings.json"
@@ -31,9 +35,11 @@ func defaultSettings() settings {
 	return settings{
 		ShopHideSeconds:  int(shop.DefaultHideAfter / time.Second),
 		OverlayOpacity:   desktop.DefaultOverlayOpacity,
+		SoulOpacity:      desktop.DefaultSoulOpacity,
 		ShopTypes:        filter.Types,
 		ShopHiddenLevels: filter.HiddenLevels,
 		ShopSources:      filter.Sources,
+		SoulPopup:        true,
 	}
 }
 
@@ -46,6 +52,9 @@ func (s settings) clean() settings {
 	}
 	if s.OverlayOpacity < 0 || s.OverlayOpacity > 100 {
 		s.OverlayOpacity = defaults.OverlayOpacity
+	}
+	if s.SoulOpacity < 0 || s.SoulOpacity > 100 {
+		s.SoulOpacity = defaults.SoulOpacity
 	}
 	s.ShopTypes = slices.DeleteFunc(slices.Clone(s.ShopTypes), func(id string) bool {
 		return !slices.Contains(shop.Types, id)
@@ -128,6 +137,8 @@ func changeSetting(s *settings, choice desktop.Choice) {
 		s.ShopHideSeconds = choice.Value
 	case desktop.CommandOverlayOpacity:
 		s.OverlayOpacity = choice.Value
+	case desktop.CommandSoulOpacity:
+		s.SoulOpacity = choice.Value
 	case desktop.CommandShopType:
 		// 0 is All, which clears the others; a type adds to them or comes off.
 		switch {
@@ -138,6 +149,8 @@ func changeSetting(s *settings, choice desktop.Choice) {
 		}
 	case desktop.CommandShopLevel:
 		s.ShopHiddenLevels = toggled(s.ShopHiddenLevels, choice.Value, []int{1, 2, 3})
+	case desktop.CommandSoulPopup:
+		s.SoulPopup = !s.SoulPopup
 	case desktop.CommandShopSource:
 		if choice.Value >= 0 && choice.Value < len(shop.Sources) {
 			s.ShopSources = toggled(s.ShopSources, shop.Sources[choice.Value], shop.Sources)

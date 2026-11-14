@@ -56,6 +56,10 @@ type Character struct {
 	// all closed, used or not, so a list with none open says nothing.
 	Corridors   map[uint32]bool
 	CorridorsAt time.Time
+	// Shop id → entry → how many the character bought ever, for the shops
+	// opened this run (game.TypeShopCounts).
+	Shops   map[uint32]map[uint32]int
+	ShopsAt time.Time
 }
 
 // Progress counters that changed this long before they were read are left
@@ -414,6 +418,39 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			c.Arena = modes
 			c.ArenaAt = now
 		}
+	case game.TypeShopCounts:
+		shop, counts, ok := game.ParseShopCounts(m.Body)
+		if !ok {
+			t.Log("Couldn't read a shop's purchase counts")
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			shops := copyMap(c.Shops)
+			shops[shop] = counts
+			c.Shops = shops
+			c.ShopsAt = now
+		}
+	case game.TypeShopPurchase:
+		shop, bought, ok := game.ParseShopPurchase(m.Body)
+		if !ok {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			// Only onto counts read this run; the next opening sends them
+			// all anyway.
+			before, known := c.Shops[shop]
+			if !known {
+				return
+			}
+			counts := copyMap(before)
+			for entry, n := range bought {
+				counts[entry] += n
+			}
+			shops := copyMap(c.Shops)
+			shops[shop] = counts
+			c.Shops = shops
+			c.ShopsAt = now
+		}
 	case game.TypeDuty:
 		duty, ok := game.ParseDuty(m.Body)
 		if !ok {
@@ -600,6 +637,10 @@ type Snapshot struct {
 	Artifacts   map[string]int `json:"artifacts,omitempty"`
 	SiegeEnd    int64          `json:"siegeEnd,omitempty"`
 	ArtifactsAt int64          `json:"artifactsAt,omitempty"`
+	// Shop id → entry → bought ever, for the shops with lifetime limits
+	// opened so far (an entry never bought is missing).
+	Shops   map[string]map[string]int `json:"shops,omitempty"`
+	ShopsAt int64                     `json:"shopsAt,omitempty"`
 }
 
 // SnapshotCharacter names the character.
@@ -669,6 +710,15 @@ func (s Snapshot) Keep(previous Snapshot) Snapshot {
 		}
 		s.Professions = professions
 		s.ProfessionsAt = max(s.ProfessionsAt, previous.ProfessionsAt)
+	}
+	// Shops come only when opened: merge by shop.
+	if previous.Shops != nil {
+		shops := copyMap(previous.Shops)
+		for id, counts := range s.Shops {
+			shops[id] = counts
+		}
+		s.Shops = shops
+		s.ShopsAt = max(s.ShopsAt, previous.ShopsAt)
 	}
 	if previous.Crafts != nil {
 		crafts := copyMap(previous.Crafts)
@@ -810,6 +860,18 @@ func (c *Character) Snapshot() Snapshot {
 			s.Progress[strconv.FormatUint(uint64(id), 10)] = [2]int64{int64(progress.Count), progress.At}
 		}
 		s.ProgressAt = millis(c.ProgressAt)
+	}
+
+	if c.Shops != nil {
+		s.Shops = make(map[string]map[string]int, len(c.Shops))
+		for shop, counts := range c.Shops {
+			entries := make(map[string]int, len(counts))
+			for entry, n := range counts {
+				entries[strconv.FormatUint(uint64(entry), 10)] = n
+			}
+			s.Shops[strconv.FormatUint(uint64(shop), 10)] = entries
+		}
+		s.ShopsAt = millis(c.ShopsAt)
 	}
 
 	if c.Arena != nil {

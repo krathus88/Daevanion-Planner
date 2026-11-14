@@ -100,7 +100,8 @@ const mergeEnergy = (
     return merged
 }
 
-// Per character, the record seen last.
+// Per character, the record seen last. Tasks set by hand in its week on
+// either side are all kept (the newer side's start wins for the same task).
 const mergeArena = (
     newer: TrackerData["arena"],
     older: TrackerData["arena"],
@@ -112,6 +113,22 @@ const mergeArena = (
 
         if (!current || record.seen.at > current.seen.at) {
             merged[characterId] = record
+        }
+
+        const kept = merged[characterId]
+        const other = kept === record ? current : record
+        const period = kept.seen.period
+
+        if (other?.fixed?.period === period) {
+            const starts =
+                kept.fixed?.period === period ? kept.fixed.starts : {}
+            const older = kept === record ? starts : other.fixed.starts
+            const newer = kept === record ? other.fixed.starts : starts
+
+            merged[characterId] = {
+                ...kept,
+                fixed: { period: period, starts: { ...older, ...newer } },
+            }
         }
     }
 

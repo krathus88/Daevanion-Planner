@@ -3,7 +3,11 @@ import { STARTER_TASKS } from "@tracker/config/starterTasks"
 import { getEnergyPeriod } from "@tracker/logic/odyleEnergy"
 import { getResetPeriods } from "@tracker/logic/resetPeriods"
 import type { TrackerData } from "@tracker/types"
-import { applyToTracker } from "./applyToTracker"
+import {
+    applyCorridorHold,
+    applyToTracker,
+    toCorridorHold,
+} from "./applyToTracker"
 import type { GameSnapshot } from "./gameSnapshot"
 
 const AT = Date.UTC(2026, 10, 11, 23, 0)
@@ -263,6 +267,44 @@ describe("applyToTracker", () => {
         expect(next.arena.a.base).toBeUndefined()
     })
 
+    it("sets one-off goals from the shops' lifetime purchase counts", () => {
+        // Kryx's Nightmare shop and Krathy's Abyss shop, 2026-11-14: the
+        // Abyss shop's stages add up (50 + 2 of 200).
+        const next = applyToTracker(
+            data(),
+            snapshot({
+                shops: {
+                    "990003": { "402024517": 3, "402024518": 50 },
+                    "990001": { "401015113": 50, "401015114": 2 },
+                },
+                shopsAt: AT,
+            }),
+        )
+
+        expect(next.counts.a).toEqual({
+            "shards-nightmare": { period: 0, count: 3 },
+            "crystals-nightmare": { period: 0, count: 50 },
+            "shards-abyss": { period: 0, count: 52 },
+        })
+    })
+
+    it("reads an entry missing from an opened shop as never bought", () => {
+        const before = data({
+            counts: { a: { "shards-nightmare": { period: 0, count: 4 } } },
+        })
+        const next = applyToTracker(
+            before,
+            snapshot({ shops: { "990003": { "402024518": 9 } }, shopsAt: AT }),
+        )
+
+        expect(next.counts.a["shards-nightmare"]).toEqual({
+            period: 0,
+            count: 0,
+        })
+        // A shop not opened says nothing about its goals.
+        expect(next.counts.a["shards-abyss"]).toBeUndefined()
+    })
+
     it("ignores yesterday's duty board", () => {
         const next = applyToTracker(
             data(),
@@ -366,6 +408,66 @@ describe("applyToTracker", () => {
             )
 
             expect(next.counts.a).toBeUndefined()
+        })
+
+        describe("shared by another member", () => {
+            const hold = toCorridorHold("siel", artifacts, SIEGE_END)
+            const read = applyToTracker(
+                twoOnSiel,
+                snapshot({ corridors: ["10000002"], corridorsAt: LATER }),
+            )
+
+            it("keeps the server's faction's corridors", () => {
+                expect(hold).toEqual({
+                    period: getResetPeriods(SIEGE_END).siege,
+                    at: SIEGE_END,
+                    artifacts: ["1001", "1002"],
+                })
+                expect(
+                    toCorridorHold("israphel", artifacts, SIEGE_END).artifacts,
+                ).toEqual(["1003"])
+            })
+
+            it("fills the rows of characters whose entrances were read", () => {
+                const next = applyCorridorHold(read, "siel", hold)
+                const period = getResetPeriods(SIEGE_END).siege
+
+                expect(next.corridorHolds.siel).toEqual(hold)
+                expect(next.counts.a).toEqual({
+                    "corridors:1001": { period, count: 1 },
+                    "corridors:1002": { period, count: 0 },
+                })
+                expect(next.counts.b).toBeUndefined()
+            })
+
+            it("changes nothing when the tracker has it or a later siege", () => {
+                const once = applyCorridorHold(read, "siel", hold)
+
+                expect(applyCorridorHold(once, "siel", hold)).toBe(once)
+                expect(
+                    applyCorridorHold(once, "siel", {
+                        ...hold,
+                        at: SIEGE_END - 1,
+                        artifacts: [],
+                    }),
+                ).toBe(once)
+            })
+
+            it("takes a different read of the same siege", () => {
+                const once = applyCorridorHold(read, "siel", hold)
+                const next = applyCorridorHold(once, "siel", {
+                    ...hold,
+                    artifacts: ["1001"],
+                })
+
+                expect(next.corridorHolds.siel.artifacts).toEqual(["1001"])
+            })
+
+            it("leaves servers without characters alone", () => {
+                const other = toCorridorHold("israphel", artifacts, SIEGE_END)
+
+                expect(applyCorridorHold(read, "israphel", other)).toBe(read)
+            })
         })
     })
 

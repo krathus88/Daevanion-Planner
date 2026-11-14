@@ -68,7 +68,16 @@ const (
 	// window is the client's own.
 	TypeShopTab = "9156"
 	TypeShopBuy = "9556"
+	// Shops with lifetime purchase limits (the Nightmare shop): how many of
+	// each entry the character bought ever, sent each time the shop opens, for
+	// every tab at once (ParseShopCounts), then one purchase
+	// (ParseShopPurchase).
+	TypeShopCounts   = "078c"
+	TypeShopPurchase = "098c"
 )
+
+// NightmareShop is the Nightmare shop's id in TypeShopCounts.
+const NightmareShop = 990003
 
 // Profession numbers: 1 Blacksmithing, 2 Armorsmithing, 3 Handicrafting,
 // 4 Alchemy, 5 Cooking (checked against the game's window, 2026-11-12).
@@ -885,6 +894,36 @@ func ParseShopTab(body []byte) (ShopTab, bool) {
 		tab.Items = append(tab.Items, ShopItem{Entry: entry, Item: item, Discount: discount, SoldOut: soldOut})
 	}
 	return tab, true
+}
+
+// ParseShopCounts reads 078c: u16 0, u32 shop, u8 n, n x (u32 entry, u32
+// bought ever), u64 server time (ms). Entries never bought are left out.
+func ParseShopCounts(body []byte) (shop uint32, counts map[uint32]int, ok bool) {
+	r := newReader(body)
+	r.skip(2)
+	shop = r.u32()
+	n := int(r.u8())
+	counts = make(map[uint32]int, n)
+	for k := 0; k < n && r.ok; k++ {
+		entry := r.u32()
+		counts[entry] = int(r.u32())
+	}
+	return shop, counts, r.ok
+}
+
+// ParseShopPurchase reads 098c: u16, u32 shop, u8 n, n x (u32 entry, u32
+// quantity bought).
+func ParseShopPurchase(body []byte) (shop uint32, bought map[uint32]int, ok bool) {
+	r := newReader(body)
+	r.skip(2)
+	shop = r.u32()
+	n := int(r.u8())
+	bought = make(map[uint32]int, n)
+	for k := 0; k < n && r.ok; k++ {
+		entry := r.u32()
+		bought[entry] += int(r.u32())
+	}
+	return shop, bought, r.ok
 }
 
 // ParseShopBuy reads 9556: u16 (0 so far), u8 tab, u32 entry bought.

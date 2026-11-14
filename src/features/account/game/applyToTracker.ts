@@ -1,5 +1,5 @@
 import { getServer } from "@timers/config/servers"
-import { getArenaWeek, updateArenaRecord } from "@tracker/logic/arenaWeeks"
+import { getArenaTaskWeek, updateArenaRecord } from "@tracker/logic/arenaWeeks"
 import { getCorridorsUsed } from "@tracker/logic/corridors"
 import { getEnergyPeriod } from "@tracker/logic/odyleEnergy"
 import { getResetPeriods } from "@tracker/logic/resetPeriods"
@@ -28,6 +28,7 @@ import {
     FACTION_NUMBERS,
     getServerId,
     HIDDEN_CUBE_KEY,
+    SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
 } from "./gameIds"
@@ -272,6 +273,54 @@ const applyDuty = (
     }
 }
 
+// One-off goals from a shop's lifetime purchase counts, once the character
+// opened that shop (an entry missing from its list was never bought).
+const applyShops = (
+    data: TrackerData,
+    character: TrackerCharacter,
+    snapshot: GameSnapshot,
+) => {
+    const at = snapshot.shopsAt
+
+    if (snapshot.shops === undefined || at === undefined) {
+        return data
+    }
+
+    const periods = getResetPeriods(at)
+    let next = data
+
+    for (const task of getTasks(data)) {
+        const source = SHOP_TASKS[task.id]
+        const counts = source && snapshot.shops[source.shop]
+
+        if (counts === undefined) {
+            continue
+        }
+
+        const count: TaskCount = {
+            period: periods[task.reset],
+            count: Math.min(
+                source.entries.reduce((sum, entry) => {
+                    return sum + (counts[entry] ?? 0)
+                }, 0),
+                task.cap,
+            ),
+        }
+
+        next = {
+            ...next,
+            counts: setOwnerItem(
+                next.counts,
+                getTaskOwner(task, character),
+                task.id,
+                count,
+            ),
+        }
+    }
+
+    return next
+}
+
 // This week's matches and wins from a progress counter: 0 unless it changed
 // this week (missing: not lately).
 const readWeekly = (snapshot: GameSnapshot, id: string, period: number) => {
@@ -321,10 +370,9 @@ const applyArena = (
     }
 
     for (const task of getTasks(data)) {
-        const source = ARENA_TASKS[task.id]
-        const week = source && getArenaWeek(record, source.mode)
+        const week = ARENA_TASKS[task.id] && getArenaTaskWeek(record, task.id)
 
-        if (!source || !week) {
+        if (week === undefined || week === null) {
             continue
         }
 
@@ -336,13 +384,98 @@ const applyArena = (
                 task.id,
                 {
                     period: getResetPeriods(at)[task.reset],
-                    count: Math.min(week[source.counts], task.cap),
+                    count: Math.min(week, task.cap),
                 },
             ),
         }
     }
 
     return next
+}
+
+// The corridors a server's faction holds after a siege, from the game's
+// artifact owners (artifact id → faction number).
+export const toCorridorHold = (
+    serverId: string,
+    artifacts: Record<string, number>,
+    siegeEnd: number,
+): CorridorRecord => {
+    const faction = FACTION_NUMBERS[getServer(serverId).faction]
+
+    return {
+        period: getResetPeriods(siegeEnd).siege,
+        at: siegeEnd,
+        artifacts: CORRIDORS.filter((corridor) => {
+            return artifacts[corridor.artifact] === faction
+        }).map((corridor) => corridor.artifact),
+    }
+}
+
+// Sets the corridor rows of every character on the server whose entrances
+// were read since its siege: each held corridor is its own row, done once
+// its entrance is used.
+const countCorridors = (data: TrackerData, serverId: string) => {
+    const task = getTasks(data).find((item) => item.id === CORRIDOR_TASK)
+    const hold = data.corridorHolds[serverId]
+
+    if (task === undefined || hold === undefined) {
+        return data
+    }
+
+    let next = data
+
+    for (const other of data.characters) {
+        const used =
+            other.server === serverId
+                ? getCorridorsUsed(hold, data.corridorsLeft[other.id])
+                : null
+
+        for (const artifact of used === null ? [] : hold.artifacts) {
+            next = {
+                ...next,
+                counts: setOwnerItem(
+                    next.counts,
+                    other.id,
+                    getCorridorTaskId(artifact),
+                    {
+                        period: hold.period,
+                        count: used?.includes(artifact) ? 1 : 0,
+                    },
+                ),
+            }
+        }
+    }
+
+    return next
+}
+
+// A server's holdings shared by another member's companion (see
+// tracker/shared/sharedCorridorHolds): taken unless the tracker already has
+// a later siege's, or the same; only for servers it has characters on.
+export const applyCorridorHold = (
+    data: TrackerData,
+    serverId: string,
+    hold: CorridorRecord,
+) => {
+    const before = data.corridorHolds[serverId]
+
+    if (
+        !data.characters.some((character) => character.server === serverId) ||
+        (before !== undefined &&
+            (before.at > hold.at ||
+                (before.at === hold.at &&
+                    before.artifacts.join() === hold.artifacts.join())))
+    ) {
+        return data
+    }
+
+    return countCorridors(
+        {
+            ...data,
+            corridorHolds: { ...data.corridorHolds, [serverId]: hold },
+        },
+        serverId,
+    )
 }
 
 // Abyss corridors. The corridors a faction holds after a siege are its
@@ -355,20 +488,15 @@ const applyCorridors = (
     character: TrackerCharacter,
     snapshot: GameSnapshot,
 ) => {
-    const task = getTasks(data).find((item) => item.id === CORRIDOR_TASK)
-    const server = getServer(character.server)
     let holds = data.corridorHolds
     let left = data.corridorsLeft
 
-    if (snapshot.artifacts && snapshot.siegeEnd !== undefined && server) {
-        const faction = FACTION_NUMBERS[server.faction]
-        const hold: CorridorRecord = {
-            period: getResetPeriods(snapshot.siegeEnd).siege,
-            at: snapshot.siegeEnd,
-            artifacts: CORRIDORS.filter((corridor) => {
-                return snapshot.artifacts?.[corridor.artifact] === faction
-            }).map((corridor) => corridor.artifact),
-        }
+    if (snapshot.artifacts && snapshot.siegeEnd !== undefined) {
+        const hold = toCorridorHold(
+            character.server,
+            snapshot.artifacts,
+            snapshot.siegeEnd,
+        )
         const before = holds[character.server]
 
         if (before === undefined || before.at <= hold.at) {
@@ -396,41 +524,10 @@ const applyCorridors = (
         return data
     }
 
-    let next: TrackerData = {
-        ...data,
-        corridorHolds: holds,
-        corridorsLeft: left,
-    }
-    const hold = holds[character.server]
-
-    if (task === undefined || hold === undefined) {
-        return next
-    }
-
-    for (const other of data.characters) {
-        const used = getCorridorsUsed(
-            other.server === character.server ? hold : undefined,
-            left[other.id],
-        )
-
-        // Each held corridor is its own row, done once its entrance is used.
-        for (const artifact of used === null ? [] : hold.artifacts) {
-            next = {
-                ...next,
-                counts: setOwnerItem(
-                    next.counts,
-                    other.id,
-                    getCorridorTaskId(artifact),
-                    {
-                        period: hold.period,
-                        count: used?.includes(artifact) ? 1 : 0,
-                    },
-                ),
-            }
-        }
-    }
-
-    return next
+    return countCorridors(
+        { ...data, corridorHolds: holds, corridorsLeft: left },
+        character.server,
+    )
 }
 
 // The game's values replace what the tracker had: the game is the real data.
@@ -449,8 +546,9 @@ export const applyToTracker = (
     const withSupply = applySupply(withKeys, character, snapshot)
     const withDuty = applyDuty(withSupply, character, snapshot)
     const withArena = applyArena(withDuty, character, snapshot)
+    const withShops = applyShops(withArena, character, snapshot)
 
-    const withCrafts = applyCrafts(withArena, character, snapshot)
+    const withCrafts = applyCrafts(withShops, character, snapshot)
 
     return applyCorridors(withCrafts, character, snapshot)
 }

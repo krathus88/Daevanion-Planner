@@ -12,8 +12,8 @@ import (
 // the continents they spawn on. Click-through like the widget, on the tray's
 // thread; an overlay (overlay_windows.go).
 
-// ShopView is what the shop panel shows: pets, or Empty when none is left
-// to show.
+// ShopView is what the shop panel shows: pets, or when none is left to show,
+// "No pet worth buying" and Empty saying why.
 type ShopView struct {
 	Pets  []ShopPet
 	Empty string
@@ -28,7 +28,8 @@ type ShopPet struct {
 	// and its souls toward the next level.
 	Level int
 	Souls int
-	// This entry was bought: drawn faded, "✓ Bought" in place of its level.
+	// This entry was bought: drawn faded but its level and souls, with
+	// "✓ Bought" after its tags.
 	Bought bool
 	// verteron, reshanta, altgard; empty: not in the wild.
 	Maps []string
@@ -133,7 +134,7 @@ type panelRow struct {
 	level      string
 	levelColor uintptr
 	progress   string
-	// A bought entry: all but its "✓ Bought" is faded.
+	// A bought entry: all but its level, souls and "✓ Bought" is faded.
 	bought bool
 	tags   []string
 	top    int32
@@ -206,11 +207,22 @@ const (
 	panelIconR   = 8
 )
 
+// What the panel says when no pet in the tab is left to show, and how wide
+// it is then (unscaled, inside the padding): about a pet row with its level
+// and souls.
+const (
+	noPetWorthBuying = "No pet worth buying"
+	panelUsualWidth  = 270
+)
+
+// boughtLabel marks a bought entry, at the right of its tags line.
+const boughtLabel = "✓ Bought"
+
 // boughtFade is how strongly a bought entry is drawn (0-1).
 const boughtFade = 0.4
 
-// boughtRects are the bought entries' areas to fade: the name line up to
-// "✓ Bought", and the tags line and portrait whole. Rows must be laid out
+// boughtRects are the bought entries' areas to fade: the portrait and the
+// name line up to the level, and the tags line up to "✓ Bought". Rows must be laid out
 // for the current width.
 func (p *shopPanel) boughtRects() []fadeRect {
 	var out []fadeRect
@@ -224,7 +236,7 @@ func (p *shopPanel) boughtRects() []fadeRect {
 		badge := right - p.rightWidth(row.level, row.progress) - p.px(panelBadgeGap)
 		out = append(out,
 			fadeRect{left, row.top, badge, line, boughtFade},
-			fadeRect{left, line, right, block, boughtFade})
+			fadeRect{left, line, right - p.measure(p.tagFont, boughtLabel) - p.px(panelBadgeGap), block, boughtFade})
 	}
 	return out
 }
@@ -241,17 +253,37 @@ func (p *shopPanel) rightWidth(level, progress string) int32 {
 	return w
 }
 
+// widestLevel is the widest a pet's level and souls can be drawn: one soul
+// short of each next level.
+func (p *shopPanel) widestLevel() int32 {
+	var widest int32
+	for level := 0; level <= 3; level++ {
+		souls := 0
+		if level < 3 {
+			souls = soulsToLevel[level] - 1
+		}
+		label, _, progress := levelText(level, souls)
+		widest = max(widest, p.rightWidth(label, progress))
+	}
+	return widest
+}
+
 // iconPixels for the current scale, shrunk once.
 func (p *shopPanel) iconPixels(icon image.Image) []byte {
-	key := iconKey{icon, p.px(panelIcon)}
-	if px, ok := p.icons[key]; ok {
+	return cachedIcon(&p.icons, icon, p.px(panelIcon), p.px(panelIconR))
+}
+
+// cachedIcon is iconPixels at size, kept in cache.
+func cachedIcon(cache *map[iconKey][]byte, icon image.Image, size, radius int32) []byte {
+	key := iconKey{icon, size}
+	if px, ok := (*cache)[key]; ok {
 		return px
 	}
-	if p.icons == nil {
-		p.icons = map[iconKey][]byte{}
+	if *cache == nil {
+		*cache = map[iconKey][]byte{}
 	}
-	px := iconPixels(icon, int(key.size), int(p.px(panelIconR)))
-	p.icons[key] = px
+	px := iconPixels(icon, int(size), int(radius))
+	(*cache)[key] = px
 	return px
 }
 
@@ -286,33 +318,15 @@ func (p *shopPanel) endPreview() {
 func (p *shopPanel) display(view *ShopView) {
 	if view == nil {
 		showWindow.Call(p.hwnd, swHide)
+		placeSoulPopup()
 		return
 	}
 	pets := view.Pets
 
-	// The game window's client area (the monitor's work area without it),
-	// at its monitor's scale.
-	game := gameWindow()
-	var monitor uintptr
-	if game != 0 {
-		monitor, _, _ = monitorFromWindow.Call(game, monitorDefaultToNearest)
-	} else {
-		monitor = widgetMonitor()
-	}
-	area, scale := workArea(monitor)
-	if scale > 0 && scale != p.scale {
+	right, bottom, scale := panelBase(p.scale)
+	if scale != p.scale {
 		p.scale = scale
 		p.makeFonts()
-	}
-	// The corner widget's spot (widget.put) on that monitor: the panel stays
-	// above it, so the two never overlap.
-	widgetTop := area.Bottom - p.px(16) - p.px(36) - p.px(8)
-	if game != 0 {
-		var client rect
-		getClientRect.Call(game, uintptr(unsafe.Pointer(&client)))
-		corner := struct{ X, Y int32 }{client.Right, client.Bottom}
-		clientToScreen.Call(game, uintptr(unsafe.Pointer(&corner)))
-		area.Right, area.Bottom = corner.X, corner.Y
 	}
 
 	p.rows = p.rows[:0]
@@ -321,22 +335,24 @@ func (p *shopPanel) display(view *ShopView) {
 	p.rows = append(p.rows, panelRow{text: "Pets here", top: top, muted: true})
 	top += p.px(panelLine) + p.px(panelPetGap)
 	if len(pets) == 0 {
-		p.rows = append(p.rows, panelRow{text: view.Empty, top: top})
-		width = max(width, p.measure(p.nameFont, view.Empty))
+		// As wide as a usual list, so it reads as the same panel.
+		p.rows = append(p.rows, panelRow{text: noPetWorthBuying, top: top})
 		top += p.px(panelLine)
+		p.rows = append(p.rows, panelRow{text: view.Empty, top: top, muted: true})
+		top += p.px(panelLine)
+		width = max(width, p.px(panelUsualWidth), p.measure(p.nameFont, noPetWorthBuying), p.measure(p.nameFont, view.Empty))
 	}
 	for k, pet := range pets {
 		level, levelColor, progress := levelText(pet.Level, pet.Souls)
-		if pet.Bought {
-			level, levelColor, progress = "✓ Bought", colorConnected, ""
-		}
 		tags := pet.Maps
 		if len(tags) == 0 {
 			tags = []string{""}
 		}
 		p.rows = append(p.rows, panelRow{pet: true, icon: pet.Icon, text: pet.Name, level: level, levelColor: levelColor, progress: progress, tags: tags, top: top, muted: pet.Level == 3 && !pet.Bought, bought: pet.Bought})
 		column := p.px(panelIcon) + p.px(panelIconGap)
-		width = max(width, column+p.measure(p.nameFont, pet.Name)+p.px(16)+p.rightWidth(level, progress))
+		// Room for the widest level and souls, and for "✓ Bought", on every
+		// row: a purchase or soul gain never changes the panel's width.
+		width = max(width, column+p.measure(p.nameFont, pet.Name)+p.px(16)+p.widestLevel())
 		var tagsWidth int32
 		for i, tag := range tags {
 			if i > 0 {
@@ -344,6 +360,7 @@ func (p *shopPanel) display(view *ShopView) {
 			}
 			tagsWidth += p.tagWidth(tag)
 		}
+		tagsWidth += p.px(16) + p.measure(p.tagFont, boughtLabel)
 		width = max(width, column+tagsWidth)
 		top += p.px(panelLine) + p.px(4) + p.px(panelTag)
 		if k < len(pets)-1 {
@@ -352,11 +369,50 @@ func (p *shopPanel) display(view *ShopView) {
 	}
 	p.w = width + 2*p.px(panelPad)
 	p.h = top + p.px(panelPad)
-	p.x = area.Right - p.w - p.px(panelInset)
-	p.y = min(area.Bottom-p.px(panelInset)-p.px(panelLift), widgetTop) - p.h
+	p.x = right - p.w
+	p.y = bottom - p.h
 	setWindowPos.Call(p.hwnd, hwndTopmost, uintptr(p.x), uintptr(p.y), uintptr(p.w), uintptr(p.h), swpNoActivate)
-	renderOverlay(p.hwnd, p.x, p.y, p.w, p.h, p.px(12), 255, p.boughtRects(), p.draw)
+	renderOverlay(p.hwnd, p.x, p.y, p.w, p.h, p.px(12), overlayBackground, 255, p.boughtRects(), p.draw)
 	showWindow.Call(p.hwnd, swShowNoActivate)
+	placeSoulPopup()
+}
+
+// visibleTop is the panel's top edge while it's shown.
+func (p *shopPanel) visibleTop() (int32, bool) {
+	if visible, _, _ := isWindowVisible.Call(p.hwnd); visible == 0 {
+		return 0, false
+	}
+	return p.y, true
+}
+
+// panelBase is where the shop panel's column sits, in screen pixels: its
+// right edge and its bottom, inset from the game window's bottom right corner
+// (the monitor's work area without the game), and that monitor's scale
+// (fallback when unknown). The soul popup stacks on the same column.
+func panelBase(fallback float64) (right, bottom int32, scale float64) {
+	game := gameWindow()
+	var monitor uintptr
+	if game != 0 {
+		monitor, _, _ = monitorFromWindow.Call(game, monitorDefaultToNearest)
+	} else {
+		monitor = widgetMonitor()
+	}
+	area, scale := workArea(monitor)
+	if scale <= 0 {
+		scale = fallback
+	}
+	px := func(v int) int32 { return int32(float64(v)*scale + 0.5) }
+	// The corner widget's spot (widget.put) on that monitor: the column stays
+	// above it, so the two never overlap.
+	widgetTop := area.Bottom - px(16) - px(36) - px(8)
+	if game != 0 {
+		var client rect
+		getClientRect.Call(game, uintptr(unsafe.Pointer(&client)))
+		corner := struct{ X, Y int32 }{client.Right, client.Bottom}
+		clientToScreen.Call(game, uintptr(unsafe.Pointer(&corner)))
+		area.Right, area.Bottom = corner.X, corner.Y
+	}
+	return area.Right - px(panelInset), min(area.Bottom-px(panelInset)-px(panelLift), widgetTop), scale
 }
 
 func (p *shopPanel) draw(dc uintptr, client rect) {
@@ -418,6 +474,11 @@ func (p *shopPanel) draw(dc uintptr, client rect) {
 			box := rect{Left: x, Top: tagTop, Right: x + w, Bottom: tagTop + p.px(panelTag)}
 			drawText.Call(dc, uintptr(unsafe.Pointer(wide(tagNames[tag]))), ^uintptr(0), uintptr(unsafe.Pointer(&box)), dtCenter|dtVCenter|dtSingleLine|dtNoPrefix)
 			x += w + p.px(panelTagGap)
+		}
+		if row.bought {
+			box := rect{Left: x, Top: tagTop, Right: right, Bottom: tagTop + p.px(panelTag)}
+			setTextColor.Call(dc, colorConnected)
+			drawText.Call(dc, uintptr(unsafe.Pointer(wide(boughtLabel))), ^uintptr(0), uintptr(unsafe.Pointer(&box)), dtRight|dtVCenter|dtSingleLine|dtNoPrefix)
 		}
 	}
 	selectObject.Call(dc, oldPen)

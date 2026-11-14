@@ -1,3 +1,4 @@
+import { isArenaTaskKnown } from "@tracker/logic/arenaWeeks"
 import { getTaskOwner } from "@tracker/logic/taskOwners"
 import type { TrackerCharacter, TrackerData, TrackerTask } from "@tracker/types"
 import {
@@ -6,6 +7,7 @@ import {
     CRAFT_TASKS,
     DUTY_TASK,
     getServerId,
+    SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
 } from "./gameIds"
@@ -15,6 +17,13 @@ import {
 export const ENERGY_LOCK = "energy"
 export const CUBE_KEYS_LOCK = "cube-keys"
 
+// Locked with no data yet: a shop goal (SHOP_TASKS) of a character that
+// hasn't opened that shop while the companion ran. It shows no count and
+// warns instead.
+export const getUnknownLockId = (taskId: string) => {
+    return `unknown:${taskId}`
+}
+
 // Owner (character id or server owner, see getTaskOwner) → what the
 // companion app fills there.
 export type CompanionLocks = Record<string, ReadonlySet<string>>
@@ -22,7 +31,8 @@ export type CompanionLocks = Record<string, ReadonlySet<string>>
 // What the companion fills for each tracker character it has a snapshot of,
 // from readGameSections' lines: those fields take no input while it runs.
 // Arena tasks lock only in a week whose start is known (`week`: the current
-// weekly reset period).
+// weekly reset period). Shop goals lock for every character, known or not
+// (getUnknownLockId), so they're never typed in by hand.
 export const getCompanionLocks = (
     sections: string,
     characters: readonly TrackerCharacter[],
@@ -31,10 +41,18 @@ export const getCompanionLocks = (
     week = 0,
 ): CompanionLocks => {
     const locks: Record<string, Set<string>> = {}
+
+    // Never used: nothing is filled, nothing locks.
+    if (sections === "") {
+        return locks
+    }
+
     const lock = (owner: string, id: string) => {
         locks[owner] ??= new Set()
         locks[owner].add(id)
     }
+    // "<character id>:<shop id>" for the shops a snapshot has counts from.
+    const shopsRead = new Set<string>()
 
     for (const line of sections.split("\n")) {
         const [server, name, section] = line.split(":")
@@ -61,12 +79,16 @@ export const getCompanionLocks = (
                 (section === "corridors" && task.id === CORRIDOR_TASK) ||
                 (section === "arena" &&
                     ARENA_TASKS[task.id] !== undefined &&
-                    arena[character.id]?.base?.period === week) ||
+                    isArenaTaskKnown(arena[character.id], week, task.id)) ||
                 (craft !== undefined && section === `crafts.${craft.recipe}`)
 
             if (filled) {
                 lock(getTaskOwner(task, character), task.id)
             }
+        }
+
+        if (section.startsWith("shops.")) {
+            shopsRead.add(`${character.id}:${section.slice("shops.".length)}`)
         }
 
         if (section === "counters") {
@@ -75,6 +97,24 @@ export const getCompanionLocks = (
 
         if (section === "items") {
             lock(character.id, CUBE_KEYS_LOCK)
+        }
+    }
+
+    for (const character of characters) {
+        for (const task of tasks) {
+            const shop = SHOP_TASKS[task.id]
+
+            if (shop === undefined) {
+                continue
+            }
+
+            const owner = getTaskOwner(task, character)
+
+            lock(owner, task.id)
+
+            if (!shopsRead.has(`${character.id}:${shop.shop}`)) {
+                lock(owner, getUnknownLockId(task.id))
+            }
         }
     }
 

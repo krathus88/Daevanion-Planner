@@ -27,6 +27,8 @@ describe("parseGameSnapshot", () => {
             progressAt: 80,
             arena: { "1": [1, 0], "2": [18, 21] },
             arenaAt: 90,
+            shops: { "990003": { "402024517": 3, "402024518": 50 } },
+            shopsAt: 100,
         })
 
         expect(snapshot).toEqual({
@@ -50,6 +52,8 @@ describe("parseGameSnapshot", () => {
             progressAt: 80,
             arena: { "1": [1, 0], "2": [18, 21] },
             arenaAt: 90,
+            shops: { "990003": { "402024517": 3, "402024518": 50 } },
+            shopsAt: 100,
         })
     })
 
@@ -104,6 +108,9 @@ describe("getSnapshotTime", () => {
         expect(
             getSnapshotTime({ character: CHARACTER, petsAt: 5, craftsAt: 12 }),
         ).toBe(12)
+        expect(
+            getSnapshotTime({ character: CHARACTER, petsAt: 5, shopsAt: 14 }),
+        ).toBe(14)
         expect(getSnapshotTime({ character: CHARACTER })).toBe(0)
     })
 })

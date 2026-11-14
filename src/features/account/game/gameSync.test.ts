@@ -5,6 +5,7 @@ import { readPetCollection } from "@pets/storage/petCollection"
 import { readTrackerData } from "@tracker/storage/trackerData"
 import {
     applyGameSnapshots,
+    applySharedCorridorHolds,
     readGameBoards,
     reapplyGameSnapshot,
     readGameCharacters,
@@ -240,5 +241,47 @@ describe("applyGameSnapshots", () => {
         expect(window.localStorage.getItem("daevanion:tracker:v1:data")).toBe(
             TRACKER,
         )
+    })
+})
+
+describe("applySharedCorridorHolds", () => {
+    const SIEGE_END = Date.UTC(2026, 10, 12, 20, 13, 24)
+
+    beforeEach(() => {
+        window.localStorage.clear()
+        window.localStorage.setItem("daevanion:tracker:v1:data", TRACKER)
+    })
+
+    it("keeps the holdings of the tracker's servers", () => {
+        applySharedCorridorHolds([
+            {
+                server: 1301,
+                siegeEnd: SIEGE_END,
+                artifacts: { "1001": 1, "1003": 2 },
+            },
+            { server: 2301, siegeEnd: SIEGE_END, artifacts: { "1003": 2 } },
+            { server: 9999, siegeEnd: SIEGE_END, artifacts: { "1001": 1 } },
+        ])
+
+        expect(readTrackerData().corridorHolds).toEqual({
+            siel: expect.objectContaining({
+                at: SIEGE_END,
+                artifacts: ["1001"],
+            }),
+        })
+    })
+
+    it("writes nothing when nothing changes", () => {
+        const holds = [
+            { server: 1301, siegeEnd: SIEGE_END, artifacts: { "1001": 1 } },
+        ]
+
+        applySharedCorridorHolds(holds)
+
+        const before = readTrackerData()
+
+        applySharedCorridorHolds(holds)
+
+        expect(readTrackerData()).toBe(before)
     })
 })

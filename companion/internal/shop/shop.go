@@ -62,6 +62,24 @@ func loadPetItems() map[int]PetItem {
 	return items
 }
 
+// petsByID is PetItems by the pet they give.
+var petsByID = sync.OnceValue(func() map[int]PetItem {
+	pets := make(map[int]PetItem, len(PetItems))
+	for _, item := range PetItems {
+		if item.Pet > 0 {
+			pets[item.Pet] = item
+		}
+	}
+	return pets
+})
+
+// Pet is a pet's name, type, portrait and maps by its game id; false for a
+// pet no shop item gives (its name isn't known here).
+func Pet(id int) (PetItem, bool) {
+	pet, ok := petsByID()[id]
+	return pet, ok
+}
+
 var (
 	iconsMu sync.Mutex
 	icons   = map[string]image.Image{}
@@ -184,13 +202,14 @@ func Lines(items []game.ShopItem, pets map[int]game.Pet, filter Filter) []Line {
 	return lines
 }
 
-// EmptyText says why a tab selling pets shows none: every one is Lv3, or
-// the filters leave none.
+// EmptyText says why a tab selling pets shows none worth buying (the panel's
+// line under "No pet worth buying"): every one is Lv3, or the filters leave
+// none.
 func EmptyText(items []game.ShopItem, pets map[int]game.Pet) string {
 	for _, item := range items {
 		pet, ok := PetItems[item.Item]
 		if ok && (pets == nil || pet.Pet <= 0 || pets[pet.Pet].Level < 3) {
-			return "No pet here matches your filters"
+			return "None here matches your filters"
 		}
 	}
 	return "Every pet here is Lv3"
@@ -226,7 +245,7 @@ func WithGains(pets map[int]game.Pet, gains map[int]int) map[int]game.Pet {
 // unless set otherwise: the shop window is the client's own, so closing it
 // sends the server nothing (two recordings, 2026-11-13). A zone change,
 // login or switch closes it sooner.
-const DefaultHideAfter = 30 * time.Second
+const DefaultHideAfter = 15 * time.Second
 
 // Watch follows the open shop tab.
 type Watch struct {

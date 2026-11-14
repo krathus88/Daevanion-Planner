@@ -9,7 +9,7 @@ import (
 	"daevanion-companion/internal/shop"
 )
 
-// The settings window: dark, in tabs (Game data, Shop panel, Account), drawn
+// The settings window: dark, in tabs (Game data, Shop panel, Pet souls, Account), drawn
 // by the companion itself (Windows' own buttons and checkboxes have no dark
 // style); only the seconds box is a real edit control. A click on the tray
 // icon opens it on Account when logged out, else on the first tab; closing
@@ -113,11 +113,12 @@ const (
 const (
 	tabGameData = iota
 	tabShop
+	tabSouls
 	tabAccount
 	tabCount
 )
 
-var tabNames = [tabCount]string{"Game data", "Shop panel", "Account"}
+var tabNames = [tabCount]string{"Game data", "Shop panel", "Pet souls", "Account"}
 
 // Things to click.
 const (
@@ -125,13 +126,17 @@ const (
 	hitTab0
 	hitTab1
 	hitTab2
+	hitTab3
 	hitStartup
+	hitSoulPopup
 	hitRecord
 	hitOpenRecordings
 	hitOpenLog
+	hitReconnect
 	hitLogIn
 	hitExit
 	hitSlider
+	hitSoulSlider
 	hitTracker
 	hitCheckUpdates
 	hitUpdateNow
@@ -154,7 +159,9 @@ const (
 	setTabsTop = 60
 	setTabsH   = 36
 	setContent = 112
-	setCardH   = 88
+	// A card's height without its description: title row, then padding.
+	setCardTop = 34
+	setCardPad = 14
 	setGap     = 10
 	setFooter  = 470
 	setButtonH = 32
@@ -234,9 +241,13 @@ type settingsWindow struct {
 	focused  bool
 	// The delay shown, to put back a value being typed when focus leaves.
 	shopSeconds int
-	// The opacity shown: State's, or the slider's while dragged.
-	opacity  int
-	dragging bool
+	// The opacities shown (widget and shop panel, soul popup): State's, or
+	// the slider's while dragged.
+	opacity     int
+	soulOpacity int
+	dragging    bool
+	// The slider dragged or previewed last (hitSlider, hitSoulSlider).
+	slider int
 	// The opacity preview is up (see previewOpacity).
 	previewing bool
 }
@@ -376,57 +387,63 @@ func (s *settingsWindow) layout() []element {
 	add(element{kind: kindLine, r: s.box(0, setTabsTop+setTabsH, setWidth, 1), color: setBorder})
 
 	// A card: title and description on the left, room for a control of
-	// controlW on the right.
-	card := func(y int, title, description string, controlW int) {
-		add(element{kind: kindCard, r: s.box(setPad, y, inner, setCardH)})
+	// controlW on the right; as tall as its description needs. Returns the
+	// height.
+	card := func(y int, title, description string, controlW int) int {
 		textW := inner - 32 - controlW
+		textH := int(float64(s.measureWrapped(s.small, description, s.px(textW)))/s.scale + 0.999)
+		h := setCardTop + textH + setCardPad
+		add(element{kind: kindCard, r: s.box(setPad, y, inner, h)})
 		textAt(s.box(setPad+16, y+12, textW, 22), title, s.strong, setText, false)
-		textAt(s.box(setPad+16, y+34, textW, setCardH-40), description, s.small, setMuted, true)
+		textAt(s.box(setPad+16, y+setCardTop, textW, textH), description, s.small, setMuted, true)
+		return h
 	}
 	right := setWidth - setPad - 16
-	middle := func(y, h int) int { return y + (setCardH-h)/2 }
+	// The top of a control of height h centered in a card of height cardH.
+	middle := func(y, cardH, h int) int { return y + (cardH-h)/2 }
 
 	switch s.tab {
 	case tabGameData:
 		y := setContent
-		card(y, "Start with Windows", "Runs in the notification area from the moment you log in to Windows.", 52)
-		add(element{kind: kindToggle, hit: hitStartup, r: s.box(right-44, middle(y, 24), 44, 24), on: st.Startup, enabled: st.StartupAvailable})
-		y += setCardH + setGap
+		h := card(y, "Start with Windows", "Starts when you log in to Windows.", 52)
+		add(element{kind: kindToggle, hit: hitStartup, r: s.box(right-44, middle(y, h, 24), 44, 24), on: st.Startup, enabled: st.StartupAvailable})
+		y += h + setGap
 		label, style := "Record", stylePlain
 		if st.Recording {
 			label, style = "Stop recording", styleDanger
 		}
-		card(y, "Record game data", "Saves the game's messages to a file you can send in, so more of the game can be read.", 136)
-		add(element{kind: kindButton, hit: hitRecord, r: s.box(right-130, middle(y, setButtonH), 130, setButtonH), text: label, style: style, enabled: true})
-		y += setCardH + setGap
-		updates := "Version " + st.Version + ". Checks by itself at start and every 6 hours."
+		h = card(y, "Record game data", "Saves game data to a file you can send in.", 136)
+		add(element{kind: kindButton, hit: hitRecord, r: s.box(right-130, middle(y, h, setButtonH), 130, setButtonH), text: label, style: style, enabled: true})
+		y += h + setGap
+		updates := "Version " + st.Version + "."
 		hit, label, style, enabled := hitCheckUpdates, "Check now", stylePlain, st.CanUpdate && !st.CheckingUpdates
 		switch {
 		case !st.CanUpdate:
-			updates = "Version " + st.Version + ": a test build, which never updates."
+			updates = "Version " + st.Version + " (test build)."
 		case st.Updating:
-			updates = "Updating to " + st.UpdateAvailable + ". It restarts in a few seconds."
+			updates = "Updating to " + st.UpdateAvailable + "."
 			hit, label, style, enabled = hitUpdateNow, "Updating…", stylePrimary, false
 		case st.UpdateAvailable != "":
-			updates = "Version " + st.UpdateAvailable + " is out (you have " + st.Version + "). It installs by itself at the next start."
+			updates = "Version " + st.UpdateAvailable + " is out (you have " + st.Version + ")."
 			hit, label, style, enabled = hitUpdateNow, "Update now", stylePrimary, true
 		case st.CheckingUpdates:
 			label = "Checking…"
 		}
-		card(y, "Updates", updates, 136)
-		add(element{kind: kindButton, hit: hit, r: s.box(right-130, middle(y, setButtonH), 130, setButtonH), text: label, style: style, enabled: enabled})
-		y += setCardH + setGap + 4
+		h = card(y, "Updates", updates, 136)
+		add(element{kind: kindButton, hit: hit, r: s.box(right-130, middle(y, h, setButtonH), 130, setButtonH), text: label, style: style, enabled: enabled})
+		y += h + setGap + 4
 		add(element{kind: kindButton, hit: hitOpenRecordings, r: s.box(setPad, y, 140, setButtonH), text: "Open recordings", enabled: true})
 		add(element{kind: kindButton, hit: hitOpenLog, r: s.box(setPad+148, y, 100, setButtonH), text: "Open log", enabled: true})
+		add(element{kind: kindButton, hit: hitReconnect, r: s.box(setPad+256, y, 110, setButtonH), text: "Reconnect", enabled: true})
 
 	case tabShop:
 		y := setContent
 		add(element{kind: kindCard, r: s.box(setPad, y, inner, 100)})
 		textAt(s.box(setPad+16, editY, 110, editH), "Hide after", s.strong, setText, false)
 		add(element{kind: kindEditBox, r: s.box(editX, editY, editW, editH), on: s.focused})
-		textAt(s.box(editX+editW+8, editY, 190, editH), "seconds without shop activity", s.small, setMuted, false)
+		textAt(s.box(editX+editW+8, editY, 190, editH), "seconds idle", s.small, setMuted, false)
 		textAt(s.box(setPad+16, sliderY, 110, sliderH), "Background", s.strong, setText, false)
-		add(element{kind: kindSlider, hit: hitSlider, r: s.box(sliderX, sliderY, sliderW, sliderH), on: s.dragging, enabled: true, text: strconv.Itoa(s.opacity)})
+		add(element{kind: kindSlider, hit: hitSlider, r: s.box(sliderX, sliderY, sliderW, sliderH), on: s.dragging && s.slider == hitSlider, enabled: true})
 		textAt(s.box(sliderX+sliderW+8, sliderY, 44, sliderH), strconv.Itoa(s.opacity)+"%", s.body, setText, false)
 
 		y += 100 + setGap
@@ -462,13 +479,23 @@ func (s *settingsWindow) layout() []element {
 			levels = append(levels, element{hit: hitLevel1 + level - 1, text: "Lv" + strconv.Itoa(level), selected: slices.Contains(st.ShopHiddenLevels, level), color: levelColors[level]})
 		}
 		y = chips(y+26, levels)
-		label(y+8, "Show only (none: all)")
+		label(y+8, "Show only")
 		var sources []element
 		for k, id := range shop.Sources {
 			sources = append(sources, element{hit: hitSource0 + k, text: sourceNames[id], selected: slices.Contains(st.ShopSources, id), color: setText})
 		}
 		y = chips(y+26, sources)
 		out[slices.IndexFunc(out, func(e element) bool { return e.kind == kindCard && e.r.Top == s.px(top) })].r.Bottom = s.px(y + 14)
+
+	case tabSouls:
+		y := setContent
+		h := card(y, "Soul popup", "Shows a pet's level and souls when it gains souls.", 52)
+		add(element{kind: kindToggle, hit: hitSoulPopup, r: s.box(right-44, middle(y, h, 24), 44, 24), on: st.SoulPopup, enabled: true})
+		y += h + setGap
+		add(element{kind: kindCard, r: s.box(setPad, y, inner, 56)})
+		textAt(s.box(setPad+16, y+13, 110, sliderH), "Background", s.strong, setText, false)
+		add(element{kind: kindSlider, hit: hitSoulSlider, r: s.box(sliderX, y+13, sliderW, sliderH), on: s.dragging && s.slider == hitSoulSlider, enabled: true})
+		textAt(s.box(sliderX+sliderW+8, y+13, 44, sliderH), strconv.Itoa(s.soulOpacity)+"%", s.body, setText, false)
 
 	case tabAccount:
 		y := setContent
@@ -477,20 +504,20 @@ func (s *settingsWindow) layout() []element {
 		case !st.CanLogIn:
 			description = "Offline test: nothing is sent."
 		case st.LoggingIn:
-			description, enabled = "Finish logging in in your browser.", false
+			description, enabled = "Finish in your browser.", false
 		case st.LoggedIn && st.Account != "":
-			description, label, style = "Logged in as "+st.Account+". Game data goes to your Daevanion Planner account.", "Log out", stylePlain
+			description, label, style = "Logged in as "+st.Account+".", "Log out", stylePlain
 		case st.LoggedIn:
-			description, label, style = "Logged in. Game data goes to your Daevanion Planner account.", "Log out", stylePlain
+			description, label, style = "Logged in.", "Log out", stylePlain
 		default:
-			description = "Not logged in: nothing is sent to the site."
+			description = "Not logged in: nothing is sent."
 		}
 		w := 170
 		if style == stylePlain {
 			w = 100
 		}
-		card(y, "Discord", description, w)
-		add(element{kind: kindButton, hit: hitLogIn, r: s.box(right-w, middle(y, setButtonH), w, setButtonH), text: label, style: style, enabled: enabled})
+		h := card(y, "Discord", description, w)
+		add(element{kind: kindButton, hit: hitLogIn, r: s.box(right-w, middle(y, h, setButtonH), w, setButtonH), text: label, style: style, enabled: enabled})
 	}
 
 	// Footer.
@@ -498,6 +525,17 @@ func (s *settingsWindow) layout() []element {
 	textAt(s.box(setPad, setFooter+14, 240, setButtonH), "Closing this window keeps it running.", s.small, setMuted, false)
 	add(element{kind: kindButton, hit: hitExit, r: s.box(setWidth-setPad-130, setFooter+14, 130, setButtonH), text: "Exit companion", style: styleDanger, enabled: true})
 	return out
+}
+
+// measureWrapped is how tall text is in font, wrapped at width pixels.
+func (s *settingsWindow) measureWrapped(font uintptr, text string, width int32) int32 {
+	dc, _, _ := getDC.Call(s.hwnd)
+	defer releaseDC.Call(s.hwnd, dc)
+	old, _, _ := selectObject.Call(dc, font)
+	defer selectObject.Call(dc, old)
+	r := rect{Right: width}
+	drawText.Call(dc, uintptr(unsafe.Pointer(wide(text))), ^uintptr(0), uintptr(unsafe.Pointer(&r)), dtCalcRect|dtWordBreak|dtNoPrefix)
+	return r.Bottom - r.Top
 }
 
 func (s *settingsWindow) measure(font uintptr, text string) int32 {
@@ -623,7 +661,7 @@ func (s *settingsWindow) paint() {
 		case kindSlider:
 			left, right := s.sliderTrack()
 			middle := (e.r.Top + e.r.Bottom) / 2
-			at := left + (right-left)*int32(s.opacity)/100
+			at := left + (right-left)*int32(*s.sliderValue(e.hit))/100
 			track := s.px(6)
 			fillRound(dc, rect{Left: left, Top: middle - track/2, Right: right, Bottom: middle + track/2}, track, setSurfaceUp, setSurfaceUp)
 			fillRound(dc, rect{Left: left, Top: middle - track/2, Right: at, Bottom: middle + track/2}, track, setAccent, setAccent)
@@ -659,15 +697,24 @@ func (s *settingsWindow) sliderTrack() (int32, int32) {
 	return s.px(sliderX + 8), s.px(sliderX + sliderW - 8)
 }
 
-// setOpacityAt moves the slider to x and previews the new opacity.
+// sliderValue is the opacity a slider shows.
+func (s *settingsWindow) sliderValue(hit int) *int {
+	if hit == hitSoulSlider {
+		return &s.soulOpacity
+	}
+	return &s.opacity
+}
+
+// setOpacityAt moves the dragged slider to x and previews the new opacity.
 func (s *settingsWindow) setOpacityAt(x int32) {
 	left, right := s.sliderTrack()
 	value := int((float64(x-left)/float64(right-left))*100 + 0.5)
 	value = max(0, min(100, value))
-	if value == s.opacity && s.previewing {
+	shown := s.sliderValue(s.slider)
+	if value == *shown && s.previewing {
 		return
 	}
-	s.opacity = value
+	*shown = value
 	s.previewOpacity()
 	invalidateRect.Call(s.hwnd, 0, 0)
 }
@@ -678,11 +725,22 @@ const (
 	previewMs    = 2500
 )
 
-// previewOpacity shows both overlays at the slider's opacity, the shop panel
-// with sample pets, until endPreview.
+// previewOpacity shows the overlays the dragged slider sets at its opacity,
+// with samples (the shop panel's pets and the widget, or the soul popup's
+// pets), until endPreview.
 func (s *settingsWindow) previewOpacity() {
-	overlayBackground = OpacityByte(s.opacity)
 	s.previewing = true
+	if s.slider == hitSoulSlider {
+		soulBackground = OpacityByte(s.soulOpacity)
+		if p := currentSoulPopup; p != nil && current != nil {
+			if sample := current.soulPreviewSample(); sample != nil {
+				p.startPreview(sample)
+			}
+		}
+		setTimer.Call(s.hwnd, previewTimer, previewMs, 0)
+		return
+	}
+	overlayBackground = OpacityByte(s.opacity)
 	if p := currentShopPanel; p != nil && current != nil {
 		if sample := current.previewSample(); sample != nil {
 			p.startPreview(sample)
@@ -702,7 +760,11 @@ func (s *settingsWindow) endPreview() {
 	s.previewing = false
 	killTimer.Call(s.hwnd, previewTimer)
 	overlayBackground = OpacityByte(s.opacity)
+	soulBackground = OpacityByte(s.soulOpacity)
 	if p := currentShopPanel; p != nil {
+		p.endPreview()
+	}
+	if p := currentSoulPopup; p != nil {
 		p.endPreview()
 	}
 	if w := currentWidget; w != nil {
@@ -750,6 +812,7 @@ func (s *settingsWindow) refresh(state State) {
 	s.shopSeconds = state.ShopHideSeconds
 	if !s.dragging {
 		s.opacity = state.OverlayOpacity
+		s.soulOpacity = state.SoulOpacity
 	}
 	// Not while it's being typed in.
 	if focus, _, _ := getFocus.Call(); focus != s.edit {
@@ -775,8 +838,10 @@ func (s *settingsWindow) click(hit int) {
 		return
 	}
 	switch hit {
-	case hitTab0, hitTab1, hitTab2:
+	case hitTab0, hitTab1, hitTab2, hitTab3:
 		s.setTab(hit - hitTab0)
+	case hitSoulPopup:
+		t.on(Choice{Command: CommandSoulPopup})
 	case hitStartup:
 		t.on(Choice{Command: CommandStartup})
 	case hitRecord:
@@ -785,6 +850,8 @@ func (s *settingsWindow) click(hit int) {
 		t.on(Choice{Command: CommandOpenRecordings})
 	case hitOpenLog:
 		t.on(Choice{Command: CommandOpenLog})
+	case hitReconnect:
+		t.on(Choice{Command: CommandReconnect})
 	case hitLogIn:
 		if s.state.LoggedIn {
 			t.on(Choice{Command: CommandLogOut})
@@ -889,7 +956,12 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 	case wmLButtonDown:
 		s.pressed = s.hitAt(x, y)
 		setCapture.Call(hwnd)
-		if s.pressed == hitSlider {
+		if s.pressed == hitSlider || s.pressed == hitSoulSlider {
+			// The other slider's preview ends first.
+			if s.slider != s.pressed {
+				s.endPreview()
+			}
+			s.slider = s.pressed
 			s.dragging = true
 			s.setOpacityAt(x)
 			return 0
@@ -906,7 +978,11 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			s.pressed = hitNone
 			// Saved; the preview stays a moment longer (previewTimer).
 			if current != nil {
-				current.on(Choice{Command: CommandOverlayOpacity, Value: s.opacity})
+				if s.slider == hitSoulSlider {
+					current.on(Choice{Command: CommandSoulOpacity, Value: s.soulOpacity})
+				} else {
+					current.on(Choice{Command: CommandOverlayOpacity, Value: s.opacity})
+				}
 			}
 			setTimer.Call(hwnd, previewTimer, previewMs, 0)
 			invalidateRect.Call(hwnd, 0, 0)

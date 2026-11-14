@@ -1,12 +1,13 @@
 import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeAll, describe, expect, it, vi } from "vitest"
-import { CUBE_KEYS_LOCK } from "@account/game/companionLocks"
+import { CUBE_KEYS_LOCK, getUnknownLockId } from "@account/game/companionLocks"
 import { renderWithChakra } from "@test/renderWithChakra"
 import { STARTER_TASKS } from "@tracker/config/starterTasks"
 import {
     ArenaUnknownContext,
     CompanionLocksContext,
+    EditingTasksContext,
     CorridorsUnknownContext,
 } from "@tracker/context/companionLocks"
 import { TaskItem } from "./TaskItem"
@@ -38,11 +39,16 @@ const renderCorridor = (unknown: boolean) => {
     )
 }
 
-const renderItem = (locks: Record<string, ReadonlySet<string>>) => {
+const SHARDS = STARTER_TASKS.find((task) => task.id === "shards-nightmare")!
+
+const renderItem = (
+    locks: Record<string, ReadonlySet<string>>,
+    task = NIGHTMARE,
+) => {
     renderWithChakra(
         <CompanionLocksContext value={locks}>
             <TaskItem
-                task={NIGHTMARE}
+                task={task}
                 owner="a"
                 ownerLabel="Testchar"
                 period={0}
@@ -103,7 +109,10 @@ describe("TaskItem", () => {
 
         renderWithChakra(
             <ArenaUnknownContext
-                value={{ owners: new Set(["a"]), onConfirm: onConfirm }}
+                value={{
+                    tasks: new Map([["a", new Set(["arena-wins"])]]),
+                    onConfirm: onConfirm,
+                }}
             >
                 <TaskItem
                     task={arena}
@@ -123,15 +132,73 @@ describe("TaskItem", () => {
         )
         // The panel stays invisible until placed, which jsdom can't do: find
         // its button by text.
-        await userEvent.click(await screen.findByText("Counts are right"))
+        await userEvent.click(await screen.findByText("Count is right"))
 
-        expect(onConfirm).toHaveBeenCalledWith("a", 5)
+        expect(onConfirm).toHaveBeenCalledWith("a", "arena-wins", 5)
+    })
+
+    it("keeps a task just edited usable until the card is left", () => {
+        renderWithChakra(
+            <CompanionLocksContext value={{ a: new Set(["nightmare"]) }}>
+                <EditingTasksContext value={new Set(["nightmare"])}>
+                    <TaskItem
+                        task={NIGHTMARE}
+                        owner="a"
+                        ownerLabel="Testchar"
+                        period={0}
+                        ignored={false}
+                        onCountChange={vi.fn()}
+                        onEntriesChange={vi.fn()}
+                        onIgnoredChange={vi.fn()}
+                    />
+                </EditingTasksContext>
+            </CompanionLocksContext>,
+        )
+
+        expect(
+            screen.getByRole("button", { name: /^Use one: Nightmare/ }),
+        ).toBeInTheDocument()
+    })
+
+    it("warns only on the arena tasks whose week is unknown", () => {
+        const participation = STARTER_TASKS.find((task) => {
+            return task.id === "arena-participation"
+        })!
+
+        renderWithChakra(
+            <ArenaUnknownContext
+                value={{
+                    tasks: new Map([["a", new Set(["arena-wins"])]]),
+                    onConfirm: vi.fn(),
+                }}
+            >
+                <TaskItem
+                    task={participation}
+                    owner="a"
+                    ownerLabel="Testchar"
+                    period={5}
+                    ignored={false}
+                    onCountChange={vi.fn()}
+                    onEntriesChange={vi.fn()}
+                    onIgnoredChange={vi.fn()}
+                />
+            </ArenaUnknownContext>,
+        )
+
+        expect(
+            screen.queryByRole("button", {
+                name: /isn't filled from the game$/,
+            }),
+        ).toBeNull()
     })
 
     it("doesn't warn on other tasks", () => {
         renderWithChakra(
             <ArenaUnknownContext
-                value={{ owners: new Set(["a"]), onConfirm: vi.fn() }}
+                value={{
+                    tasks: new Map([["a", new Set(["arena-wins"])]]),
+                    onConfirm: vi.fn(),
+                }}
             >
                 <TaskItem
                     task={NIGHTMARE}
@@ -168,8 +235,44 @@ describe("TaskItem", () => {
         ).toBeInTheDocument()
         // Its pip stays usable.
         expect(
-            screen.getByRole("group", { name: /^Abyss Corridor \(Reshanta's Root\)/ }),
+            screen.getByRole("group", {
+                name: /^Abyss Corridor \(Reshanta's Root\)/,
+            }),
         ).toBeInTheDocument()
+    })
+
+    it("shows a shop goal with no counts yet as locked, unknown and warning", async () => {
+        renderItem(
+            {
+                a: new Set([
+                    "shards-nightmare",
+                    getUnknownLockId("shards-nightmare"),
+                ]),
+            },
+            SHARDS,
+        )
+
+        expect(
+            screen.getByLabelText(
+                /^Stigma Shards \(Nightmare\), Testchar: not known/,
+            ),
+        ).toHaveTextContent("?/35")
+        expect(screen.queryByRole("group")).toBeNull()
+        await userEvent.click(
+            screen.getByRole("button", { name: /Testchar: no data/ }),
+        )
+        expect(
+            await screen.findByText(/Open the Nightmare shop on Testchar/),
+        ).toBeInTheDocument()
+    })
+
+    it("shows a shop goal's count once the shop was read", () => {
+        renderItem({ a: new Set(["shards-nightmare"]) }, SHARDS)
+
+        expect(screen.queryByRole("button", { name: /no data/ })).toBeNull()
+        expect(
+            screen.getByLabelText(/^Stigma Shards \(Nightmare\), Testchar: /),
+        ).toHaveTextContent("0/35")
     })
 
     it("locks a corridor row with the Corridors task once known", () => {
@@ -177,7 +280,9 @@ describe("TaskItem", () => {
 
         expect(screen.queryByRole("button", { name: /no data/ })).toBeNull()
         expect(
-            screen.getByLabelText(/^Abyss Corridor \(Reshanta's Root\).*Testchar: /),
+            screen.getByLabelText(
+                /^Abyss Corridor \(Reshanta's Root\).*Testchar: /,
+            ),
         ).toHaveTextContent("0/1")
         expect(screen.queryByRole("group")).toBeNull()
     })

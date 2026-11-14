@@ -58,3 +58,22 @@ func TestOtherPortsAreIgnored(t *testing.T) {
 		t.Fatalf("read %d messages from another port", p.Messages)
 	}
 }
+
+func TestResetReadsAfreshFromMidway(t *testing.T) {
+	p := New(state.NewTracker())
+	p.Packet(packet(GamePort, 100, true, nil))
+	p.Packet(packet(GamePort, 101, false, tick))
+	// Packets missed meanwhile: without a reset the stream waits for them.
+	p.Packet(packet(GamePort, 5000, false, append(append([]byte{}, tick...), tick...)))
+	before := p.Messages
+	p.Reset()
+	// Joined midway, it reads once a run of frames proves where they start.
+	var ticks []byte
+	for range 8 {
+		ticks = append(ticks, tick...)
+	}
+	p.Packet(packet(GamePort, 9000, false, ticks))
+	if p.Messages <= before {
+		t.Fatalf("read nothing after the reset (%d, then %d)", before, p.Messages)
+	}
+}

@@ -106,6 +106,25 @@ export const CRAFT_TASKS: Record<
     "odyle-craft": { recipe: "31070002", limit: "character" },
 }
 
+// One-off tracker tasks a shop's lifetime purchase counts fill: task id →
+// the shop and the entries it adds up. A shop's list leaves out entries never
+// bought. The Abyss shop sells Stigma Shards in 4 stages of 50, one entry
+// each (all four seen buying, 2026-11-14).
+export const SHOP_TASKS: Record<string, { shop: string; entries: string[] }> = {
+    "crystals-nightmare": { shop: "990003", entries: ["402024518"] },
+    "shards-nightmare": { shop: "990003", entries: ["402024517"] },
+    "shards-abyss": {
+        shop: "990001",
+        entries: ["401015113", "401015114", "401015115", "401015116"],
+    },
+}
+
+// The shops of SHOP_TASKS, by id, as players call them.
+export const SHOP_NAMES: Record<string, string> = {
+    "990001": "Abyss shop",
+    "990003": "Nightmare shop",
+}
+
 // The Hidden Cube key item, kept per character.
 export const HIDDEN_CUBE_KEY = "630900003"
 

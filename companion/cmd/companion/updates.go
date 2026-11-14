@@ -14,7 +14,7 @@ import (
 // How often a running companion looks for a new version. At launch it
 // looks at once and updates without asking; later it only offers the update
 // in the settings window.
-const updateInterval = 6 * time.Hour
+const updateInterval = 30 * time.Minute
 
 // A newer release, found at launch (installed without asking) or later
 // (offered in the settings window).

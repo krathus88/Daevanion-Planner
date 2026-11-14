@@ -1,6 +1,5 @@
 import { CompanionLockedContext } from "@account/companionLockedContext"
 import { useCompanionFills } from "@account/hooks/useCompanionFills"
-import { useCompanionStatus } from "@account/hooks/useCompanionStatus"
 import { Container, Flex, Grid, Heading, Link, Text } from "@chakra-ui/react"
 import {
     PET_CATEGORY_IDS,
@@ -45,8 +44,8 @@ const NO_FARM_SPOTS: ReturnType<typeof getFarmSpots> = {
 }
 
 export const PetsPage = () => {
-    // While the companion app runs, levels and souls come from the game.
-    const petsLocked = useCompanionFills(useCompanionStatus(), "pets")
+    // Once the companion app sent them, levels and souls come from the game.
+    const petsLocked = useCompanionFills("pets")
     const search = route.useSearch()
     const navigate = route.useNavigate()
     const atlas = route.useLoaderData()

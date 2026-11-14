@@ -183,6 +183,36 @@ describe("mergeTrackerData", () => {
         })
     })
 
+    it("keeps arena tasks set by hand on either side in that week", () => {
+        const seen = { period: 5, at: 2, modes: { "2": [18, 21] } }
+        const merged = mergeTrackerData(
+            {
+                arena: {
+                    a: {
+                        seen: seen,
+                        fixed: { period: 5, starts: { "arena-wins": 17 } },
+                    },
+                },
+            },
+            {
+                arena: {
+                    a: {
+                        seen: seen,
+                        fixed: {
+                            period: 5,
+                            starts: { "arena-wins": 10, "arena-1v1-wins": 0 },
+                        },
+                    },
+                },
+            },
+        )
+
+        expect(merged.arena.a.fixed).toEqual({
+            period: 5,
+            starts: { "arena-wins": 17, "arena-1v1-wins": 0 },
+        })
+    })
+
     it("keeps characters declined on either side", () => {
         const merged = mergeTrackerData(
             { declined: ["siel:a"] },

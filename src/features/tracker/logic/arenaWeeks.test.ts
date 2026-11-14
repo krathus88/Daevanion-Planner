@@ -1,10 +1,29 @@
 import type { ArenaSighting } from "@tracker/types"
 import { describe, expect, it } from "vitest"
 import {
-    getArenaWeek,
-    isArenaWeekUnknown,
+    fixArenaTask,
+    getArenaTaskWeek,
+    isArenaTaskKnown,
+    isArenaTaskUnknown,
     updateArenaRecord,
 } from "./arenaWeeks"
+
+// A mode's week as [played, won] (5v5 is mode 2, 1v1 mode 1).
+const getWeek = (
+    record: Parameters<typeof getArenaTaskWeek>[0],
+    mode: string,
+) => {
+    const [played, won] =
+        mode === "2"
+            ? ["arena-participation", "arena-wins"]
+            : ["arena-1v1-participation", "arena-1v1-wins"]
+    const week = {
+        played: getArenaTaskWeek(record, played),
+        won: getArenaTaskWeek(record, won),
+    }
+
+    return week.played === null || week.won === null ? null : week
+}
 
 // Kryx's real records on 2026-11-12: mode 2 (5v5) at 17 wins, 20 losses
 // before the week's first match, then a loss, a win, and a 1v1 win.
@@ -40,8 +59,8 @@ describe("updateArenaRecord", () => {
             won: 2,
         })
 
-        expect(getArenaWeek(record, "2")).toEqual({ played: 2, won: 1 })
-        expect(getArenaWeek(record, "1")).toEqual({ played: 1, won: 1 })
+        expect(getWeek(record, "2")).toEqual({ played: 2, won: 1 })
+        expect(getWeek(record, "1")).toEqual({ played: 1, won: 1 })
     })
 
     it("takes last week's last sighting when it adds up to the week's totals", () => {
@@ -56,7 +75,7 @@ describe("updateArenaRecord", () => {
         })
 
         expect(record.base?.period).toBe(5)
-        expect(getArenaWeek(record, "2")).toEqual({ played: 2, won: 1 })
+        expect(getWeek(record, "2")).toEqual({ played: 2, won: 1 })
     })
 
     it("leaves the week unknown when matches were played after the last sighting", () => {
@@ -71,21 +90,23 @@ describe("updateArenaRecord", () => {
             won: 1,
         })
 
-        expect(getArenaWeek(record, "2")).toBeNull()
-        expect(isArenaWeekUnknown(record, 5)).toBe(true)
+        expect(getWeek(record, "2")).toBeNull()
+        expect(isArenaTaskUnknown(record, 5, "arena-wins")).toBe(true)
     })
 
     it("leaves the week unknown without totals or an earlier sighting", () => {
         expect(
-            isArenaWeekUnknown(
+            isArenaTaskUnknown(
                 updateArenaRecord(undefined, AFTER_LOSS, null),
                 5,
+                "arena-wins",
             ),
         ).toBe(true)
         expect(
-            isArenaWeekUnknown(
+            isArenaTaskUnknown(
                 updateArenaRecord(undefined, AFTER_LOSS, { played: 1, won: 0 }),
                 5,
+                "arena-wins",
             ),
         ).toBe(true)
     })
@@ -98,13 +119,64 @@ describe("updateArenaRecord", () => {
         const record = updateArenaRecord(start, AFTER_LOSS, null)
 
         expect(record.base).toEqual(START)
-        expect(getArenaWeek(record, "2")).toEqual({ played: 1, won: 0 })
+        expect(getWeek(record, "2")).toEqual({ played: 1, won: 0 })
     })
 
     it("isn't unknown in a week it wasn't seen", () => {
         const record = updateArenaRecord(undefined, AFTER_LOSS, null)
 
-        expect(isArenaWeekUnknown(record, 6)).toBe(false)
-        expect(isArenaWeekUnknown(undefined, 5)).toBe(false)
+        expect(isArenaTaskUnknown(record, 6, "arena-wins")).toBe(false)
+        expect(isArenaTaskUnknown(undefined, 5, "arena-wins")).toBe(false)
+    })
+})
+
+describe("fixArenaTask", () => {
+    // Seen this week at 18-21 in 5v5 and 1-0 in 1v1, start unknown.
+    const unknown = updateArenaRecord(undefined, AFTER_1V1, null)
+
+    it("sets only the task entered, from the count shown", () => {
+        const record = fixArenaTask(unknown, "arena-wins", 1)
+
+        expect(getArenaTaskWeek(record, "arena-wins")).toBe(1)
+        expect(isArenaTaskKnown(record, 5, "arena-wins")).toBe(true)
+        // Its participation and the 1v1 tasks stay unknown.
+        expect(isArenaTaskUnknown(record, 5, "arena-participation")).toBe(true)
+        expect(isArenaTaskUnknown(record, 5, "arena-1v1-wins")).toBe(true)
+        expect(isArenaTaskUnknown(record, 5, "arena-1v1-participation")).toBe(
+            true,
+        )
+    })
+
+    it("counts later matches on top of the count entered", () => {
+        const fixed = fixArenaTask(unknown, "arena-participation", 2)
+        const later = updateArenaRecord(
+            fixed,
+            sighting(5, 9, { "1": [1, 0], "2": [19, 22] }),
+            null,
+        )
+
+        expect(getArenaTaskWeek(later, "arena-participation")).toBe(4)
+        expect(getArenaTaskWeek(later, "arena-wins")).toBeNull()
+    })
+
+    it("forgets the tasks set by hand once the week is over", () => {
+        const fixed = fixArenaTask(unknown, "arena-wins", 1)
+        const nextWeek = updateArenaRecord(
+            fixed,
+            sighting(6, 9, { "1": [1, 0], "2": [19, 22] }),
+            null,
+        )
+
+        expect(nextWeek.fixed).toBeUndefined()
+        expect(isArenaTaskUnknown(nextWeek, 6, "arena-wins")).toBe(true)
+    })
+
+    it("leaves a week whose start the game knows alone", () => {
+        const known = updateArenaRecord(undefined, START, {
+            played: 0,
+            won: 0,
+        })
+
+        expect(fixArenaTask(known, "arena-wins", 9)).toBe(known)
     })
 })

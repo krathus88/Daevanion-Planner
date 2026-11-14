@@ -199,6 +199,25 @@ const pickArenaSighting = (value: unknown): ArenaSighting | null => {
     return { period: value.period, at: value.at, modes: modes }
 }
 
+// Arena task starts set by hand in one week; bad entries are dropped.
+const pickArenaStarts = (value: unknown) => {
+    if (!isRecord(value) || !isWholeNumber(value.period, 0)) {
+        return null
+    }
+
+    const starts: Record<string, number> = {}
+
+    if (isRecord(value.starts)) {
+        for (const [taskId, start] of Object.entries(value.starts)) {
+            if (isWholeNumber(start, 0)) {
+                starts[taskId] = start
+            }
+        }
+    }
+
+    return { period: value.period, starts: starts }
+}
+
 // Arena records by character id; bad ones are dropped one by one.
 const pickArena = (value: unknown) => {
     const arena: TrackerData["arena"] = {}
@@ -215,8 +234,13 @@ const pickArena = (value: unknown) => {
         }
 
         const base = pickArenaSighting(record.base)
+        const fixed = pickArenaStarts(record.fixed)
 
-        arena[characterId] = base ? { seen: seen, base: base } : { seen: seen }
+        arena[characterId] = {
+            seen: seen,
+            ...(base && { base: base }),
+            ...(fixed && { fixed: fixed }),
+        }
     }
 
     return arena

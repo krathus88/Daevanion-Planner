@@ -1,4 +1,3 @@
-import { ARENA_TASKS } from "@account/game/gameIds"
 import { STARTER_TASKS, STARTS_IGNORED } from "@tracker/config/starterTasks"
 import {
     MAX_CUBE_KEYS,
@@ -13,11 +12,7 @@ import type {
     TrackerReset,
     TrackerTask,
 } from "@tracker/types"
-import {
-    isArenaWeekUnknown,
-    startFromCounts,
-    type ArenaTotals,
-} from "./arenaWeeks"
+import { fixArenaTask } from "./arenaWeeks"
 import { addIgnored, insertPreset } from "./presetTasks"
 import { clampEnergy, getEnergyCap, type EnergyLeft } from "./odyleEnergy"
 import { readCount } from "./resetPeriods"
@@ -435,36 +430,31 @@ export const setMinimized = (
     }
 }
 
-// A character's arena week the companion couldn't work out, taken from the
-// tracker's own counts (entered or confirmed by the user): from then on the
-// game fills it again. Nothing changes when the week is known.
-export const confirmArenaWeek = (
+// An arena task set by hand (a count entered, or the one shown confirmed) in
+// a week the companion couldn't work out: where that task stood when the week
+// began, worked back from it. Only that task; the game then fills it again.
+export const confirmArenaTask = (
     data: TrackerData,
     characterId: string,
+    taskId: string,
     period: number,
 ): TrackerData => {
     const record = data.arena[characterId]
 
-    if (record === undefined || !isArenaWeekUnknown(record, period)) {
+    if (
+        record === undefined ||
+        record.seen.period !== period ||
+        record.base?.period === period
+    ) {
         return data
     }
 
-    const counts: Record<string, ArenaTotals> = {}
+    const count = readCount(data.counts[characterId]?.[taskId], period)
+    const next = fixArenaTask(record, taskId, count)
 
-    for (const [taskId, source] of Object.entries(ARENA_TASKS)) {
-        const count = readCount(data.counts[characterId]?.[taskId], period)
-        const mode = (counts[source.mode] ??= { played: 0, won: 0 })
-
-        mode[source.counts] = count
-    }
-
-    return {
-        ...data,
-        arena: {
-            ...data.arena,
-            [characterId]: startFromCounts(record, counts),
-        },
-    }
+    return next === record
+        ? data
+        : { ...data, arena: { ...data.arena, [characterId]: next } }
 }
 
 // How a character the companion app sent is named in `declined`.

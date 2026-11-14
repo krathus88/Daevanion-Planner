@@ -2,6 +2,7 @@ import { Box, Flex } from "@chakra-ui/react"
 import { Card } from "@common/Card"
 import { Section } from "@common/Section"
 import { useDelayedIgnore } from "@tracker/hooks/useDelayedIgnore"
+import { EditingTasksContext } from "@tracker/context/companionLocks"
 import { useDoneStash } from "@tracker/hooks/useDoneStash"
 import { useSlideIntoPlace } from "@tracker/hooks/useSlideIntoPlace"
 import type { ResetPeriods } from "@tracker/logic/resetPeriods"
@@ -109,6 +110,7 @@ export const TaskCard = ({
     // entries refilled) slide the rest aside and fade it in.
     const handleCountChange: CountChangeHandler = (...args) => {
         captureSlide()
+        stash.edit(args[1].id)
         onCountChange(...args)
     }
 
@@ -137,120 +139,132 @@ export const TaskCard = ({
     }
 
     return (
-        <Card
-            ref={cardRef}
-            as="article"
-            gap="4"
-            aria-label={title}
-            onPointerLeave={stash.onPointerLeave}
-        >
-            <TaskCardHeader
-                title={title}
-                progress={progress}
-                minimized={minimized}
-                titleHref={titleHref}
-                icon={icon}
-                subtitle={subtitle}
-                titleAction={titleAction}
-                onMinimizedChange={handleMinimizedChange}
-            />
+        <EditingTasksContext value={stash.editing}>
+            <Card
+                ref={cardRef}
+                as="article"
+                gap="4"
+                aria-label={title}
+                onPointerLeave={stash.onPointerLeave}
+            >
+                <TaskCardHeader
+                    title={title}
+                    progress={progress}
+                    minimized={minimized}
+                    titleHref={titleHref}
+                    icon={icon}
+                    subtitle={subtitle}
+                    titleAction={titleAction}
+                    onMinimizedChange={handleMinimizedChange}
+                />
 
-            {minimized ? (
-                <Flex flexDir="column" gap="3">
-                    {top}
+                {minimized ? (
+                    <Flex flexDir="column" gap="3">
+                        {top}
 
-                    <PendingTasks
-                        pending={getPendingTasks(
-                            taskGroups,
-                            counts,
-                            entries,
-                            ignored,
-                            periods,
+                        <PendingTasks
+                            pending={getPendingTasks(
+                                taskGroups,
+                                counts,
+                                entries,
+                                ignored,
+                                periods,
+                            )}
+                        />
+                    </Flex>
+                ) : (
+                    <Flex ref={contentRef} flexDir="column" gap="4">
+                        {top}
+
+                        <TaskGroupBoxes
+                            groups={active.todo}
+                            allGroups={split.active}
+                            slideScope="todo"
+                            leaving={leaving}
+                            owner={owner}
+                            ownerLabel={ownerLabel}
+                            periods={periods}
+                            wide={wide}
+                            counts={counts}
+                            entries={entries}
+                            onCountChange={handleCountChange}
+                            onEntriesChange={handleEntriesChange}
+                            onIgnoredChange={handleIgnoredChange}
+                            goalsOpen={goalsOpen}
+                            onGoalsOpenChange={handleGoalsOpenChange}
+                        />
+
+                        {active.done.length > 0 && (
+                            // Sections slide as a whole (see useSlideIntoPlace).
+                            <Box
+                                data-slide-id="section:done"
+                                data-slide-section
+                            >
+                                <Section
+                                    title="Done"
+                                    variant="sub"
+                                    count={countTasks(active.done)}
+                                >
+                                    {/* Same boxes and tiles as above, so they stay green. */}
+                                    <TaskGroupBoxes
+                                        groups={active.done}
+                                        allGroups={split.active}
+                                        slideScope="done"
+                                        leaving={leaving}
+                                        owner={owner}
+                                        ownerLabel={ownerLabel}
+                                        periods={periods}
+                                        wide={wide}
+                                        counts={counts}
+                                        entries={entries}
+                                        onCountChange={handleCountChange}
+                                        onEntriesChange={handleEntriesChange}
+                                        onIgnoredChange={handleIgnoredChange}
+                                        goalsOpen={goalsOpen}
+                                        onGoalsOpenChange={
+                                            handleGoalsOpenChange
+                                        }
+                                    />
+                                </Section>
+                            </Box>
                         )}
-                    />
-                </Flex>
-            ) : (
-                <Flex ref={contentRef} flexDir="column" gap="4">
-                    {top}
 
-                    <TaskGroupBoxes
-                        groups={active.todo}
-                        allGroups={split.active}
-                        slideScope="todo"
-                        leaving={leaving}
-                        owner={owner}
-                        ownerLabel={ownerLabel}
-                        periods={periods}
-                        wide={wide}
-                        counts={counts}
-                        entries={entries}
-                        onCountChange={handleCountChange}
-                        onEntriesChange={handleEntriesChange}
-                        onIgnoredChange={handleIgnoredChange}
-                        goalsOpen={goalsOpen}
-                        onGoalsOpenChange={handleGoalsOpenChange}
-                    />
-
-                    {active.done.length > 0 && (
-                        // Sections slide as a whole (see useSlideIntoPlace).
-                        <Box data-slide-id="section:done" data-slide-section>
-                            <Section
-                                title="Done"
-                                variant="sub"
-                                count={countTasks(active.done)}
+                        {split.ignored.length > 0 && (
+                            <Box
+                                data-slide-id="section:ignored"
+                                data-slide-section
                             >
-                                {/* Same boxes and tiles as above, so they stay green. */}
-                                <TaskGroupBoxes
-                                    groups={active.done}
-                                    allGroups={split.active}
-                                    slideScope="done"
-                                    leaving={leaving}
-                                    owner={owner}
-                                    ownerLabel={ownerLabel}
-                                    periods={periods}
-                                    wide={wide}
-                                    counts={counts}
-                                    entries={entries}
-                                    onCountChange={handleCountChange}
-                                    onEntriesChange={handleEntriesChange}
-                                    onIgnoredChange={handleIgnoredChange}
-                                    goalsOpen={goalsOpen}
-                                    onGoalsOpenChange={handleGoalsOpenChange}
-                                />
-                            </Section>
-                        </Box>
-                    )}
-
-                    {split.ignored.length > 0 && (
-                        <Box data-slide-id="section:ignored" data-slide-section>
-                            <Section
-                                title="Ignored"
-                                variant="sub"
-                                count={countTasks(split.ignored)}
-                            >
-                                {/* Same boxes and tiles as above, dimmed. */}
-                                <TaskGroupBoxes
-                                    groups={split.ignored}
-                                    allGroups={split.ignored}
-                                    slideScope="ignored"
-                                    ignored
-                                    owner={owner}
-                                    ownerLabel={ownerLabel}
-                                    periods={periods}
-                                    wide={wide}
-                                    counts={counts}
-                                    entries={entries}
-                                    onCountChange={handleCountChange}
-                                    onEntriesChange={handleEntriesChange}
-                                    onIgnoredChange={handleIgnoredChange}
-                                    goalsOpen={goalsOpen}
-                                    onGoalsOpenChange={handleGoalsOpenChange}
-                                />
-                            </Section>
-                        </Box>
-                    )}
-                </Flex>
-            )}
-        </Card>
+                                <Section
+                                    title="Ignored"
+                                    variant="sub"
+                                    count={countTasks(split.ignored)}
+                                >
+                                    {/* Same boxes and tiles as above, dimmed. */}
+                                    <TaskGroupBoxes
+                                        groups={split.ignored}
+                                        allGroups={split.ignored}
+                                        slideScope="ignored"
+                                        ignored
+                                        owner={owner}
+                                        ownerLabel={ownerLabel}
+                                        periods={periods}
+                                        wide={wide}
+                                        counts={counts}
+                                        entries={entries}
+                                        onCountChange={handleCountChange}
+                                        onEntriesChange={handleEntriesChange}
+                                        onIgnoredChange={handleIgnoredChange}
+                                        goalsOpen={goalsOpen}
+                                        onGoalsOpenChange={
+                                            handleGoalsOpenChange
+                                        }
+                                    />
+                                </Section>
+                            </Box>
+                        )}
+                    </Flex>
+                )}
+            </Card>
+        </EditingTasksContext>
     )
 }

@@ -23,25 +23,25 @@ export const getCorridorName = (artifact: string) => {
     return corridor?.name ?? `Corridor ${artifact}`
 }
 
-// Holdings sent since this period's siege set the rows. Without them, while
-// the companion runs, nothing is known until the game says (a siege can be
-// lost). Otherwise the task stays as the user set it up.
+// Holdings sent since this period's siege set the rows. Without them, once
+// the companion was used, nothing is known until the game says (a siege can
+// be lost). Otherwise the task stays as the user set it up.
 export const getCorridorView = (
     hold: CorridorRecord | undefined,
     left: CorridorRecord | undefined,
     siegePeriod: number,
-    companionRunning: boolean,
+    companionUsed: boolean,
 ): CorridorView | null => {
     const held = hold !== undefined && hold.period === siegePeriod
 
-    if (!held && !companionRunning) {
+    if (!held && !companionUsed) {
         return null
     }
 
     return {
         artifacts: held ? hold.artifacts : null,
         unknown:
-            companionRunning &&
+            companionUsed &&
             (!held ||
                 (hold.artifacts.length > 0 &&
                     getCorridorsUsed(hold, left) === null)),

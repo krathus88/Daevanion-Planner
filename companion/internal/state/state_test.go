@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/binary"
+	"reflect"
 	"testing"
 	"time"
 
@@ -555,5 +556,41 @@ func TestArtifacts(t *testing.T) {
 	tr.Handle("a", msg(game.TypeArtifacts, body), now.Add(10*time.Second))
 	if tr.All()[0].ArtifactsAt != got.ArtifactsAt {
 		t.Fatal("restamped unchanged owners")
+	}
+}
+
+func shopCounts(shop uint32, entries ...uint32) wire.Message {
+	body := join([]byte{0, 0}, u32(shop), []byte{byte(len(entries) / 2)})
+	for k := 0; k+1 < len(entries); k += 2 {
+		body = join(body, u32(entries[k]), u32(entries[k+1]))
+	}
+	return msg(game.TypeShopCounts, join(body, u64(1)))
+}
+
+func TestShopPurchaseCounts(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	// Bought before the shop was opened this run: nothing to add to.
+	tr.Handle("a", msg(game.TypeShopPurchase, join([]byte{0, 6}, u32(990003), []byte{1}, u32(402024517), u32(1))), now)
+	if got := tr.All()[0]; got.Shops != nil {
+		t.Fatalf("got %+v", got.Shops)
+	}
+	tr.Handle("a", shopCounts(990003, 402024517, 2, 402024518, 50), now)
+	tr.Handle("a", shopCounts(990001, 7, 1), now)
+	tr.Handle("a", msg(game.TypeShopPurchase, join([]byte{0, 6}, u32(990003), []byte{1}, u32(402024517), u32(1))), now.Add(time.Second))
+	got := tr.All()[0]
+	want := map[string]map[string]int{"990003": {"402024517": 3, "402024518": 50}, "990001": {"7": 1}}
+	if !reflect.DeepEqual(got.Shops, want) || got.ShopsAt != now.Add(time.Second).UnixMilli() {
+		t.Fatalf("got %+v at %d", got.Shops, got.ShopsAt)
+	}
+}
+
+func TestKeepMergesShops(t *testing.T) {
+	previous := Snapshot{Version: SnapshotVersion, Shops: map[string]map[string]int{"990003": {"402024518": 36}, "990001": {"7": 1}}, ShopsAt: 1}
+	s := Snapshot{Version: SnapshotVersion, Shops: map[string]map[string]int{"990003": {"402024517": 3}}, ShopsAt: 2}
+	got := s.Keep(previous)
+	want := map[string]map[string]int{"990003": {"402024517": 3}, "990001": {"7": 1}}
+	if !reflect.DeepEqual(got.Shops, want) || got.ShopsAt != 2 {
+		t.Fatalf("got %+v %d", got.Shops, got.ShopsAt)
 	}
 }

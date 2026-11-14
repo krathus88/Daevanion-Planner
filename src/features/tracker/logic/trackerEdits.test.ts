@@ -4,7 +4,7 @@ import { MAX_TASK_CAP } from "@tracker/storage/trackerData"
 import type { TrackerData, TrackerTask } from "@tracker/types"
 import {
     addCharacter,
-    confirmArenaWeek,
+    confirmArenaTask,
     declineGameCharacter,
     addTask,
     getTasks,
@@ -393,7 +393,7 @@ describe("setCubeKeys", () => {
     })
 })
 
-describe("confirmArenaWeek", () => {
+describe("confirmArenaTask", () => {
     // Seen this week (period 5) at 18-21 in 5v5 and 1-0 in 1v1, start unknown.
     const ARENA: TrackerData["arena"] = {
         a: {
@@ -401,38 +401,38 @@ describe("confirmArenaWeek", () => {
         },
     }
 
-    it("works the week's start back from the counts shown", () => {
+    it("works only that task's start back from its count shown", () => {
         const counted = data({
             arena: ARENA,
             counts: {
                 a: {
-                    "arena-participation": { period: 5, count: 2 },
                     "arena-wins": { period: 5, count: 1 },
-                    "arena-1v1-wins": { period: 5, count: 1 },
-                    "arena-1v1-participation": { period: 5, count: 1 },
+                    "arena-participation": { period: 5, count: 2 },
                 },
             },
         })
-        const next = confirmArenaWeek(counted, "a", 5)
+        const next = confirmArenaTask(counted, "a", "arena-wins", 5)
 
-        expect(next.arena.a.base).toEqual({
+        // 18 lifetime wins, 1 this week: 17 when the week began.
+        expect(next.arena.a.fixed).toEqual({
             period: 5,
-            at: 2,
-            modes: { "1": [0, 0], "2": [17, 20] },
+            starts: { "arena-wins": 17 },
         })
+        expect(next.arena.a.base).toBeUndefined()
     })
 
     it("counts last week's numbers as none this week", () => {
-        const next = confirmArenaWeek(
+        const next = confirmArenaTask(
             data({
                 arena: ARENA,
                 counts: { a: { "arena-wins": { period: 4, count: 3 } } },
             }),
             "a",
+            "arena-wins",
             5,
         )
 
-        expect(next.arena.a.base?.modes).toEqual(ARENA.a.seen.modes)
+        expect(next.arena.a.fixed?.starts).toEqual({ "arena-wins": 18 })
     })
 
     it("changes nothing in a week whose start is known", () => {
@@ -440,7 +440,7 @@ describe("confirmArenaWeek", () => {
             arena: { a: { ...ARENA.a, base: ARENA.a.seen } },
         })
 
-        expect(confirmArenaWeek(known, "a", 5)).toBe(known)
+        expect(confirmArenaTask(known, "a", "arena-wins", 5)).toBe(known)
     })
 })
 

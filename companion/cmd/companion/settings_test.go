@@ -13,7 +13,7 @@ import (
 
 func TestSettingsRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), settingsFile)
-	if got := readSettings(path); got.ShopHideSeconds != 30 {
+	if got := readSettings(path); got.ShopHideSeconds != 15 {
 		t.Fatalf("default: %+v", got)
 	}
 	if err := writeSettings(path, settings{ShopHideSeconds: 90}); err != nil {
@@ -34,7 +34,7 @@ func TestSettingsFallBackToDefaults(t *testing.T) {
 	} {
 		path := filepath.Join(dir, name)
 		os.WriteFile(path, []byte(body), 0o600)
-		if got := readSettings(path); got.ShopHideSeconds != 30 {
+		if got := readSettings(path); got.ShopHideSeconds != 15 {
 			t.Errorf("%s: got %+v", name, got)
 		}
 	}
@@ -88,6 +88,46 @@ func TestSettingsKeepEmptyFilters(t *testing.T) {
 	os.WriteFile(path, []byte(`{"overlayOpacity": 140, "shopTypes": ["dragon", "natura"], "shopHiddenLevels": [3, 9], "shopSources": ["moon", "several"]}`), 0o600)
 	got := readSettings(path)
 	if got.OverlayOpacity != 0 || !reflect.DeepEqual(got.ShopTypes, []string{"natura"}) || !reflect.DeepEqual(got.ShopHiddenLevels, []int{3}) || !reflect.DeepEqual(got.ShopSources, []string{"several"}) {
+		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestSoulPopupSetting(t *testing.T) {
+	path := filepath.Join(t.TempDir(), settingsFile)
+	// On by default, also in a file saved before the setting existed.
+	os.WriteFile(path, []byte(`{"shopHideSeconds": 60}`), 0o600)
+	s := readSettings(path)
+	if !s.SoulPopup {
+		t.Fatalf("default: %+v", s)
+	}
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandSoulPopup})
+	if err := writeSettings(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if got := readSettings(path); got.SoulPopup {
+		t.Fatalf("turned off: %+v", got)
+	}
+}
+
+func TestSoulOpacity(t *testing.T) {
+	dir := t.TempDir()
+	// Missing file: the default.
+	if got := readSettings(filepath.Join(dir, "none.json")); got.SoulOpacity != 75 {
+		t.Fatalf("no file: %+v", got)
+	}
+	// Saved before the popup had its own: the default, apart from the widget's.
+	old := filepath.Join(dir, "old.json")
+	os.WriteFile(old, []byte(`{"overlayOpacity": 40}`), 0o600)
+	s := readSettings(old)
+	if s.SoulOpacity != 75 || s.OverlayOpacity != 40 {
+		t.Fatalf("old file: %+v", s)
+	}
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandSoulOpacity, Value: 70})
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandOverlayOpacity, Value: 10})
+	if err := writeSettings(old, s); err != nil {
+		t.Fatal(err)
+	}
+	if got := readSettings(old); got.SoulOpacity != 70 || got.OverlayOpacity != 10 {
 		t.Fatalf("got %+v", got)
 	}
 }

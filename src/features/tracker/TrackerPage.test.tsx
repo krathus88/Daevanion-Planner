@@ -1,9 +1,4 @@
-import {
-    screen,
-    waitFor,
-    waitForElementToBeRemoved,
-    within,
-} from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { renderWithChakra } from "@test/renderWithChakra"
@@ -23,6 +18,16 @@ vi.hoisted(() => {
             disconnect() {}
         },
     )
+})
+
+// No server here: the shared corridor holdings stay empty.
+vi.mock("./shared/sharedCorridorHolds", () => {
+    const none: never[] = []
+
+    return {
+        readSharedCorridorHolds: () => none,
+        subscribeToSharedCorridorHolds: () => () => {},
+    }
 })
 
 // What every character starts with ignored.
@@ -291,12 +296,16 @@ describe("TrackerPage", () => {
 
         await userEvent.unhover(aria)
 
-        // It fades out first, then moves.
-        await waitForElementToBeRemoved(
-            within(aria).queryByRole("button", {
-                name: "Supply Requests, Aria: 1 of 1",
-            }),
-        )
+        // It fades out first, then moves. waitFor, not
+        // waitForElementToBeRemoved: that one fails when the tile is already
+        // gone by the time it starts.
+        await waitFor(() => {
+            expect(
+                within(aria).queryByRole("button", {
+                    name: "Supply Requests, Aria: 1 of 1",
+                }),
+            ).not.toBeInTheDocument()
+        })
 
         // A click outside the card works too, for touch screens.
         await userEvent.click(
@@ -306,11 +315,13 @@ describe("TrackerPage", () => {
         )
         await userEvent.click(document.body)
 
-        await waitForElementToBeRemoved(
-            within(bran).queryByRole("button", {
-                name: "Supply Requests, Bran: 1 of 1",
-            }),
-        )
+        await waitFor(() => {
+            expect(
+                within(bran).queryByRole("button", {
+                    name: "Supply Requests, Bran: 1 of 1",
+                }),
+            ).not.toBeInTheDocument()
+        })
 
         // Undone from the Done section, it comes back at once.
         await userEvent.click(
@@ -358,11 +369,13 @@ describe("TrackerPage", () => {
         ).toHaveAttribute("aria-pressed", "true")
 
         await userEvent.unhover(aria)
-        await waitForElementToBeRemoved(
-            within(aria).queryByRole("button", {
-                name: "Supply Requests, Aria: 1 of 1",
-            }),
-        )
+        await waitFor(() => {
+            expect(
+                within(aria).queryByRole("button", {
+                    name: "Supply Requests, Aria: 1 of 1",
+                }),
+            ).not.toBeInTheDocument()
+        })
     })
 
     it("sets a small count with one click on its pip", async () => {

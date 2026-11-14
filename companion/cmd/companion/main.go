@@ -32,6 +32,7 @@ import (
 	"daevanion-companion/internal/pipeline"
 	"daevanion-companion/internal/record"
 	"daevanion-companion/internal/shop"
+	"daevanion-companion/internal/souls"
 	"daevanion-companion/internal/state"
 	"daevanion-companion/internal/update"
 	"daevanion-companion/internal/wire"
@@ -125,9 +126,11 @@ func (a *app) state() desktop.State {
 		Account:          a.account,
 		ShopHideSeconds:  a.settings.ShopHideSeconds,
 		OverlayOpacity:   a.settings.OverlayOpacity,
+		SoulOpacity:      a.settings.SoulOpacity,
 		ShopTypes:        a.settings.ShopTypes,
 		ShopHiddenLevels: a.settings.ShopHiddenLevels,
 		ShopSources:      a.settings.ShopSources,
+		SoulPopup:        a.settings.SoulPopup,
 		Startup:          desktop.StartsWithWindows(),
 		StartupAvailable: desktop.CanStartWithWindows(),
 		Recording:        a.recording,
@@ -163,7 +166,7 @@ func main() {
 	}
 
 	if !desktop.FirstInstance() {
-		desktop.ShowInfo("Daevanion Companion is already running: its icon is in the notification area, by the clock.")
+		desktop.ShowInfo("Daevanion Companion is already running (notification area, by the clock).")
 		return
 	}
 
@@ -177,9 +180,10 @@ func main() {
 	}
 	setUpStartup()
 
-	devices, err := capture.Devices()
+	// Checked first, so a missing Npcap says so before anything starts.
+	_, err := capture.Devices()
 	if errors.Is(err, capture.ErrNoNpcap) {
-		fail("Npcap isn't installed. Install it from https://npcap.com (the same one NotMeter uses), then start Daevanion Companion again.")
+		fail("Npcap isn't installed. Install it from https://npcap.com, then start the companion again.")
 	}
 	if err != nil {
 		fail("Couldn't list network adapters: %v", err)
@@ -212,7 +216,11 @@ func main() {
 		logf("Couldn't make the connection widget: %v", desktop.WidgetError)
 	}
 	tray.SetOverlayOpacity(state0.settings.OverlayOpacity)
+	tray.SetSoulOpacity(state0.settings.SoulOpacity)
 	tray.SetShopPreview(shopSample())
+	if state0.settings.SoulPopup {
+		tray.SetSoulPreview(soulSample())
+	}
 	// The tray tip and the settings window, after the state changed.
 	updateTip := func() {
 		tray.SetTip("Daevanion Companion: " + state0.status())
@@ -224,17 +232,12 @@ func main() {
 	}
 
 	packets := make(chan netio.Packet, 8192)
-	opened := 0
-	for _, device := range devices {
-		handle, err := capture.Open(device, pipeline.CaptureFilter)
-		if err != nil {
-			continue
-		}
-		opened++
-		go read(handle, packets)
+	reading, opened, err := openAdapters(packets)
+	if err != nil {
+		fail("Couldn't list network adapters: %v", err)
 	}
 	if opened == 0 {
-		fail("Couldn't open any network adapter. If Npcap was installed with \"Restrict Npcap driver's access to Administrators only\", reinstall it without that option.")
+		fail("Couldn't open a network adapter. Reinstall Npcap without \"Restrict Npcap driver's access to Administrators only\".")
 	}
 	logf("Watching %d network adapter(s). Items and entries load when you log in or switch character.", opened)
 
@@ -288,16 +291,21 @@ func main() {
 	shopWatch := shop.Watch{HideAfter: state0.settings.shopHideAfter()}
 	var shownShop *desktop.ShopView
 	shopSouls := false
+	// The pet collection as known now: the newest read this run, else (started
+	// mid-session) the account's copy plus what was gained since; nil when
+	// neither is known.
+	knownPets := func() map[int]game.Pet {
+		pets := tracker.Pets()
+		if pets == nil && up != nil {
+			pets = shop.WithGains(up.accountPets(), tracker.LateGains())
+		}
+		return pets
+	}
 	updateShop := func(now time.Time) {
 		items := shopWatch.Items(now)
 		var pets map[int]game.Pet
 		if items != nil {
-			pets = tracker.Pets()
-			// Started mid-session: the account's copy, plus what was
-			// bought since.
-			if pets == nil && up != nil {
-				pets = shop.WithGains(up.accountPets(), tracker.LateGains())
-			}
+			pets = knownPets()
 		}
 		next := shopPets(items, pets, state0.settings.shopFilter())
 		if !reflect.DeepEqual(next, shownShop) {
@@ -305,6 +313,18 @@ func main() {
 			shownShop = next
 		}
 	}
+	// The soul popup: pets that gained souls lately. Not while the shop
+	// panel is up (a purchase's souls show there).
+	var soulFeed souls.Feed
+	var shownSouls *desktop.SoulView
+	updateSouls := func(now time.Time) {
+		next := soulView(soulFeed.Rows(now))
+		if !reflect.DeepEqual(next, shownSouls) {
+			tray.ShowSouls(next)
+			shownSouls = next
+		}
+	}
+	soulsChanged := false
 	p.OnMessage = func(conn string, m wire.Message, at time.Time) {
 		if recorder != nil {
 			recorder.Message(conn, m, at)
@@ -324,7 +344,21 @@ func main() {
 				// Shown with the souls it gave, after this batch.
 				shopSouls = true
 			}
-		case game.TypePets, game.TypePetSouls:
+		case game.TypePetSouls:
+			shopSouls = true
+			// Before the tracker adds them: the collection is still as it
+			// was, so a level reached shows.
+			gains, ok := game.ParsePetSouls(m.Body)
+			state0.mu.Lock()
+			on := state0.settings.SoulPopup
+			state0.mu.Unlock()
+			if ok && on && !shop.HasPets(shopWatch.Items(time.Now())) {
+				for _, gain := range gains {
+					soulFeed.Add(gain, knownPets(), time.Now())
+				}
+				soulsChanged = true
+			}
+		case game.TypePets:
 			shopSouls = true
 		case game.TypeCharacter, game.TypeLogin, game.TypeSwitch:
 			// A zone change, login or switch: no shop stays open through it.
@@ -425,6 +459,25 @@ func main() {
 				return
 			case desktop.CommandOpenLog:
 				desktop.Open(logPath)
+			case desktop.CommandReconnect:
+				// Every adapter again (a VPN or network change can stop them
+				// silently), and the game's streams read afresh; what was read
+				// of the characters stays.
+				reading.close()
+				p.Reset()
+				next, opened, err := openAdapters(packets)
+				reading = next
+				switch {
+				case err != nil:
+					logf("Couldn't list network adapters: %v", err)
+					showNote(desktop.WidgetWaiting, "Couldn't reconnect: see the log", time.Now())
+				case opened == 0:
+					logf("Couldn't open any network adapter.")
+					showNote(desktop.WidgetWaiting, "Couldn't reconnect: see the log", time.Now())
+				default:
+					logf("Reconnected: watching %d network adapter(s).", opened)
+					showNote(desktop.WidgetDone, "Reconnected", time.Now())
+				}
 			case desktop.CommandRecord:
 				if recorder != nil {
 					stopRecording()
@@ -458,13 +511,21 @@ func main() {
 				if dir, err := recordingsDir(); err == nil {
 					desktop.Open(dir)
 				}
-			case desktop.CommandShopHide, desktop.CommandOverlayOpacity, desktop.CommandShopType, desktop.CommandShopLevel, desktop.CommandShopSource:
+			case desktop.CommandShopHide, desktop.CommandOverlayOpacity, desktop.CommandShopType, desktop.CommandShopLevel, desktop.CommandShopSource, desktop.CommandSoulPopup, desktop.CommandSoulOpacity:
 				state0.mu.Lock()
 				changeSetting(&state0.settings, choice)
 				saved := state0.settings
 				state0.mu.Unlock()
 				shopWatch.HideAfter = saved.shopHideAfter()
 				tray.SetOverlayOpacity(saved.OverlayOpacity)
+				tray.SetSoulOpacity(saved.SoulOpacity)
+				if !saved.SoulPopup {
+					soulFeed.Clear()
+					updateSouls(time.Now())
+					tray.SetSoulPreview(nil)
+				} else {
+					tray.SetSoulPreview(soulSample())
+				}
 				if err := saveSettings(saved); err != nil {
 					logf("Couldn't save the settings: %v", err)
 				}
@@ -562,7 +623,7 @@ func main() {
 			logf("Updated to %s: restarting.", done.release.Version)
 			quit()
 			if err := restart(exe); err != nil {
-				desktop.ShowError("Daevanion Companion was updated but couldn't restart: start it again.")
+				desktop.ShowError("Updated, but couldn't restart: start it again.")
 			}
 			return
 
@@ -573,7 +634,7 @@ func main() {
 			if result.err != nil {
 				text := fmt.Sprintf("Login failed: %v", result.err)
 				if errors.Is(result.err, account.ErrNotMember) {
-					text = "This Discord account isn't on the Daevanion Planner members list, so the companion can't send data for it."
+					text = "This Discord account isn't on the members list."
 				}
 				logf("%s", text)
 				note := "Login failed: see the log"
@@ -609,6 +670,10 @@ func main() {
 				shopSouls = false
 				updateShop(time.Now())
 			}
+			if soulsChanged {
+				soulsChanged = false
+				updateSouls(time.Now())
+			}
 			// The next tick shows it.
 			lastPacket = time.Now()
 
@@ -618,6 +683,7 @@ func main() {
 			}
 			showConnection(now)
 			updateShop(now)
+			updateSouls(now)
 			current := tracker.Current()
 			name := ""
 			if current != nil {
@@ -674,7 +740,7 @@ func connectionText(connected bool, playing *game.Character) (desktop.WidgetStat
 	default:
 		// Started mid-session: characters come at login, a character switch
 		// or a zone change.
-		return desktop.WidgetWaiting, "Connected to AION 2 · waiting for your character"
+		return desktop.WidgetWaiting, "Connected · waiting for your character"
 	}
 }
 
@@ -701,6 +767,34 @@ func shopSample() *desktop.ShopView {
 	items := []game.ShopItem{{Item: 534760134}, {Item: 534760088}, {Item: 534760078}, {Item: 534760143}}
 	pets := map[int]game.Pet{1163: {Level: 1}, 1089: {Level: 1, Souls: 12}}
 	return shopPets(items, pets, shop.Filter{})
+}
+
+// soulView is what the soul popup shows for the feed's rows: nil (hidden)
+// without any. A pet the companion can't name shows as "Unknown pet".
+func soulView(rows []souls.Row) *desktop.SoulView {
+	if len(rows) == 0 {
+		return nil
+	}
+	view := &desktop.SoulView{}
+	for _, row := range rows {
+		pet := desktop.SoulPet{Name: "Unknown pet", Gained: row.Gained, Level: row.Level, Souls: row.Souls, LevelUp: row.LevelUp}
+		if item, ok := shop.Pet(row.Pet); ok {
+			pet.Name, pet.Icon = item.Name, shop.Icon(item.Icon)
+		}
+		view.Pets = append(view.Pets, pet)
+	}
+	return view
+}
+
+// soulSample is what the opacity preview shows in the soul popup: a pet that
+// just reached Lv2 and one partway to Lv1.
+func soulSample() *desktop.SoulView {
+	var feed souls.Feed
+	now := time.Now()
+	pets := map[int]game.Pet{1163: {Level: 1, Souls: 23}, 1089: {Souls: 2}}
+	feed.Add(game.SoulGain{Pet: 1163, Amount: 3}, pets, now)
+	feed.Add(game.SoulGain{Pet: 1089, Amount: 1}, pets, now)
+	return soulView(feed.Rows(now))
 }
 
 func snapshotKey(s state.Snapshot) string {
@@ -764,7 +858,7 @@ func setUpStartup() {
 // askToLogIn offers the Discord login at launch when there's no saved one,
 // so it needn't be found in the tray menu. Yes works like the menu's Log in.
 func askToLogIn(commands chan<- desktop.Choice) {
-	logIn := desktop.Ask("Daevanion Companion", "Log in with Discord so the companion can send your game data to Daevanion Planner?\n\nYou can also log in later from its icon in the notification area, by the clock.")
+	logIn := desktop.Ask("Daevanion Companion", "Log in with Discord to send your game data to Daevanion Planner?\n\nYou can also log in later from the tray icon.")
 	if logIn {
 		commands <- desktop.Choice{Command: desktop.CommandLogIn}
 	}
@@ -793,16 +887,60 @@ func savedLogin() (account.Session, bool) {
 	return refreshed, true
 }
 
-func read(handle *capture.Handle, packets chan<- netio.Packet) {
+// adapters reads the network adapters into packets until closed.
+type adapters struct {
+	stop chan struct{}
+	done sync.WaitGroup
+}
+
+// openAdapters lists the adapters (again) and starts reading every one it
+// can open; the count opened. It never returns nil.
+func openAdapters(packets chan<- netio.Packet) (*adapters, int, error) {
+	a := &adapters{stop: make(chan struct{})}
+	devices, err := capture.Devices()
+	if err != nil {
+		return a, 0, err
+	}
+	opened := 0
+	for _, device := range devices {
+		handle, err := capture.Open(device, pipeline.CaptureFilter)
+		if err != nil {
+			continue
+		}
+		opened++
+		a.done.Add(1)
+		go a.read(handle, packets)
+	}
+	return a, opened, nil
+}
+
+// close stops every reader and waits for them (each within a read timeout).
+func (a *adapters) close() {
+	close(a.stop)
+	a.done.Wait()
+}
+
+func (a *adapters) read(handle *capture.Handle, packets chan<- netio.Packet) {
+	defer a.done.Done()
 	defer handle.Close()
 	for {
+		select {
+		case <-a.stop:
+			return
+		default:
+		}
 		packet, ok, err := handle.Next()
 		if err != nil {
-			// The adapter went away (VPN off, cable out): stop quietly.
+			// The adapter went away (VPN off, cable out).
+			logf("Stopped reading %s (%v). Reconnect in the settings opens the adapters again.", handle.Device.Description, err)
 			return
 		}
 		if ok {
-			packets <- packet
+			select {
+			case packets <- packet:
+			case <-a.stop:
+				return
+			}
 		}
 	}
 }
@@ -846,6 +984,9 @@ func describe(snapshots map[string]state.Snapshot) {
 		}
 		if s.Arena != nil {
 			parts = append(parts, "arena stats")
+		}
+		if s.Shops != nil {
+			parts = append(parts, "shop purchases")
 		}
 		if len(parts) == 0 {
 			parts = append(parts, "character (items and entries load at login or a character switch)")

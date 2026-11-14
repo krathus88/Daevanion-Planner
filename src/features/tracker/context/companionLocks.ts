@@ -9,21 +9,30 @@ export const useIsLocked = (owner: string, id: string) => {
     return useContext(CompanionLocksContext)[owner]?.has(id) ?? false
 }
 
-// Characters whose arena counts this week can't be worked out (see
-// isArenaWeekUnknown): their arena tasks warn and stay manual until the user
-// corrects or confirms them (onConfirm).
+// Arena tasks whose count this week can't be worked out (owner → task ids,
+// see isArenaTaskUnknown): each warns and stays manual until the user sets
+// or confirms it (onConfirm), one task at a time.
 export type ArenaUnknown = {
-    owners: ReadonlySet<string>
-    onConfirm: (owner: string, period: number) => void
+    tasks: ReadonlyMap<string, ReadonlySet<string>>
+    onConfirm: (owner: string, taskId: string, period: number) => void
 }
 
 export const ArenaUnknownContext = createContext<ArenaUnknown>({
-    owners: new Set(),
+    tasks: new Map(),
     onConfirm: () => {},
 })
 
 export const useArenaUnknown = () => {
     return useContext(ArenaUnknownContext)
+}
+
+// Tasks edited in a card since the pointer came into it (see useDoneStash):
+// they stay as they are, unlocked, until the user leaves the card, even when
+// the edit lets the game fill them (an arena task set by hand).
+export const EditingTasksContext = createContext<ReadonlySet<string>>(new Set())
+
+export const useIsEditing = (taskId: string) => {
+    return useContext(EditingTasksContext).has(taskId)
 }
 
 // A character card's: the companion runs but hasn't read this character's

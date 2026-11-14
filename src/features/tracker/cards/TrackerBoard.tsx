@@ -39,7 +39,7 @@ type TrackerBoardProps = {
     corridorHolds: TrackerData["corridorHolds"]
     // Corridor entrances each character has left (read since the siege?).
     corridorsLeft: TrackerData["corridorsLeft"]
-    companionRunning: boolean
+    companionUsed: boolean
     periods: ResetPeriods
     // The character the companion app says is being played.
     playingId?: string
@@ -69,7 +69,7 @@ export const TrackerBoard = ({
     ignored,
     corridorHolds,
     corridorsLeft,
-    companionRunning,
+    companionUsed,
     periods,
     playingId,
     onCountChange,
@@ -146,7 +146,7 @@ export const TrackerBoard = ({
                             corridorHolds[character.server],
                             corridorsLeft[character.id],
                             periods.siege,
-                            companionRunning,
+                            companionUsed,
                         )
 
                         return (

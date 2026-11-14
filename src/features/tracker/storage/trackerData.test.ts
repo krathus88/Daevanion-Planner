@@ -109,6 +109,13 @@ describe("parseTrackerData", () => {
                     base: "x",
                 },
                 b: { seen: { period: -1, at: 2, modes: {} } },
+                c: {
+                    seen: { period: 5, at: 2, modes: {} },
+                    fixed: {
+                        period: 5,
+                        starts: { "arena-wins": 17, "arena-1v1-wins": -1 },
+                    },
+                },
             },
             declined: ["siel:kryx", 5],
             membership: false,
@@ -120,6 +127,10 @@ describe("parseTrackerData", () => {
             declined: ["siel:kryx"],
             arena: {
                 a: { seen: { period: 5, at: 2, modes: { "2": [18, 21] } } },
+                c: {
+                    seen: { period: 5, at: 2, modes: {} },
+                    fixed: { period: 5, starts: { "arena-wins": 17 } },
+                },
             },
         })
     })

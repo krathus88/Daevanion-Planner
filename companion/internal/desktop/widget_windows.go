@@ -240,7 +240,7 @@ func (w *widget) render() {
 	if w.preview != "" {
 		text, state = w.preview, WidgetDone
 	}
-	renderOverlay(w.hwnd, w.x, w.y, w.w, w.h, w.px(10), byte(max(0, min(255, w.alpha))), nil, func(dc uintptr, client rect) {
+	renderOverlay(w.hwnd, w.x, w.y, w.w, w.h, w.px(10), overlayBackground, byte(max(0, min(255, w.alpha))), nil, func(dc uintptr, client rect) {
 		dot, _, _ := createSolidBrush.Call(state.color())
 		oldBrush, _, _ := selectObject.Call(dc, dot)
 		pen, _, _ := getStockObject.Call(nullPen)

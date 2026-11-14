@@ -83,14 +83,14 @@ func TestWatch(t *testing.T) {
 		t.Fatal("open before a tab")
 	}
 	w.Tab(game.ShopTab{ID: 104, Items: items(534760134)}, now)
-	if len(w.Items(now.Add(30*time.Second))) != 1 {
+	if len(w.Items(now.Add(DefaultHideAfter))) != 1 {
 		t.Fatal("closed too soon")
 	}
-	w.Bought(104, 1, now.Add(30*time.Second))
-	if w.Items(now.Add(30*time.Second+DefaultHideAfter)) == nil {
+	w.Bought(104, 1, now.Add(DefaultHideAfter))
+	if w.Items(now.Add(2*DefaultHideAfter)) == nil {
 		t.Fatal("a purchase didn't keep it open")
 	}
-	if w.Items(now.Add(30*time.Second+DefaultHideAfter+time.Second)) != nil {
+	if w.Items(now.Add(2*DefaultHideAfter+time.Second)) != nil {
 		t.Fatal("never timed out")
 	}
 	w.Tab(game.ShopTab{ID: 104, Items: items(534760134)}, now)
@@ -223,7 +223,7 @@ func TestEmptyText(t *testing.T) {
 	if got := EmptyText(tab, map[int]game.Pet{1163: {Level: 3}, 1217: {Level: 3}}); got != "Every pet here is Lv3" {
 		t.Fatal(got)
 	}
-	if got := EmptyText(tab, map[int]game.Pet{1163: {Level: 3}}); got != "No pet here matches your filters" {
+	if got := EmptyText(tab, map[int]game.Pet{1163: {Level: 3}}); got != "None here matches your filters" {
 		t.Fatal(got)
 	}
 }
@@ -247,5 +247,15 @@ func TestScreenOrder(t *testing.T) {
 	}
 	if sent[1].Entry != 120127 {
 		t.Fatal("sorted the tab it was given")
+	}
+}
+
+func TestPetByID(t *testing.T) {
+	pet, ok := Pet(1163)
+	if !ok || pet.Name != "Basilisk" || Icon(pet.Icon) == nil {
+		t.Fatalf("got %+v %v", pet, ok)
+	}
+	if _, ok := Pet(-2001); ok {
+		t.Fatal("a placeholder id has no pet")
 	}
 }

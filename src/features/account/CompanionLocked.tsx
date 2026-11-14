@@ -38,7 +38,7 @@ type CompanionLockedProps = {
 }
 
 // A control the companion app fills (tracker, pets, crafting bag counts):
-// takes no input (inert) while it runs.
+// takes no input (inert) once it has sent game data, running or not.
 export const CompanionLocked = ({
     locked,
     side = "start",

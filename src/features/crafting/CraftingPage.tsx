@@ -55,11 +55,10 @@ export const CraftingPage = () => {
     const sharedPrices = useSharedPrices(settings.server)
     const characters = useGameCharacters(settings.server)
     const companion = useCompanionStatus()
-    // While the companion app runs, bag counts come from the game.
-    const ownedLocked = useCompanionFills(companion, "items", settings.server)
+    // Once the companion app sent them, bag counts come from the game.
+    const ownedLocked = useCompanionFills("items", settings.server)
     // The chosen character's crafting levels ("" matches no character).
     const proficiencyLocked = useCompanionFills(
-        companion,
         "professions",
         settings.server,
         settings.character ?? "",

@@ -15,8 +15,8 @@ type ArenaWeekWarningProps = {
 }
 
 // Beside an arena task whose week the companion couldn't work out: says
-// why, and lets the user confirm the counts shown. Entering a count does the
-// same; either way the game fills the week again from there.
+// why, and lets the user confirm the count shown. Entering a count does the
+// same; either way the game fills that task again from there.
 export const ArenaWeekWarning = ({
     label,
     onConfirm,
@@ -60,9 +60,8 @@ export const ArenaWeekWarning = ({
                                     and the game sends only lifetime arena
                                     results per mode, so this week&apos;s
                                     matches can&apos;t be told apart. Enter this
-                                    week&apos;s counts, or confirm the ones
-                                    shown, and the game fills them again from
-                                    there.
+                                    week&apos;s count, or confirm the one shown,
+                                    and the game fills it again from there.
                                 </Text>
 
                                 {/* Not a close trigger, which closes on the
@@ -74,7 +73,7 @@ export const ArenaWeekWarning = ({
                                     alignSelf="flex-start"
                                     onClick={onConfirm}
                                 >
-                                    Counts are right
+                                    Count is right
                                 </Button>
                             </Flex>
                         </Popover.Body>

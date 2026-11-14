@@ -16,7 +16,7 @@ import {
     removeTask,
     restorePreset,
     restoreStarterTasks,
-    confirmArenaWeek,
+    confirmArenaTask,
     setCount,
     setEntries,
     setGoalsOpen,
@@ -38,9 +38,12 @@ import {
 } from "@tracker/storage/trackerData"
 import type { CharacterNote, TrackerTask } from "@tracker/types"
 import { useSyncExternalStore } from "react"
+import { useSharedCorridorHolds } from "./useSharedCorridorHolds"
 
 export const useTrackerData = () => {
     const data = useSyncExternalStore(subscribeToTrackerData, readTrackerData)
+
+    useSharedCorridorHolds(data)
 
     const changeCount = (
         owner: string,
@@ -51,15 +54,19 @@ export const useTrackerData = () => {
         const next = setCount(readTrackerData(), owner, task, period, count)
 
         // An arena count entered in a week the companion couldn't work out
-        // sets where that week began.
+        // sets where that task stood when the week began.
         writeTrackerData(
-            ARENA_TASKS[task.id] ? confirmArenaWeek(next, owner, period) : next,
+            ARENA_TASKS[task.id]
+                ? confirmArenaTask(next, owner, task.id, period)
+                : next,
         )
         requestPersistentStorage()
     }
 
-    const confirmArena = (owner: string, period: number) => {
-        writeTrackerData(confirmArenaWeek(readTrackerData(), owner, period))
+    const confirmArena = (owner: string, taskId: string, period: number) => {
+        writeTrackerData(
+            confirmArenaTask(readTrackerData(), owner, taskId, period),
+        )
     }
 
     const changeEntries = (

@@ -77,6 +77,11 @@ export type GameSnapshot = {
     artifacts?: Record<string, number>
     siegeEnd?: number
     artifactsAt?: number
+    // Shop id → entry → how many the character bought ever, for shops with
+    // lifetime limits (gameIds SHOP_TASKS), sent when a shop opens. Entries
+    // never bought are left out.
+    shops?: Record<string, Record<string, number>>
+    shopsAt?: number
 }
 
 const isCount = (value: unknown): value is number => {
@@ -253,6 +258,8 @@ export const parseGameSnapshot = (value: unknown): GameSnapshot | null => {
         artifacts: pickLevels(value.artifacts, 0),
         siegeEnd: pickTime(value.siegeEnd),
         artifactsAt: pickTime(value.artifactsAt),
+        shops: pickItems(value.shops),
+        shopsAt: pickTime(value.shopsAt),
     }
 }
 
@@ -271,5 +278,6 @@ export const getSnapshotTime = (snapshot: GameSnapshot) => {
         snapshot.arenaAt ?? 0,
         snapshot.corridorsAt ?? 0,
         snapshot.artifactsAt ?? 0,
+        snapshot.shopsAt ?? 0,
     )
 }

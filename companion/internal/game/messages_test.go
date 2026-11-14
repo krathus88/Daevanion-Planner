@@ -474,3 +474,33 @@ func TestParseCorridorCounter(t *testing.T) {
 		t.Fatal("cleared entrance still open")
 	}
 }
+
+// Kryx at the Nightmare shop, 2026-11-14: Stigma Shards (402024517) 2/35 and
+// Daevanion Crystals (402024518) 50/50 when opened, one shard bought, 3/35 on
+// opening again.
+func TestParseShopCounts(t *testing.T) {
+	shop, counts, ok := ParseShopCounts(h("0000331b0f00024568f617020000004668f61732000000bbbd82daa1010000"))
+	if !ok || shop != NightmareShop || len(counts) != 2 || counts[402024517] != 2 || counts[402024518] != 50 {
+		t.Fatalf("got %d %v %v", shop, counts, ok)
+	}
+	// Kryx's Abyss shop: Stigma Shards stages 1-3 bought out (150/200).
+	shop, counts, ok = ParseShopCounts(h("0000311b0f00034901e717320000004a01e717320000004b01e71732000000765787daa1010000"))
+	if !ok || shop != 990001 || counts[401015113] != 50 || counts[401015114] != 50 || counts[401015115] != 50 {
+		t.Fatalf("Abyss shop: got %d %v %v", shop, counts, ok)
+	}
+	if _, _, ok := ParseShopCounts(h("0000331b0f00024568f617")); ok {
+		t.Fatal("read a cut list")
+	}
+}
+
+func TestParseShopPurchase(t *testing.T) {
+	shop, bought, ok := ParseShopPurchase(h("0006331b0f00014568f61701000000"))
+	if !ok || shop != NightmareShop || len(bought) != 1 || bought[402024517] != 1 {
+		t.Fatalf("got %d %v %v", shop, bought, ok)
+	}
+	// Kryx's first stage-4 Stigma Shard at the Abyss shop (151/200).
+	shop, bought, ok = ParseShopPurchase(h("0006311b0f00014c01e71701000000"))
+	if !ok || shop != 990001 || bought[401015116] != 1 {
+		t.Fatalf("Abyss shop: got %d %v %v", shop, bought, ok)
+	}
+}

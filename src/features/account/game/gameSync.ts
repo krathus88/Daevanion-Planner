@@ -12,7 +12,13 @@ import {
 import { readTrackerData, writeTrackerData } from "@tracker/storage/trackerData"
 import { applyToCrafting } from "./applyToCrafting"
 import { applyToPets } from "./applyToPets"
-import { applyToTracker } from "./applyToTracker"
+import type { SharedCorridorHold } from "@tracker/shared/sharedCorridorHolds"
+import {
+    applyCorridorHold,
+    applyToTracker,
+    toCorridorHold,
+} from "./applyToTracker"
+import { getServerId } from "./gameIds"
 import {
     GAME_KEY_PREFIX,
     getSnapshotTime,
@@ -25,9 +31,9 @@ import {
 // old snapshot never overwrites what was edited after it. Bump the version
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
-// corridors; v7: one row per corridor), so
+// corridors; v7: one row per corridor; v8: shop purchase counts), so
 // each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v7"
+const APPLIED_KEY = "daevanion:game-applied:v8"
 const OLD_APPLIED_KEYS = [
     "daevanion:game-applied",
     "daevanion:game-applied:v2",
@@ -35,6 +41,7 @@ const OLD_APPLIED_KEYS = [
     "daevanion:game-applied:v4",
     "daevanion:game-applied:v5",
     "daevanion:game-applied:v6",
+    "daevanion:game-applied:v7",
 ]
 
 type StoredSnapshot = {
@@ -188,6 +195,7 @@ export const readGameSections = () => {
             snapshot.corridorsAt !== undefined && "corridors",
             snapshot.professions && "professions",
             ...Object.keys(snapshot.crafts ?? {}).map((id) => `crafts.${id}`),
+            ...Object.keys(snapshot.shops ?? {}).map((id) => `shops.${id}`),
         ]
 
         for (const section of sections) {
@@ -316,6 +324,35 @@ export const reapplyGameSnapshot = (key: string) => {
 
     writeApplied({ ...applied, [GAME_KEY_PREFIX + key]: 0 })
     applyGameSnapshots()
+}
+
+// Corridor holdings other members' companions shared (by game server
+// number): each server the tracker has characters on takes a later siege's.
+// A game edit like snapshots: every device applies them alike, and the
+// Tracker page applies them again after taking the account's copy.
+export const applySharedCorridorHolds = (
+    holds: readonly SharedCorridorHold[],
+) => {
+    asGameEdit(() => {
+        const before = readTrackerData()
+        let tracker = before
+
+        for (const shared of holds) {
+            const serverId = getServerId(shared.server)
+
+            if (serverId !== null) {
+                tracker = applyCorridorHold(
+                    tracker,
+                    serverId,
+                    toCorridorHold(serverId, shared.artifacts, shared.siegeEnd),
+                )
+            }
+        }
+
+        if (tracker !== before) {
+            writeTrackerData(tracker)
+        }
+    })
 }
 
 const applyFresh = () => {

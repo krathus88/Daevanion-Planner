@@ -5,8 +5,10 @@ import {
     CUBE_KEYS_LOCK,
     ENERGY_LOCK,
     getCompanionLocks,
+    getUnknownLockId,
     hasGameSection,
 } from "./companionLocks"
+import { SHOP_TASKS } from "./gameIds"
 
 const CHARACTERS: TrackerCharacter[] = [
     { id: "a", name: "Kryx", classId: "cleric", server: "siel" },
@@ -21,11 +23,17 @@ const ARENA: TrackerData["arena"] = {
     },
 }
 
-const locked = (sections: string[], week = 5) => {
+// The starter tasks but the shop goals, which lock for every character (their
+// own tests below).
+const OTHER_TASKS = STARTER_TASKS.filter((task) => {
+    return SHOP_TASKS[task.id] === undefined
+})
+
+const locked = (sections: string[], week = 5, tasks = OTHER_TASKS) => {
     const locks = getCompanionLocks(
         sections.join("\n"),
         CHARACTERS,
-        STARTER_TASKS,
+        tasks,
         ARENA,
         week,
     )
@@ -78,10 +86,43 @@ describe("getCompanionLocks", () => {
         expect(locked(["1301:Kryx:arena"], 6)).toEqual({})
     })
 
+    it("locks only the arena tasks set by hand when the week's start is unknown", () => {
+        const locks = getCompanionLocks(
+            "1301:Kryx:arena",
+            CHARACTERS,
+            OTHER_TASKS,
+            {
+                a: {
+                    seen: { period: 6, at: 3, modes: { "2": [19, 21] } },
+                    fixed: { period: 6, starts: { "arena-wins": 18 } },
+                },
+            },
+            6,
+        )
+
+        expect([...(locks.a ?? [])]).toEqual(["arena-wins"])
+    })
+
     it("locks nothing for characters it hasn't sent", () => {
         expect(locked(["1302:kryx:counters", "1301:nobody:items", ""])).toEqual(
             {},
         )
+    })
+
+    it("locks the shop goals of every character, marking those with no counts", () => {
+        const shopTasks = STARTER_TASKS.filter((task) => {
+            return SHOP_TASKS[task.id] !== undefined
+        })
+        const goals = ["crystals-nightmare", "shards-abyss", "shards-nightmare"]
+        const unknown = (...ids: string[]) => ids.map(getUnknownLockId)
+
+        // Kryx opened the Nightmare shop; Other has never been seen.
+        expect(locked(["1301:Kryx:shops.990003"], 5, shopTasks)).toEqual({
+            a: [...goals, ...unknown("shards-abyss")].sort(),
+            b: [...goals, ...unknown(...goals)].sort(),
+        })
+        // Never used: nothing locks.
+        expect(locked([], 5, shopTasks)).toEqual({})
     })
 
     it("locks only the crafting tasks whose recipe it has", () => {

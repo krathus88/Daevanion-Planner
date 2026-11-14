@@ -15,7 +15,8 @@ export const DONE_LEAVE_MS = 200
 // Done tasks move into a card's Done section only once the user leaves the
 // card (the mouse leaves it, or a click or tap lands outside it), so a task
 // doesn't jump away under the pointer. They fade out first (`leaving`), then
-// move. One undone again comes back at once.
+// move. One undone again comes back at once. Tasks edited meanwhile
+// (`editing`, added by `edit`) keep their controls until that leave too.
 export const useDoneStash = (
     cardRef: RefObject<HTMLDivElement | null>,
     doneIds: readonly string[],
@@ -26,6 +27,7 @@ export const useDoneStash = (
     const [settled, setSettled] = useState(doneIds)
     const settledRef = useRef(settled)
     const [leaving, setLeaving] = useState<readonly string[]>([])
+    const [editing, setEditing] = useState<ReadonlySet<string>>(new Set())
     const leaveTimer = useRef<number | undefined>(undefined)
 
     // A task undone forgets it was settled, so done again it waits for the
@@ -35,6 +37,8 @@ export const useDoneStash = (
     }
 
     const settle = () => {
+        setEditing((current) => (current.size === 0 ? current : new Set()))
+
         // Tasks done meanwhile wait for the next leave.
         if (leaveTimer.current !== undefined) {
             return
@@ -107,8 +111,16 @@ export const useDoneStash = (
         }
     }
 
+    const edit = (taskId: string) => {
+        setEditing((current) => {
+            return current.has(taskId) ? current : new Set([...current, taskId])
+        })
+    }
+
     return {
         stashed: settled.filter((id) => doneIds.includes(id)),
+        editing: editing,
+        edit: edit,
         // Done tasks fading out on their way to the Done section.
         leaving: leaving.filter((id) => doneIds.includes(id)),
         onPointerLeave: handlePointerLeave,

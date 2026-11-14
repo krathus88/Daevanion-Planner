@@ -60,9 +60,12 @@ export type ArenaSighting = {
 
 // What the companion has seen of a character's arena record: the last
 // sighting, and this week's starting record once known (see arenaWeeks).
+// Without it, tasks the user set by hand that week keep where each stood
+// at the week's start (`fixed`: task id → the lifetime count then).
 export type ArenaRecord = {
     seen: ArenaSighting
     base?: ArenaSighting
+    fixed?: { period: number; starts: Record<string, number> }
 }
 
 // Abyss corridors the companion app saw: a server's after a siege (`at` =

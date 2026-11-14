@@ -2,7 +2,7 @@ package desktop
 
 import "unsafe"
 
-// Overlays (the corner widget and the shop panel) are layered windows drawn
+// Overlays (the corner widget, the shop panel and the soul popup) are layered windows drawn
 // pixel by pixel: their background takes the user's opacity while text, tags
 // and portraits stay solid. Both live on the tray's thread.
 
@@ -17,16 +17,24 @@ const ulwAlpha = 2
 // unless set otherwise.
 const DefaultOverlayOpacity = 0
 
-// overlayBackground is the overlays' background opacity (0-255), set by
-// Tray.SetOverlayOpacity and, while previewing, the settings window.
-var overlayBackground = OpacityByte(DefaultOverlayOpacity)
+// DefaultSoulOpacity is the soul popup's background opacity, in percent,
+// unless set otherwise.
+const DefaultSoulOpacity = 75
+
+// The background opacity (0-255) of the corner widget and shop panel, and of
+// the soul popup, set by Tray.SetOverlayOpacity / SetSoulOpacity and, while
+// previewing, the settings window.
+var (
+	overlayBackground = OpacityByte(DefaultOverlayOpacity)
+	soulBackground    = OpacityByte(DefaultSoulOpacity)
+)
 
 // renderOverlay draws a w x h overlay at x, y: draw's content over the
-// background at the user's opacity, with rounded corners; fade (0-255) dims
+// background at opacity background (0-255), with rounded corners; fade (0-255) dims
 // the whole window, and each of fades draws the content inside it fainter
 // (the background stays). The content is drawn twice, on black and on white, so
 // composeOverlay can tell how see-through each pixel is.
-func renderOverlay(hwnd uintptr, x, y, w, h, radius int32, fade byte, fades []fadeRect, draw func(dc uintptr, client rect)) {
+func renderOverlay(hwnd uintptr, x, y, w, h, radius int32, background, fade byte, fades []fadeRect, draw func(dc uintptr, client rect)) {
 	if w <= 0 || h <= 0 {
 		return
 	}
@@ -66,7 +74,7 @@ func renderOverlay(hwnd uintptr, x, y, w, h, radius int32, fade byte, fades []fa
 		return
 	}
 	defer doneWhite()
-	composeOverlay(black, white, int(w), int(h), int(radius), colorBackground, overlayBackground, fades)
+	composeOverlay(black, white, int(w), int(h), int(radius), colorBackground, background, fades)
 
 	at := point{X: x, Y: y}
 	size := struct{ CX, CY int32 }{w, h}
@@ -76,7 +84,8 @@ func renderOverlay(hwnd uintptr, x, y, w, h, radius int32, fade byte, fades []fa
 	updateLayeredWindow.Call(hwnd, screen, uintptr(unsafe.Pointer(&at)), uintptr(unsafe.Pointer(&size)), dc, uintptr(unsafe.Pointer(&source)), 0, uintptr(unsafe.Pointer(&blend)), ulwAlpha)
 }
 
-// wmOverlay (WM_APP + 5) carries a new opacity, in percent, in wParam.
+// wmOverlay (WM_APP + 5) carries a new opacity, in percent, in wParam: the
+// soul popup's when lParam is 1, else the widget's and shop panel's.
 const wmOverlay = 0x8000 + 5
 
 // redrawOverlays draws the shown overlays again (after an opacity change).
@@ -95,4 +104,6 @@ func redrawOverlays() {
 			}
 		}
 	}
+	// After the shop panel: it sits on top of it.
+	placeSoulPopup()
 }

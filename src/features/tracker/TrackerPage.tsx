@@ -1,4 +1,6 @@
 import { CompanionNote } from "@account/CompanionNote"
+import { ARENA_TASKS } from "@account/game/gameIds"
+import { useCompanionUsed } from "@account/hooks/useCompanionFills"
 import { findPlayingId } from "@account/game/playingCharacter"
 import { useCompanionStatus } from "@account/hooks/useCompanionStatus"
 import { Button, Container, Flex, Heading, Text } from "@chakra-ui/react"
@@ -10,7 +12,7 @@ import {
     CompanionLocksContext,
 } from "./context/companionLocks"
 import { useNewGameCharacters } from "./hooks/useNewGameCharacters"
-import { isArenaWeekUnknown } from "./logic/arenaWeeks"
+import { isArenaTaskUnknown } from "./logic/arenaWeeks"
 import { useCompanionLocks } from "./hooks/useCompanionLocks"
 import { useResetPeriods } from "./hooks/useResetPeriods"
 import { useTrackerData } from "./hooks/useTrackerData"
@@ -65,20 +67,21 @@ export const TrackerPage = () => {
         addPresetBack,
     } = useTrackerData()
 
-    const locks = useCompanionLocks(
-        companion,
-        characters,
-        tasks,
-        arena,
-        periods.weekly,
-    )
+    const locks = useCompanionLocks(characters, tasks, arena, periods.weekly)
+    const companionUsed = useCompanionUsed()
     const newCharacters = useNewGameCharacters(characters, declined)
-    const arenaUnknown = new Set(
-        characters
-            .filter((character) => {
-                return isArenaWeekUnknown(arena[character.id], periods.weekly)
+    const arenaUnknown = new Map(
+        characters.map((character) => {
+            const unknown = Object.keys(ARENA_TASKS).filter((taskId) => {
+                return isArenaTaskUnknown(
+                    arena[character.id],
+                    periods.weekly,
+                    taskId,
+                )
             })
-            .map((character) => character.id),
+
+            return [character.id, new Set(unknown)] as const
+        }),
     )
     const [charactersOpen, setCharactersOpen] = useState(false)
     const [tasksOpen, setTasksOpen] = useState(false)
@@ -147,7 +150,7 @@ export const TrackerPage = () => {
                     <CompanionLocksContext value={locks}>
                         <ArenaUnknownContext
                             value={{
-                                owners: arenaUnknown,
+                                tasks: arenaUnknown,
                                 onConfirm: confirmArena,
                             }}
                         >
@@ -165,7 +168,7 @@ export const TrackerPage = () => {
                                 ignored={ignored}
                                 corridorHolds={corridorHolds}
                                 corridorsLeft={corridorsLeft}
-                                companionRunning={companion.state === "running"}
+                                companionUsed={companionUsed}
                                 periods={periods}
                                 playingId={findPlayingId(companion, characters)}
                                 onCountChange={changeCount}

@@ -7,6 +7,7 @@ import (
 	"daevanion-companion/internal/desktop"
 	"daevanion-companion/internal/game"
 	"daevanion-companion/internal/shop"
+	"daevanion-companion/internal/souls"
 	"daevanion-companion/internal/state"
 )
 
@@ -22,7 +23,7 @@ func TestConnectionText(t *testing.T) {
 		{false, nil, desktop.WidgetHidden, ""},
 		{false, kryx, desktop.WidgetHidden, ""},
 		// Started mid-session: stays up until a character comes.
-		{true, nil, desktop.WidgetWaiting, "Connected to AION 2 · waiting for your character"},
+		{true, nil, desktop.WidgetWaiting, "Connected · waiting for your character"},
 		{true, kryx, desktop.WidgetDone, "Connected · playing Kryx"},
 	} {
 		state, got := connectionText(c.connected, c.playing)
@@ -95,5 +96,23 @@ func TestStateVersion(t *testing.T) {
 	got := a.state()
 	if got.Version != version || got.CanUpdate || !got.CheckingUpdates {
 		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestSoulView(t *testing.T) {
+	if soulView(nil) != nil {
+		t.Fatal("no rows: hidden")
+	}
+	view := soulView([]souls.Row{{Pet: 1163, Gained: 2, Level: 2, Souls: 1, LevelUp: true}, {Pet: 999999, Gained: 1, Level: -1}})
+	basilisk, unknown := view.Pets[0], view.Pets[1]
+	if basilisk.Name != "Basilisk" || basilisk.Icon == nil || basilisk.Gained != 2 || basilisk.Level != 2 || basilisk.Souls != 1 || !basilisk.LevelUp {
+		t.Fatalf("got %+v", basilisk)
+	}
+	if unknown.Name != "Unknown pet" || unknown.Icon != nil || unknown.Level != -1 {
+		t.Fatalf("got %+v", unknown)
+	}
+	sample := soulSample()
+	if len(sample.Pets) != 2 || !sample.Pets[0].LevelUp || sample.Pets[0].Level != 2 {
+		t.Fatalf("sample %+v", sample.Pets)
 	}
 }

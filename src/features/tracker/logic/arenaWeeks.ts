@@ -1,3 +1,4 @@
+import { ARENA_TASKS } from "@account/game/gameIds"
 import type { ArenaModes, ArenaRecord, ArenaSighting } from "@tracker/types"
 
 // The game sends each arena mode's lifetime wins and losses, and this week's
@@ -40,6 +41,19 @@ export const updateArenaRecord = (
     seen: ArenaSighting,
     totals: ArenaTotals | null,
 ): ArenaRecord => {
+    const next = findWeekStart(record, seen, totals)
+
+    // Tasks set by hand this week keep their starts.
+    return record?.fixed?.period === seen.period
+        ? { ...next, fixed: record.fixed }
+        : next
+}
+
+const findWeekStart = (
+    record: ArenaRecord | undefined,
+    seen: ArenaSighting,
+    totals: ArenaTotals | null,
+): ArenaRecord => {
     if (record?.base?.period === seen.period) {
         return { seen: seen, base: record.base }
     }
@@ -62,52 +76,82 @@ export const updateArenaRecord = (
     return { seen: seen }
 }
 
-// A mode's matches and wins in the record's last week, or null when that
-// week's start isn't known.
-export const getArenaWeek = (record: ArenaRecord, mode: string) => {
-    if (record.base?.period !== record.seen.period) {
+// What an arena task counts in a lifetime record: a mode's wins, or its
+// matches (wins and losses).
+const getLifetime = (modes: ArenaModes, taskId: string) => {
+    const source = ARENA_TASKS[taskId]
+    const [wins, losses] = modes[source?.mode ?? ""] ?? [0, 0]
+
+    return source?.counts === "won" ? wins : wins + losses
+}
+
+// An arena task's count in the record's last week, or null when where it
+// stood at the week's start isn't known: from the game's start (every task),
+// else from the user setting that task by hand this week.
+export const getArenaTaskWeek = (record: ArenaRecord, taskId: string) => {
+    const period = record.seen.period
+    const start =
+        record.base?.period === period
+            ? getLifetime(record.base.modes, taskId)
+            : record.fixed?.period === period
+              ? record.fixed.starts[taskId]
+              : undefined
+
+    if (ARENA_TASKS[taskId] === undefined || start === undefined) {
         return null
     }
 
-    const [wins, losses] = record.seen.modes[mode] ?? [0, 0]
-    const [startWins, startLosses] = record.base.modes[mode] ?? [0, 0]
-
-    return {
-        played: Math.max(0, wins + losses - startWins - startLosses),
-        won: Math.max(0, wins - startWins),
-    }
+    return Math.max(0, getLifetime(record.seen.modes, taskId) - start)
 }
 
-// Seen this week without knowing where the week began: the companion
-// missed the reset (or a week), so the week's arena counts stay manual.
-export const isArenaWeekUnknown = (
+// Seen this week without knowing where the task stood when the week began:
+// the companion missed the reset (or a week), so the task stays manual until
+// the user sets or confirms it.
+export const isArenaTaskUnknown = (
     record: ArenaRecord | undefined,
     period: number,
+    taskId: string,
 ) => {
     return (
         record !== undefined &&
         record.seen.period === period &&
-        record.base?.period !== period
+        getArenaTaskWeek(record, taskId) === null
     )
 }
 
-// The week's start worked back from counts the user entered or confirmed
-// (mode → this week's matches and wins): the last sighting minus them. The
-// game's next records then fill the week again.
-export const startFromCounts = (
+// Whether the game fills an arena task this week (its start is known).
+export const isArenaTaskKnown = (
+    record: ArenaRecord | undefined,
+    period: number,
+    taskId: string,
+) => {
+    return (
+        record !== undefined &&
+        record.seen.period === period &&
+        getArenaTaskWeek(record, taskId) !== null
+    )
+}
+
+// One task's start this week worked back from the count the user entered or
+// confirmed: the last sighting minus it. The game's next records then fill
+// that task again; the others stay as they were. A week whose start the game
+// knows is left alone.
+export const fixArenaTask = (
     record: ArenaRecord,
-    counts: Record<string, ArenaTotals>,
+    taskId: string,
+    count: number,
 ): ArenaRecord => {
-    const modes: ArenaModes = { ...record.seen.modes }
+    const period = record.seen.period
 
-    for (const [mode, { played, won }] of Object.entries(counts)) {
-        const [wins, losses] = modes[mode] ?? [0, 0]
-
-        modes[mode] = [
-            Math.max(0, wins - won),
-            Math.max(0, losses - Math.max(0, played - won)),
-        ]
+    if (ARENA_TASKS[taskId] === undefined || record.base?.period === period) {
+        return record
     }
 
-    return { seen: record.seen, base: { ...record.seen, modes: modes } }
+    const starts = record.fixed?.period === period ? record.fixed.starts : {}
+    const start = Math.max(0, getLifetime(record.seen.modes, taskId) - count)
+
+    return {
+        ...record,
+        fixed: { period: period, starts: { ...starts, [taskId]: start } },
+    }
 }

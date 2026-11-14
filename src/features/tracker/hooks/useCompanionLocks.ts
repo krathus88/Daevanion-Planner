@@ -1,8 +1,4 @@
-import {
-    getCompanionLocks,
-    type CompanionLocks,
-} from "@account/game/companionLocks"
-import type { CompanionStatus } from "@account/game/companionStatus"
+import { getCompanionLocks } from "@account/game/companionLocks"
 import {
     readGameSections,
     subscribeToGameSnapshots,
@@ -10,11 +6,9 @@ import {
 import type { TrackerCharacter, TrackerData, TrackerTask } from "@tracker/types"
 import { useSyncExternalStore } from "react"
 
-const NONE: CompanionLocks = {}
-
-// The fields the companion app fills, only while it's running.
+// The fields the companion app fills: locked once it has sent game data,
+// running now or not (no snapshots, no locks).
 export const useCompanionLocks = (
-    status: CompanionStatus,
     characters: readonly TrackerCharacter[],
     tasks: readonly TrackerTask[],
     arena: TrackerData["arena"],
@@ -25,7 +19,5 @@ export const useCompanionLocks = (
         readGameSections,
     )
 
-    return status.state === "running"
-        ? getCompanionLocks(sections, characters, tasks, arena, week)
-        : NONE
+    return getCompanionLocks(sections, characters, tasks, arena, week)
 }
