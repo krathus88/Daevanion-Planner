@@ -288,6 +288,33 @@ describe("applyToTracker", () => {
         })
     })
 
+    it("adds up the Shugo Festival shop's crystal stages", () => {
+        // Kryx, 2026-11-14: stages 10/10, 10/10, 15/15, 2/15 and 6/35 shards,
+        // plus two entries of other items.
+        const next = applyToTracker(
+            data(),
+            snapshot({
+                shops: {
+                    "990007": {
+                        "405015104": 10,
+                        "405015133": 10,
+                        "405015134": 15,
+                        "405015135": 2,
+                        "405015137": 6,
+                        "405016724": 1,
+                        "405016728": 1,
+                    },
+                },
+                shopsAt: AT,
+            }),
+        )
+
+        expect(next.counts.a).toEqual({
+            "crystals-shugo": { period: 0, count: 37 },
+            "shards-shugo": { period: 0, count: 6 },
+        })
+    })
+
     it("reads an entry missing from an opened shop as never bought", () => {
         const before = data({
             counts: { a: { "shards-nightmare": { period: 0, count: 4 } } },

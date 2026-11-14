@@ -109,10 +109,16 @@ export const CRAFT_TASKS: Record<
 // One-off tracker tasks a shop's lifetime purchase counts fill: task id →
 // the shop and the entries it adds up. A shop's list leaves out entries never
 // bought. The Abyss shop sells Stigma Shards in 4 stages of 50, one entry
-// each (all four seen buying, 2026-11-14).
+// each (all four seen buying, 2026-11-14). The Shugo Festival shop sells
+// Daevanion Crystals in 4 stages (10, 10, 15, 15), one entry each.
 export const SHOP_TASKS: Record<string, { shop: string; entries: string[] }> = {
     "crystals-nightmare": { shop: "990003", entries: ["402024518"] },
+    "crystals-shugo": {
+        shop: "990007",
+        entries: ["405015104", "405015133", "405015134", "405015135"],
+    },
     "shards-nightmare": { shop: "990003", entries: ["402024517"] },
+    "shards-shugo": { shop: "990007", entries: ["405015137"] },
     "shards-abyss": {
         shop: "990001",
         entries: ["401015113", "401015114", "401015115", "401015116"],
@@ -123,6 +129,7 @@ export const SHOP_TASKS: Record<string, { shop: string; entries: string[] }> = {
 export const SHOP_NAMES: Record<string, string> = {
     "990001": "Abyss shop",
     "990003": "Nightmare shop",
+    "990007": "Shugo Festival shop",
 }
 
 // The Hidden Cube key item, kept per character.

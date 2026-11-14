@@ -31,10 +31,11 @@ import {
 // old snapshot never overwrites what was edited after it. Bump the version
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
-// corridors; v7: one row per corridor; v8: shop purchase counts), so
-// each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v8"
+// corridors; v7: one row per corridor; v8: shop purchase counts; v9: the
+// Shugo Festival shop), so each is applied once more.
+const APPLIED_KEY = "daevanion:game-applied:v9"
 const OLD_APPLIED_KEYS = [
+    "daevanion:game-applied:v8",
     "daevanion:game-applied",
     "daevanion:game-applied:v2",
     "daevanion:game-applied:v3",

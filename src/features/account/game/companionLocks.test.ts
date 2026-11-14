@@ -113,12 +113,21 @@ describe("getCompanionLocks", () => {
         const shopTasks = STARTER_TASKS.filter((task) => {
             return SHOP_TASKS[task.id] !== undefined
         })
-        const goals = ["crystals-nightmare", "shards-abyss", "shards-nightmare"]
+        const goals = [
+            "crystals-nightmare",
+            "crystals-shugo",
+            "shards-abyss",
+            "shards-nightmare",
+            "shards-shugo",
+        ]
         const unknown = (...ids: string[]) => ids.map(getUnknownLockId)
 
         // Kryx opened the Nightmare shop; Other has never been seen.
         expect(locked(["1301:Kryx:shops.990003"], 5, shopTasks)).toEqual({
-            a: [...goals, ...unknown("shards-abyss")].sort(),
+            a: [
+                ...goals,
+                ...unknown("crystals-shugo", "shards-abyss", "shards-shugo"),
+            ].sort(),
             b: [...goals, ...unknown(...goals)].sort(),
         })
         // Never used: nothing locks.
