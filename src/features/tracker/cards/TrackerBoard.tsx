@@ -53,6 +53,13 @@ type TrackerBoardProps = {
     onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
+// Rough card heights for placing the Characters cards: a card goes under the
+// column that's shortest so far, so one after a minimized card fills in
+// under it. By minimized state, not measured heights, so cards never jump
+// columns while tasks are ticked off.
+const OPEN_WEIGHT = 3
+const MINIMIZED_WEIGHT = 1
+
 // The server's shared tasks first, across the page (most players have one
 // server); then a card per character.
 export const TrackerBoard = ({
@@ -140,7 +147,14 @@ export const TrackerBoard = ({
                 })}
 
             {ownGroups.length > 0 && (
-                <CardGrid title="Characters">
+                <CardGrid
+                    title="Characters"
+                    weights={characters.map((character) =>
+                        minimized.includes(character.id)
+                            ? MINIMIZED_WEIGHT
+                            : OPEN_WEIGHT,
+                    )}
+                >
                     {characters.map((character) => {
                         const corridors = getCorridorView(
                             corridorHolds[character.server],

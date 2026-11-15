@@ -1,33 +1,31 @@
 import { Flex, Heading, Text, useBreakpointValue } from "@chakra-ui/react"
 import { Children, type ReactNode } from "react"
+import { dealCards } from "./cardColumns"
 
 type CardGridProps = {
     children: ReactNode
     title: string
     caption?: string
-}
-
-// Deals the cards out left to right, one per column in turn.
-const toColumns = (cards: ReactNode[], count: number) => {
-    const columns: ReactNode[][] = []
-
-    for (let index = 0; index < count; index++) {
-        columns.push([])
-    }
-
-    cards.forEach((card, index) => {
-        columns[index % count].push(card)
-    })
-
-    return columns
+    // A rough height per card, in order: each card goes under the column
+    // with the least so far. Missing, every card weighs 1.
+    weights?: readonly number[]
 }
 
 // A titled set of card columns: one on phones, up to three. Each column stacks
 // on its own, so a short (minimized) card pulls the one below it up.
-export const CardGrid = ({ children, title, caption }: CardGridProps) => {
+export const CardGrid = ({
+    children,
+    title,
+    caption,
+    weights,
+}: CardGridProps) => {
     const count =
         useBreakpointValue({ base: 1, md: 2, xl: 3 }, { ssr: false }) ?? 1
-    const columns = toColumns(Children.toArray(children), count)
+    const cards = Children.toArray(children)
+    const columns = dealCards(
+        cards.map((_, index) => weights?.[index] ?? 1),
+        count,
+    ).map((column) => column.map((index) => cards[index]))
 
     return (
         <Flex as="section" flexDir="column" gap="3" aria-label={title}>
