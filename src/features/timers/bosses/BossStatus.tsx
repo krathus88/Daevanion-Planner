@@ -16,6 +16,11 @@ const getStatusText = (state: TimerState, now: number) => {
                 main: `${formatCountdown(now - state.at)} ago`,
                 sub: `Killed ${formatLocalTime(state.at)}`,
             }
+        case "up":
+            return {
+                main: "Up now",
+                sub: `Spawned ${formatLocalTime(state.at)}`,
+            }
         case "open":
             return {
                 main: "Up now",
@@ -23,7 +28,7 @@ const getStatusText = (state: TimerState, now: number) => {
             }
         case "upcoming":
             return {
-                main: `${state.estimated || state.afterMaintenance ? "~" : ""}${formatCountdown(state.at - now)}`,
+                main: `${state.afterMaintenance ? "~" : ""}${formatCountdown(state.at - now)}`,
                 sub: `Spawns ${formatLocalTime(state.at)}`,
             }
     }
@@ -36,7 +41,7 @@ export const BossStatus = ({ state, now }: BossStatusProps) => {
         <Flex minW="24" flexDir="column" alignItems="flex-end">
             <Text
                 color={
-                    state.status === "open"
+                    state.status === "open" || state.status === "up"
                         ? "app.success"
                         : state.status === "upcoming"
                           ? "app.fg"

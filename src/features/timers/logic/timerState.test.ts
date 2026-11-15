@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-    BOSS_ALIVE_FOR,
-    WEEKLY_RESET,
-    type TimerDefinition,
-} from "@timers/config/timers"
+import { WEEKLY_RESET, type TimerDefinition } from "@timers/config/timers"
 import { getTimerAlert, getTimerState } from "./timerState"
 
 const MINUTE = 60_000
@@ -29,7 +25,6 @@ describe("getTimerState: fixed schedules", () => {
             status: "open",
             at: 11 * HOUR,
             startedAt: 10 * HOUR,
-            estimated: false,
             afterMaintenance: false,
         })
     })
@@ -91,7 +86,6 @@ describe("getTimerState: reported bosses", () => {
     const boss = { respawn: HOUR }
     const spawnAt = 1_000_000 * 1000
     const report = { spawnAt: spawnAt, reportedAt: spawnAt - MINUTE }
-    const cycle = BOSS_ALIVE_FOR + HOUR
 
     it("is unset without a report", () => {
         expect(getTimerState(bossTimer(boss), null, 0)).toEqual({
@@ -106,41 +100,24 @@ describe("getTimerState: reported bosses", () => {
         })
     })
 
-    it("counts down to a reported spawn, not estimated", () => {
+    it("counts down to a reported spawn", () => {
         expect(
             getTimerState(bossTimer(boss), report, spawnAt - MINUTE),
-        ).toMatchObject({ status: "upcoming", at: spawnAt, estimated: false })
+        ).toEqual({ status: "upcoming", at: spawnAt, afterMaintenance: false })
     })
 
-    it("is open while alive", () => {
-        expect(
-            getTimerState(bossTimer(boss), report, spawnAt + 1),
-        ).toMatchObject({
-            status: "open",
-            startedAt: spawnAt,
-            at: spawnAt + BOSS_ALIVE_FOR,
-            estimated: false,
+    it("is up once its spawn time passes", () => {
+        expect(getTimerState(bossTimer(boss), report, spawnAt)).toEqual({
+            status: "up",
+            at: spawnAt,
+            afterMaintenance: false,
         })
     })
 
-    it("projects the next spawn once it should be dead", () => {
+    it("stays up until a newer time comes in, projecting nothing", () => {
         expect(
-            getTimerState(bossTimer(boss), report, spawnAt + BOSS_ALIVE_FOR),
-        ).toMatchObject({
-            status: "upcoming",
-            at: spawnAt + cycle,
-            estimated: true,
-        })
-    })
-
-    it("keeps projecting spawns cycles later", () => {
-        expect(
-            getTimerState(bossTimer(boss), report, spawnAt + 3 * cycle + 1),
-        ).toMatchObject({
-            status: "open",
-            startedAt: spawnAt + 3 * cycle,
-            estimated: true,
-        })
+            getTimerState(bossTimer(boss), report, spawnAt + 5 * HOUR),
+        ).toMatchObject({ status: "up", at: spawnAt })
     })
 
     it("rounds the reported spawn to a whole second", () => {
@@ -153,37 +130,21 @@ describe("getTimerState: reported bosses", () => {
         expect(rounded).toMatchObject({ at: spawnAt })
     })
 
-    it("uses a boss's own alive time", () => {
-        expect(
-            getTimerState(
-                bossTimer({ respawn: HOUR, aliveFor: 2 * HOUR }),
-                report,
-                spawnAt + 90 * MINUTE,
-            ),
-        ).toMatchObject({ status: "open", at: spawnAt + 2 * HOUR })
-    })
-
-    it("stays killed after its life when it never respawns", () => {
-        expect(
-            getTimerState(
-                bossTimer({ respawn: null }),
-                report,
-                spawnAt + BOSS_ALIVE_FOR,
-            ),
-        ).toEqual({ status: "killed", at: spawnAt + BOSS_ALIVE_FOR })
-    })
-
-    it("flags a projected spawn past the weekly maintenance", () => {
+    it("flags a spawn past the weekly maintenance", () => {
         const reportedAt = WEEKLY_RESET.anchor + WEEKLY_RESET.period + HOUR
-        const near = { spawnAt: reportedAt, reportedAt: reportedAt }
-        const weekly = bossTimer({ respawn: WEEKLY_RESET.period })
+        const nextReset = WEEKLY_RESET.anchor + 2 * WEEKLY_RESET.period
+        const before = { spawnAt: nextReset - HOUR, reportedAt: reportedAt }
+        const after = { spawnAt: nextReset + HOUR, reportedAt: reportedAt }
 
-        expect(getTimerState(weekly, near, reportedAt + 1)).toMatchObject({
-            afterMaintenance: false,
-        })
         expect(
-            getTimerState(weekly, near, reportedAt + BOSS_ALIVE_FOR + MINUTE),
-        ).toMatchObject({ afterMaintenance: true })
+            getTimerState(bossTimer(boss), before, reportedAt),
+        ).toMatchObject({ afterMaintenance: false })
+        expect(getTimerState(bossTimer(boss), after, reportedAt)).toMatchObject(
+            { status: "upcoming", afterMaintenance: true },
+        )
+        expect(
+            getTimerState(bossTimer(boss), after, nextReset + 2 * HOUR),
+        ).toMatchObject({ status: "up", afterMaintenance: true })
     })
 })
 
@@ -196,7 +157,7 @@ describe("getTimerState: no source", () => {
 })
 
 describe("getTimerAlert", () => {
-    const countdown = { estimated: false, afterMaintenance: false }
+    const countdown = { afterMaintenance: false }
 
     it("is active while open", () => {
         expect(
@@ -205,6 +166,12 @@ describe("getTimerAlert", () => {
                 5,
                 1,
             ),
+        ).toBe("active")
+    })
+
+    it("is active while a boss is up", () => {
+        expect(
+            getTimerAlert({ status: "up", at: 0, ...countdown }, 5, HOUR),
         ).toBe("active")
     })
 

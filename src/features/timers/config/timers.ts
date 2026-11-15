@@ -230,7 +230,3 @@ export const TIMERS: readonly TimerDefinition[] = [
 export const isTimerId = (value: unknown): value is TimerId => {
     return TIMERS.some((timer) => timer.id === value)
 }
-
-// Bosses die about a minute after spawning, so the cycle is respawn + 1m.
-// A boss's own aliveFor overrides it.
-export const BOSS_ALIVE_FOR = MINUTE

@@ -4,7 +4,7 @@ import type { TimerEntry } from "@timers/hooks/useTimers"
 import { getComingNext, isComingNextCount, isInComingNext } from "./comingNext"
 import type { TimerState } from "./timerState"
 
-const countdown = { estimated: false, afterMaintenance: false }
+const countdown = { afterMaintenance: false }
 
 const entry = (name: string, state: TimerState, inComingNext = true) => {
     return {
@@ -16,6 +16,10 @@ const entry = (name: string, state: TimerState, inComingNext = true) => {
 
 const open = (at: number): TimerState => {
     return { status: "open", startedAt: 0, at: at, ...countdown }
+}
+
+const up = (at: number): TimerState => {
+    return { status: "up", at: at, ...countdown }
 }
 
 const upcoming = (at: number): TimerState => {
@@ -85,6 +89,25 @@ describe("getComingNext", () => {
             "closing later",
             "soon",
             "later",
+        ])
+    })
+
+    it("puts bosses up now first, longest up first", () => {
+        const result = getComingNext(
+            [
+                entry("soon", upcoming(10)),
+                entry("closing", open(30)),
+                entry("up recently", up(5)),
+                entry("up long", up(1)),
+            ],
+            10,
+        )
+
+        expect(names(result)).toEqual([
+            "up long",
+            "up recently",
+            "closing",
+            "soon",
         ])
     })
 

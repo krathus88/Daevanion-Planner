@@ -37,12 +37,14 @@ const getAt = (entry: TimerEntry) => {
     return "at" in entry.state ? entry.state.at : 0
 }
 
-// Open timers first, by when they close, then upcoming ones by when they
-// start. Unset and killed timers have no next time, so they're left out.
+// Bosses up now first, by when they spawned, then open timers by when they
+// close, then upcoming ones by when they start. Unset and killed timers have no
+// next time, so they're left out.
 export const getComingNext = (
     entries: readonly TimerEntry[],
     count: number,
 ) => {
+    const up: TimerEntry[] = []
     const open: TimerEntry[] = []
     const upcoming: TimerEntry[] = []
 
@@ -51,7 +53,9 @@ export const getComingNext = (
             continue
         }
 
-        if (entry.state.status === "open") {
+        if (entry.state.status === "up") {
+            up.push(entry)
+        } else if (entry.state.status === "open") {
             open.push(entry)
         } else if (entry.state.status === "upcoming") {
             upcoming.push(entry)
@@ -62,8 +66,9 @@ export const getComingNext = (
         return getAt(a) - getAt(b)
     }
 
+    up.sort(byTime)
     open.sort(byTime)
     upcoming.sort(byTime)
 
-    return [...open, ...upcoming].slice(0, count)
+    return [...up, ...open, ...upcoming].slice(0, count)
 }

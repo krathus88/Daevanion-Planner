@@ -69,24 +69,6 @@ describe("schedules from the 4 Nov 2026 patch", () => {
         )
     })
 
-    it.each(["lagta", "gartua", "lagta-altgard", "immortal-gartua"] as const)(
-        "expects %s to die 10 seconds after spawning",
-        (id) => {
-            const spawnAt = Date.UTC(2026, 10, 4, 12)
-            const report = { spawnAt: spawnAt, reportedAt: spawnAt - HOUR }
-
-            expect(
-                getTimerState(getTimer(id), report, spawnAt + 5000),
-            ).toMatchObject({ status: "open", at: spawnAt + 10_000 })
-            expect(
-                getTimerState(getTimer(id), report, spawnAt + 11_000),
-            ).toMatchObject({
-                status: "upcoming",
-                at: spawnAt + 10_000 + 11 * HOUR,
-            })
-        },
-    )
-
     it("respawns Lagta and Gartua 11 hours after they die", () => {
         const ids = ["lagta", "gartua", "lagta-altgard", "immortal-gartua"]
 

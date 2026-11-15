@@ -23,15 +23,17 @@ const getChipText = (state: TimerState, now: number) => {
         return `${formatCountdown(now - state.at)} ago`
     }
 
+    if (state.status === "up") {
+        return "up"
+    }
+
     const countdown = formatCountdown(state.at - now)
 
     if (state.status === "open") {
         return `open ${countdown}`
     }
 
-    return state.estimated || state.afterMaintenance
-        ? `~${countdown}`
-        : countdown
+    return state.afterMaintenance ? `~${countdown}` : countdown
 }
 
 export const TimerChip = ({
@@ -44,7 +46,7 @@ export const TimerChip = ({
     const highlight = useRecipe({ key: "timerHighlight" })
 
     const state = entry.state
-    const isOpen = state.status === "open"
+    const isOpen = state.status === "open" || state.status === "up"
     const highlightStyles: SystemStyleObject = highlight({
         state: entry.alert,
         tone: entry.color.tone,

@@ -7,8 +7,6 @@ import { everyHours, type ServerSchedule } from "@timers/logic/serverSchedule"
 // schedule from the client and the patch notes.
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
-// Lagta and Gartua die within seconds of spawning.
-const QUICK_KILL_ALIVE_FOR = 10_000
 
 export type FieldBossRegion = "verteron" | "altgard" | "abyss"
 
@@ -55,8 +53,6 @@ export type FieldBoss = {
     zone: string
     level?: number
     respawn: number | null
-    // How long it usually lives after spawning; BOSS_ALIVE_FOR when missing.
-    aliveFor?: number
     schedule?: ServerSchedule
     note?: string
 }
@@ -82,8 +78,6 @@ export const FIELD_BOSSES = [
         zone: "Isle of Eternity",
         level: 51,
         respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         id: "lagta",
@@ -93,8 +87,6 @@ export const FIELD_BOSSES = [
         zone: "Red Forest",
         level: 48,
         respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         id: "dartan",
@@ -304,8 +296,6 @@ export const FIELD_BOSSES = [
         zone: "Isle of Immortality",
         level: 51,
         respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         id: "lagta-altgard",
@@ -315,8 +305,6 @@ export const FIELD_BOSSES = [
         zone: "Ragta Fortress",
         level: 48,
         respawn: 11 * HOUR,
-        // Usually dies within 10 seconds.
-        aliveFor: QUICK_KILL_ALIVE_FOR,
     },
     {
         id: "dartan-altgard",

@@ -15,7 +15,6 @@ export const TimerStatus = ({ state, now, chance }: TimerStatusProps) => {
     }
 
     const isOpen = state.status === "open"
-    const isUncertain = state.estimated || state.afterMaintenance
 
     return (
         <Flex flexDir="column" gap="0.5">
@@ -25,7 +24,7 @@ export const TimerStatus = ({ state, now, chance }: TimerStatusProps) => {
                     color={isOpen ? "app.success" : "app.fg"}
                     fontVariantNumeric="tabular-nums"
                 >
-                    {isUncertain && "~"}
+                    {state.afterMaintenance && "~"}
                     {formatCountdown(state.at - now)}
                 </Text>
 

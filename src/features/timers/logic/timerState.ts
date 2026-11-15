@@ -1,6 +1,5 @@
 import type { FieldBoss } from "@timers/config/fieldBosses"
 import {
-    BOSS_ALIVE_FOR,
     WEEKLY_RESET,
     type FixedSchedule,
     type TimerDefinition,
@@ -11,12 +10,13 @@ import { getServerStarts, type ServerSchedule } from "./serverSchedule"
 export type TimerState =
     | { status: "unset" }
     | { status: "killed"; at: number }
+    // A field boss past its spawn time, up until a newer time comes in.
+    | { status: "up"; at: number; afterMaintenance: boolean }
     | ({ status: "open"; startedAt: number } & Countdown)
     | ({ status: "upcoming" } & Countdown)
 
 type Countdown = {
     at: number
-    estimated: boolean
     afterMaintenance: boolean
 }
 
@@ -34,7 +34,6 @@ const getFixedState = (schedule: FixedSchedule, now: number): TimerState => {
             status: "open",
             at: start + schedule.openFor,
             startedAt: start,
-            estimated: false,
             afterMaintenance: false,
         }
     }
@@ -42,7 +41,6 @@ const getFixedState = (schedule: FixedSchedule, now: number): TimerState => {
     return {
         status: "upcoming",
         at: start + schedule.period,
-        estimated: false,
         afterMaintenance: false,
     }
 }
@@ -63,7 +61,6 @@ const getServerState = (
             status: "open",
             at: last + schedule.openFor,
             startedAt: last,
-            estimated: false,
             afterMaintenance: false,
         }
     }
@@ -71,7 +68,6 @@ const getServerState = (
     return {
         status: "upcoming",
         at: next,
-        estimated: false,
         afterMaintenance: false,
     }
 }
@@ -98,38 +94,20 @@ const getBossState = (
     }
 
     // On a whole second so it ticks in step with the clock.
-    const firstSpawnAt = Math.round(report.spawnAt / 1000) * 1000
-    const aliveFor = boss.aliveFor ?? BOSS_ALIVE_FOR
-    const killedAt = firstSpawnAt + aliveFor
-
-    if (boss.respawn === null && now >= killedAt) {
-        return { status: "killed", at: killedAt }
-    }
-
-    const cycleLength = aliveFor + (boss.respawn ?? 0)
-    const cycle = Math.max(0, Math.floor((now - firstSpawnAt) / cycleLength))
-    const spawnAt = firstSpawnAt + cycle * cycleLength
-    const isAlive = now >= spawnAt && now - spawnAt < aliveFor
-    const shownCycle = isAlive || now < spawnAt ? cycle : cycle + 1
-    const shownSpawnAt = firstSpawnAt + shownCycle * cycleLength
+    const spawnAt = Math.round(report.spawnAt / 1000) * 1000
     const nextWeeklyReset =
         lastStart(WEEKLY_RESET, report.reportedAt) + WEEKLY_RESET.period
+    const afterMaintenance = nextWeeklyReset <= spawnAt
 
-    const countdown = {
-        estimated: shownCycle > 0,
-        afterMaintenance: nextWeeklyReset <= shownSpawnAt,
+    if (now >= spawnAt) {
+        return { status: "up", at: spawnAt, afterMaintenance: afterMaintenance }
     }
 
-    if (isAlive) {
-        return {
-            status: "open",
-            at: spawnAt + aliveFor,
-            startedAt: spawnAt,
-            ...countdown,
-        }
+    return {
+        status: "upcoming",
+        at: spawnAt,
+        afterMaintenance: afterMaintenance,
     }
-
-    return { status: "upcoming", at: shownSpawnAt, ...countdown }
 }
 
 export type TimerAlert = "idle" | "soon" | "active"
@@ -139,7 +117,7 @@ export const getTimerAlert = (
     soonMinutes: number,
     now: number,
 ): TimerAlert => {
-    if (state.status === "open") {
+    if (state.status === "open" || state.status === "up") {
         return "active"
     }
 
