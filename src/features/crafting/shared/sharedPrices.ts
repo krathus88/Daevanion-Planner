@@ -1,16 +1,15 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import type { Tables } from "@account/database.types"
 import { supabase } from "@account/supabaseClient"
 import {
     isPageVisible,
     subscribeToPageVisibility,
 } from "@common/pageVisibility"
 
-type PriceRow = {
-    server: string
-    item_id: number
-    price: number
-    updated_at: string
-}
+type PriceRow = Pick<
+    Tables<"crafting_prices">,
+    "server" | "item_id" | "price" | "updated_at"
+>
 
 // A server's price for an item, and when it was set (ms).
 export type SharedPrice = {
@@ -106,7 +105,7 @@ const update = () => {
     // server and item), and prices change rarely.
     const channel = supabase
         .channel(`${TABLE}:${server}`)
-        .on(
+        .on<Tables<"crafting_prices">>(
             "postgres_changes",
             {
                 event: "*",
@@ -115,11 +114,14 @@ const update = () => {
             },
             (payload) => {
                 if (payload.eventType === "DELETE") {
-                    if (isWatched(payload.old.server)) {
-                        removeRow(payload.old.item_id)
+                    // A delete carries only the key columns.
+                    const { server: rowServer, item_id: itemId } = payload.old
+
+                    if (itemId !== undefined && isWatched(rowServer)) {
+                        removeRow(itemId)
                     }
                 } else if (isWatched(payload.new.server)) {
-                    putRow(payload.new as PriceRow)
+                    putRow(payload.new)
                 }
             },
         )

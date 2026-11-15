@@ -1,20 +1,21 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import type { Tables } from "@account/database.types"
 import { supabase } from "@account/supabaseClient"
 import {
     isPageVisible,
     subscribeToPageVisibility,
 } from "@common/pageVisibility"
-import { isRecord } from "@planner/storage/isRecord"
+import { entriesOf, parseOrNull } from "@common/schemas"
+import * as v from "valibot"
 
 // Which artifacts each faction held after a game server's last Artifact
 // Siege, shared by every member: a database trigger copies them from the
 // game snapshot of whoever's companion saw them first (or later, for a later
 // siege), so nobody's site writes them.
-type HoldRow = {
-    server: number
-    siege_end: string
-    artifacts: unknown
-}
+type HoldRow = Pick<
+    Tables<"corridor_holds">,
+    "server" | "siege_end" | "artifacts"
+>
 
 export type SharedCorridorHold = {
     // The game's server number (gameIds getServerId).
@@ -42,27 +43,19 @@ const emit = () => {
     }
 }
 
+const HoldSchema = v.object({
+    server: v.pipe(v.number(), v.integer()),
+    siegeEnd: v.pipe(v.string(), v.transform(Date.parse), v.finite()),
+    artifacts: entriesOf(v.number()),
+})
+
 // Null for a row this version of the site doesn't understand.
 const toSharedHold = (row: HoldRow): SharedCorridorHold | null => {
-    const siegeEnd = Date.parse(row.siege_end)
-
-    if (
-        !Number.isInteger(row.server) ||
-        Number.isNaN(siegeEnd) ||
-        !isRecord(row.artifacts)
-    ) {
-        return null
-    }
-
-    const artifacts: Record<string, number> = {}
-
-    for (const [id, faction] of Object.entries(row.artifacts)) {
-        if (typeof faction === "number") {
-            artifacts[id] = faction
-        }
-    }
-
-    return { server: row.server, siegeEnd: siegeEnd, artifacts: artifacts }
+    return parseOrNull(HoldSchema, {
+        server: row.server,
+        siegeEnd: row.siege_end,
+        artifacts: row.artifacts,
+    })
 }
 
 const putRow = (row: HoldRow) => {
@@ -84,7 +77,7 @@ const load = async () => {
         return
     }
 
-    holds = data.flatMap((row: HoldRow) => {
+    holds = data.flatMap((row) => {
         return toSharedHold(row) ?? []
     })
     emit()
@@ -115,12 +108,12 @@ const update = () => {
     // Rows are only ever written by the trigger, never deleted.
     channel = supabase
         .channel(TABLE)
-        .on(
+        .on<Tables<"corridor_holds">>(
             "postgres_changes",
             { event: "*", schema: "public", table: TABLE },
             (payload) => {
                 if (payload.eventType !== "DELETE") {
-                    putRow(payload.new as HoldRow)
+                    putRow(payload.new)
                 }
             },
         )

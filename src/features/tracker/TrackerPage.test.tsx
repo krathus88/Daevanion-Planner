@@ -203,6 +203,28 @@ describe("TrackerPage", () => {
         ).toHaveAttribute("aria-expanded", "true")
     })
 
+    it("shows no summary on a minimized card with nothing left", () => {
+        withCharacters()
+
+        const data = readTrackerData()
+        const shared = STARTER_TASKS.filter((task) => task.shared)
+
+        writeTrackerData({
+            ...data,
+            minimized: ["server:zikel"],
+            ignored: {
+                ...data.ignored,
+                "server:zikel": shared.map((task) => task.id),
+            },
+        })
+        renderWithChakra(<TrackerPage />)
+
+        const zikel = screen.getByRole("article", { name: "Zikel" })
+
+        expect(within(zikel).queryByText("Left")).not.toBeInTheDocument()
+        expect(within(zikel).queryByText("All done")).not.toBeInTheDocument()
+    })
+
     it("links a character's name to its kisk.app page without minimizing", async () => {
         withCharacters()
         renderWithChakra(<TrackerPage />)

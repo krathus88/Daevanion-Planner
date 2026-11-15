@@ -1,4 +1,5 @@
-import { isRecord } from "@planner/storage/isRecord"
+import { entriesOf, itemsOf, parseOrNull, wholeNumber } from "@common/schemas"
+import * as v from "valibot"
 
 // The companion app uploads one of these per character, under
 // `daevanion:game:v1:<server number>:<name>`. The site only reads them.
@@ -84,183 +85,77 @@ export type GameSnapshot = {
     shopsAt?: number
 }
 
-const isCount = (value: unknown): value is number => {
-    return typeof value === "number" && Number.isInteger(value) && value >= 0
+const count = wholeNumber(0)
+
+const pair = v.strictTuple([count, count])
+
+const triple = v.strictTuple([count, count, count])
+
+// A board's cells, numbered 1-225.
+const cell = wholeNumber(1, 225)
+
+const SupplySchema = v.object({
+    kind: count,
+    start: count,
+    end: count,
+    cards: count,
+    delivered: count,
+})
+
+// A section the game sent: one that doesn't parse is left out on its own.
+const section = <S extends v.GenericSchema<unknown>>(schema: S) => {
+    return v.fallback(v.optional(schema), undefined)
 }
 
-const isPair = (value: unknown): value is [number, number] => {
-    return Array.isArray(value) && value.length === 2 && value.every(isCount)
-}
+// Storage code (or shop id) → item id (or entry) → count.
+const counts = entriesOf(entriesOf(count))
 
-const pickPairs = (value: unknown) => {
-    const pairs: Record<string, [number, number]> = {}
+const time = section(v.pipe(count, v.minValue(1)))
 
-    if (!isRecord(value)) {
-        return undefined
-    }
+const SectionsSchema = v.object({
+    character: v.object({
+        name: v.pipe(v.string(), v.minLength(1)),
+        server: count,
+        class: count,
+    }),
+    pets: section(entriesOf(pair)),
+    petsAt: time,
+    items: section(counts),
+    bound: section(counts),
+    itemsAt: time,
+    counters: section(entriesOf(pair)),
+    countersAt: time,
+    supply: section(itemsOf(SupplySchema)),
+    supplyAt: time,
+    crafts: section(entriesOf(triple)),
+    craftsAt: time,
+    professions: section(entriesOf(wholeNumber(1))),
+    professionsAt: time,
+    boards: section(entriesOf(itemsOf(cell))),
+    boardsAt: time,
+    duty: section(pair),
+    dutyAt: time,
+    progress: section(entriesOf(pair)),
+    progressAt: time,
+    arena: section(entriesOf(pair)),
+    arenaAt: time,
+    corridors: section(itemsOf(v.string())),
+    corridorsAt: time,
+    artifacts: section(entriesOf(count)),
+    siegeEnd: time,
+    artifactsAt: time,
+    shops: section(counts),
+    shopsAt: time,
+})
 
-    for (const [id, pair] of Object.entries(value)) {
-        if (isPair(pair)) {
-            pairs[id] = pair
-        }
-    }
-
-    return pairs
-}
-
-const isTriple = (value: unknown): value is [number, number, number] => {
-    return Array.isArray(value) && value.length === 3 && value.every(isCount)
-}
-
-const pickTriples = (value: unknown) => {
-    const triples: Record<string, [number, number, number]> = {}
-
-    if (!isRecord(value)) {
-        return undefined
-    }
-
-    for (const [id, triple] of Object.entries(value)) {
-        if (isTriple(triple)) {
-            triples[id] = triple
-        }
-    }
-
-    return triples
-}
-
-const pickLevels = (value: unknown, min = 1) => {
-    const levels: Record<string, number> = {}
-
-    if (!isRecord(value)) {
-        return undefined
-    }
-
-    for (const [id, level] of Object.entries(value)) {
-        if (isCount(level) && level >= min) {
-            levels[id] = level
-        }
-    }
-
-    return levels
-}
-
-const isCell = (value: unknown) => {
-    return isCount(value) && value >= 1 && value <= 225
-}
-
-const pickBoards = (value: unknown) => {
-    const boards: Record<string, number[]> = {}
-
-    if (!isRecord(value)) {
-        return undefined
-    }
-
-    for (const [board, cells] of Object.entries(value)) {
-        if (Array.isArray(cells)) {
-            boards[board] = cells.filter(isCell)
-        }
-    }
-
-    return boards
-}
-
-const pickItems = (value: unknown) => {
-    const items: Record<string, Record<string, number>> = {}
-
-    if (!isRecord(value)) {
-        return undefined
-    }
-
-    for (const [storage, counts] of Object.entries(value)) {
-        if (!isRecord(counts)) {
-            continue
-        }
-
-        const picked: Record<string, number> = {}
-
-        for (const [id, count] of Object.entries(counts)) {
-            if (isCount(count)) {
-                picked[id] = count
-            }
-        }
-
-        items[storage] = picked
-    }
-
-    return items
-}
-
-const isSupply = (value: unknown): value is GameSupply => {
-    return (
-        isRecord(value) &&
-        isCount(value.kind) &&
-        isCount(value.start) &&
-        isCount(value.end) &&
-        isCount(value.cards) &&
-        isCount(value.delivered)
-    )
-}
-
-const pickTime = (value: unknown) => {
-    return isCount(value) && value > 0 ? value : undefined
-}
+// The version only decides whether the site understands it.
+const VersionSchema = v.looseObject({ v: v.literal(1) })
 
 // Null when it isn't a snapshot this version of the site understands.
 export const parseGameSnapshot = (value: unknown): GameSnapshot | null => {
-    if (!isRecord(value) || value.v !== 1 || !isRecord(value.character)) {
-        return null
-    }
-
-    const character = value.character
-
-    if (
-        typeof character.name !== "string" ||
-        character.name === "" ||
-        !isCount(character.server) ||
-        !isCount(character.class)
-    ) {
-        return null
-    }
-
-    return {
-        character: {
-            name: character.name,
-            server: character.server,
-            class: character.class,
-        },
-        pets: pickPairs(value.pets),
-        petsAt: pickTime(value.petsAt),
-        items: pickItems(value.items),
-        bound: pickItems(value.bound),
-        itemsAt: pickTime(value.itemsAt),
-        counters: pickPairs(value.counters),
-        countersAt: pickTime(value.countersAt),
-        supply: Array.isArray(value.supply)
-            ? value.supply.filter(isSupply)
-            : undefined,
-        supplyAt: pickTime(value.supplyAt),
-        crafts: pickTriples(value.crafts),
-        craftsAt: pickTime(value.craftsAt),
-        professions: pickLevels(value.professions),
-        professionsAt: pickTime(value.professionsAt),
-        boards: pickBoards(value.boards),
-        boardsAt: pickTime(value.boardsAt),
-        duty: isPair(value.duty) ? value.duty : undefined,
-        dutyAt: pickTime(value.dutyAt),
-        progress: pickPairs(value.progress),
-        progressAt: pickTime(value.progressAt),
-        arena: pickPairs(value.arena),
-        arenaAt: pickTime(value.arenaAt),
-        corridors: Array.isArray(value.corridors)
-            ? value.corridors.filter((id) => typeof id === "string")
-            : undefined,
-        corridorsAt: pickTime(value.corridorsAt),
-        artifacts: pickLevels(value.artifacts, 0),
-        siegeEnd: pickTime(value.siegeEnd),
-        artifactsAt: pickTime(value.artifactsAt),
-        shops: pickItems(value.shops),
-        shopsAt: pickTime(value.shopsAt),
-    }
+    return v.is(VersionSchema, value)
+        ? parseOrNull(SectionsSchema, value)
+        : null
 }
 
 // The newest section's time: a snapshot with a later one has news.

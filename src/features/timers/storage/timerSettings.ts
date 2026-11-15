@@ -1,6 +1,12 @@
 import { setStoredItem } from "@account/sync/syncMeta"
 import { keepUnchanged } from "@common/keepUnchanged"
-import { isRecord } from "@planner/storage/isRecord"
+import {
+    finiteNumber,
+    guarded,
+    parseStored,
+    validEntries,
+    wholeNumber,
+} from "@common/schemas"
 import {
     isTimerColor,
     isTimerId,
@@ -17,10 +23,10 @@ import {
 } from "@timers/logic/comingNextPosition"
 import { MAX_PER_COLUMN, type PinnedColumns } from "@timers/logic/pinnedColumns"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
+import * as v from "valibot"
 
-type SpawnReport = { spawnAt: number; reportedAt: number }
-
-export type BossReport = SpawnReport | { killedAt: number }
+export type BossReport =
+    { spawnAt: number; reportedAt: number } | { killedAt: number }
 
 export type TimerSettings = {
     pinned: PinnedColumns
@@ -62,118 +68,69 @@ const DEFAULT_SETTINGS: TimerSettings = {
     showShared: true,
 }
 
-const isTime = (value: unknown): value is number => {
-    return typeof value === "number" && Number.isFinite(value)
+const SpawnReportSchema = v.object({
+    spawnAt: finiteNumber,
+    reportedAt: finiteNumber,
+})
+
+const BossReportSchema = v.union([
+    SpawnReportSchema,
+    v.object({ killedAt: finiteNumber }),
+])
+
+// Columns of 1 to MAX_PER_COLUMN timers, each timer pinned once.
+const PinnedColumnsSchema = v.pipe(
+    v.array(
+        v.pipe(
+            v.array(guarded(isTimerId)),
+            v.minLength(1),
+            v.maxLength(MAX_PER_COLUMN),
+        ),
+    ),
+    v.check((columns) => {
+        const ids = columns.flat()
+
+        return new Set(ids).size === ids.length
+    }),
+)
+
+const perTimer = <S extends v.GenericSchema<unknown>>(item: S) => {
+    return validEntries(item, isTimerId)
 }
 
-const isSpawnReport = (value: unknown): value is SpawnReport => {
-    return isRecord(value) && isTime(value.spawnAt) && isTime(value.reportedAt)
-}
+const SettingsSchema = v.object({
+    pinned: v.fallback(PinnedColumnsSchema, DEFAULT_SETTINGS.pinned),
+    showPinned: v.fallback(v.boolean(), DEFAULT_SETTINGS.showPinned),
+    bossReports: perTimer(BossReportSchema),
+    colors: perTimer(guarded(isTimerColor)),
+    soonMinutes: perTimer(wholeNumber(0)),
+    comingNext: perTimer(v.boolean()),
+    showComingNext: v.fallback(v.boolean(), DEFAULT_SETTINGS.showComingNext),
+    comingNextCount: v.fallback(
+        guarded(isComingNextCount),
+        DEFAULT_SETTINGS.comingNextCount,
+    ),
+    comingNextPosition: v.fallback(
+        v.nullable(guarded(isComingNextPosition)),
+        DEFAULT_SETTINGS.comingNextPosition,
+    ),
+    server: v.fallback(guarded(isServerId), DEFAULT_SETTINGS.server),
+    showShared: v.fallback(v.boolean(), DEFAULT_SETTINGS.showShared),
+})
 
-const isBossReport = (value: unknown): value is BossReport => {
-    return isSpawnReport(value) || (isRecord(value) && isTime(value.killedAt))
-}
-
-const isPinnedColumns = (value: unknown): value is PinnedColumns => {
-    if (!Array.isArray(value)) {
-        return false
-    }
-
-    const seen = new Set<unknown>()
-
-    for (const column of value) {
-        if (
-            !Array.isArray(column) ||
-            column.length === 0 ||
-            column.length > MAX_PER_COLUMN
-        ) {
-            return false
-        }
-
-        for (const id of column) {
-            if (!isTimerId(id) || seen.has(id)) {
-                return false
-            }
-
-            seen.add(id)
-        }
-    }
-
-    return true
-}
-
-const pickPerTimer = <T>(
-    value: unknown,
-    isValid: (item: unknown) => item is T,
-) => {
-    const picked: Partial<Record<TimerId, T>> = {}
-
-    if (!isRecord(value)) {
-        return picked
-    }
-
-    for (const [id, item] of Object.entries(value)) {
-        if (isTimerId(id) && isValid(item)) {
-            picked[id] = item
-        }
-    }
-
-    return picked
-}
-
-const isMinutes = (value: unknown): value is number => {
-    return typeof value === "number" && Number.isInteger(value) && value >= 0
-}
-
-const isBoolean = (value: unknown): value is boolean => {
-    return typeof value === "boolean"
-}
+// Before other bosses, Gartua's report had a field of its own.
+const StoredSettingsSchema = v.pipe(
+    v.record(v.string(), v.unknown()),
+    v.transform((value) => {
+        return v.is(SpawnReportSchema, value.gartua)
+            ? { ...value, bossReports: { gartua: value.gartua } }
+            : value
+    }),
+    SettingsSchema,
+)
 
 const parse = (raw: string | null): TimerSettings => {
-    if (raw === null) {
-        return DEFAULT_SETTINGS
-    }
-
-    try {
-        const value: unknown = JSON.parse(raw)
-
-        if (!isRecord(value)) {
-            return DEFAULT_SETTINGS
-        }
-
-        return {
-            pinned: isPinnedColumns(value.pinned)
-                ? value.pinned
-                : DEFAULT_SETTINGS.pinned,
-            showPinned: isBoolean(value.showPinned)
-                ? value.showPinned
-                : DEFAULT_SETTINGS.showPinned,
-            // Before other bosses, Gartua's report had a field of its own.
-            bossReports: isSpawnReport(value.gartua)
-                ? { gartua: value.gartua }
-                : pickPerTimer(value.bossReports, isBossReport),
-            colors: pickPerTimer(value.colors, isTimerColor),
-            soonMinutes: pickPerTimer(value.soonMinutes, isMinutes),
-            comingNext: pickPerTimer(value.comingNext, isBoolean),
-            showComingNext: isBoolean(value.showComingNext)
-                ? value.showComingNext
-                : DEFAULT_SETTINGS.showComingNext,
-            comingNextCount: isComingNextCount(value.comingNextCount)
-                ? value.comingNextCount
-                : DEFAULT_SETTINGS.comingNextCount,
-            comingNextPosition: isComingNextPosition(value.comingNextPosition)
-                ? value.comingNextPosition
-                : DEFAULT_SETTINGS.comingNextPosition,
-            server: isServerId(value.server)
-                ? value.server
-                : DEFAULT_SETTINGS.server,
-            showShared: isBoolean(value.showShared)
-                ? value.showShared
-                : DEFAULT_SETTINGS.showShared,
-        }
-    } catch {
-        return DEFAULT_SETTINGS
-    }
+    return parseStored(StoredSettingsSchema, raw, DEFAULT_SETTINGS)
 }
 
 // useSyncExternalStore needs the same object back until the data changes.

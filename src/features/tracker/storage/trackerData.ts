@@ -1,7 +1,15 @@
 import { setStoredItem } from "@account/sync/syncMeta"
 import { keepUnchanged } from "@common/keepUnchanged"
-import { isClassId } from "@config/classPresets/classInfo"
-import { isRecord } from "@planner/storage/isRecord"
+import {
+    entriesOf,
+    guarded,
+    itemsOf,
+    parseOrNull,
+    validEntries,
+    validItems,
+    wholeNumber,
+} from "@common/schemas"
+import { isClassId, type ClassId } from "@config/classPresets/classInfo"
 import { DEFAULT_SERVER_ID, isServerId } from "@timers/config/servers"
 import { FIRST_PRESETS, STARTER_TASKS } from "@tracker/config/starterTasks"
 import { isTrackerReset } from "@tracker/config/trackerResets"
@@ -12,16 +20,8 @@ import {
     renameOldPresets,
     STARTER_IDS,
 } from "@tracker/logic/presetTasks"
-import type {
-    ArenaModes,
-    ArenaSighting,
-    CorridorRecord,
-    TaskCount,
-    TaskEntries,
-    TrackerCharacter,
-    TrackerData,
-    TrackerTask,
-} from "@tracker/types"
+import type { ArenaRecord, TrackerData, TrackerTask } from "@tracker/types"
+import * as v from "valibot"
 
 const KEY = "daevanion:tracker:v1:data"
 const CHANGE_EVENT = "daevanion-tracker-change"
@@ -51,382 +51,196 @@ const EMPTY_DATA: TrackerData = {
 
 export const MAX_CUBE_KEYS = 9999
 
-const isWholeNumber = (value: unknown, min: number): value is number => {
-    return typeof value === "number" && Number.isInteger(value) && value >= min
-}
+const taskCap = wholeNumber(1, MAX_TASK_CAP)
 
-const isTaskCap = (value: unknown): value is number => {
-    return isWholeNumber(value, 1) && value <= MAX_TASK_CAP
+const optionalField = <S extends v.GenericSchema<unknown>>(schema: S) => {
+    return v.fallback(v.optional(schema), undefined)
 }
 
 // Saves from before servers existed get the default server.
-const parseCharacter = (value: unknown): TrackerCharacter | null => {
-    if (
-        !isRecord(value) ||
-        typeof value.id !== "string" ||
-        typeof value.name !== "string" ||
-        typeof value.classId !== "string" ||
-        !isClassId(value.classId)
-    ) {
-        return null
-    }
-
-    return {
-        id: value.id,
-        name: value.name,
-        classId: value.classId,
-        server: isServerId(value.server) ? value.server : DEFAULT_SERVER_ID,
-    }
-}
+const CharacterSchema = v.object({
+    id: v.string(),
+    name: v.string(),
+    classId: guarded((value): value is ClassId => {
+        return typeof value === "string" && isClassId(value)
+    }),
+    server: v.fallback(guarded(isServerId), DEFAULT_SERVER_ID),
+})
 
 // Saves from before shared tasks existed are per character.
-const parseTask = (value: unknown): TrackerTask | null => {
-    if (
-        !isRecord(value) ||
-        typeof value.id !== "string" ||
-        typeof value.name !== "string" ||
-        !isTrackerReset(value.reset) ||
-        !isTaskCap(value.cap)
-    ) {
-        return null
-    }
+const TaskSchema = v.pipe(
+    v.object({
+        id: v.string(),
+        name: v.string(),
+        subtitle: optionalField(v.pipe(v.string(), v.minLength(1))),
+        reset: guarded(isTrackerReset),
+        cap: taskCap,
+        shared: v.fallback(v.boolean(), false),
+        recharge: optionalField(taskCap),
+        bonusCap: optionalField(wholeNumber(0)),
+    }),
+    v.transform(({ subtitle, recharge, bonusCap, ...rest }) => {
+        const task: TrackerTask = rest
 
-    const task: TrackerTask = {
-        id: value.id,
-        name: value.name,
-        reset: value.reset,
-        cap: value.cap,
-        shared: value.shared === true,
-    }
+        if (subtitle !== undefined) {
+            task.subtitle = subtitle
+        }
 
-    if (typeof value.subtitle === "string" && value.subtitle !== "") {
-        task.subtitle = value.subtitle
-    }
+        if (recharge !== undefined) {
+            task.recharge = recharge
+            task.bonusCap = bonusCap ?? 0
 
-    if (isTaskCap(value.recharge)) {
-        task.recharge = value.recharge
-        task.bonusCap = isWholeNumber(value.bonusCap, 0) ? value.bonusCap : 0
+            return task
+        }
+
+        // The task dialogs can't set entries, so an own copy saved before a
+        // starter task counted entries takes them from the starter task.
+        const starter = STARTER_TASKS.find((item) => item.id === task.id)
+
+        if (starter?.recharge !== undefined) {
+            task.recharge = starter.recharge
+            task.bonusCap = starter.bonusCap ?? 0
+        }
 
         return task
-    }
+    }),
+)
 
-    // The task dialogs can't set entries, so an own copy saved before a starter
-    // task counted entries takes them from the starter task.
-    const starter = STARTER_TASKS.find((item) => item.id === task.id)
+const TaskCountSchema = v.object({
+    period: v.pipe(v.number(), v.integer()),
+    count: wholeNumber(0),
+})
 
-    if (starter?.recharge !== undefined) {
-        task.recharge = starter.recharge
-        task.bonusCap = starter.bonusCap ?? 0
-    }
+const TaskEntriesSchema = v.object({
+    period: v.pipe(v.number(), v.integer()),
+    base: wholeNumber(0),
+    bonus: wholeNumber(0),
+})
 
-    return task
-}
+const ArenaSightingSchema = v.object({
+    period: wholeNumber(0),
+    at: wholeNumber(0),
+    modes: entriesOf(v.strictTuple([wholeNumber(0), wholeNumber(0)])),
+})
 
-const isTaskCount = (value: unknown): value is TaskCount => {
-    return (
-        isRecord(value) &&
-        Number.isInteger(value.period) &&
-        isWholeNumber(value.count, 0)
-    )
-}
+// Arena task starts set by hand in one week.
+const ArenaStartsSchema = v.object({
+    period: wholeNumber(0),
+    starts: validEntries(wholeNumber(0)),
+})
 
-const isTaskEntries = (value: unknown): value is TaskEntries => {
-    return (
-        isRecord(value) &&
-        Number.isInteger(value.period) &&
-        isWholeNumber(value.base, 0) &&
-        isWholeNumber(value.bonus, 0)
-    )
-}
-
-// Odyle Energy by character id; bad entries are dropped one by one.
-const pickEnergy = (value: unknown) => {
-    const energy: TrackerData["energy"] = {}
-
-    if (!isRecord(value)) {
-        return energy
-    }
-
-    for (const [characterId, entries] of Object.entries(value)) {
-        if (isTaskEntries(entries)) {
-            energy[characterId] = entries
-        }
-    }
-
-    return energy
-}
-
-// Hidden Cube keys by character id; bad entries are dropped one by one.
-const pickCubeKeys = (value: unknown) => {
-    const keys: TrackerData["cubeKeys"] = {}
-
-    if (!isRecord(value)) {
-        return keys
-    }
-
-    for (const [characterId, count] of Object.entries(value)) {
-        if (isWholeNumber(count, 0) && count <= MAX_CUBE_KEYS) {
-            keys[characterId] = count
-        }
-    }
-
-    return keys
-}
-
-const pickArenaSighting = (value: unknown): ArenaSighting | null => {
-    if (
-        !isRecord(value) ||
-        !isWholeNumber(value.period, 0) ||
-        !isWholeNumber(value.at, 0) ||
-        !isRecord(value.modes)
-    ) {
-        return null
-    }
-
-    const modes: ArenaModes = {}
-
-    for (const [mode, record] of Object.entries(value.modes)) {
-        if (
-            Array.isArray(record) &&
-            record.length === 2 &&
-            isWholeNumber(record[0], 0) &&
-            isWholeNumber(record[1], 0)
-        ) {
-            modes[mode] = [record[0], record[1]]
-        }
-    }
-
-    return { period: value.period, at: value.at, modes: modes }
-}
-
-// Arena task starts set by hand in one week; bad entries are dropped.
-const pickArenaStarts = (value: unknown) => {
-    if (!isRecord(value) || !isWholeNumber(value.period, 0)) {
-        return null
-    }
-
-    const starts: Record<string, number> = {}
-
-    if (isRecord(value.starts)) {
-        for (const [taskId, start] of Object.entries(value.starts)) {
-            if (isWholeNumber(start, 0)) {
-                starts[taskId] = start
-            }
-        }
-    }
-
-    return { period: value.period, starts: starts }
-}
-
-// Arena records by character id; bad ones are dropped one by one.
-const pickArena = (value: unknown) => {
-    const arena: TrackerData["arena"] = {}
-
-    if (!isRecord(value)) {
-        return arena
-    }
-
-    for (const [characterId, record] of Object.entries(value)) {
-        const seen = isRecord(record) ? pickArenaSighting(record.seen) : null
-
-        if (!isRecord(record) || seen === null) {
-            continue
-        }
-
-        const base = pickArenaSighting(record.base)
-        const fixed = pickArenaStarts(record.fixed)
-
-        arena[characterId] = {
+const ArenaRecordSchema = v.pipe(
+    v.object({
+        seen: ArenaSightingSchema,
+        base: optionalField(ArenaSightingSchema),
+        fixed: optionalField(ArenaStartsSchema),
+    }),
+    v.transform(({ seen, base, fixed }): ArenaRecord => {
+        return {
             seen: seen,
             ...(base && { base: base }),
             ...(fixed && { fixed: fixed }),
         }
-    }
+    }),
+)
 
-    return arena
-}
+const CorridorRecordSchema = v.object({
+    period: wholeNumber(0),
+    at: wholeNumber(0),
+    artifacts: itemsOf(v.string()),
+})
 
-// Corridor records by server or character id; bad ones are dropped.
-const pickCorridors = (value: unknown) => {
-    const records: Record<string, CorridorRecord> = {}
-
-    if (!isRecord(value)) {
-        return records
-    }
-
-    for (const [id, record] of Object.entries(value)) {
-        if (
-            isRecord(record) &&
-            isWholeNumber(record.period, 0) &&
-            isWholeNumber(record.at, 0) &&
-            Array.isArray(record.artifacts)
-        ) {
-            records[id] = {
-                period: record.period,
-                at: record.at,
-                artifacts: pickStrings(record.artifacts),
-            }
+// Empty notes are dropped, overlong ones cut.
+const NoteSchema = v.pipe(
+    v.object({
+        short: v.fallback(v.string(), ""),
+        long: v.fallback(v.string(), ""),
+    }),
+    v.transform((note) => {
+        return {
+            short: note.short.slice(0, MAX_SHORT_NOTE),
+            long: note.long.slice(0, MAX_LONG_NOTE),
         }
-    }
+    }),
+    v.check((note) => {
+        return note.short.trim() !== "" || note.long.trim() !== ""
+    }),
+)
 
-    return records
-}
-
-// Notes by character id; empty ones are dropped, overlong ones cut.
-const pickNotes = (value: unknown) => {
-    const notes: TrackerData["notes"] = {}
-
-    if (!isRecord(value)) {
-        return notes
-    }
-
-    for (const [characterId, note] of Object.entries(value)) {
-        if (!isRecord(note)) {
-            continue
-        }
-
-        const short =
-            typeof note.short === "string"
-                ? note.short.slice(0, MAX_SHORT_NOTE)
-                : ""
-        const long =
-            typeof note.long === "string"
-                ? note.long.slice(0, MAX_LONG_NOTE)
-                : ""
-
-        if (short.trim() !== "" || long.trim() !== "") {
-            notes[characterId] = { short: short, long: long }
-        }
-    }
-
-    return notes
-}
-
-// Drops whatever doesn't parse, entry by entry, keeping the first of each id.
-const pickById = <T extends { id: string }>(
-    value: unknown,
-    parseItem: (item: unknown) => T | null,
-) => {
-    const picked: T[] = []
+// Keeps the first of each id.
+const uniqueById = <T extends { id: string }>(items: T[]) => {
     const seen = new Set<string>()
 
-    if (!Array.isArray(value)) {
-        return picked
-    }
+    return items.filter((item) => {
+        const isNew = !seen.has(item.id)
 
-    for (const item of value) {
-        const parsed = parseItem(item)
+        seen.add(item.id)
 
-        if (parsed && !seen.has(parsed.id)) {
-            picked.push(parsed)
-            seen.add(parsed.id)
-        }
-    }
-
-    return picked
+        return isNew
+    })
 }
 
-// Per owner, then per task; bad entries are dropped one by one.
-const pickPerOwner = <T>(
-    value: unknown,
-    isValid: (item: unknown) => item is T,
-) => {
-    const picked: Record<string, Record<string, T>> = {}
-
-    if (!isRecord(value)) {
-        return picked
-    }
-
-    for (const [owner, perTask] of Object.entries(value)) {
-        if (!isRecord(perTask)) {
-            continue
-        }
-
-        const ownerItems: Record<string, T> = {}
-
-        for (const [taskId, item] of Object.entries(perTask)) {
-            if (isValid(item)) {
-                ownerItems[taskId] = item
-            }
-        }
-
-        picked[owner] = ownerItems
-    }
-
-    return picked
+// Per owner, then per task.
+const perOwner = <S extends v.GenericSchema<unknown>>(item: S) => {
+    return validEntries(entriesOf(item))
 }
 
-const pickStrings = (value: unknown) => {
-    return Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === "string")
-        : []
-}
+const strings = validItems(v.string())
 
-const pickIgnored = (value: unknown) => {
-    const ignored: TrackerData["ignored"] = {}
-
-    if (!isRecord(value)) {
-        return ignored
-    }
-
-    for (const [owner, taskIds] of Object.entries(value)) {
-        const picked = pickStrings(taskIds)
-
-        if (picked.length > 0) {
-            ignored[owner] = picked
-        }
-    }
-
-    return ignored
-}
-
-// The user's own list, with starter tasks it didn't know of yet added.
-const pickTasks = (
-    value: Record<string, unknown>,
-    known: readonly string[],
-) => {
-    if (!Array.isArray(value.tasks)) {
-        return null
-    }
-
-    const tasks = renameOldPresets(pickById(value.tasks, parseTask), known)
-
-    return [...addNewPresets(tasks, known)]
-}
+const TrackerDataSchema = v.object({
+    characters: v.pipe(validItems(CharacterSchema), v.transform(uniqueById)),
+    // Null: the starter tasks, never edited.
+    tasks: v.fallback(
+        v.nullable(v.pipe(itemsOf(TaskSchema), v.transform(uniqueById))),
+        null,
+    ),
+    // Missing: from before the first presets were tracked.
+    presets: optionalField(itemsOf(v.string())),
+    counts: perOwner(TaskCountSchema),
+    entries: perOwner(TaskEntriesSchema),
+    minimized: strings,
+    goalsOpen: strings,
+    ignored: validEntries(v.pipe(itemsOf(v.string()), v.minLength(1))),
+    energy: validEntries(TaskEntriesSchema),
+    cubeKeys: validEntries(wholeNumber(0, MAX_CUBE_KEYS)),
+    arena: validEntries(ArenaRecordSchema),
+    corridorHolds: validEntries(CorridorRecordSchema),
+    corridorsLeft: validEntries(CorridorRecordSchema),
+    declined: strings,
+    notes: validEntries(NoteSchema),
+    // Saves from before it existed assume the membership.
+    membership: v.fallback(v.boolean(), true),
+})
 
 export const parseTrackerData = (value: unknown): TrackerData => {
-    if (!isRecord(value)) {
+    const data = parseOrNull(TrackerDataSchema, value)
+
+    if (data === null) {
         return EMPTY_DATA
     }
 
-    const known = Array.isArray(value.presets)
-        ? pickStrings(value.presets)
-        : FIRST_PRESETS
-    const characters = pickById(value.characters, parseCharacter)
+    const known = data.presets ?? FIRST_PRESETS
 
     return {
-        characters: characters,
-        tasks: pickTasks(value, known),
+        ...data,
+        // The user's own list, with starter tasks it didn't know of yet added.
+        tasks:
+            data.tasks === null
+                ? null
+                : [
+                      ...addNewPresets(
+                          renameOldPresets(data.tasks, known),
+                          known,
+                      ),
+                  ],
         presets: STARTER_IDS,
-        counts: pickPerOwner(value.counts, isTaskCount),
-        entries: pickPerOwner(value.entries, isTaskEntries),
-        minimized: pickStrings(value.minimized),
-        goalsOpen: pickStrings(value.goalsOpen),
-        // Starter tasks that start ignored do so for the characters already there.
+        // Starter tasks that start ignored do so for the characters already
+        // there.
         ignored: addIgnored(
-            pickIgnored(value.ignored),
-            characters.map((character) => character.id),
+            data.ignored,
+            data.characters.map((character) => character.id),
             getNewIgnoredPresets(known),
         ),
-        energy: pickEnergy(value.energy),
-        cubeKeys: pickCubeKeys(value.cubeKeys),
-        arena: pickArena(value.arena),
-        corridorHolds: pickCorridors(value.corridorHolds),
-        corridorsLeft: pickCorridors(value.corridorsLeft),
-        declined: pickStrings(value.declined),
-        notes: pickNotes(value.notes),
-        // Saves from before it existed assume the membership.
-        membership: value.membership !== false,
     }
 }
 

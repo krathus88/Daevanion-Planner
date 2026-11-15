@@ -1,4 +1,12 @@
-import { isRecord } from "@planner/storage/isRecord"
+import {
+    entriesOf,
+    finiteNumber,
+    itemsOf,
+    parseStored,
+    validEntries,
+    validItems,
+} from "@common/schemas"
+import * as v from "valibot"
 import { toAccountValue } from "./deviceFields"
 import { jsonEquals } from "./jsonEquals"
 import { isSyncedKey } from "./syncedKeys"
@@ -19,30 +27,29 @@ const META_KEY = "daevanion:sync:v1:state"
 
 const listeners = new Set<() => void>()
 
+// Bad entries are dropped one by one.
+const SyncMetaSchema = v.object({
+    times: entriesOf(finiteNumber),
+    pending: itemsOf(v.string()),
+    synced: validEntries(finiteNumber),
+    game: validItems(v.string()),
+})
+
 export const readSyncMeta = (): SyncMeta => {
+    // A new object each time: callers change what they read. Unreadable,
+    // it starts over; the next login compares with the account.
+    const empty: SyncMeta = { times: {}, pending: [], synced: {}, game: [] }
+
     try {
-        const raw = window.localStorage.getItem(META_KEY)
-        const value: unknown = raw === null ? null : JSON.parse(raw)
-
-        if (
-            isRecord(value) &&
-            isRecord(value.times) &&
-            Array.isArray(value.pending)
-        ) {
-            return {
-                times: value.times as Record<string, number>,
-                pending: value.pending as string[],
-                synced: isRecord(value.synced)
-                    ? (value.synced as Record<string, number>)
-                    : {},
-                game: Array.isArray(value.game) ? (value.game as string[]) : [],
-            }
-        }
+        return parseStored(
+            SyncMetaSchema,
+            window.localStorage.getItem(META_KEY),
+            empty,
+        )
     } catch {
-        // Unreadable: start over; the next login compares with the account.
+        // Storage is blocked.
+        return empty
     }
-
-    return { times: {}, pending: [], synced: {}, game: [] }
 }
 
 export const writeSyncMeta = (meta: SyncMeta) => {

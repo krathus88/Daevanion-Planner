@@ -105,6 +105,9 @@ export const TaskCard = ({
         onIgnoredChange(owner, taskId, true)
     }, captureSlide)
     const leaving = [...stash.leaving, ...delayedIgnore.ignoring]
+    const pending = minimized
+        ? getPendingTasks(taskGroups, counts, entries, ignored, periods)
+        : []
 
     // Changes that can bring a task back into view (undone from Done,
     // entries refilled) slide the rest aside and fade it in.
@@ -159,19 +162,13 @@ export const TaskCard = ({
                 />
 
                 {minimized ? (
-                    <Flex flexDir="column" gap="3">
-                        {top}
+                    (top || pending.length > 0) && (
+                        <Flex flexDir="column" gap="3">
+                            {top}
 
-                        <PendingTasks
-                            pending={getPendingTasks(
-                                taskGroups,
-                                counts,
-                                entries,
-                                ignored,
-                                periods,
-                            )}
-                        />
-                    </Flex>
+                            <PendingTasks pending={pending} />
+                        </Flex>
+                    )
                 ) : (
                     <Flex ref={contentRef} flexDir="column" gap="4">
                         {top}

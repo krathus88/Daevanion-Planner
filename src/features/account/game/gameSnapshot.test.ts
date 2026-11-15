@@ -69,8 +69,8 @@ describe("parseGameSnapshot", () => {
         const snapshot = parseGameSnapshot({
             v: 1,
             character: CHARACTER,
-            pets: { "1": [1, 2], "2": [1], "3": "x" },
-            items: { "1": { a: 1, b: -1 }, "2": "x" },
+            pets: { "1": [1, 2], "2": [1], "3": "x", "4": [1, 2, 3] },
+            items: { "1": { a: 1, b: -1 }, "2": "x", "3": [5] },
             supply: [{ kind: 1 }],
             crafts: { "1": [1, 0, 5], "2": [1, 0], "3": [1, -1, 5] },
             boards: { "1": [33, 0, 226, 1.5], "2": "x" },

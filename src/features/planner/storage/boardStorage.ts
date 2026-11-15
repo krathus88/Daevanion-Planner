@@ -2,7 +2,8 @@ import { setStoredItem } from "@account/sync/syncMeta"
 import { BOARD_IDS, MAIN_BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import type { BoardView } from "@planner/types"
-import { isRecord } from "./isRecord"
+import { finiteNumber } from "@common/schemas"
+import * as v from "valibot"
 import { requestPersistentStorage } from "./persistStorage"
 
 export type BoardProgress = {
@@ -79,7 +80,7 @@ const keyFor = (
 
 const read = <T>(
     key: string,
-    isValid: (value: unknown) => value is T,
+    schema: v.GenericSchema<unknown, T>,
 ): StorageRead<T> => {
     try {
         const raw = window.localStorage.getItem(key)
@@ -87,15 +88,15 @@ const read = <T>(
             return { value: null, error: null }
         }
 
-        const value: unknown = JSON.parse(raw)
-        if (!isValid(value)) {
+        const parsed = v.safeParse(schema, JSON.parse(raw))
+        if (!parsed.success) {
             return {
                 value: null,
                 error: "Saved board data is invalid and could not be loaded.",
             }
         }
 
-        return { value: value, error: null }
+        return { value: parsed.output, error: null }
     } catch (error) {
         return {
             value: null,
@@ -132,96 +133,77 @@ const remove = (key: string) => {
     }
 }
 
-const isStringArray = (value: unknown): value is string[] => {
-    return (
-        Array.isArray(value) && value.every((item) => typeof item === "string")
-    )
-}
+// Loose objects: a saved value comes back as it was, fields this version
+// doesn't know of included.
+const strings = v.array(v.string())
 
-const isNonNegativeNumber = (value: unknown): value is number => {
-    return typeof value === "number" && Number.isFinite(value) && value >= 0
-}
+const points = v.pipe(finiteNumber, v.minValue(0))
 
-const isNullableNumber = (value: unknown): value is number | null => {
-    return (
-        value === null || (typeof value === "number" && Number.isFinite(value))
-    )
-}
+const cost = v.nullable(finiteNumber)
 
-const isActivePlanner = (value: unknown): value is ActivePlanner => {
-    return (
-        isRecord(value) &&
-        typeof value.id === "string" &&
-        typeof value.name === "string" &&
-        (value.source === "saved" || value.source === "history")
-    )
-}
+const ActivePlannerSchema = v.looseObject({
+    id: v.string(),
+    name: v.string(),
+    source: v.picklist(["saved", "history"]),
+})
 
-const isBoardProgress = (value: unknown): value is BoardProgress => {
-    return (
-        isRecord(value) &&
-        isStringArray(value.selectedCells) &&
-        isNonNegativeNumber(value.availablePoints) &&
-        isStringArray(value.targetCells) &&
-        isStringArray(value.plannedPath) &&
-        isNullableNumber(value.plannedCost) &&
-        (value.activePlanner === undefined ||
-            value.activePlanner === null ||
-            isActivePlanner(value.activePlanner))
-    )
-}
+const BoardProgressSchema = v.looseObject({
+    selectedCells: strings,
+    availablePoints: points,
+    targetCells: strings,
+    plannedPath: strings,
+    plannedCost: cost,
+    activePlanner: v.nullish(ActivePlannerSchema),
+})
 
-const isBoardUndo = (value: unknown): value is BoardUndo => {
-    return isRecord(value) && isStringArray(value.selectedCells)
-}
+const BoardUndoSchema = v.looseObject({
+    selectedCells: strings,
+})
 
-const isPlannerUndo = (value: unknown): value is PlannerUndo => {
-    return (
-        isRecord(value) &&
-        isStringArray(value.targetCells) &&
-        isStringArray(value.plannedPath) &&
-        isNullableNumber(value.plannedCost)
-    )
-}
+const PlannerUndoSchema = v.looseObject({
+    targetCells: strings,
+    plannedPath: strings,
+    plannedCost: cost,
+})
+
+const SavedBoardSchema = v.looseObject({
+    id: v.string(),
+    name: v.string(),
+    createdAt: v.number(),
+    availablePoints: points,
+    selectedCells: strings,
+})
+
+const SavedPlannerSchema = v.looseObject({
+    id: v.string(),
+    name: v.string(),
+    createdAt: v.number(),
+    availablePoints: points,
+    targetCells: strings,
+    plannedPath: strings,
+    plannedCost: cost,
+})
 
 export const isSavedBoard = (value: unknown): value is SavedBoard => {
-    return (
-        isRecord(value) &&
-        typeof value.id === "string" &&
-        typeof value.name === "string" &&
-        typeof value.createdAt === "number" &&
-        isNonNegativeNumber(value.availablePoints) &&
-        isStringArray(value.selectedCells)
-    )
+    return v.is(SavedBoardSchema, value)
 }
 
 export const isSavedPlanner = (value: unknown): value is SavedPlanner => {
-    return (
-        isRecord(value) &&
-        typeof value.id === "string" &&
-        typeof value.name === "string" &&
-        typeof value.createdAt === "number" &&
-        isNonNegativeNumber(value.availablePoints) &&
-        isStringArray(value.targetCells) &&
-        isStringArray(value.plannedPath) &&
-        isNullableNumber(value.plannedCost)
-    )
+    return v.is(SavedPlannerSchema, value)
 }
 
-const isSharedAllocation = (value: unknown): value is SharedAllocation => {
-    return (
-        isRecord(value) &&
-        isNonNegativeNumber(value.totalPoints) &&
-        isRecord(value.selectedPlannerIds) &&
-        Object.entries(value.selectedPlannerIds).every(
-            ([layout, id]) =>
-                Object.hasOwn(layouts, layout) && typeof id === "string",
-        )
-    )
-}
+const SharedAllocationSchema = v.looseObject({
+    totalPoints: points,
+    selectedPlannerIds: v.record(
+        v.custom<BoardId>((layout) => {
+            return typeof layout === "string" && Object.hasOwn(layouts, layout)
+        }),
+        v.string(),
+    ),
+})
 
 export const readSharedAllocation = (classId: string) => {
-    return read(sharedAllocationKey(classId), isSharedAllocation)
+    return read(sharedAllocationKey(classId), SharedAllocationSchema)
 }
 
 export const writeSharedAllocation = (
@@ -303,7 +285,7 @@ export const subscribeToPlansReplaced = (
 }
 
 export const readBoardProgress = (classId: string, layout: BoardId) => {
-    return read(keyFor(classId, "progress", layout), isBoardProgress)
+    return read(keyFor(classId, "progress", layout), BoardProgressSchema)
 }
 
 // The nodes a board shows in a view: the planner's route or the Manual picks.
@@ -332,7 +314,7 @@ export const writeBoardProgress = (
 }
 
 export const readBoardUndo = (classId: string, layout: BoardId) => {
-    return read(keyFor(classId, "board-undo", layout), isBoardUndo)
+    return read(keyFor(classId, "board-undo", layout), BoardUndoSchema)
 }
 
 export const writeBoardUndo = (
@@ -348,7 +330,7 @@ export const clearBoardUndo = (classId: string, layout: BoardId) => {
 }
 
 export const readPlannerUndo = (classId: string, layout: BoardId) => {
-    return read(keyFor(classId, "planner-undo", layout), isPlannerUndo)
+    return read(keyFor(classId, "planner-undo", layout), PlannerUndoSchema)
 }
 
 export const writePlannerUndo = (
@@ -361,17 +343,13 @@ export const writePlannerUndo = (
 
 export type BoardWantChoices = Record<string, "need" | "prefer" | "skip">
 
-const isWantChoices = (value: unknown): value is BoardWantChoices => {
-    return (
-        isRecord(value) &&
-        Object.values(value).every(
-            (want) => want === "need" || want === "prefer" || want === "skip",
-        )
-    )
-}
+const WantChoicesSchema = v.record(
+    v.string(),
+    v.picklist(["need", "prefer", "skip"]),
+)
 
 export const readWantChoices = (classId: string, layout: BoardId) => {
-    return read(keyFor(classId, "wants", layout), isWantChoices)
+    return read(keyFor(classId, "wants", layout), WantChoicesSchema)
 }
 
 export const writeWantChoices = (
@@ -389,8 +367,7 @@ export const clearPlannerUndo = (classId: string, layout: BoardId) => {
 export const readSavedBoards = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "saved-boards", layout),
-        (value): value is SavedBoard[] =>
-            Array.isArray(value) && value.every(isSavedBoard),
+        v.array(SavedBoardSchema),
     )
 }
 
@@ -409,8 +386,7 @@ export const writeSavedBoards = (
 export const readSavedPlanners = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "saved-planners", layout),
-        (value): value is SavedPlanner[] =>
-            Array.isArray(value) && value.every(isSavedPlanner),
+        v.array(SavedPlannerSchema),
     )
 }
 
@@ -429,8 +405,7 @@ export const writeSavedPlanners = (
 export const readPlannerHistory = (classId: string, layout: BoardId) => {
     return read(
         keyFor(classId, "planner-history", layout),
-        (value): value is SavedPlanner[] =>
-            Array.isArray(value) && value.every(isSavedPlanner),
+        v.array(SavedPlannerSchema),
     )
 }
 

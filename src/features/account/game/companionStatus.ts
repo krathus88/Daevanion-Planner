@@ -8,7 +8,8 @@ import {
     isPageVisible,
     subscribeToPageVisibility,
 } from "@common/pageVisibility"
-import { isRecord } from "@planner/storage/isRecord"
+import { parseOrNull } from "@common/schemas"
+import * as v from "valibot"
 import type { GameCharacter } from "./gameSnapshot"
 
 // The companion app keeps this row fresh while it runs (every minute, and on
@@ -25,13 +26,28 @@ export type CompanionStatus =
     | { state: "stopped" }
     | { state: "running"; character: GameCharacter | null }
 
-const isCharacter = (value: unknown): value is GameCharacter => {
-    return (
-        isRecord(value) &&
-        typeof value.name === "string" &&
-        typeof value.server === "number" &&
-        typeof value.class === "number"
-    )
+// A running row, still to be checked for staleness.
+const RunningRowSchema = v.object({
+    v: v.literal(1),
+    running: v.literal(true),
+    at: v.number(),
+    character: v.fallback(
+        v.nullable(
+            v.object({
+                name: v.string(),
+                server: v.number(),
+                class: v.number(),
+            }),
+        ),
+        null,
+    ),
+})
+
+// When a row would count as stopped, or null for a row that isn't running.
+const getStaleAt = (value: unknown) => {
+    const row = parseOrNull(RunningRowSchema, value)
+
+    return row === null ? null : row.at + STALE_MS
 }
 
 // What a status row means at `now`.
@@ -39,20 +55,13 @@ export const readCompanionStatus = (
     value: unknown,
     now: number,
 ): CompanionStatus => {
-    if (
-        !isRecord(value) ||
-        value.v !== 1 ||
-        value.running !== true ||
-        typeof value.at !== "number" ||
-        now - value.at > STALE_MS
-    ) {
+    const row = parseOrNull(RunningRowSchema, value)
+
+    if (row === null || now - row.at > STALE_MS) {
         return { state: "stopped" }
     }
 
-    return {
-        state: "running",
-        character: isCharacter(value.character) ? value.character : null,
-    }
+    return { state: "running", character: row.character }
 }
 
 const UNKNOWN: CompanionStatus = { state: "unknown" }
@@ -101,12 +110,10 @@ const show = () => {
 
     setStatus(readCompanionStatus(row, now))
 
-    if (isRecord(row) && row.running === true && typeof row.at === "number") {
-        const wait = row.at + STALE_MS - now
+    const staleAt = getStaleAt(row)
 
-        if (wait > 0) {
-            staleTimer = window.setTimeout(show, wait + 1000)
-        }
+    if (staleAt !== null && staleAt > now) {
+        staleTimer = window.setTimeout(show, staleAt - now + 1000)
     }
 }
 

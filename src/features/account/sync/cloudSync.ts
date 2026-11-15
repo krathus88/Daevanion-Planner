@@ -1,4 +1,5 @@
 import { readAuth, subscribeToAuth } from "@account/auth"
+import type { Json } from "@account/database.types"
 import { isGameKey } from "@account/game/gameSnapshot"
 import {
     applyGameSnapshots,
@@ -51,8 +52,9 @@ type RemoteValue = RemoteRow & {
     value: unknown
 }
 
-type UploadRow = RemoteValue & {
+type UploadRow = RemoteRow & {
     user_id: string
+    value: Json
 }
 
 const TABLE = "user_data"
@@ -186,7 +188,7 @@ const pull = async () => {
     const changed: string[] = []
     const lastMeta = readSyncMeta()
 
-    for (const row of data as RemoteRow[]) {
+    for (const row of data) {
         const remoteTime = Date.parse(row.updated_at)
 
         remoteTimes.set(row.key, remoteTime)
@@ -211,7 +213,7 @@ const pull = async () => {
             throw valuesError
         }
 
-        fetched.push(...(values as RemoteValue[]))
+        fetched.push(...values)
     }
 
     // Read again: edits made during the downloads count too.
@@ -297,7 +299,8 @@ const push = async (owner: string) => {
             rows.push({
                 user_id: owner,
                 key: key,
-                value: toAccountValue(key, parsed.value),
+                // Read from JSON text, so it is JSON.
+                value: toAccountValue(key, parsed.value) as Json,
                 updated_at: new Date(time ?? Date.now()).toISOString(),
             })
         }

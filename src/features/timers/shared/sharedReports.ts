@@ -1,18 +1,16 @@
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import type { BossReport } from "@timers/storage/timerSettings"
+import type { Tables } from "@account/database.types"
 import { supabase } from "@account/supabaseClient"
 import {
     isPageVisible,
     subscribeToPageVisibility,
 } from "@common/pageVisibility"
 
-type ReportRow = {
-    server: string
-    boss_id: string
-    spawn_at: string | null
-    killed_at: string | null
-    reported_at: string
-}
+type ReportRow = Pick<
+    Tables<"boss_reports">,
+    "server" | "boss_id" | "spawn_at" | "killed_at" | "reported_at"
+>
 
 export type SharedReport = {
     report: BossReport
@@ -70,7 +68,7 @@ const removeRow = (scope: string, bossId: string) => {
     emit()
 }
 
-const isWatched = (scope: unknown) => {
+const isWatched = (scope: unknown): scope is string => {
     return (
         typeof scope === "string" && wanted !== null && wanted.includes(scope)
     )
@@ -122,16 +120,19 @@ const update = () => {
     // Unfiltered: Supabase can't filter deletes, and the table is tiny.
     const channel = supabase
         .channel(`${TABLE}:${scopes.join()}`)
-        .on(
+        .on<Tables<"boss_reports">>(
             "postgres_changes",
             { event: "*", schema: "public", table: TABLE },
             (payload) => {
                 if (payload.eventType === "DELETE") {
-                    if (isWatched(payload.old.server)) {
-                        removeRow(payload.old.server, payload.old.boss_id)
+                    // A delete carries only the key columns.
+                    const { server, boss_id: bossId } = payload.old
+
+                    if (bossId !== undefined && isWatched(server)) {
+                        removeRow(server, bossId)
                     }
                 } else if (isWatched(payload.new.server)) {
-                    putRow(payload.new as ReportRow)
+                    putRow(payload.new)
                 }
             },
         )
