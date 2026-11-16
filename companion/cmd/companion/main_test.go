@@ -48,7 +48,7 @@ func TestShopPets(t *testing.T) {
 	}
 	// Basilisk (pet 1163) at Lv1 12/25.
 	got := shopPets(items(535810015, 534760134), map[int]game.Pet{1163: {Level: 1, Souls: 12}}, filter)
-	want := []desktop.ShopPet{{Name: "Basilisk", Level: 1, Souls: 12, Maps: []string{"altgard"}}}
+	want := []desktop.ShopPet{{Name: "Basilisk", Level: 1, Souls: 12, Tags: []string{"altgard"}}}
 	if got == nil || len(got.Pets) != 1 || got.Pets[0].Icon == nil {
 		t.Fatalf("no portrait: %+v", got)
 	}
@@ -110,6 +110,10 @@ func TestSoulView(t *testing.T) {
 	}
 	if unknown.Name != "Unknown pet" || unknown.Icon != nil || unknown.Level != -1 {
 		t.Fatalf("got %+v", unknown)
+	}
+	// The popup lists as many pets as the feed keeps.
+	if desktop.SoulMaxRows != souls.MaxRows {
+		t.Fatalf("SoulMaxRows %d, souls.MaxRows %d", desktop.SoulMaxRows, souls.MaxRows)
 	}
 	sample := soulSample()
 	if len(sample.Pets) != 2 || !sample.Pets[0].LevelUp || sample.Pets[0].Level != 2 {

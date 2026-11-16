@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"image"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -9,8 +10,9 @@ import (
 // The shop panel: while a shop tab selling pets is open, a column in the
 // game window's bottom right corner (growing upward) listing the pets the
 // user's filters let through: portrait, souls to Insight Lv3, and tags for
-// the continents they spawn on. Click-through like the widget, on the tray's
-// thread; an overlay (overlay_windows.go).
+// where they can be had. Click-through like the widget, on the tray's
+// thread; an overlay (overlay_windows.go). Its spot, zoom and most rows are
+// shopPlacement (overlayedit_windows.go).
 
 // ShopView is what the shop panel shows: pets, or when none is left to show,
 // "No pet worth buying" and Empty saying why.
@@ -31,8 +33,9 @@ type ShopPet struct {
 	// This entry was bought: drawn faded but its level and souls, with
 	// "✓ Bought" after its tags.
 	Bought bool
-	// verteron, reshanta, altgard; empty: not in the wild.
-	Maps []string
+	// Where it can be had (shop.Tags): its maps or notWild, dungeon,
+	// fieldBoss.
+	Tags []string
 }
 
 var (
@@ -88,23 +91,33 @@ const (
 	colorIconBg = 0x3d2c26 // #262c3d, an empty portrait
 )
 
-// Tag colors (BGR), one per continent and one for pets not in the wild.
+// Tag colors (BGR) and names: one per continent, pets not in the wild,
+// dungeon bosses and field bosses (shop.Sources).
 var tagColors = map[string]uintptr{
-	"verteron": 0x9ad35f, // #5fd39a green
-	"reshanta": 0xf08cb4, // #b48cf0 purple
-	"altgard":  0xf0a85b, // #5ba8f0 blue
-	"":         0x6c8af0, // #f08a6c coral
+	"verteron":      0x9ad35f, // #5fd39a green
+	"reshanta":      0xf08cb4, // #b48cf0 purple
+	"outerReshanta": 0xd6c85c, // #5cc8d6 teal
+	"altgard":       0xf0a85b, // #5ba8f0 blue
+	"notWild":       0x6c8af0, // #f08a6c coral
+	"dungeon":       0x5bc0ef, // #efc05b gold
+	"fieldBoss":     0x8a72f0, // #f0728a rose
 }
 
 var tagNames = map[string]string{
-	"verteron": "Verteron",
-	"reshanta": "Lower Reshanta",
-	"altgard":  "Altgard",
-	"":         "Not in the wild",
+	"verteron":      "Verteron",
+	"reshanta":      "Lower Reshanta",
+	"outerReshanta": "Outer Reshanta",
+	"altgard":       "Altgard",
+	"notWild":       "Not in the wild",
+	"dungeon":       "Dungeon",
+	"fieldBoss":     "Field boss",
 }
 
 type shopPanel struct {
-	hwnd     uintptr
+	hwnd uintptr
+	// The monitor's scale, and that times the placement's zoom: what px
+	// scales by.
+	dpi      float64
 	scale    float64
 	nameFont uintptr
 	tagFont  uintptr
@@ -112,6 +125,8 @@ type shopPanel struct {
 	// sample shown over it meanwhile.
 	view    *ShopView
 	preview *ShopView
+	// What is laid out: one of those, or the edit sample.
+	shown *ShopView
 	// Where it sits, in screen pixels.
 	x, y, w, h int32
 	// Rows laid out for painting, in window pixels.
@@ -148,7 +163,7 @@ func (p *shopPanel) px(v int) int32 {
 }
 
 func newShopPanel(instance uintptr) *shopPanel {
-	p := &shopPanel{scale: 1}
+	p := &shopPanel{dpi: 1, scale: 1}
 	className := wide("DaevanionCompanionShopPanel")
 	class := wndClassEx{
 		WndProc:   syscall.NewCallback(shopPanelProc),
@@ -314,25 +329,89 @@ func (p *shopPanel) endPreview() {
 	p.display(p.view)
 }
 
-// display lays a view out and puts the panel up, or hides it for nil.
+// redisplay lays out and draws again what it shows (the preview over the
+// view), after its placement changed.
+func (p *shopPanel) redisplay() {
+	if p.preview != nil {
+		p.display(p.preview)
+	} else {
+		p.display(p.view)
+	}
+}
+
+// display lays a view out and puts the panel up, or hides it for nil. While
+// it's moved and resized, it shows the edit sample instead.
 func (p *shopPanel) display(view *ShopView) {
+	if editing == editShop {
+		view = p.editSample()
+	}
 	if view == nil {
+		p.shown = nil
 		showWindow.Call(p.hwnd, swHide)
 		placeSoulPopup()
 		return
 	}
-	pets := view.Pets
+	p.shown = view
+	p.layout()
+	p.put()
+	showWindow.Call(p.hwnd, swShowNoActivate)
+	placeSoulPopup()
+}
 
-	right, bottom, scale := panelBase(p.scale)
-	if scale != p.scale {
+// editSample is the opacity preview's sample, repeated to as many pets as
+// it lists at most, so its height shows.
+func (p *shopPanel) editSample() *ShopView {
+	var sample *ShopView
+	if current != nil {
+		sample = current.previewSample()
+	}
+	if sample == nil || len(sample.Pets) == 0 {
+		return &ShopView{Pets: []ShopPet{}, Empty: "Sample"}
+	}
+	return &ShopView{Pets: cycled(sample.Pets, shopPlacement.RowsShown(ShopMaxRows))}
+}
+
+// cycled is list repeated (or cut) to n items.
+func cycled[T any](list []T, n int) []T {
+	out := make([]T, n)
+	for k := range out {
+		out[k] = list[k%len(list)]
+	}
+	return out
+}
+
+// editHint heads the panel while it's moved and resized.
+const editHint = "Drag to move, edges to resize"
+
+// rowStep is how much taller each more pet makes it.
+func (p *shopPanel) rowStep() int32 {
+	return p.px(panelLine) + p.px(4) + p.px(panelTag) + p.px(panelPetGap) + p.px(4)
+}
+
+// layout lays out what it shows at its placement's zoom and rows (the pets
+// past them are left out, counted in the heading), setting its size.
+func (p *shopPanel) layout() {
+	view := p.shown
+	pets := view.Pets
+	_, _, dpi := panelBase(p.dpi)
+	p.dpi = dpi
+	if scale := dpi * shopPlacement.Zoom; scale != p.scale {
 		p.scale = scale
 		p.makeFonts()
+	}
+	heading := "Pets here"
+	if rows := shopPlacement.RowsShown(ShopMaxRows); len(pets) > rows {
+		heading += " · " + strconv.Itoa(len(pets)-rows) + " more"
+		pets = pets[:rows]
+	}
+	if editing == editShop {
+		heading = editHint
 	}
 
 	p.rows = p.rows[:0]
 	top := p.px(panelPad)
-	width := p.measure(p.nameFont, "Pets here")
-	p.rows = append(p.rows, panelRow{text: "Pets here", top: top, muted: true})
+	width := p.measure(p.nameFont, heading)
+	p.rows = append(p.rows, panelRow{text: heading, top: top, muted: true})
 	top += p.px(panelLine) + p.px(panelPetGap)
 	if len(pets) == 0 {
 		// As wide as a usual list, so it reads as the same panel.
@@ -344,10 +423,7 @@ func (p *shopPanel) display(view *ShopView) {
 	}
 	for k, pet := range pets {
 		level, levelColor, progress := levelText(pet.Level, pet.Souls)
-		tags := pet.Maps
-		if len(tags) == 0 {
-			tags = []string{""}
-		}
+		tags := pet.Tags
 		p.rows = append(p.rows, panelRow{pet: true, icon: pet.Icon, text: pet.Name, level: level, levelColor: levelColor, progress: progress, tags: tags, top: top, muted: pet.Level == 3 && !pet.Bought, bought: pet.Bought})
 		column := p.px(panelIcon) + p.px(panelIconGap)
 		// Room for the widest level and souls, and for "✓ Bought", on every
@@ -369,12 +445,21 @@ func (p *shopPanel) display(view *ShopView) {
 	}
 	p.w = width + 2*p.px(panelPad)
 	p.h = top + p.px(panelPad)
-	p.x = right - p.w
-	p.y = bottom - p.h
+}
+
+// put places the laid out panel at its placement's spot (its usual one:
+// the game window's bottom right corner) and draws it.
+func (p *shopPanel) put() {
+	if shopPlacement.Moved() {
+		area, _ := overlayArea(p.dpi)
+		r := placedRect(shopPlacement, p.w, p.h, area)
+		p.x, p.y = r.Left, r.Top
+	} else {
+		right, bottom, _ := panelBase(p.dpi)
+		p.x, p.y = right-p.w, bottom-p.h
+	}
 	setWindowPos.Call(p.hwnd, hwndTopmost, uintptr(p.x), uintptr(p.y), uintptr(p.w), uintptr(p.h), swpNoActivate)
-	renderOverlay(p.hwnd, p.x, p.y, p.w, p.h, p.px(12), overlayBackground, 255, p.boughtRects(), p.draw)
-	showWindow.Call(p.hwnd, swShowNoActivate)
-	placeSoulPopup()
+	renderOverlay(p.hwnd, p.x, p.y, p.w, p.h, p.px(12), editedBackground(editShop, overlayBackground), 255, p.boughtRects(), p.draw)
 }
 
 // visibleTop is the panel's top edge while it's shown.
@@ -390,6 +475,24 @@ func (p *shopPanel) visibleTop() (int32, bool) {
 // (the monitor's work area without the game), and that monitor's scale
 // (fallback when unknown). The soul popup stacks on the same column.
 func panelBase(fallback float64) (right, bottom int32, scale float64) {
+	area, work, scale := gameArea(fallback)
+	px := func(v int) int32 { return int32(float64(v)*scale + 0.5) }
+	// The corner widget's spot (widget.put) on that monitor: the column stays
+	// above it, so the two never overlap.
+	widgetTop := work.Bottom - px(16) - px(36) - px(8)
+	return area.Right - px(panelInset), min(area.Bottom-px(panelInset)-px(panelLift), widgetTop), scale
+}
+
+// overlayArea is what a moved overlay's spot is a fraction of: the game
+// window's client area on screen (the monitor's work area without the
+// game), and that monitor's scale (fallback when unknown).
+func overlayArea(fallback float64) (rect, float64) {
+	area, _, scale := gameArea(fallback)
+	return area, scale
+}
+
+// gameArea is overlayArea plus the monitor's work area.
+func gameArea(fallback float64) (area, work rect, scale float64) {
 	game := gameWindow()
 	var monitor uintptr
 	if game != 0 {
@@ -397,22 +500,20 @@ func panelBase(fallback float64) (right, bottom int32, scale float64) {
 	} else {
 		monitor = widgetMonitor()
 	}
-	area, scale := workArea(monitor)
+	work, scale = workArea(monitor)
 	if scale <= 0 {
 		scale = fallback
 	}
-	px := func(v int) int32 { return int32(float64(v)*scale + 0.5) }
-	// The corner widget's spot (widget.put) on that monitor: the column stays
-	// above it, so the two never overlap.
-	widgetTop := area.Bottom - px(16) - px(36) - px(8)
+	area = work
 	if game != 0 {
 		var client rect
 		getClientRect.Call(game, uintptr(unsafe.Pointer(&client)))
-		corner := struct{ X, Y int32 }{client.Right, client.Bottom}
-		clientToScreen.Call(game, uintptr(unsafe.Pointer(&corner)))
-		area.Right, area.Bottom = corner.X, corner.Y
+		corners := [2]struct{ X, Y int32 }{{client.Left, client.Top}, {client.Right, client.Bottom}}
+		clientToScreen.Call(game, uintptr(unsafe.Pointer(&corners[0])))
+		clientToScreen.Call(game, uintptr(unsafe.Pointer(&corners[1])))
+		area = rect{Left: corners[0].X, Top: corners[0].Y, Right: corners[1].X, Bottom: corners[1].Y}
 	}
-	return area.Right - px(panelInset), min(area.Bottom-px(panelInset)-px(panelLift), widgetTop), scale
+	return area, work, scale
 }
 
 func (p *shopPanel) draw(dc uintptr, client rect) {
@@ -427,6 +528,14 @@ func (p *shopPanel) draw(dc uintptr, client rect) {
 			color = colorMuted
 		}
 		textLeft := left
+		if !row.pet {
+			// The heading: cut short rather than past the edge.
+			selectObject.Call(dc, p.nameFont)
+			setTextColor.Call(dc, color)
+			line := rect{Left: left, Top: row.top, Right: right, Bottom: row.top + p.px(panelLine)}
+			drawText.Call(dc, uintptr(unsafe.Pointer(wide(row.text))), ^uintptr(0), uintptr(unsafe.Pointer(&line)), dtLeft|dtVCenter|dtSingleLine|dtNoPrefix|dtEndEllipsis)
+			continue
+		}
 		if row.pet {
 			size := p.px(panelIcon)
 			// Centered on the name and tags.
@@ -483,9 +592,17 @@ func (p *shopPanel) draw(dc uintptr, client rect) {
 	}
 	selectObject.Call(dc, oldPen)
 	selectObject.Call(dc, oldFont)
+	if editing == editShop {
+		drawEditFrame(dc, client, p.px(12), p.dpi)
+	}
 }
 
 func shopPanelProc(hwnd, message, wParam, lParam uintptr) uintptr {
+	if p := currentShopPanel; p != nil && hwnd == p.hwnd {
+		if r, ok := editMouse(shopEditable{p}, message); ok {
+			return r
+		}
+	}
 	r, _, _ := defWindowProc.Call(hwnd, message, wParam, lParam)
 	return r
 }

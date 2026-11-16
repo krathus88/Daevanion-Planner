@@ -1,6 +1,6 @@
 import { chakra, Flex, Text } from "@chakra-ui/react"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
-import { getPetMapCounts } from "@pets/logic/petFinder"
+import { getPetMapCounts, getPetMonsters } from "@pets/logic/petFinder"
 import { describePetSpawns } from "@pets/logic/petLabels"
 import { CategoryDot } from "@pets/CategoryDot"
 import { FarmPetLevelCard } from "@pets/farm/FarmPetLevelCard"
@@ -36,7 +36,11 @@ export const PetListItem = memo(function PetListItem({
         onSelect(pet.id)
     }
 
-    const spawns = describePetSpawns(pet, getPetMapCounts(atlas, pet))
+    const spawns = describePetSpawns(
+        pet,
+        getPetMapCounts(atlas, pet),
+        getPetMonsters(atlas, pet),
+    )
 
     // A fill a shade darker than the panel, so each pet reads as its own row.
     // Right-click sets its level, like a spot's pets.

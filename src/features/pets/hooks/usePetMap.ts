@@ -1,5 +1,11 @@
 import { PET_CATEGORY_IDS } from "@pets/config/petCategories"
-import { getTileUrl, TILE_SIZE, type PetMapId } from "@pets/config/petMaps"
+import {
+    getSharpestZoom,
+    getTileUrl,
+    PET_MAPS,
+    TILE_SIZE,
+    type PetMapId,
+} from "@pets/config/petMaps"
 import type { PetPin } from "@pets/logic/petFinder"
 import { getMapBounds, toLatLng } from "@pets/map/mapCoords"
 import { PinLayer, type PinColors } from "@pets/map/PinLayer"
@@ -8,6 +14,15 @@ import { useEffect, useEffectEvent, useState, type RefObject } from "react"
 
 const ATTRIBUTION =
     'Map © NCSOFT via <a href="https://github.com/aion2-interactive-map/aion2-interactive-map" target="_blank" rel="noreferrer">AION2 Interactive Map</a> (CC BY-NC 4.0)'
+
+// A map the Interactive Map doesn't have credits the site its art is from.
+const getAttribution = (mapId: PetMapId) => {
+    const art = PET_MAPS[mapId].art
+
+    return art
+        ? `Map © NCSOFT via <a href="${art.url}" target="_blank" rel="noreferrer">${art.site}</a>`
+        : ATTRIBUTION
+}
 
 // Zoom 0 shows map pixels 1:1.
 const MIN_ZOOM = -4
@@ -122,12 +137,13 @@ export const usePetMap = (
             tileSize: TILE_SIZE,
             minZoom: MIN_ZOOM,
             maxZoom: MAX_ZOOM,
-            // Below -3 Leaflet shrinks the -3 tiles; above 0 it enlarges 0.
+            // Below -3 Leaflet shrinks the -3 tiles; above the map's sharpest
+            // zoom it enlarges that one's.
             minNativeZoom: -3,
-            maxNativeZoom: 0,
+            maxNativeZoom: getSharpestZoom(mapId),
             noWrap: true,
             bounds: bounds,
-            attribution: ATTRIBUTION,
+            attribution: getAttribution(mapId),
         })
 
         tiles.addTo(view.map)

@@ -39,8 +39,12 @@ type PetItem struct {
 	// Its portrait in icons/; empty without one.
 	Icon string `json:"icon"`
 	// Where its soul monsters spawn: verteron, reshanta (Lower Reshanta),
-	// altgard. Empty: not in the wild.
+	// outerReshanta (Outer Reshanta), altgard. Empty: not in the wild.
 	Maps []string `json:"maps"`
+	// The dungeon whose boss drops its soul; empty for none.
+	Dungeon string `json:"dungeon"`
+	// Only field bosses drop its soul in the wild.
+	FieldBoss bool `json:"fieldBoss"`
 }
 
 // PetItems is every pet item by item id.
@@ -112,29 +116,34 @@ type Line struct {
 	// toward the next level, like the site and the game's card show them.
 	Level int
 	Souls int
-	Maps  []string
+	// Where it can be had (Tags).
+	Tags []string
 	// This entry was bought (sold out).
 	Bought bool
 }
 
-// Pet types (the Pets page's), and where else a pet on sale can be had (its
-// Shop check's "Only worth buying" choices), in display order.
+// Pet types (the Pets page's), and the tags saying where a pet can be had
+// (the panel's tags and the Show only choices), in display order.
 var (
 	Types   = []string{"cogni", "fera", "natura", "varian", "special"}
-	Sources = []string{"notWild", "verteron", "reshanta", "altgard", "several"}
+	Sources = []string{"verteron", "reshanta", "outerReshanta", "altgard", "notWild", "dungeon", "fieldBoss"}
 )
 
-// Source is where else a pet with these spawn maps can be had: nowhere in
-// the wild, only on one map, or on several.
-func Source(maps []string) string {
-	switch len(maps) {
-	case 0:
-		return "notWild"
-	case 1:
-		return maps[0]
-	default:
-		return "several"
+// Tags is where a pet can be had, in Sources' order: each map its soul
+// monsters spawn on (or notWild for none), then dungeon for a dungeon boss
+// and fieldBoss when only field bosses drop it.
+func Tags(item PetItem) []string {
+	tags := slices.Clone(item.Maps)
+	if len(tags) == 0 {
+		tags = []string{"notWild"}
 	}
+	if item.Dungeon != "" {
+		tags = append(tags, "dungeon")
+	}
+	if item.FieldBoss {
+		tags = append(tags, "fieldBoss")
+	}
+	return tags
 }
 
 // Filter picks the pets the panel shows, like the site's Pets page.
@@ -144,7 +153,7 @@ type Filter struct {
 	// Insight levels left out (1-3). Locked pets and those whose level isn't
 	// known always show.
 	HiddenLevels []int
-	// Where else the pet can be had (Sources); empty lets any through.
+	// Show only pets with any of these tags (Sources); empty lets any through.
 	Sources []string
 }
 
@@ -160,7 +169,12 @@ func (f Filter) shows(item PetItem, level int) bool {
 	if level > 0 && slices.Contains(f.HiddenLevels, level) {
 		return false
 	}
-	return len(f.Sources) == 0 || slices.Contains(f.Sources, Source(item.Maps))
+	if len(f.Sources) == 0 {
+		return true
+	}
+	return slices.ContainsFunc(Tags(item), func(tag string) bool {
+		return slices.Contains(f.Sources, tag)
+	})
 }
 
 // ScreenOrder is the tab's items as the shop shows them, left to right, top
@@ -186,7 +200,7 @@ func Lines(items []game.ShopItem, pets map[int]game.Pet, filter Filter) []Line {
 		if !ok {
 			continue
 		}
-		line := Line{Name: pet.Name, Icon: Icon(pet.Icon), Level: -1, Maps: pet.Maps, Bought: item.SoldOut}
+		line := Line{Name: pet.Name, Icon: Icon(pet.Icon), Level: -1, Tags: Tags(pet), Bought: item.SoldOut}
 		if pets != nil && pet.Pet > 0 {
 			line.Level, line.Souls = pets[pet.Pet].Level, pets[pet.Pet].Souls
 		}

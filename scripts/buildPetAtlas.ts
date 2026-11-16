@@ -3,8 +3,9 @@
 // (which joins Global client exports with the AION2 Interactive Map). Area
 // names come from the Interactive Map's region outlines (CC BY-NC 4.0).
 // Pet portraits (© NCSOFT) come from gegebase, which names each by pet id;
-// missing ones are saved as src/assets/pets/<portrait>.webp.
-import { existsSync, writeFileSync } from "node:fs"
+// missing ones are saved as src/assets/pets/<portrait>.webp. Outer Reshanta,
+// which the Atlas lacks, comes from a saved copy of Shugo.GG's map.
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import sharp from "sharp"
 import { PET_ID_CHANGES } from "../src/features/pets/config/petIdChanges.ts"
@@ -24,6 +25,11 @@ const ATLAS_URL = "https://pristine-zone-6q93xmk.shipstatic.com/"
 const MAP_DATA_URL =
     "https://raw.githubusercontent.com/aion2-interactive-map/aion2-interactive-map/master/public"
 const OUT_PATH = join(process.cwd(), "src/features/pets/data/petAtlas.json")
+// Shugo.GG's Outer Reshanta soul monsters, saved by hand (addOuterReshanta).
+const OUTER_RESHANTA_PATH = join(
+    process.cwd(),
+    "scripts/outerReshantaPets.json",
+)
 const ICON_SITE = "https://gegebase.com"
 const ICON_DIR = join(process.cwd(), "src/assets/pets")
 // Shown at up to 48px; double that for sharp high-DPI screens.
@@ -67,6 +73,13 @@ const HANDLED_MONSTERS = new Set([
     2400587, // Drakan Patrol Armed Beast Lv40
 ])
 const HANDLER_DISTANCE = 5
+// Soul monsters that are field bosses: one spawn each, on a timer (both are
+// on the Timers page). By Atlas monster id, as NotMeter's pet tracker flags
+// them (2026-11-02).
+const FIELD_BOSS_MONSTERS = new Set([
+    2100718, // Divine Ansas Lv45
+    2100079, // Bodyguard Teegant Lv45
+])
 const COMPASS = [
     "east",
     "southeast",
@@ -587,8 +600,166 @@ const dropHandlers = (atlas: Atlas): Atlas => {
     }
 }
 
+// The Atlas can list one monster as several entries. Entries of the same pet,
+// map, name, level and rank become the first of them, which takes the others'
+// spawn points; a point they repeat is kept once.
+const mergeMonsters = (atlas: Atlas): Atlas => {
+    const petByMonster = new Map<number, number>()
+
+    for (const pet of atlas.pets) {
+        for (const index of pet.sources.flat()) {
+            petByMonster.set(index, pet.id)
+        }
+    }
+
+    const firstByKey = new Map<string, number>()
+    // Each entry's first entry of the same monster (itself when it is one).
+    const firsts = atlas.monsters.map((monster, index) => {
+        const key = [
+            petByMonster.get(index),
+            monster.zone,
+            monster.name,
+            monster.level,
+            monster.rank,
+        ].join("|")
+        const first = firstByKey.get(key) ?? index
+
+        firstByKey.set(key, first)
+
+        return first
+    })
+    const merged = new Set<number>()
+    const newIndexes = new Map<number, number>()
+    const monsters: AtlasMonster[] = []
+
+    for (const [index, monster] of atlas.monsters.entries()) {
+        if (firsts[index] === index) {
+            newIndexes.set(index, monsters.length)
+            monsters.push(monster)
+        } else {
+            merged.add(firsts[index])
+        }
+    }
+
+    const getNewIndex = (index: number) => {
+        return newIndexes.get(firsts[index]) ?? -1
+    }
+
+    const seen = new Set<string>()
+    const spawns: Atlas["spawns"] = []
+
+    for (const [zone, pet, x, y, monster] of atlas.spawns) {
+        const point = `${firsts[monster]}|${Math.round(x)}|${Math.round(y)}`
+
+        if (merged.has(firsts[monster])) {
+            if (seen.has(point)) {
+                continue
+            }
+
+            seen.add(point)
+        }
+
+        spawns.push([zone, pet, x, y, getNewIndex(monster)])
+    }
+
+    const pets = atlas.pets.map((pet) => {
+        return {
+            ...pet,
+            sources: pet.sources.map((indexes) => {
+                return [...new Set(indexes.map(getNewIndex))]
+            }),
+        }
+    })
+
+    return { ...atlas, pets: pets, monsters: monsters, spawns: spawns }
+}
+
+type OuterReshantaMonster = {
+    id: number
+    name: string
+    level: number
+    rank: string
+    pet: string
+    // Flat x, y pairs in Shugo.GG's map pixels.
+    points: number[]
+}
+
+type OuterReshantaData = {
+    size: number
+    monsters: OuterReshantaMonster[]
+}
+
+// Adds Outer Reshanta, which the Atlas doesn't have yet, from a saved copy of
+// Shugo.GG's map (OUTER_RESHANTA_PATH; how to refresh it is in the pets
+// notes). Its soul monsters come from each monster's soul drop there; its
+// points are scaled to our map, whose art has the same framing. Shugo.GG
+// keeps one pin where the Atlas has a few a pixel or two apart, so counts
+// there read lower than on the Atlas's maps.
+const addOuterReshanta = (atlas: Atlas): Atlas => {
+    const code = PET_MAPS.outerReshanta.code
+
+    if (atlas.meta.zones.some((zone) => zone.mapCode === code)) {
+        throw new Error(
+            "The Atlas has Outer Reshanta now: drop addOuterReshanta and its saved copy.",
+        )
+    }
+
+    const data: OuterReshantaData = JSON.parse(
+        readFileSync(OUTER_RESHANTA_PATH, "utf8"),
+    )
+    const scale = PET_MAPS.outerReshanta.size / data.size
+    const zone = atlas.meta.zones.length
+    const monsters = [...atlas.monsters]
+    const spawns = [...atlas.spawns]
+    const pets = atlas.pets.map((pet) => {
+        return { ...pet, sources: [...pet.sources, [] as number[]] }
+    })
+
+    for (const monster of data.monsters) {
+        const petIndex = pets.findIndex((pet) => pet.name === monster.pet)
+
+        if (petIndex < 0) {
+            throw new Error(`Outer Reshanta: no pet named ${monster.pet}.`)
+        }
+
+        const index = monsters.length
+
+        monsters.push({
+            id: monster.id,
+            zone: zone,
+            name: monster.name,
+            level: monster.level,
+            rank: monster.rank,
+        })
+        pets[petIndex].sources[zone].push(index)
+
+        for (let i = 0; i < monster.points.length; i += 2) {
+            spawns.push([
+                zone,
+                petIndex,
+                monster.points[i] * scale,
+                monster.points[i + 1] * scale,
+                index,
+            ])
+        }
+    }
+
+    return {
+        ...atlas,
+        meta: {
+            ...atlas.meta,
+            zones: [...atlas.meta.zones, { mapCode: code }],
+        },
+        pets: pets,
+        monsters: monsters,
+        spawns: spawns,
+    }
+}
+
 const main = async () => {
-    const atlas = dropHandlers(readAtlas(await fetchText(ATLAS_URL)))
+    const atlas = mergeMonsters(
+        addOuterReshanta(dropHandlers(readAtlas(await fetchText(ATLAS_URL)))),
+    )
     const zoneMaps = atlas.meta.zones.map((zone) => {
         const id = PET_MAP_IDS.find((mapId) => {
             return PET_MAPS[mapId].code === zone.mapCode
@@ -606,7 +777,15 @@ const main = async () => {
     const landmarks = {} as Record<PetMapId, Landmark[]>
 
     for (const mapId of PET_MAP_IDS) {
-        const { code, size } = PET_MAPS[mapId]
+        const { code, size, art } = PET_MAPS[mapId]
+
+        // The Interactive Map has no outlines or markers for a map it
+        // doesn't have (Outer Reshanta).
+        if (art) {
+            maps[mapId] = { regions: [], names: [] }
+            landmarks[mapId] = []
+            continue
+        }
 
         maps[mapId] = await readRegions(code)
         landmarks[mapId] = await readLandmarks(code, size)
@@ -634,7 +813,9 @@ const main = async () => {
     const spots = {} as Record<PetMapId, { name: string; area: number }[]>
 
     for (const mapId of PET_MAP_IDS) {
-        // Lower Reshanta has no named landmarks, so no spots either.
+        // Lower and Outer Reshanta have no named landmarks, so no spots
+        // either. The Atlas has no spawns in Outer Reshanta yet; when it
+        // does, its zone's map code goes in petMaps.ts.
         if (landmarks[mapId].length === 0) {
             spots[mapId] = []
             continue
@@ -719,6 +900,7 @@ const main = async () => {
             level: monster.level,
             rank: monster.rank.toLowerCase(),
             map: zoneMaps[monster.zone],
+            ...(FIELD_BOSS_MONSTERS.has(monster.id) ? { fieldBoss: true } : {}),
             spawns: spawnsByMonster[index],
         }
     })

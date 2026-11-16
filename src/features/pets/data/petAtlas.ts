@@ -23,6 +23,8 @@ export type PetMonster = {
     level: number
     rank: "normal" | "elite" | "hero"
     map: PetMapId
+    // A field boss: one spawn, on a timer.
+    fieldBoss?: boolean
     // Flat x, y, spot triples; spot indexes PetAtlas.spots[map], -1 is none.
     spawns: number[]
 }

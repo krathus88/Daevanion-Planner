@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest"
+import {
+    getSharpestZoom,
+    getTileUrl,
+    OVERVIEW_ZOOMS,
+    PET_MAP_IDS,
+} from "@pets/config/petMaps"
 import type { PetPin } from "@pets/logic/petFinder"
 import { getMapBounds, toLatLng } from "./mapCoords"
 import { buildPinTooltip } from "./pinTooltip"
@@ -19,6 +25,33 @@ describe("map coordinates", () => {
         expect(bounds.getWest()).toBeCloseTo(0)
         expect(bounds.getSouth()).toBe(-4096)
         expect(bounds.getEast()).toBe(4096)
+    })
+})
+
+describe("map tiles", () => {
+    it("serves our own copies below full size", () => {
+        expect(getTileUrl("reshanta", -2, 1, 0)).toMatch(
+            /pet-maps\/Abyss_Reshanta_A\/-2\/1_0\.webp$/,
+        )
+    })
+
+    it("links full-size tiles from the Interactive Map", () => {
+        expect(getTileUrl("reshanta", 0, 1, 2)).toMatch(
+            /^https:\/\/aion2-interactive-map\.github\.io\/.*Abyss_Reshanta_A_01_02\.webp$/,
+        )
+    })
+
+    it("is full size at best, but for a map with other art", () => {
+        expect(getSharpestZoom("verteron")).toBe(0)
+        expect(getSharpestZoom("outerReshanta")).toBe(-1)
+    })
+
+    it("never needs a tile we don't have", () => {
+        for (const mapId of PET_MAP_IDS) {
+            expect(OVERVIEW_ZOOMS, mapId).toContain(
+                Math.min(getSharpestZoom(mapId), -1),
+            )
+        }
     })
 })
 

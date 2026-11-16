@@ -136,12 +136,18 @@ const (
 	CommandReconnect
 	// The soul popup's background opacity changed: Value is the percent.
 	CommandSoulOpacity
+	// The shop panel was moved or resized, or put back: Placement.
+	CommandShopPlacement
+	// The soul popup was moved or resized, or put back: Placement.
+	CommandSoulPlacement
 )
 
 // Choice is a command and, for settings, its new value.
 type Choice struct {
 	Command Command
 	Value   int
+	// An overlay's new placement (CommandShopPlacement, CommandSoulPlacement).
+	Placement Placement
 }
 
 // State is what the settings window shows; it asks for it each time it
@@ -209,6 +215,9 @@ type Tray struct {
 	// The soul popup's view (nil: hidden) and its preview sample.
 	soulView    *SoulView
 	soulPreview *SoulView
+	// The shop panel's and soul popup's placements, handed over.
+	shopPlacement Placement
+	soulPlacement Placement
 }
 
 // One tray per process: the window procedure finds it here.
@@ -399,6 +408,15 @@ func (t *Tray) soulPreviewSample() *SoulView {
 	return t.soulPreview
 }
 
+// SetPlacements puts the shop panel and the soul popup where they belong,
+// at their size (the saved settings).
+func (t *Tray) SetPlacements(shop, soul Placement) {
+	t.mu.Lock()
+	t.shopPlacement, t.soulPlacement = shop, soul
+	t.mu.Unlock()
+	postMessage.Call(t.hwnd, wmPlacement, 0, 0)
+}
+
 // Refresh redraws the settings window from State (when it's open).
 func (t *Tray) Refresh() {
 	postMessage.Call(t.hwnd, wmRefresh, 0, 0)
@@ -437,6 +455,17 @@ func windowProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			overlayBackground = OpacityByte(int(wParam))
 		}
 		redrawOverlays()
+		return 0
+	case message == wmPlacement:
+		t.mu.Lock()
+		shopNow, soulNow := t.shopPlacement, t.soulPlacement
+		t.mu.Unlock()
+		// Not under a drag: it's newer.
+		if !drag.active {
+			shopPlacement, soulPlacement = shopNow, soulNow
+			redisplayOverlay(editShop)
+			redisplayOverlay(editSoul)
+		}
 		return 0
 	case message == wmTimer && wParam == timerFollow:
 		followTick(hwnd)

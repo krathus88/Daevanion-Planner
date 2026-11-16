@@ -29,7 +29,7 @@ func TestPetItems(t *testing.T) {
 	}
 	for id, item := range PetItems {
 		for _, m := range item.Maps {
-			if m != "verteron" && m != "reshanta" && m != "altgard" {
+			if !slices.Contains([]string{"verteron", "reshanta", "outerReshanta", "altgard"}, m) {
 				t.Fatalf("%d: map %q", id, m)
 			}
 		}
@@ -45,9 +45,9 @@ func TestLines(t *testing.T) {
 	// Pet Atlas placeholder, now 1079), Withered Branch Spider (never seen: locked).
 	got := Lines(items(534760134, 535810015, 534760187, 534760078, 534760023), pets, DefaultFilter())
 	want := []Line{
-		{Name: "Basilisk", Level: 1, Souls: 12, Maps: []string{"altgard"}},
-		{Name: "Ultimate Wind Spirit", Level: 0, Maps: []string{}},
-		{Name: "Withered Branch Spider", Level: 0, Maps: []string{"altgard"}},
+		{Name: "Basilisk", Level: 1, Souls: 12, Tags: []string{"altgard"}},
+		{Name: "Ultimate Wind Spirit", Level: 0, Tags: []string{"notWild"}},
+		{Name: "Withered Branch Spider", Level: 0, Tags: []string{"altgard"}},
 	}
 	for k := range got {
 		if got[k].Icon == nil {
@@ -185,8 +185,8 @@ func names(lines []Line) []string {
 	return out
 }
 
-// Basilisk (fera, Altgard only, Lv1), Aberrant Skama (Verteron and Lower
-// Reshanta, Lv3), Ultimate Wind Spirit (not in the wild, level unknown),
+// Basilisk (fera, Altgard only, Lv1), Aberrant Skama (Verteron, Lower and
+// Outer Reshanta, Lv3), Ultimate Wind Spirit (not in the wild, level unknown),
 // Kerubian (Verteron and Altgard, locked).
 func TestFilters(t *testing.T) {
 	tab := items(534760134, 534760088, 534760078, 534760143)
@@ -201,15 +201,46 @@ func TestFilters(t *testing.T) {
 		{"hide Lv1", Filter{HiddenLevels: []int{1}}, []string{"Aberrant Skama", "Ultimate Wind Spirit", "Kerubian"}},
 		{"one type", Filter{Types: []string{"fera"}}, []string{"Basilisk", "Aberrant Skama"}},
 		{"two types", Filter{Types: []string{"fera", "cogni"}}, []string{"Basilisk", "Aberrant Skama", "Kerubian"}},
-		{"only Altgard", Filter{Sources: []string{"altgard"}}, []string{"Basilisk"}},
-		{"not in the wild or several", Filter{Sources: []string{"notWild", "several"}}, []string{"Aberrant Skama", "Ultimate Wind Spirit", "Kerubian"}},
+		{"Altgard, among other maps too", Filter{Sources: []string{"altgard"}}, []string{"Basilisk", "Kerubian"}},
+		{"not in the wild or Outer Reshanta", Filter{Sources: []string{"notWild", "outerReshanta"}}, []string{"Aberrant Skama", "Ultimate Wind Spirit"}},
 	} {
 		if got := names(Lines(tab, pets, c.filter)); !reflect.DeepEqual(got, c.want) {
 			t.Errorf("%s: got %v", c.name, got)
 		}
 	}
-	if Source(nil) != "notWild" || Source([]string{"reshanta"}) != "reshanta" || Source([]string{"verteron", "altgard"}) != "several" {
-		t.Fatal("Source")
+	// Silver Blade Rotan (Lower and Outer Reshanta, and a Fire Temple
+	// boss), Harcon (a Krao Cave boss only), Elite Guardite (a Verteron
+	// field boss), Basilisk.
+	bosses := items(534760128, 534760076, 534760207, 534760134)
+	for _, c := range []struct {
+		name   string
+		filter Filter
+		want   []string
+	}{
+		{"dungeon", Filter{Sources: []string{"dungeon"}}, []string{"Silver Blade Rotan", "Harcon"}},
+		{"field boss", Filter{Sources: []string{"fieldBoss"}}, []string{"Elite Guardite"}},
+		{"not in the wild", Filter{Sources: []string{"notWild"}}, []string{"Harcon"}},
+	} {
+		if got := names(Lines(bosses, nil, c.filter)); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: got %v", c.name, got)
+		}
+	}
+	for id, want := range map[int][]string{
+		534760128: {"reshanta", "outerReshanta", "dungeon"},
+		534760076: {"notWild", "dungeon"},
+		534760207: {"verteron", "fieldBoss"},
+		534760078: {"notWild"},
+	} {
+		if got := Tags(PetItems[id]); !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: tags %v", PetItems[id].Name, got)
+		}
+	}
+	for id, item := range PetItems {
+		for _, tag := range Tags(item) {
+			if !slices.Contains(Sources, tag) {
+				t.Errorf("%d: tag %q", id, tag)
+			}
+		}
 	}
 	for id, item := range PetItems {
 		if !slices.Contains(Types, item.Category) {

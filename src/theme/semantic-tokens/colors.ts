@@ -97,6 +97,18 @@ export const colors = defineSemanticTokens.colors({
         level3Muted: { value: "rgba(251, 146, 60, 0.16)" },
         pinRing: { value: "{colors.ink.950}" },
     },
+    // Where a pet on sale can be had (logic/shopFilters), the companion's
+    // shop panel tags: filled, with dark text.
+    shopTag: {
+        verteron: { value: "{colors.mint.400}" },
+        reshanta: { value: "{colors.lavender.400}" },
+        outerReshanta: { value: "{colors.lagoon.400}" },
+        altgard: { value: "{colors.azure.400}" },
+        notWild: { value: "{colors.salmon.400}" },
+        dungeon: { value: "{colors.gold.400}" },
+        fieldBoss: { value: "{colors.rose.400}" },
+        ink: { value: "{colors.ink.850}" },
+    },
     grade: {
         heroic: { value: "{colors.orange.400}" },
         unique: { value: "{colors.yellow.300}" },

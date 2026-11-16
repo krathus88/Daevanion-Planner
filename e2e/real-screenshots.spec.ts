@@ -30,6 +30,56 @@ test.describe("the shop check", () => {
         await expect(dialog.getByText(/^7 other items were/)).toBeVisible()
     })
 
+    test("filters pets worth buying by the companion's tags", async ({
+        page,
+    }) => {
+        await page.goto("/pets")
+        await page.getByRole("button", { name: "Check the pet shop" }).click()
+
+        const dialog = page.getByRole("dialog")
+
+        await dialog
+            .locator('input[type="file"]')
+            .setInputFiles(shot("shop.jpg"))
+        await expect(dialog.getByText("Worth buying (2)")).toBeVisible({
+            timeout: 30_000,
+        })
+
+        const chips = dialog.getByRole("group", {
+            name: "Only show pets worth buying from these sources",
+        })
+
+        // Both spirits spawn in Verteron and Altgard: counted under each.
+        await expect(chips.getByRole("button")).toHaveText([
+            "Verteron (2)",
+            "Lower Reshanta (0)",
+            "Outer Reshanta (0)",
+            "Altgard (2)",
+            "Not in the wild (0)",
+            "Dungeon (0)",
+            "Field boss (0)",
+        ])
+        await expect(
+            chips.getByRole("button", { name: "Dungeon (0)" }),
+        ).toBeDisabled()
+
+        // Each pet's tile carries the same tags.
+        const tile = dialog
+            .getByText("Intermediate Wind Spirit", { exact: true })
+            .locator("xpath=../..")
+
+        await expect(tile.getByText("Verteron", { exact: true })).toBeVisible()
+        await expect(tile.getByText("Altgard", { exact: true })).toBeVisible()
+
+        await chips.getByRole("button", { name: "Altgard (2)" }).click()
+
+        await expect(
+            chips.getByRole("button", { name: "Altgard (2)" }),
+        ).toHaveAttribute("aria-pressed", "true")
+        await expect(dialog.getByText("Intermediate Wind Spirit")).toBeVisible()
+        await expect(dialog.getByText("Intermediate Fire Spirit")).toBeVisible()
+    })
+
     test("a sold-out pet can still have its souls added", async ({ page }) => {
         await page.goto("/pets")
         await page.getByRole("button", { name: "Check the pet shop" }).click()

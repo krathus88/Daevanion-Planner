@@ -5,7 +5,7 @@ import {
     PET_CATEGORY_IDS,
     type PetCategoryId,
 } from "@pets/config/petCategories"
-import { PET_MAP_IDS, type PetMapId } from "@pets/config/petMaps"
+import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import {
     filterFarmSpots,
     getFarmSpots,
@@ -19,6 +19,7 @@ import {
     getMostSpawnsMap,
     getPetMapCounts,
     getPetMapSources,
+    hasMapSpawns,
 } from "@pets/logic/petFinder"
 import {
     getNeighborPins,
@@ -38,6 +39,8 @@ import { LevelTip } from "./LevelTip"
 import { PetMapPanel } from "./map/PetMapPanel"
 
 const route = getRouteApi("/pets")
+const OUTER_RESHANTA_ART_URL = PET_MAPS.outerReshanta.art?.url
+const OUTER_RESHANTA_DATA_URL = "https://shugo.gg/map/reshanta-upper"
 const NO_FARM_SPOTS: ReturnType<typeof getFarmSpots> = {
     spots: [],
     labels: new Map(),
@@ -471,6 +474,7 @@ export const PetsPage = () => {
                                 <FarmSpotsPanel
                                     spots={farmSpots}
                                     mapId={mapId}
+                                    hasSpawns={hasMapSpawns(atlas, mapId)}
                                     focusedSpot={focusedSpot}
                                     levels={levels}
                                     requiredCategories={requiredCategories}
@@ -506,6 +510,15 @@ export const PetsPage = () => {
                         >
                             AION 2 Pet Atlas
                         </Link>
+                        , Outer Reshanta's from{" "}
+                        <Link
+                            href={OUTER_RESHANTA_DATA_URL}
+                            color="app.muted"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Shugo.GG
+                        </Link>
                         ; map art and area names from the{" "}
                         <Link
                             href="https://github.com/aion2-interactive-map/aion2-interactive-map"
@@ -515,8 +528,17 @@ export const PetsPage = () => {
                         >
                             AION2 Interactive Map
                         </Link>{" "}
-                        (CC BY-NC 4.0). Pet portraits © NCSOFT. A listed monster
-                        can drop the soul; drops are not guaranteed.
+                        (CC BY-NC 4.0), Outer Reshanta's map art from{" "}
+                        <Link
+                            href={OUTER_RESHANTA_ART_URL}
+                            color="app.muted"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Wikily
+                        </Link>
+                        . Pet portraits © NCSOFT. A listed monster can drop the
+                        soul; drops are not guaranteed.
                     </Text>
                 </Flex>
             </Container>

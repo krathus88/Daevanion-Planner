@@ -31,6 +31,9 @@ playwright-report
 # TanStack Router generator temp files
 .tanstack
 
+# Supabase CLI local state (linked project, CLI version cache)
+supabase/.temp
+
 CLAUDE.md
 # Packet captures (private: account ids, tokens)
 captures/

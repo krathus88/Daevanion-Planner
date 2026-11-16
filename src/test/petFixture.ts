@@ -68,8 +68,8 @@ export const makeAtlas = (
     return {
         patch: 1,
         client: "test",
-        areas: { verteron: [], reshanta: [], altgard: [] },
-        spots: { verteron: [], reshanta: [], altgard: [] },
+        areas: { verteron: [], reshanta: [], outerReshanta: [], altgard: [] },
+        spots: { verteron: [], reshanta: [], outerReshanta: [], altgard: [] },
         pets: pets,
         monsters: monsters,
         ...overrides,
@@ -80,6 +80,7 @@ export const namedSpots = (mapId: PetMapId, names: string[], area = -1) => {
     return {
         verteron: [],
         reshanta: [],
+        outerReshanta: [],
         altgard: [],
         [mapId]: names.map((name) => {
             return { name: name, area: area }

@@ -3,7 +3,12 @@ import { makeAtlas } from "@test/petFixture"
 import { getSpotArea, nameSpotGroup } from "./spotNames"
 
 const atlas = makeAtlas([], {
-    areas: { verteron: ["Big Area"], reshanta: [], altgard: [] },
+    areas: {
+        verteron: ["Big Area"],
+        reshanta: [],
+        outerReshanta: [],
+        altgard: [],
+    },
     spots: {
         verteron: [
             { name: "Ruins (south)", area: 0 },
@@ -11,6 +16,7 @@ const atlas = makeAtlas([], {
             { name: "Lake", area: -1 },
         ],
         reshanta: [],
+        outerReshanta: [],
         altgard: [],
     },
 })

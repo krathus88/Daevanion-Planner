@@ -4,12 +4,15 @@ import type { ShopPet } from "./shopCheck"
 import {
     countShopSources,
     filterShopPets,
-    getShopSource,
     getShopSourceName,
+    getShopSources,
     SHOP_SOURCE_IDS,
 } from "./shopFilters"
 
-const atlas = makeAtlas([
+// Harcon, a Krao Cave boss (petBosses.ts).
+const DUNGEON_PET_ID = 1077
+
+const fixture = makeAtlas([
     { source: "other" },
     { monsters: [makeMonster(spawnsAt(0, 0, 3), { map: "altgard" })] },
     {
@@ -19,30 +22,76 @@ const atlas = makeAtlas([
         ],
     },
     { monsters: [makeMonster([], { map: "verteron" })] },
+    { source: "other" },
+    {
+        monsters: [
+            makeMonster(spawnsAt(0, 0, 3), {
+                map: "verteron",
+                fieldBoss: true,
+            }),
+        ],
+    },
+    {
+        monsters: [
+            makeMonster(spawnsAt(0, 0, 3), {
+                map: "verteron",
+                fieldBoss: true,
+            }),
+            makeMonster(spawnsAt(0, 0, 3), { map: "verteron" }),
+        ],
+    },
 ])
-const [notWild, oneMap, several, emptyMonster] = atlas.pets
+const atlas = {
+    ...fixture,
+    pets: fixture.pets.map((pet, index) => {
+        return index === 4 ? { ...pet, id: DUNGEON_PET_ID } : pet
+    }),
+}
+const [
+    notWild,
+    oneMap,
+    twoMaps,
+    emptyMonster,
+    dungeon,
+    fieldBoss,
+    bossAndNormal,
+] = atlas.pets
 
 const items = atlas.pets.map((pet) => {
     return { pet: pet } as ShopPet
 })
 
-describe("getShopSource", () => {
-    it("sorts each pet into one source", () => {
-        expect(getShopSource(atlas, notWild)).toBe("notWild")
-        expect(getShopSource(atlas, oneMap)).toBe("altgard")
-        expect(getShopSource(atlas, several)).toBe("several")
+describe("getShopSources", () => {
+    it("tags each map a pet spawns on", () => {
+        expect(getShopSources(atlas, oneMap)).toEqual(["altgard"])
+        expect(getShopSources(atlas, twoMaps)).toEqual(["verteron", "altgard"])
     })
 
-    it("doesn't count a monster with no spawns", () => {
-        expect(getShopSource(atlas, emptyMonster)).toBe("notWild")
+    it("tags pets with no spawns as not in the wild", () => {
+        expect(getShopSources(atlas, notWild)).toEqual(["notWild"])
+        expect(getShopSources(atlas, emptyMonster)).toEqual(["notWild"])
+    })
+
+    it("tags dungeon bosses", () => {
+        expect(getShopSources(atlas, dungeon)).toEqual(["notWild", "dungeon"])
+    })
+
+    it("tags pets only field bosses drop", () => {
+        expect(getShopSources(atlas, fieldBoss)).toEqual([
+            "verteron",
+            "fieldBoss",
+        ])
+        expect(getShopSources(atlas, bossAndNormal)).toEqual(["verteron"])
     })
 })
 
 describe("getShopSourceName", () => {
-    it("names each kind", () => {
+    it("names each kind like the companion", () => {
         expect(getShopSourceName("notWild")).toBe("Not in the wild")
-        expect(getShopSourceName("several")).toBe("Several maps")
-        expect(getShopSourceName("reshanta")).toBe("Only Lower Reshanta")
+        expect(getShopSourceName("reshanta")).toBe("Lower Reshanta")
+        expect(getShopSourceName("outerReshanta")).toBe("Outer Reshanta")
+        expect(getShopSourceName("dungeon")).toBe("Dungeon")
+        expect(getShopSourceName("fieldBoss")).toBe("Field boss")
     })
 
     it("names every source", () => {
@@ -53,13 +102,15 @@ describe("getShopSourceName", () => {
 })
 
 describe("countShopSources", () => {
-    it("counts each pet once", () => {
+    it("counts a pet under each of its sources", () => {
         expect(countShopSources(atlas, items)).toEqual({
-            notWild: 2,
-            verteron: 0,
+            verteron: 3,
             reshanta: 0,
-            altgard: 1,
-            several: 1,
+            outerReshanta: 0,
+            altgard: 2,
+            notWild: 3,
+            dungeon: 1,
+            fieldBoss: 1,
         })
     })
 })
@@ -69,9 +120,15 @@ describe("filterShopPets", () => {
         expect(filterShopPets(atlas, items, [])).toBe(items)
     })
 
-    it("keeps pets from any picked source", () => {
-        const kept = filterShopPets(atlas, items, ["altgard", "several"])
+    it("keeps pets with any picked source", () => {
+        const kept = filterShopPets(atlas, items, ["altgard", "dungeon"])
 
-        expect(kept.map((item) => item.pet)).toEqual([oneMap, several])
+        expect(kept.map((item) => item.pet)).toEqual([oneMap, twoMaps, dungeon])
+    })
+
+    it("keeps a pet on several maps under any of them", () => {
+        const kept = filterShopPets(atlas, items, ["altgard"])
+
+        expect(kept.map((item) => item.pet)).toContain(twoMaps)
     })
 })

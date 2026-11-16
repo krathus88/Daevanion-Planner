@@ -1,5 +1,6 @@
 // Pets whose soul drops from killing them as a dungeon boss. Kept by hand:
-// the Pet Atlas has no dungeon data. Keyed by pet id.
+// the Pet Atlas has no dungeon data. Keyed by pet id. The companion's shop
+// panel tags them too: rerun npm run pets:shop after a change.
 export type PetBoss = {
     dungeon: string
     // The boss's name when it differs from the pet's.

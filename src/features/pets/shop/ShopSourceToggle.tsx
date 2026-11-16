@@ -31,15 +31,15 @@ export const ShopSourceToggle = ({
             borderWidth="1px"
             borderColor={picked ? "app.accent" : "app.border"}
             borderRadius="full"
-            color={picked ? "app.fg" : "app.muted"}
+            color={`shopTag.${source}`}
             fontSize="xs"
             fontWeight="medium"
             cursor="button"
-            _hover={{ color: "app.fg", borderColor: "app.accent" }}
+            _hover={{ borderColor: "app.accent" }}
             _disabled={{
                 opacity: "disabled",
                 cursor: "disabled",
-                _hover: { color: "app.muted", borderColor: "app.border" },
+                _hover: { borderColor: "app.border" },
             }}
             type="button"
             disabled={count === 0 && !picked}

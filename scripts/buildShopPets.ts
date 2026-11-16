@@ -4,7 +4,8 @@
 // owned). The companion's shop panel needs each such item's pet and where the
 // pet spawns in the wild. Item names come from AION 2 Hub's item database
 // (the crafting data's source, credited on the Crafting page), pets and their
-// continents from our Pet Atlas data (npm run pets:data first). The pets
+// continents from our Pet Atlas data (npm run pets:data first), dungeon
+// bosses from the Pets page's petBosses.ts. The pets
 // matched by name, so a pet the Atlas only has a placeholder (negative) id
 // for keeps it: the companion can't look up its souls.
 // Downloaded pages are cached in the OS temp folder, so a rerun only fetches
@@ -19,6 +20,7 @@ import {
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import sharp from "sharp"
+import { PET_BOSSES } from "../src/features/pets/config/petBosses.ts"
 
 const SITE = "https://aion2hub.com"
 const SITEMAP_URL = `${SITE}/sitemap.xml`
@@ -36,7 +38,7 @@ const USER_AGENT = "Mozilla/5.0 (compatible; fan-site data script)"
 // Kept low so the script never loads the site much.
 const PAUSE_MS = 250
 // The Pets page's map order (PET_MAP_IDS).
-const MAP_ORDER = ["verteron", "reshanta", "altgard"]
+const MAP_ORDER = ["verteron", "reshanta", "outerReshanta", "altgard"]
 
 type AtlasPet = {
     id: number
@@ -45,7 +47,7 @@ type AtlasPet = {
     icon?: string
     monsters: number[]
 }
-type AtlasMonster = { map: string; spawns: number[] }
+type AtlasMonster = { map: string; spawns: number[]; fieldBoss?: boolean }
 type Atlas = { pets: AtlasPet[]; monsters: AtlasMonster[] }
 
 type PetItem = {
@@ -55,6 +57,10 @@ type PetItem = {
     category: string
     icon?: string
     maps: string[]
+    // The dungeon whose boss drops its soul (petBosses.ts).
+    dungeon?: string
+    // Only field bosses drop its soul in the wild.
+    fieldBoss?: boolean
 }
 
 const sleep = (ms: number) => {
@@ -141,6 +147,15 @@ const getMaps = (pet: AtlasPet, monsters: AtlasMonster[]) => {
     return MAP_ORDER.filter((map) => maps.has(map))
 }
 
+// Whether every one of the pet's soul monsters is a field boss, like the
+// Pets page's "Field boss" (getFieldBossText).
+const isFieldBossPet = (pet: AtlasPet, monsters: AtlasMonster[]) => {
+    return (
+        pet.monsters.length > 0 &&
+        pet.monsters.every((index) => monsters[index]?.fieldBoss === true)
+    )
+}
+
 // Saves each portrait the items use; returns the ones it found.
 const writeIcons = async (icons: Set<string>) => {
     rmSync(ICON_DIR, { recursive: true, force: true })
@@ -200,6 +215,8 @@ const main = async () => {
             continue
         }
 
+        const dungeon = PET_BOSSES[pet.id]?.dungeon
+
         items.push([
             id,
             {
@@ -208,6 +225,10 @@ const main = async () => {
                 category: pet.category,
                 icon: pet.icon,
                 maps: getMaps(pet, atlas.monsters),
+                ...(dungeon ? { dungeon: dungeon } : {}),
+                ...(isFieldBossPet(pet, atlas.monsters)
+                    ? { fieldBoss: true }
+                    : {}),
             },
         ])
     }

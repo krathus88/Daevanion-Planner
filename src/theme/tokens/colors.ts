@@ -36,4 +36,20 @@ export const colors = defineTokens.colors({
     periwinkle: {
         400: { value: "#86aefc" },
     },
+    // The companion's shop panel tag colors (shoppanel_windows.go).
+    lavender: {
+        400: { value: "#b48cf0" },
+    },
+    lagoon: {
+        400: { value: "#5cc8d6" },
+    },
+    azure: {
+        400: { value: "#5ba8f0" },
+    },
+    salmon: {
+        400: { value: "#f08a6c" },
+    },
+    rose: {
+        400: { value: "#f0728a" },
+    },
 })

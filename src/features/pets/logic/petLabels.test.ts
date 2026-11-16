@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { PET_BOSSES } from "@pets/config/petBosses"
 import type { Pet } from "@pets/data/petAtlas"
-import { describePetSpawns, getBossText, getNoSpawnText } from "./petLabels"
+import {
+    describePetSpawns,
+    getBossText,
+    getFieldBossText,
+    getNoSpawnText,
+} from "./petLabels"
 
 const pet = (id: number, source: Pet["source"] = "field") => {
     return { id: id, source: source } as unknown as Pet
@@ -41,6 +46,24 @@ describe("getBossText", () => {
     })
 })
 
+describe("getFieldBossText", () => {
+    it("names a pet only field bosses drop", () => {
+        expect(getFieldBossText([{ fieldBoss: true }])).toBe("Field boss")
+        expect(
+            getFieldBossText([{ fieldBoss: true }, { fieldBoss: true }]),
+        ).toBe("Field boss")
+    })
+
+    it("is null when a normal monster drops it too", () => {
+        expect(getFieldBossText([{ fieldBoss: true }, {}])).toBeNull()
+        expect(getFieldBossText([{ fieldBoss: false }])).toBeNull()
+    })
+
+    it("is null for a pet with no monsters", () => {
+        expect(getFieldBossText([])).toBeNull()
+    })
+})
+
 describe("getNoSpawnText", () => {
     it.each([
         ["field", "No tracked spawns"],
@@ -68,6 +91,20 @@ describe("describePetSpawns", () => {
         expect(describePetSpawns(pet(NOT_A_BOSS, "special"), {})).toBe(
             "Special pet: no open-world spawn",
         )
+    })
+
+    it("says when only field bosses drop it", () => {
+        expect(
+            describePetSpawns(pet(NOT_A_BOSS), { verteron: 1 }, [
+                { fieldBoss: true },
+            ]),
+        ).toBe("Verteron 1 · Field boss")
+    })
+
+    it("doesn't call a pet with no spawns a field boss's", () => {
+        expect(
+            describePetSpawns(pet(NOT_A_BOSS), {}, [{ fieldBoss: true }]),
+        ).toBe("No tracked spawns")
     })
 
     it("adds the boss for a field pet that's also one", () => {

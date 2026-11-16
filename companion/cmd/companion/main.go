@@ -218,9 +218,8 @@ func main() {
 	tray.SetOverlayOpacity(state0.settings.OverlayOpacity)
 	tray.SetSoulOpacity(state0.settings.SoulOpacity)
 	tray.SetShopPreview(shopSample())
-	if state0.settings.SoulPopup {
-		tray.SetSoulPreview(soulSample())
-	}
+	tray.SetSoulPreview(soulSample())
+	tray.SetPlacements(state0.settings.ShopPlacement, state0.settings.SoulPlacement)
 	// The tray tip and the settings window, after the state changed.
 	updateTip := func() {
 		tray.SetTip("Daevanion Companion: " + state0.status())
@@ -511,7 +510,7 @@ func main() {
 				if dir, err := recordingsDir(); err == nil {
 					desktop.Open(dir)
 				}
-			case desktop.CommandShopHide, desktop.CommandOverlayOpacity, desktop.CommandShopType, desktop.CommandShopLevel, desktop.CommandShopSource, desktop.CommandSoulPopup, desktop.CommandSoulOpacity:
+			case desktop.CommandShopHide, desktop.CommandOverlayOpacity, desktop.CommandShopType, desktop.CommandShopLevel, desktop.CommandShopSource, desktop.CommandSoulPopup, desktop.CommandSoulOpacity, desktop.CommandShopPlacement, desktop.CommandSoulPlacement:
 				state0.mu.Lock()
 				changeSetting(&state0.settings, choice)
 				saved := state0.settings
@@ -519,12 +518,10 @@ func main() {
 				shopWatch.HideAfter = saved.shopHideAfter()
 				tray.SetOverlayOpacity(saved.OverlayOpacity)
 				tray.SetSoulOpacity(saved.SoulOpacity)
+				tray.SetPlacements(saved.ShopPlacement, saved.SoulPlacement)
 				if !saved.SoulPopup {
 					soulFeed.Clear()
 					updateSouls(time.Now())
-					tray.SetSoulPreview(nil)
-				} else {
-					tray.SetSoulPreview(soulSample())
 				}
 				if err := saveSettings(saved); err != nil {
 					logf("Couldn't save the settings: %v", err)
@@ -753,7 +750,7 @@ func shopPets(items []game.ShopItem, pets map[int]game.Pet, filter shop.Filter) 
 	}
 	view := &desktop.ShopView{Pets: []desktop.ShopPet{}}
 	for _, line := range shop.Lines(items, pets, filter) {
-		view.Pets = append(view.Pets, desktop.ShopPet{Name: line.Name, Icon: line.Icon, Level: line.Level, Souls: line.Souls, Maps: line.Maps, Bought: line.Bought})
+		view.Pets = append(view.Pets, desktop.ShopPet{Name: line.Name, Icon: line.Icon, Level: line.Level, Souls: line.Souls, Tags: line.Tags, Bought: line.Bought})
 	}
 	if len(view.Pets) == 0 {
 		view.Empty = shop.EmptyText(items, pets)

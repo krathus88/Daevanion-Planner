@@ -1,7 +1,8 @@
 // Rebuilds the Pets map's zoomed-out tiles: npm run pets:tiles
 // The AION2 Interactive Map only serves full-size tiles (~6 MB per map), so a
 // zoomed-out view would download all of them. This saves smaller versions as
-// public/pet-maps/<code>/<zoom>/<x>_<y>.webp for zooms below 0.
+// public/pet-maps/<code>/<zoom>/<x>_<y>.webp for zooms below 0. For a map
+// with other art (petMaps.ts `art`) those tiles are all the page has.
 import { mkdirSync } from "node:fs"
 import { join } from "node:path"
 import sharp from "sharp"
@@ -16,8 +17,18 @@ import {
 
 const OUT_DIR = join(process.cwd(), "public/pet-maps")
 
+// A map the Interactive Map doesn't have takes its art from another site's
+// tiles (`art`): smaller than full size, in rows counted up from the bottom.
+const getSourceUrl = (mapId: PetMapId, x: number, y: number) => {
+    const map = PET_MAPS[mapId]
+
+    return map.art
+        ? `${map.art.tiles}/${x}/${y - map.tiles}.webp`
+        : getTileUrl(mapId, 0, x, y)
+}
+
 const fetchTile = async (mapId: PetMapId, x: number, y: number) => {
-    const url = getTileUrl(mapId, 0, x, y)
+    const url = getSourceUrl(mapId, x, y)
     const response = await fetch(url)
 
     if (!response.ok) {

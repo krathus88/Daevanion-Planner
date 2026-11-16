@@ -8,6 +8,8 @@ import {
     getMostSpawnsMap,
     getPetMapCounts,
     getPetMapSources,
+    getPetMonsters,
+    hasMapSpawns,
     type PetMapSource,
 } from "./petFinder"
 
@@ -90,6 +92,20 @@ describe("map counts", () => {
             altgard: 4,
         })
     })
+
+    it("knows which maps have spawns", () => {
+        expect(hasMapSpawns(atlas, "verteron")).toBe(true)
+        expect(hasMapSpawns(atlas, "altgard")).toBe(true)
+        expect(hasMapSpawns(atlas, "outerReshanta")).toBe(false)
+    })
+
+    it("has no spawns on a map whose monsters have none", () => {
+        const empty = makeAtlas([
+            { monsters: [makeMonster([], { map: "reshanta" })] },
+        ])
+
+        expect(hasMapSpawns(empty, "reshanta")).toBe(false)
+    })
 })
 
 describe("getPetMapSources", () => {
@@ -115,6 +131,29 @@ describe("getPetMapSources", () => {
         const atlas = makeAtlas([{ source: "other" }])
 
         expect(getPetMapSources(atlas, atlas.pets[0])).toEqual([])
+    })
+
+    it("says which monsters are field bosses", () => {
+        const atlas = makeAtlas([
+            {
+                monsters: [
+                    makeMonster(spawnsAt(0, 0, 5), { name: "Grunt" }),
+                    makeMonster(spawnsAt(30, 0, 1), {
+                        name: "Boss",
+                        fieldBoss: true,
+                    }),
+                ],
+            },
+        ])
+        const [source] = getPetMapSources(atlas, atlas.pets[0])
+
+        expect(
+            source.monsters.map((monster) => [monster.name, monster.fieldBoss]),
+        ).toEqual([
+            ["Grunt", false],
+            ["Boss", true],
+        ])
+        expect(getPetMonsters(atlas, atlas.pets[0])).toEqual(atlas.monsters)
     })
 
     it("sorts monsters by spawns, then name", () => {
@@ -227,7 +266,12 @@ describe("getMapPins", () => {
             },
         ],
         {
-            areas: { verteron: ["Area"], reshanta: [], altgard: [] },
+            areas: {
+                verteron: ["Area"],
+                reshanta: [],
+                outerReshanta: [],
+                altgard: [],
+            },
             spots: namedSpots("verteron", ["Spot"], 0),
         },
     )

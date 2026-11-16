@@ -80,6 +80,27 @@ test.describe("a pet's details", () => {
         await expect(page.getByRole("main")).toContainText(FIELD_PET)
     })
 
+    test("says when only a field boss drops the soul", async ({ page }) => {
+        await page.goto("/pets")
+        await page
+            .getByRole("searchbox", { name: "Search pets" })
+            .fill("Elite Guardite")
+
+        const row = page.getByRole("button", { name: "Elite Guardite" }).first()
+
+        await expect(row).toContainText("Verteron 1 · Field boss")
+        await row.click()
+
+        await expect(
+            page.getByText("Spawns on 1 map · Field boss"),
+        ).toBeVisible()
+        await page.getByRole("button", { name: /Soul monsters/ }).click()
+
+        await expect(
+            page.getByText("Field boss", { exact: true }),
+        ).toBeVisible()
+    })
+
     test("survives an unknown pet id in the URL", async ({ page }) => {
         await page.goto("/pets?pet=999999999")
 
@@ -100,6 +121,28 @@ test.describe("the map", () => {
 
         await expect(page.locator(".leaflet-container")).toBeVisible()
         await expect(page).toHaveURL(/map=altgard/)
+    })
+
+    test("Outer Reshanta draws from our own tiles", async ({ page }) => {
+        await page.goto("/pets")
+        await page
+            .getByRole("radiogroup", { name: "Map" })
+            .locator("label")
+            .filter({ hasText: "Outer Reshanta" })
+            .click()
+
+        await expect(page).toHaveURL(/map=outerReshanta/)
+        await expect(
+            page.getByRole("button", { name: /^#1 Outer Reshanta/ }),
+        ).toBeVisible()
+        await expect(page.locator(".leaflet-container")).toBeVisible()
+        // All its tiles are ours, so they load without any map site.
+        await expect(
+            page.locator('.leaflet-tile-loaded[src*="Abyss_Reshanta_Outer"]'),
+        ).not.toHaveCount(0)
+        await expect(
+            page.locator(".leaflet-control-attribution"),
+        ).toContainText("Wikily")
     })
 })
 

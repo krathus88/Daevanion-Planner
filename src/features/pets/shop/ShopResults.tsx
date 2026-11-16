@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { WrongScreenshotNotice } from "@common/WrongScreenshotNotice"
+import type { PetAtlas } from "@pets/data/petAtlas"
 import { BOUGHT_SOULS } from "@pets/logic/petLevels"
 import type { ShopPet, ShopSummary } from "@pets/logic/shopCheck"
 import type { ShopSourceId } from "@pets/logic/shopFilters"
@@ -21,6 +22,7 @@ const getSummaryText = (needed: number, total: number) => {
 }
 
 type ShopResultsProps = {
+    atlas: PetAtlas
     summary: ShopSummary
     // The pets worth buying left after the source filter.
     shownNeeded: ShopPet[]
@@ -35,6 +37,7 @@ type ShopResultsProps = {
 }
 
 export const ShopResults = ({
+    atlas,
     summary,
     shownNeeded,
     sources,
@@ -92,6 +95,7 @@ export const ShopResults = ({
             {neededCount > 0 &&
                 (shownNeeded.length > 0 ? (
                     <ShopPetGrid
+                        atlas={atlas}
                         title="Worth buying"
                         items={shownNeeded}
                         bought={bought}
@@ -105,6 +109,7 @@ export const ShopResults = ({
 
             {summary.maxed.length > 0 && (
                 <ShopPetGrid
+                    atlas={atlas}
                     title="Already Lv3"
                     items={summary.maxed}
                     bought={bought}
@@ -113,6 +118,7 @@ export const ShopResults = ({
 
             {summary.soldOut.length > 0 && (
                 <ShopPetGrid
+                    atlas={atlas}
                     title="Already bought"
                     items={summary.soldOut}
                     bought={bought}

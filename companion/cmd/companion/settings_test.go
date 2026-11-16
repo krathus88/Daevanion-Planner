@@ -50,9 +50,9 @@ func TestChangeSetting(t *testing.T) {
 	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopType, Value: 1})
 	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopLevel, Value: 1})
 	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopLevel, Value: 3})
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopSource, Value: 5})
 	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopSource, Value: 3})
-	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopSource, Value: 0})
-	want := shop.Filter{Types: []string{"cogni", "fera"}, HiddenLevels: []int{1}, Sources: []string{"notWild", "altgard"}}
+	want := shop.Filter{Types: []string{"cogni", "fera"}, HiddenLevels: []int{1}, Sources: []string{"altgard", "dungeon"}}
 	if s.OverlayOpacity != 40 || !reflect.DeepEqual(s.shopFilter(), want) {
 		t.Fatalf("got %+v", s)
 	}
@@ -85,9 +85,9 @@ func TestSettingsKeepEmptyFilters(t *testing.T) {
 	if got := readSettings(path); len(got.ShopHiddenLevels) != 0 {
 		t.Fatalf("got %+v", got)
 	}
-	os.WriteFile(path, []byte(`{"overlayOpacity": 140, "shopTypes": ["dragon", "natura"], "shopHiddenLevels": [3, 9], "shopSources": ["moon", "several"]}`), 0o600)
+	os.WriteFile(path, []byte(`{"overlayOpacity": 140, "shopTypes": ["dragon", "natura"], "shopHiddenLevels": [3, 9], "shopSources": ["moon", "several", "fieldBoss"]}`), 0o600)
 	got := readSettings(path)
-	if got.OverlayOpacity != 0 || !reflect.DeepEqual(got.ShopTypes, []string{"natura"}) || !reflect.DeepEqual(got.ShopHiddenLevels, []int{3}) || !reflect.DeepEqual(got.ShopSources, []string{"several"}) {
+	if got.OverlayOpacity != 0 || !reflect.DeepEqual(got.ShopTypes, []string{"natura"}) || !reflect.DeepEqual(got.ShopHiddenLevels, []int{3}) || !reflect.DeepEqual(got.ShopSources, []string{"fieldBoss"}) {
 		t.Fatalf("got %+v", got)
 	}
 }
@@ -129,5 +129,32 @@ func TestSoulOpacity(t *testing.T) {
 	}
 	if got := readSettings(old); got.SoulOpacity != 70 || got.OverlayOpacity != 10 {
 		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestPlacements(t *testing.T) {
+	s := defaultSettings()
+	if s.ShopPlacement != desktop.DefaultPlacement() || s.SoulPlacement != desktop.DefaultPlacement() {
+		t.Fatalf("defaults %+v %+v", s.ShopPlacement, s.SoulPlacement)
+	}
+	moved := desktop.Placement{X: 0.5, Y: 0.75, Zoom: 1.5, Rows: 3}
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandShopPlacement, Placement: moved})
+	// Rows past the soul popup's most are cut to it.
+	changeSetting(&s, desktop.Choice{Command: desktop.CommandSoulPlacement, Placement: desktop.Placement{X: 0.1, Y: 0.2, Zoom: 0.8, Rows: 9}})
+	if s.ShopPlacement != moved || s.SoulPlacement != (desktop.Placement{X: 0.1, Y: 0.2, Zoom: 0.8, Rows: desktop.SoulMaxRows}) {
+		t.Fatalf("changed %+v %+v", s.ShopPlacement, s.SoulPlacement)
+	}
+	path := filepath.Join(t.TempDir(), settingsFile)
+	if err := writeSettings(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if got := readSettings(path); got.ShopPlacement != moved || got.SoulPlacement != s.SoulPlacement {
+		t.Fatalf("read back %+v %+v", got.ShopPlacement, got.SoulPlacement)
+	}
+	// An older file without them, and an edited one out of range.
+	os.WriteFile(path, []byte(`{"soulPopup": true, "shopPlacement": {"x": 3, "y": 0.5, "zoom": 50}}`), 0o600)
+	got := readSettings(path)
+	if got.SoulPlacement != desktop.DefaultPlacement() || got.ShopPlacement != (desktop.Placement{X: -1, Y: -1, Zoom: desktop.MaxZoom}) {
+		t.Fatalf("old or edited %+v %+v", got.ShopPlacement, got.SoulPlacement)
 	}
 }

@@ -19,6 +19,8 @@ const MORE_STEP = 6
 type FarmSpotsPanelProps = {
     spots: FarmSpot[]
     mapId: PetMapId
+    // False while no pet spawns are known on the map.
+    hasSpawns: boolean
     focusedSpot: string | null
     levels: Record<string, number>
     // Types every listed spot must still have a pet of.
@@ -33,6 +35,7 @@ type FarmSpotsPanelProps = {
 export const FarmSpotsPanel = ({
     spots,
     mapId,
+    hasSpawns,
     focusedSpot,
     levels,
     requiredCategories,
@@ -60,12 +63,13 @@ export const FarmSpotsPanel = ({
     const requiredNames = requiredCategories
         .map((category) => PET_CATEGORY_NAMES[category])
         .join(", ")
-    const emptyText =
-        requiredCategories.length > 0
-            ? `No spot in ${mapName} still has a pet below Lv3 of every type picked (${requiredNames}).`
-            : hasSpotNames
-              ? `Every pet in your list that spawns in ${mapName} is at Lv3.`
-              : `${mapName} has no named spots; use the map below.`
+    const emptyText = !hasSpawns
+        ? `No pet spawns are known in ${mapName} yet.`
+        : requiredCategories.length > 0
+          ? `No spot in ${mapName} still has a pet below Lv3 of every type picked (${requiredNames}).`
+          : hasSpotNames
+            ? `Every pet in your list that spawns in ${mapName} is at Lv3.`
+            : `${mapName} has no named spots; use the map below.`
 
     return (
         <Card>

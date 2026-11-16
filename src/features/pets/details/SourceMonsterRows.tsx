@@ -7,6 +7,11 @@ const RANK_NAMES: Record<SourceMonster["rank"], string | null> = {
     hero: "Hero",
 }
 
+// A field boss says so in place of its rank.
+const getBadgeText = (monster: SourceMonster) => {
+    return monster.fieldBoss ? "Field boss" : RANK_NAMES[monster.rank]
+}
+
 type SourceMonsterRowsProps = {
     monsters: SourceMonster[]
 }
@@ -28,9 +33,9 @@ export const SourceMonsterRows = ({ monsters }: SourceMonsterRowsProps) => {
                 </Text>
             </Text>
 
-            {RANK_NAMES[monster.rank] && (
+            {getBadgeText(monster) && (
                 <Badge size="xs" variant="subtle" colorPalette="orange">
-                    {RANK_NAMES[monster.rank]}
+                    {getBadgeText(monster)}
                 </Badge>
             )}
 

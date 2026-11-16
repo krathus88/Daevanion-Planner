@@ -12,7 +12,8 @@ import (
 // portrait, name, level and souls toward the next one, and what was gained.
 // Click-through like the widget, on the tray's thread; an overlay
 // (overlay_windows.go). Main keeps the rows (internal/souls) and hides it;
-// hiding fades it out.
+// hiding fades it out. Its spot (its own once moved, else on the shop panel's
+// column), zoom and most rows are soulPlacement (overlayedit_windows.go).
 
 // SoulView is what the soul popup shows, oldest gain first.
 type SoulView struct {
@@ -41,7 +42,10 @@ const (
 )
 
 type soulPopup struct {
-	hwnd     uintptr
+	hwnd uintptr
+	// The monitor's scale, and that times the placement's zoom: what px
+	// scales by.
+	dpi      float64
 	scale    float64
 	nameFont uintptr
 	tagFont  uintptr
@@ -50,7 +54,9 @@ type soulPopup struct {
 	view    *SoulView
 	preview *SoulView
 	drawn   *SoulView
-	alpha   int
+	// The drawn view's pets that fit its rows: the newest.
+	shown []SoulPet
+	alpha int
 	// Where it sits, in screen pixels.
 	x, y, w, h int32
 	icons      map[iconKey][]byte
@@ -63,7 +69,7 @@ func (s *soulPopup) px(v int) int32 {
 }
 
 func newSoulPopup(instance uintptr) *soulPopup {
-	s := &soulPopup{scale: 1}
+	s := &soulPopup{dpi: 1, scale: 1}
 	className := wide("DaevanionCompanionSoulPopup")
 	class := wndClassEx{
 		WndProc:   syscall.NewCallback(soulPopupProc),
@@ -125,14 +131,51 @@ func soulLines(pet SoulPet) (level string, levelColor uintptr, progress, gained,
 // show takes what main wants shown (nil fades the popup out).
 func (s *soulPopup) show(view *SoulView) {
 	s.view = view
-	if s.preview == nil {
+	if s.preview == nil && editing != editSoul {
 		s.apply(view)
 	}
 }
 
-// apply puts a view up at full strength, or fades out for nil.
+// redisplay draws again what it shows (the edit sample, the preview over the
+// view), after its placement changed.
+func (s *soulPopup) redisplay() {
+	switch {
+	case editing == editSoul:
+		s.apply(nil)
+	case s.preview != nil:
+		s.apply(s.preview)
+	default:
+		// What main asked for: nil fades out what is drawn (the edit
+		// sample, once editing ends).
+		s.apply(s.view)
+	}
+}
+
+// editSample is the opacity preview's sample, repeated to as many pets as
+// it lists at most, so its height shows.
+func (s *soulPopup) editSample() *SoulView {
+	var sample *SoulView
+	if current != nil {
+		sample = current.soulPreviewSample()
+	}
+	if sample == nil || len(sample.Pets) == 0 {
+		sample = &SoulView{Pets: []SoulPet{{Name: "Sample", Gained: 1, Level: -1}}}
+	}
+	return &SoulView{Pets: cycled(sample.Pets, soulPlacement.RowsShown(SoulMaxRows))}
+}
+
+// rowStep is how much taller each more pet makes it.
+func (s *soulPopup) rowStep() int32 {
+	return s.rowHeight() + s.px(panelPetGap) + s.px(4)
+}
+
+// apply puts a view up at full strength, or fades out for nil. While it's
+// moved and resized, it shows the edit sample instead.
 func (s *soulPopup) apply(view *SoulView) {
 	killTimer.Call(s.hwnd, timerFade)
+	if editing == editSoul {
+		view = s.editSample()
+	}
 	if view == nil {
 		if s.drawn != nil && s.alpha > 0 {
 			setTimer.Call(s.hwnd, timerFade, fadeStepMs, 0)
@@ -162,7 +205,7 @@ func (s *soulPopup) endPreview() {
 		return
 	}
 	s.preview = nil
-	if s.view == nil {
+	if s.view == nil && editing != editSoul {
 		s.hide()
 		return
 	}
@@ -174,22 +217,49 @@ func (s *soulPopup) rowHeight() int32 {
 	return s.px(panelLine) + s.px(4) + s.px(panelTag)
 }
 
-// place lays out what is drawn on the shop panel's column (above the panel
-// while it's shown) and draws it at the current fade.
+// place lays out what is drawn and puts it at its spot (its usual one: on
+// the shop panel's column, above the panel while it's shown), drawn at the
+// current fade.
 func (s *soulPopup) place() {
-	view := s.drawn
-	if view == nil {
+	if s.drawn == nil {
 		return
 	}
-	right, bottom, scale := panelBase(s.scale)
-	if scale != s.scale {
+	s.layout()
+	s.put()
+	showWindow.Call(s.hwnd, swShowNoActivate)
+}
+
+// put places the laid out popup and draws it.
+func (s *soulPopup) put() {
+	if soulPlacement.Moved() {
+		area, _ := overlayArea(s.dpi)
+		r := placedRect(soulPlacement, s.w, s.h, area)
+		s.x, s.y = r.Left, r.Top
+	} else {
+		right, bottom, _ := panelBase(s.dpi)
+		if p := currentShopPanel; p != nil {
+			if top, ok := p.visibleTop(); ok {
+				bottom = top - int32(float64(soulGap)*s.dpi+0.5)
+			}
+		}
+		s.x, s.y = right-s.w, bottom-s.h
+	}
+	setWindowPos.Call(s.hwnd, hwndTopmost, uintptr(s.x), uintptr(s.y), uintptr(s.w), uintptr(s.h), swpNoActivate)
+	s.render()
+}
+
+// layout sizes what is drawn at its placement's zoom and rows (the newest
+// pets that fit).
+func (s *soulPopup) layout() {
+	_, _, dpi := panelBase(s.dpi)
+	s.dpi = dpi
+	if scale := dpi * soulPlacement.Zoom; scale != s.scale {
 		s.scale = scale
 		s.makeFonts()
 	}
-	if p := currentShopPanel; p != nil {
-		if top, ok := p.visibleTop(); ok {
-			bottom = top - s.px(soulGap)
-		}
+	s.shown = s.drawn.Pets
+	if rows := soulPlacement.RowsShown(SoulMaxRows); len(s.shown) > rows {
+		s.shown = s.shown[len(s.shown)-rows:]
 	}
 	column := s.px(panelIcon) + s.px(panelIconGap)
 	var width int32
@@ -209,21 +279,16 @@ func (s *soulPopup) place() {
 		widestLevel = max(widestLevel, w)
 	}
 	below := column + s.measure(s.tagFont, "+99 souls") + s.px(panelBadgeGap) + s.measure(s.tagFont, "· Lv3 reached")
-	for _, pet := range view.Pets {
+	for _, pet := range s.shown {
 		width = max(width, column+s.measure(s.nameFont, pet.Name)+s.px(16)+widestLevel, below)
 	}
-	n := int32(len(view.Pets))
+	n := int32(len(s.shown))
 	s.w = max(width, s.px(180)) + 2*s.px(panelPad)
 	s.h = 2*s.px(panelPad) + n*s.rowHeight() + max(0, n-1)*(s.px(panelPetGap)+s.px(4))
-	s.x = right - s.w
-	s.y = bottom - s.h
-	setWindowPos.Call(s.hwnd, hwndTopmost, uintptr(s.x), uintptr(s.y), uintptr(s.w), uintptr(s.h), swpNoActivate)
-	s.render()
-	showWindow.Call(s.hwnd, swShowNoActivate)
 }
 
 func (s *soulPopup) render() {
-	renderOverlay(s.hwnd, s.x, s.y, s.w, s.h, s.px(12), soulBackground, byte(max(0, min(255, s.alpha))), nil, s.draw)
+	renderOverlay(s.hwnd, s.x, s.y, s.w, s.h, s.px(12), editedBackground(editSoul, soulBackground), byte(max(0, min(255, s.alpha))), nil, s.draw)
 }
 
 func (s *soulPopup) draw(dc uintptr, client rect) {
@@ -237,7 +302,7 @@ func (s *soulPopup) draw(dc uintptr, client rect) {
 	oldPen, _, _ := selectObject.Call(dc, pen)
 	top := s.px(panelPad)
 	size := s.px(panelIcon)
-	for _, pet := range s.drawn.Pets {
+	for _, pet := range s.shown {
 		level, levelColor, progress, gained, reached := soulLines(pet)
 		iconTop := top + (s.rowHeight()-size)/2
 		if pet.Icon != nil {
@@ -281,6 +346,9 @@ func (s *soulPopup) draw(dc uintptr, client rect) {
 	}
 	selectObject.Call(dc, oldPen)
 	selectObject.Call(dc, oldFont)
+	if editing == editSoul {
+		drawEditFrame(dc, client, s.px(12), s.dpi)
+	}
 }
 
 func (s *soulPopup) tick(id uintptr) {
@@ -309,6 +377,11 @@ func soulPopupProc(hwnd, message, wParam, lParam uintptr) uintptr {
 	if s != nil && hwnd == s.hwnd && message == wmTimer {
 		s.tick(wParam)
 		return 0
+	}
+	if s != nil && hwnd == s.hwnd {
+		if r, ok := editMouse(soulEditable{s}, message); ok {
+			return r
+		}
 	}
 	r, _, _ := defWindowProc.Call(hwnd, message, wParam, lParam)
 	return r

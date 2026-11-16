@@ -1,69 +1,74 @@
+import { PET_BOSSES } from "@pets/config/petBosses"
 import { PET_MAP_IDS, PET_MAPS, type PetMapId } from "@pets/config/petMaps"
 import type { Pet, PetAtlas } from "@pets/data/petAtlas"
-import { getPetMapCounts } from "@pets/logic/petFinder"
+import { getPetMapCounts, getPetMonsters } from "@pets/logic/petFinder"
+import { getFieldBossText } from "@pets/logic/petLabels"
 import type { ShopPet } from "@pets/logic/shopCheck"
 
-// Where else a pet on sale can be had: nowhere in the wild, only on one map,
-// or on several. Each pet falls in exactly one.
-export type ShopSourceId = "notWild" | PetMapId | "several"
+// Where a pet on sale can be had, like the companion's shop panel tags it
+// (its shop.Tags): each map its soul monsters spawn on (or nowhere in the
+// wild), a dungeon boss dropping its soul, and only field bosses dropping it.
+// A pet can have several.
+export type ShopSourceId = PetMapId | "notWild" | "dungeon" | "fieldBoss"
 
 export const SHOP_SOURCE_IDS: ShopSourceId[] = [
-    "notWild",
     ...PET_MAP_IDS,
-    "several",
+    "notWild",
+    "dungeon",
+    "fieldBoss",
 ]
 
 export const getShopSourceName = (source: ShopSourceId) => {
-    if (source === "notWild") {
-        return "Not in the wild"
+    switch (source) {
+        case "notWild":
+            return "Not in the wild"
+        case "dungeon":
+            return "Dungeon"
+        case "fieldBoss":
+            return "Field boss"
+        default:
+            return PET_MAPS[source].name
     }
-
-    if (source === "several") {
-        return "Several maps"
-    }
-
-    return `Only ${PET_MAPS[source].name}`
 }
 
-export const getShopSource = (atlas: PetAtlas, pet: Pet): ShopSourceId => {
+// A pet's sources, in SHOP_SOURCE_IDS order.
+export const getShopSources = (atlas: PetAtlas, pet: Pet) => {
     const counts = getPetMapCounts(atlas, pet)
-    const maps: PetMapId[] = []
+    const sources: ShopSourceId[] = PET_MAP_IDS.filter((mapId) => {
+        return (counts[mapId] ?? 0) > 0
+    })
 
-    for (const mapId of PET_MAP_IDS) {
-        if ((counts[mapId] ?? 0) > 0) {
-            maps.push(mapId)
-        }
+    if (sources.length === 0) {
+        sources.push("notWild")
     }
 
-    if (maps.length === 0) {
-        return "notWild"
+    if (PET_BOSSES[pet.id]) {
+        sources.push("dungeon")
     }
 
-    if (maps.length === 1) {
-        return maps[0]
+    if (getFieldBossText(getPetMonsters(atlas, pet))) {
+        sources.push("fieldBoss")
     }
 
-    return "several"
+    return sources
 }
 
-// How many pets fall in each source.
+// How many pets have each source (a pet counts under each of its own).
 export const countShopSources = (atlas: PetAtlas, items: ShopPet[]) => {
-    const counts: Record<ShopSourceId, number> = {
-        notWild: 0,
-        verteron: 0,
-        reshanta: 0,
-        altgard: 0,
-        several: 0,
-    }
+    const counts = Object.fromEntries(
+        SHOP_SOURCE_IDS.map((source) => [source, 0]),
+    ) as Record<ShopSourceId, number>
 
     for (const item of items) {
-        counts[getShopSource(atlas, item.pet)]++
+        for (const source of getShopSources(atlas, item.pet)) {
+            counts[source]++
+        }
     }
 
     return counts
 }
 
-// Keeps pets from any picked source; none picked keeps them all.
+// Keeps pets with any picked source; none picked keeps them all.
 export const filterShopPets = (
     atlas: PetAtlas,
     items: ShopPet[],
@@ -73,13 +78,9 @@ export const filterShopPets = (
         return items
     }
 
-    const kept: ShopPet[] = []
-
-    for (const item of items) {
-        if (sources.includes(getShopSource(atlas, item.pet))) {
-            kept.push(item)
-        }
-    }
-
-    return kept
+    return items.filter((item) => {
+        return getShopSources(atlas, item.pet).some((source) => {
+            return sources.includes(source)
+        })
+    })
 }

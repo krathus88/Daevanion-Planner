@@ -26,6 +26,9 @@ type settings struct {
 	ShopSources      []string `json:"shopSources"`
 	// The soul popup shows soul gains (on unless turned off).
 	SoulPopup bool `json:"soulPopup"`
+	// Where the shop panel and the soul popup sit, and their size.
+	ShopPlacement desktop.Placement `json:"shopPlacement"`
+	SoulPlacement desktop.Placement `json:"soulPlacement"`
 }
 
 const settingsFile = "settings.json"
@@ -40,6 +43,8 @@ func defaultSettings() settings {
 		ShopHiddenLevels: filter.HiddenLevels,
 		ShopSources:      filter.Sources,
 		SoulPopup:        true,
+		ShopPlacement:    desktop.DefaultPlacement(),
+		SoulPlacement:    desktop.DefaultPlacement(),
 	}
 }
 
@@ -69,6 +74,8 @@ func (s settings) clean() settings {
 	s.ShopSources = slices.DeleteFunc(slices.Clone(s.ShopSources), func(source string) bool {
 		return !slices.Contains(shop.Sources, source)
 	})
+	s.ShopPlacement = s.ShopPlacement.Clean(desktop.ShopMaxRows)
+	s.SoulPlacement = s.SoulPlacement.Clean(desktop.SoulMaxRows)
 	return s
 }
 
@@ -155,6 +162,10 @@ func changeSetting(s *settings, choice desktop.Choice) {
 		if choice.Value >= 0 && choice.Value < len(shop.Sources) {
 			s.ShopSources = toggled(s.ShopSources, shop.Sources[choice.Value], shop.Sources)
 		}
+	case desktop.CommandShopPlacement:
+		s.ShopPlacement = choice.Placement.Clean(desktop.ShopMaxRows)
+	case desktop.CommandSoulPlacement:
+		s.SoulPlacement = choice.Placement.Clean(desktop.SoulMaxRows)
 	}
 	*s = s.clean()
 }

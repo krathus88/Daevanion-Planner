@@ -55,7 +55,7 @@ export const MapTabs = ({ value, counts, total, onChange }: MapTabsProps) => {
             size="sm"
             value={value}
             // Chakra keeps it max-content wide; on phones each map's name sits
-            // over its count, so all three fit.
+            // over its count, so they all fit.
             w={{ base: "full", md: "auto" }}
             minW="0"
             css={{
@@ -67,6 +67,10 @@ export const MapTabs = ({ value, counts, total, onChange }: MapTabsProps) => {
                         flex: "1",
                         fontSize: "xs",
                         lineHeight: "short",
+                    },
+                    // Beside the pet list the four tabs only just fit.
+                    lgOnly: {
+                        px: "2",
                     },
                 },
             }}

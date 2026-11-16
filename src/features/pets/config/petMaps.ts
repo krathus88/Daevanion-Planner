@@ -1,16 +1,34 @@
 // Maps with tracked pet spawns. Coordinates are map pixels at full size,
 // matching the AION2 Interactive Map's tiles (`code` is its map name).
 // Maps always show in this order.
-export const PET_MAP_IDS = ["verteron", "reshanta", "altgard"] as const
+export const PET_MAP_IDS = [
+    "verteron",
+    "reshanta",
+    "outerReshanta",
+    "altgard",
+] as const
 
 export type PetMapId = (typeof PET_MAP_IDS)[number]
+
+// Another site's art for a map the AION2 Interactive Map doesn't have. We
+// serve our own copies (scripts/buildPetMapTiles.ts).
+type PetMapArt = {
+    // The site, for the credit, and its page of the map.
+    site: string
+    url: string
+    // Its tiles at `zoom`, the sharpest it has: <tiles>/<x>/<y>.webp.
+    tiles: string
+    zoom: number
+}
 
 type PetMapInfo = {
     name: string
     short: string
     code: string
     size: number
+    // Full-size tiles per side.
     tiles: number
+    art?: PetMapArt
 }
 
 export const PET_MAPS: Record<PetMapId, PetMapInfo> = {
@@ -34,6 +52,22 @@ export const PET_MAPS: Record<PetMapId, PetMapInfo> = {
         code: "Abyss_Reshanta_A",
         size: 4096,
         tiles: 4,
+    },
+    // The game's Chaotic Outer Reshanta. No pet spawns are known there yet,
+    // and the Interactive Map doesn't have it: `code` is our own name for it,
+    // and the size is Wikily's (its art is half that at best).
+    outerReshanta: {
+        name: "Outer Reshanta",
+        short: "O",
+        code: "Abyss_Reshanta_Outer",
+        size: 4096,
+        tiles: 4,
+        art: {
+            site: "Wikily",
+            url: "https://wikily.gg/aion-2/interactive-map/chaotic-outer-reshanta",
+            tiles: "https://media.wikily.gg/d9ef9e2b-cdbf-43cb-a423-2947e69d538d/map-tiles/0647a42b-3524-4cad-af7f-5ad8937fb7c1/-1",
+            zoom: -1,
+        },
     },
 }
 
@@ -63,6 +97,11 @@ export const getTileUrl = (
     }
 
     return `${TILE_ROOT}/${code}/Res/${code}_${pad(x)}_${pad(y)}.webp`
+}
+
+// The sharpest zoom a map has tiles for: 0 is full size.
+export const getSharpestZoom = (mapId: PetMapId) => {
+    return PET_MAPS[mapId].art?.zoom ?? 0
 }
 
 export const isPetMapId = (value: unknown): value is PetMapId => {

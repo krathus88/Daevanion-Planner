@@ -27,6 +27,7 @@ export type SourceMonster = {
     name: string
     level: number
     rank: PetMonster["rank"]
+    fieldBoss: boolean
     count: number
 }
 
@@ -185,6 +186,10 @@ export const filterPets = (
     return pets
 }
 
+export const getPetMonsters = (atlas: PetAtlas, pet: Pet) => {
+    return pet.monsters.map((index) => atlas.monsters[index])
+}
+
 export const getPetMapCounts = (atlas: PetAtlas, pet: Pet) => {
     const counts: Partial<Record<PetMapId, number>> = {}
 
@@ -214,6 +219,13 @@ export const getMapCounts = (atlas: PetAtlas, pets: Pet[]) => {
     return counts
 }
 
+// False for a map no soul monster is known on yet (a new map).
+export const hasMapSpawns = (atlas: PetAtlas, mapId: PetMapId) => {
+    return atlas.monsters.some((monster) => {
+        return monster.map === mapId && monster.spawns.length > 0
+    })
+}
+
 // Maps that have the pet, in map order.
 export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
     const sources: PetMapSource[] = []
@@ -238,6 +250,7 @@ export const getPetMapSources = (atlas: PetAtlas, pet: Pet) => {
                 name: monster.name,
                 level: monster.level,
                 rank: monster.rank,
+                fieldBoss: monster.fieldBoss === true,
                 count: spawns,
             })
         }

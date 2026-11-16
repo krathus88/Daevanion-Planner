@@ -9,7 +9,11 @@ import { PET_CATEGORY_NAMES } from "@pets/config/petCategories"
 import type { PetMapId } from "@pets/config/petMaps"
 import type { Pet } from "@pets/data/petAtlas"
 import type { PetMapSource } from "@pets/logic/petFinder"
-import { getBossText, getNoSpawnText } from "@pets/logic/petLabels"
+import {
+    getBossText,
+    getFieldBossText,
+    getNoSpawnText,
+} from "@pets/logic/petLabels"
 import type { SpotNeighbors } from "@pets/logic/spotNeighbors"
 import { LuX } from "react-icons/lu"
 import { BossSource } from "./BossSource"
@@ -73,6 +77,9 @@ export const PetDetails = ({
                   sources.length === 1
                       ? "Spawns on 1 map"
                       : `Spawns on ${sources.length} maps`,
+                  getFieldBossText(
+                      sources.flatMap((source) => source.monsters),
+                  ),
                   bossText,
               ]
                   .filter(Boolean)

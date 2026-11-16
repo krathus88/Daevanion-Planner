@@ -58,6 +58,7 @@ const (
 	wmSetCursor       = 0x0020
 	wmMouseMove       = 0x0200
 	wmLButtonDown     = 0x0201
+	wmMouseWheel      = 0x020A
 	wmMouseLeave      = 0x02A3
 	wmCtlColorEdit    = 0x0133
 	enChange          = 0x0300
@@ -140,6 +141,11 @@ const (
 	hitTracker
 	hitCheckUpdates
 	hitUpdateNow
+	hitScrollbar
+	hitShopMove
+	hitShopReset
+	hitSoulMove
+	hitSoulReset
 	// Type chips: All, then shop.Types.
 	hitType0
 	hitTypeLast = hitType0 + 5
@@ -148,7 +154,7 @@ const (
 	hitLevel3 = hitLevel1 + 2
 	// Show only: shop.Sources.
 	hitSource0    = hitLevel3 + 1
-	hitSourceLast = hitSource0 + 4
+	hitSourceLast = hitSource0 + 6
 )
 
 // Layout in 96 DPI pixels.
@@ -165,6 +171,10 @@ const (
 	setGap     = 10
 	setFooter  = 470
 	setButtonH = 32
+	// The tabs' content scrolls between the tabs' line and the footer.
+	setViewTop = setTabsTop + setTabsH + 1
+	// A mouse wheel notch scrolls this far.
+	setWheelStep = 48
 )
 
 type buttonStyle int
@@ -188,6 +198,9 @@ type element struct {
 	color    uintptr
 	wrap     bool
 	selected bool
+	// Part of the tab's content: moves with its scroll, drawn and clicked
+	// only between the tabs and the footer.
+	scrolls bool
 }
 
 const (
@@ -201,6 +214,7 @@ const (
 	kindEditBox
 	kindSlider
 	kindChip
+	kindScrollbar
 )
 
 // Pet type and Insight level colors (BGR), the site's pet.* tokens.
@@ -214,14 +228,6 @@ var (
 	}
 	typeNames   = map[string]string{"cogni": "Cogni", "fera": "Fera", "natura": "Natura", "varian": "Varian", "special": "Special"}
 	levelColors = [4]uintptr{0, 0x80de4a, 0xfaa560, 0x3c92fb} // #4ade80, #60a5fa, #fb923c
-	// The Shop check's names (the site's getShopSourceName).
-	sourceNames = map[string]string{
-		"notWild":  "Not in the wild",
-		"verteron": "Only Verteron",
-		"reshanta": "Only Lower Reshanta",
-		"altgard":  "Only Altgard",
-		"several":  "Several maps",
-	}
 )
 
 type settingsWindow struct {
@@ -250,6 +256,14 @@ type settingsWindow struct {
 	slider int
 	// The opacity preview is up (see previewOpacity).
 	previewing bool
+	// How far the open tab's content is scrolled, and at most, in window
+	// pixels (set by layout).
+	scroll    int32
+	maxScroll int32
+	// The scrollbar's thumb is dragged: from this mouse y and scroll.
+	scrollDrag      bool
+	scrollDragY     int32
+	scrollDragStart int32
 }
 
 var currentSettings *settingsWindow
@@ -385,6 +399,7 @@ func (s *settingsWindow) layout() []element {
 		x += w + 4
 	}
 	add(element{kind: kindLine, r: s.box(0, setTabsTop+setTabsH, setWidth, 1), color: setBorder})
+	contentStart := len(out)
 
 	// A card: title and description on the left, room for a control of
 	// controlW on the right; as tall as its description needs. Returns the
@@ -447,6 +462,7 @@ func (s *settingsWindow) layout() []element {
 		textAt(s.box(sliderX+sliderW+8, sliderY, 44, sliderH), strconv.Itoa(s.opacity)+"%", s.body, setText, false)
 
 		y += 100 + setGap
+		y += s.placementCard(y, editShop, hitShopMove, hitShopReset, add, card) + setGap
 		top := y
 		add(element{kind: kindCard, r: s.box(setPad, y, inner, 0)})
 		textAt(s.box(setPad+16, y+12, 200, 22), "Show pets", s.strong, setText, false)
@@ -482,7 +498,7 @@ func (s *settingsWindow) layout() []element {
 		label(y+8, "Show only")
 		var sources []element
 		for k, id := range shop.Sources {
-			sources = append(sources, element{hit: hitSource0 + k, text: sourceNames[id], selected: slices.Contains(st.ShopSources, id), color: setText})
+			sources = append(sources, element{hit: hitSource0 + k, text: tagNames[id], selected: slices.Contains(st.ShopSources, id), color: tagColors[id]})
 		}
 		y = chips(y+26, sources)
 		out[slices.IndexFunc(out, func(e element) bool { return e.kind == kindCard && e.r.Top == s.px(top) })].r.Bottom = s.px(y + 14)
@@ -496,6 +512,8 @@ func (s *settingsWindow) layout() []element {
 		textAt(s.box(setPad+16, y+13, 110, sliderH), "Background", s.strong, setText, false)
 		add(element{kind: kindSlider, hit: hitSoulSlider, r: s.box(sliderX, y+13, sliderW, sliderH), on: s.dragging && s.slider == hitSoulSlider, enabled: true})
 		textAt(s.box(sliderX+sliderW+8, y+13, 44, sliderH), strconv.Itoa(s.soulOpacity)+"%", s.body, setText, false)
+		y += 56 + setGap
+		s.placementCard(y, editSoul, hitSoulMove, hitSoulReset, add, card)
 
 	case tabAccount:
 		y := setContent
@@ -520,11 +538,102 @@ func (s *settingsWindow) layout() []element {
 		add(element{kind: kindButton, hit: hitLogIn, r: s.box(right-w, middle(y, h, setButtonH), w, setButtonH), text: label, style: style, enabled: enabled})
 	}
 
+	s.scrollContent(out[contentStart:])
+	if thumb, ok := s.scrollThumb(); ok {
+		add(element{kind: kindScrollbar, hit: hitScrollbar, r: thumb, enabled: true, on: s.scrollDrag})
+	}
+
 	// Footer.
 	add(element{kind: kindLine, r: s.box(0, setFooter, setWidth, 1), color: setBorder})
 	textAt(s.box(setPad, setFooter+14, 240, setButtonH), "Closing this window keeps it running.", s.small, setMuted, false)
 	add(element{kind: kindButton, hit: hitExit, r: s.box(setWidth-setPad-130, setFooter+14, 130, setButtonH), text: "Exit companion", style: styleDanger, enabled: true})
 	return out
+}
+
+// placementCard is an overlay's Position and size card at y: Move and
+// resize (Done while it's edited) and Reset. Returns its height.
+func (s *settingsWindow) placementCard(y, which, moveHit, resetHit int, add func(element), card func(y int, title, description string, controlW int) int) int {
+	description := "Drag it to move it; drag its sides to resize it."
+	label, style := "Move and resize", stylePlain
+	if editing == which {
+		label, style = "Done", stylePrimary
+	}
+	h := card(y, "Position and size", description, 210)
+	right := setWidth - setPad - 16
+	middle := y + (h-setButtonH)/2
+	add(element{kind: kindButton, hit: resetHit, r: s.box(right-66, middle, 66, setButtonH), text: "Reset", enabled: true})
+	add(element{kind: kindButton, hit: moveHit, r: s.box(right-66-8-136, middle, 136, setButtonH), text: label, style: style, enabled: true})
+	return h
+}
+
+// toggleEditing moves and resizes an overlay, or stops.
+func (s *settingsWindow) toggleEditing(which int) {
+	if editing == which {
+		stopEditing()
+	} else {
+		s.endPreview()
+		startEditing(which)
+	}
+	invalidateRect.Call(s.hwnd, 0, 0)
+}
+
+// resetPlacement puts an overlay back to its usual spot, size and rows.
+func (s *settingsWindow) resetPlacement(which int) {
+	e := editableOf(which)
+	if e == nil {
+		return
+	}
+	*e.placement() = DefaultPlacement()
+	redisplayOverlay(which)
+	if current != nil {
+		current.on(Choice{Command: e.command(), Placement: DefaultPlacement()})
+	}
+}
+
+// scrollContent marks the tab's content as scrolling, sets how far it can
+// scroll (keeping the scroll within it) and moves it by the scroll.
+func (s *settingsWindow) scrollContent(content []element) {
+	var bottom int32
+	for _, e := range content {
+		bottom = max(bottom, e.r.Bottom)
+	}
+	s.maxScroll = max(0, bottom+s.px(setPad)-s.px(setFooter))
+	s.scroll = max(0, min(s.scroll, s.maxScroll))
+	for k := range content {
+		content[k].scrolls = true
+		content[k].r.Top -= s.scroll
+		content[k].r.Bottom -= s.scroll
+	}
+}
+
+// inView says whether y is between the tabs and the footer, where the
+// content shows.
+func (s *settingsWindow) inView(y int32) bool {
+	return y >= s.px(setViewTop) && y < s.px(setFooter)
+}
+
+// scrollThumb is the scrollbar's thumb, at the window's right edge; false
+// while everything fits.
+func (s *settingsWindow) scrollThumb() (rect, bool) {
+	if s.maxScroll <= 0 {
+		return rect{}, false
+	}
+	top, view := s.px(setViewTop)+s.px(4), s.px(setFooter-setViewTop)-s.px(8)
+	h := max(s.px(24), view*view/(view+s.maxScroll))
+	at := top + (view-h)*s.scroll/s.maxScroll
+	return rect{Left: s.px(setWidth - 10), Top: at, Right: s.px(setWidth - 4), Bottom: at + h}, true
+}
+
+// scrollTo scrolls the content to y (window pixels), within what it can.
+func (s *settingsWindow) scrollTo(y int32) {
+	y = max(0, min(y, s.maxScroll))
+	if y == s.scroll {
+		return
+	}
+	s.scroll = y
+	s.hover = hitNone
+	s.placeEdit()
+	invalidateRect.Call(s.hwnd, 0, 0)
 }
 
 // measureWrapped is how tall text is in font, wrapped at width pixels.
@@ -588,7 +697,29 @@ func (s *settingsWindow) paint() {
 	setBkMode.Call(dc, bkTransparent)
 
 	center := uintptr(dtCenter | dtVCenter | dtSingleLine)
-	for _, e := range s.layout() {
+	elements := s.layout()
+	// The content first, then the tabs and footer, with their background
+	// over content scrolled under them.
+	slices.SortStableFunc(elements, func(a, b element) int {
+		switch {
+		case a.scrolls == b.scrolls:
+			return 0
+		case a.scrolls:
+			return -1
+		default:
+			return 1
+		}
+	})
+	covered := false
+	for _, e := range elements {
+		if !e.scrolls && !covered {
+			covered = true
+			cover, _, _ := createSolidBrush.Call(setBg)
+			for _, band := range []rect{{Right: client.Right, Bottom: s.px(setViewTop)}, {Top: s.px(setFooter), Right: client.Right, Bottom: client.Bottom}} {
+				fillRect.Call(dc, uintptr(unsafe.Pointer(&band)), cover)
+			}
+			deleteObject.Call(cover)
+		}
 		hovered := e.hit != hitNone && e.hit == s.hover && e.enabled
 		switch e.kind {
 		case kindText:
@@ -687,6 +818,12 @@ func (s *settingsWindow) paint() {
 			}
 			fillRound(dc, e.r, e.r.Bottom-e.r.Top, fill, border)
 			drawLabel(dc, e.r, e.text, s.body, ink, center)
+		case kindScrollbar:
+			color := uintptr(setBorder)
+			if e.on || hovered {
+				color = setMuted
+			}
+			fillRound(dc, e.r, e.r.Right-e.r.Left, color, color)
 		}
 	}
 	bitBlt.Call(target, 0, 0, uintptr(client.Right), uintptr(client.Bottom), dc, 0, 0, srcCopy)
@@ -732,7 +869,7 @@ func (s *settingsWindow) previewOpacity() {
 	s.previewing = true
 	if s.slider == hitSoulSlider {
 		soulBackground = OpacityByte(s.soulOpacity)
-		if p := currentSoulPopup; p != nil && current != nil {
+		if p := currentSoulPopup; p != nil && current != nil && s.state.SoulPopup {
 			if sample := current.soulPreviewSample(); sample != nil {
 				p.startPreview(sample)
 			}
@@ -775,6 +912,9 @@ func (s *settingsWindow) endPreview() {
 // hitAt is what's clickable under (x, y), or hitNone.
 func (s *settingsWindow) hitAt(x, y int32) int {
 	for _, e := range s.layout() {
+		if e.scrolls && !s.inView(y) {
+			continue
+		}
 		if e.hit != hitNone && e.enabled && x >= e.r.Left && x < e.r.Right && y >= e.r.Top && y < e.r.Bottom {
 			return e.hit
 		}
@@ -790,6 +930,13 @@ func (s *settingsWindow) placeEdit() {
 	}
 	lineH := s.px(20)
 	box := s.box(editX, editY, editW, editH)
+	box.Top, box.Bottom = box.Top-s.scroll, box.Bottom-s.scroll
+	// A child window would show over the tabs or footer: hidden while
+	// scrolled partly out of view.
+	if !s.inView(box.Top) || !s.inView(box.Bottom-1) {
+		showWindow.Call(s.edit, swHide)
+		return
+	}
 	top := box.Top + (box.Bottom-box.Top-lineH)/2
 	moveWindow.Call(s.edit, uintptr(box.Left+s.px(6)), uintptr(top), uintptr(box.Right-box.Left-s.px(12)), uintptr(lineH), 1)
 	showWindow.Call(s.edit, swShowNoActivate)
@@ -800,7 +947,9 @@ func (s *settingsWindow) setTab(tab int) {
 		return
 	}
 	s.tab = tab
+	s.scroll = 0
 	s.endPreview()
+	stopEditing()
 	setFocus.Call(s.hwnd)
 	s.placeEdit()
 	invalidateRect.Call(s.hwnd, 0, 0)
@@ -818,11 +967,15 @@ func (s *settingsWindow) refresh(state State) {
 	if focus, _, _ := getFocus.Call(); focus != s.edit {
 		setWindowText.Call(s.edit, uintptr(unsafe.Pointer(wide(strconv.Itoa(state.ShopHideSeconds)))))
 	}
+	// The content's height may have changed: keep the scroll within it.
+	s.layout()
+	s.placeEdit()
 	invalidateRect.Call(s.hwnd, 0, 0)
 }
 
 func (s *settingsWindow) show(state State) {
 	s.tab = tabGameData
+	s.scroll = 0
 	if !state.LoggedIn && state.CanLogIn {
 		s.tab = tabAccount
 	}
@@ -866,6 +1019,14 @@ func (s *settingsWindow) click(hit int) {
 		t.on(Choice{Command: CommandCheckUpdates})
 	case hitUpdateNow:
 		t.on(Choice{Command: CommandUpdateNow})
+	case hitShopMove:
+		s.toggleEditing(editShop)
+	case hitSoulMove:
+		s.toggleEditing(editSoul)
+	case hitShopReset:
+		s.resetPlacement(editShop)
+	case hitSoulReset:
+		s.resetPlacement(editSoul)
 	default:
 		switch {
 		case hit >= hitType0 && hit <= hitTypeLast:
@@ -935,6 +1096,15 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			s.setOpacityAt(x)
 			return 0
 		}
+		if s.scrollDrag {
+			if thumb, ok := s.scrollThumb(); ok {
+				track := s.px(setFooter-setViewTop) - s.px(8) - (thumb.Bottom - thumb.Top)
+				if track > 0 {
+					s.scrollTo(s.scrollDragStart + (y-s.scrollDragY)*s.maxScroll/track)
+				}
+			}
+			return 0
+		}
 		if hit := s.hitAt(x, y); hit != s.hover {
 			s.hover = hit
 			invalidateRect.Call(hwnd, 0, 0)
@@ -966,6 +1136,11 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			s.setOpacityAt(x)
 			return 0
 		}
+		if s.pressed == hitScrollbar {
+			s.scrollDrag, s.scrollDragY, s.scrollDragStart = true, y, s.scroll
+			invalidateRect.Call(hwnd, 0, 0)
+			return 0
+		}
 		if s.pressed == hitNone {
 			// A click elsewhere leaves the seconds box.
 			setFocus.Call(hwnd)
@@ -973,6 +1148,12 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		return 0
 	case wmLButtonUp:
 		releaseCapture.Call()
+		if s.scrollDrag {
+			s.scrollDrag = false
+			s.pressed = hitNone
+			invalidateRect.Call(hwnd, 0, 0)
+			return 0
+		}
 		if s.dragging {
 			s.dragging = false
 			s.pressed = hitNone
@@ -995,6 +1176,11 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			s.click(hit)
 		}
 		return 0
+	case wmMouseWheel:
+		// 120 a notch, up positive.
+		delta := int32(int16(wParam >> 16 & 0xffff))
+		s.scrollTo(s.scroll - delta*s.px(setWheelStep)/120)
+		return 0
 	case wmTimer:
 		if wParam == previewTimer && !s.dragging {
 			s.endPreview()
@@ -1002,6 +1188,7 @@ func settingsProc(hwnd, message, wParam, lParam uintptr) uintptr {
 		return 0
 	case wmClose:
 		s.endPreview()
+		stopEditing()
 		showWindow.Call(hwnd, swHide)
 		return 0
 	}

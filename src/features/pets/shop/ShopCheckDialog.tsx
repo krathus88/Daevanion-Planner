@@ -169,6 +169,7 @@ export const ShopCheckDialog = ({ atlas }: ShopCheckDialogProps) => {
                                 />
                             ) : hasResults ? (
                                 <ShopResults
+                                    atlas={atlas}
                                     summary={summary}
                                     shownNeeded={shownNeeded}
                                     sources={sources}
