@@ -53,8 +53,12 @@ type RawCraftingData = {
 // A Splendent item crafting a recipe can make instead: the game's "Combo
 // Activation Chance" on the base item.
 type ComboProc = {
+    // The item the plan counts: a transfer it skips stands in for the proc.
     id: number
     chance: number
+    // The item the craft really makes, under its own id: sellable, unlike the
+    // transfer's (bound); the same as `id` for most procs (user-told).
+    soldId: number
 }
 
 export type CraftingData = {
@@ -116,6 +120,7 @@ export const buildCraftingData = (raw: RawCraftingData): CraftingData => {
             const proc = {
                 id: transfer?.id ?? recipe.id,
                 chance: recipe.combo.chance,
+                soldId: recipe.id,
             }
 
             // The transfer it skips is also had from the combo, like White

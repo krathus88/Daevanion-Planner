@@ -26,7 +26,7 @@ const data = makeCraftingData(
 
 describe("groupRecipeEntries", () => {
     it("puts each tab's run of recipes under its name", () => {
-        const groups = groupRecipeEntries(getRecipeEntries(data, "elyos"))
+        const groups = groupRecipeEntries(getRecipeEntries(data, "elyos"), [])
 
         expect(
             groups.map((group) => {
@@ -41,5 +41,23 @@ describe("groupRecipeEntries", () => {
             { title: "Longsword", profession: "Blacksmithing", ids: [11, 12] },
             { title: "Other", profession: "Cooking", ids: [41] },
         ])
+    })
+
+    it("lists starred groups first, each keeping its place", () => {
+        const groups = groupRecipeEntries(getRecipeEntries(data, "elyos"), [
+            "cooking:other",
+            "blacksmithing:longsword",
+        ])
+
+        expect(
+            groups.map((group) => {
+                return [group.title, group.favorite]
+            }),
+        ).toEqual([
+            ["Longsword", true],
+            ["Other", true],
+            ["Greatsword", false],
+        ])
+        expect(groups[0].key).toBe("blacksmithing:longsword")
     })
 })

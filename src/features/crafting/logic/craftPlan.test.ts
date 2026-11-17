@@ -138,7 +138,7 @@ describe("buildCraftPlan", () => {
         expect(getStep(plan, SWORD)).toMatchObject({ owned: 0, crafts: 2 })
     })
 
-    it("counts failed crafts from the success rate", () => {
+    it("leaves failed crafts out, like the game's materials window", () => {
         const plan = buildCraftPlan(
             data,
             makeSettings({ success: { [SWORD]: 50 } }),
@@ -148,12 +148,12 @@ describe("buildCraftPlan", () => {
 
         expect(getStep(plan, SWORD)).toMatchObject({
             crafts: 2,
-            attempts: 4,
-            // 4 attempts x 50% success x 25% combo.
+            attempts: 2,
+            // 2 crafts x 25% combo.
             procs: [{ item: { id: SPLENDENT_SWORD }, chance: 25, count: 1 }],
         })
-        // Every attempt uses the materials.
-        expect(getStep(plan, INGOT)?.need).toBe(12)
+        // 3 Ingots per craft.
+        expect(getStep(plan, INGOT)?.need).toBe(6)
     })
 
     it("counts the base crafts a combo item takes on average", () => {
@@ -216,8 +216,9 @@ describe("buildCraftPlan", () => {
         expect(getStep(sure, 5)?.need).toBe(4)
         // 6 Ore per attempt, 1 per Splendent Mace.
         expect(getMaterial(sure, ORE)?.need).toBe(4 * 6 + 4)
-        expect(getStep(failing, 21)?.attempts).toBe(8)
-        expect(getStep(failing, 5)?.need).toBe(8)
+        // Failures aren't counted: the combo's crafts alone.
+        expect(getStep(failing, 21)?.attempts).toBe(4)
+        expect(getStep(failing, 5)?.need).toBe(4)
     })
 
     it("never fails a Transfer Crafting recipe", () => {

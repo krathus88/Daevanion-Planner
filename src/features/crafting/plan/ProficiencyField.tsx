@@ -26,7 +26,8 @@ const getRank = (value: number) => {
     )
 }
 
-// Picked like the game shows it: a rank, then its level 1-50.
+// Picked like the game shows it: a rank, then its level 1-50; its name
+// above, like a field label.
 export const ProficiencyField = ({
     profession,
     value,
@@ -65,8 +66,8 @@ export const ProficiencyField = ({
 
     return (
         <Flex
-            alignItems="center"
-            gap="2"
+            flexDir="column"
+            gap="0.5"
             role="group"
             aria-label={`${name} proficiency`}
         >

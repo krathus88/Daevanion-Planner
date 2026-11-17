@@ -1,5 +1,6 @@
 import type { ProfessionId } from "@crafting/config/professions"
 import type { CraftingSettings } from "@crafting/types"
+import { getFavoritesKey } from "./favorites"
 
 // Sets one item's number, or removes it when it's the default, so defaults
 // aren't saved.
@@ -106,4 +107,28 @@ export const setBought = (
     const others = settings.bought.filter((item) => item !== id)
 
     return { ...settings, bought: bought ? [...others, id] : others }
+}
+
+// Stars or unstars a list section ("crafting/blacksmithing:mace") for the
+// settings' character; an emptied list is dropped.
+export const setFavorite = (
+    settings: CraftingSettings,
+    section: string,
+    favorite: boolean,
+): CraftingSettings => {
+    const key = getFavoritesKey(settings)
+    const others = (settings.favorites[key] ?? []).filter((item) => {
+        return item !== section
+    })
+    const next = { ...settings.favorites }
+
+    if (favorite) {
+        next[key] = [...others, section]
+    } else if (others.length > 0) {
+        next[key] = others
+    } else {
+        delete next[key]
+    }
+
+    return { ...settings, favorites: next }
 }

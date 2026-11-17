@@ -26,6 +26,10 @@ export type CraftingSettings = {
     // Proficiency per profession, as the game's level number (61 is
     // Professional Lv. 11).
     proficiency: Partial<Record<ProfessionId, number>>
+    // Starred sections of the recipe list, per character ("<server>/<name>",
+    // or "" with none picked), as "<window>/<profession>:<category>"; listed
+    // first in their window.
+    favorites: Record<string, string[]>
 }
 
 // What a plan is worked out from: the settings with each item's price picked

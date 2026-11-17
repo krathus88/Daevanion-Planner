@@ -27,6 +27,10 @@ describe("parseCraftingSettings", () => {
             bought: [10],
             success: { 20: 75 },
             proficiency: { blacksmithing: 61, cooking: 1 },
+            favorites: {
+                "": ["crafting/cooking:food"],
+                "israphel/Testchar": ["transfer/blacksmithing:mace"],
+            },
         })
 
         expect(parseCraftingSettings(settings)).toEqual(settings)
@@ -55,6 +59,15 @@ describe("parseCraftingSettings", () => {
                     cooking: 0,
                     armorsmithing: 999,
                 },
+                favorites: {
+                    "": [
+                        "crafting/blacksmithing:mace",
+                        5,
+                        "",
+                        "crafting/blacksmithing:mace",
+                    ],
+                    "siel/Gone": "crafting/cooking:food",
+                },
             }),
         ).toEqual({
             server: "siel",
@@ -64,6 +77,7 @@ describe("parseCraftingSettings", () => {
             bought: [10],
             success: { 1: 50 },
             proficiency: { alchemy: 30 },
+            favorites: { "": ["crafting/blacksmithing:mace"] },
         })
     })
 

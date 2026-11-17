@@ -13,13 +13,21 @@ import { ItemName } from "@crafting/ItemName"
 import {
     arePricesLoading,
     buildCraftPlan,
+    getCraftChance,
     getPlanProfessions,
     getPrice,
+    getPriceState,
 } from "@crafting/logic/craftPlan"
 import { indexPlan } from "@crafting/logic/craftTree"
 import { isTradable } from "@crafting/logic/tradable"
 import { describeRecipe } from "@crafting/logic/recipeLabels"
-import { getCraftCost, getThisCraftCost } from "@crafting/logic/unitCost"
+import { formatSuccess, getSuccessInfo } from "@crafting/logic/successChance"
+import {
+    describeBlocked,
+    describeOddsHint,
+} from "@crafting/logic/summaryLabels"
+import { getFinishChances, getSuccessesNeeded } from "@crafting/logic/craftOdds"
+import { getAttemptCost, getCraftsEach } from "@crafting/logic/unitCost"
 import type { PlanSettings } from "@crafting/types"
 import { PlanContext } from "@crafting/context/planContext"
 import { getCraftedFrom } from "@crafting/logic/craftedFrom"
@@ -75,15 +83,23 @@ export const CraftPlanPanel = memo(function CraftPlanPanel({
         onCountChange(value ?? 1)
     }
 
+    // The main item's own price, when the market has none.
+    const handleSellPriceChange = (value: number | null) => {
+        onPriceChange(item.id, value)
+    }
+
+    // A percent set by hand over the game's table; empty goes back to it.
+    const handleSuccessChange = (value: number | null) => {
+        onSuccessChange(item.id, value)
+    }
+
     const plan = buildCraftPlan(data, settings, item.id, count)
     // A base item's combo proc, shown in its own card.
     const proc = getProcs(data, recipe.id)[0]
-    // A proc that skips a Transfer Crafting step (Splendent White, Splendent
-    // True): bound gear, so what it skips, not odds and market prices.
-    const transferProc =
-        proc !== undefined &&
-        (recipe.transfer === true ||
-            data.recipes.get(proc.id)?.transfer === true)
+    // Transfer Crafting's procs are bound (Splendent White): what one skips,
+    // not odds and market prices. A Crafting proc is sold (user-told), even
+    // one that skips a transfer (Splendent True Dragon Lord gear).
+    const transferProc = proc !== undefined && recipe.transfer === true
     const handlers = {
         onOwnedChange: onOwnedChange,
         onSuccessChange: onSuccessChange,
@@ -92,40 +108,29 @@ export const CraftPlanPanel = memo(function CraftPlanPanel({
         onItemSelect: onItemSelect,
     }
     const professions = getPlanProfessions(plan)
+    const craftsEach = getCraftsEach(data, settings, recipe)
+    const success = getSuccessInfo(data, settings, recipe)
 
     return (
         // Item mentions in the texts read recipes and prices from here.
         <PlanContext.Provider value={{ data: data, settings: settings }}>
             <Flex minW="0" flexDir="column" gap="4">
                 <Card>
-                    <Flex flexWrap="wrap" alignItems="flex-end" gap="4">
-                        <Flex minW="0" flex="1">
+                    <Flex flexWrap="wrap" alignItems="flex-start" gap="4">
+                        <Flex minW="0" flex="1" flexDir="column" gap="2">
                             <ItemName
                                 item={item}
                                 size="md"
                                 caption={describeRecipe(data, recipe)}
                             />
-                        </Flex>
 
-                        <Flex w="24">
-                            <NumberField
-                                value={count}
-                                label="How many"
-                                fallback={1}
-                                min={1}
-                                max={MAX_CRAFT_COUNT}
-                                onChange={handleCountChange}
+                            <CraftedFromLinks
+                                items={getCraftedFrom(data, recipe)}
+                                onSelect={onItemSelect}
                             />
                         </Flex>
-                    </Flex>
 
-                    <CraftedFromLinks
-                        items={getCraftedFrom(data, recipe)}
-                        onSelect={onItemSelect}
-                    />
-
-                    {professions.length > 0 && (
-                        <Flex flexWrap="wrap" gap="4">
+                        <Flex flexWrap="wrap" alignItems="flex-end" gap="4">
                             {professions.map((profession) => (
                                 <ProficiencyField
                                     key={profession}
@@ -137,8 +142,36 @@ export const CraftPlanPanel = memo(function CraftPlanPanel({
                                     onChange={onProficiencyChange}
                                 />
                             ))}
+
+                            {/* Transfer Crafting is guaranteed to succeed. */}
+                            {!recipe.transfer && (
+                                <Flex w="24">
+                                    <NumberField
+                                        value={
+                                            settings.success[item.id] ?? null
+                                        }
+                                        label="Success %"
+                                        fallback={null}
+                                        min={1}
+                                        max={100}
+                                        placeholder={formatSuccess(success)}
+                                        onChange={handleSuccessChange}
+                                    />
+                                </Flex>
+                            )}
+
+                            <Flex w="24">
+                                <NumberField
+                                    value={count}
+                                    label="How many"
+                                    fallback={1}
+                                    min={1}
+                                    max={MAX_CRAFT_COUNT}
+                                    onChange={handleCountChange}
+                                />
+                            </Flex>
                         </Flex>
-                    )}
+                    </Flex>
 
                     {recipe.variants > 1 && (
                         <Text textStyle="hint">
@@ -149,15 +182,20 @@ export const CraftPlanPanel = memo(function CraftPlanPanel({
 
                     <PlanSummary
                         plan={plan}
-                        costEach={getCraftCost(data, settings, item.id)}
-                        thisCraftEach={getThisCraftCost(
-                            data,
-                            settings,
-                            item.id,
+                        attemptCost={getAttemptCost(data, settings, item.id)}
+                        craftsEach={craftsEach}
+                        finishes={getFinishChances(
+                            getCraftChance(recipe, success.value),
+                            getSuccessesNeeded(recipe, count),
                         )}
+                        oddsHint={describeOddsHint(recipe, success)}
+                        blocked={describeBlocked(recipe, success)}
+                        count={count}
                         sellPrice={getPrice(settings, item.id)}
+                        sellPriceState={getPriceState(settings, item.id)}
                         tradable={isTradable(data, item.id)}
                         pricesLoading={arePricesLoading(settings)}
+                        onSellPriceChange={handleSellPriceChange}
                     />
                 </Card>
 
@@ -176,8 +214,7 @@ export const CraftPlanPanel = memo(function CraftPlanPanel({
                         data={data}
                         recipe={recipe}
                         settings={settings}
-                        attempts={plan.steps[0]?.attempts ?? 0}
-                        splendentId={proc.id}
+                        splendentId={proc.soldId}
                         comboChance={proc.chance}
                         onPriceChange={onPriceChange}
                     />

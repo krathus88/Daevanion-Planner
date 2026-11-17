@@ -3,14 +3,15 @@ import { getProcs, type CraftingData } from "@crafting/data/craftingData"
 import { MERCHANT_PRICES } from "@crafting/config/merchantPrices"
 import { isTradable } from "./tradable"
 
-// Every item an item's recipe tree can use: the item, its combo procs and
+// Every item an item's recipe tree can use: the item, its combo procs (as
+// the plan counts them and as sold) and
 // every material down the tree. Sorted, so the same tree gives the same list.
 export const getTreeItemIds = (data: CraftingData, itemId: number) => {
     const seen = new Set<number>()
     const stack = [itemId]
 
     for (const proc of getProcs(data, itemId)) {
-        stack.push(proc.id)
+        stack.push(proc.id, proc.soldId)
     }
 
     while (stack.length > 0) {

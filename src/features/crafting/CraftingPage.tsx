@@ -16,6 +16,7 @@ import {
     getTreeItemIds,
     pickOwned,
 } from "@crafting/logic/planItems"
+import { getFavoriteSections, getSectionKey } from "@crafting/logic/favorites"
 import { pickPrices } from "@crafting/logic/prices"
 import {
     filterRecipeEntries,
@@ -24,6 +25,10 @@ import {
     getStartWindow,
     type CraftingWindow,
 } from "@crafting/logic/recipeList"
+import {
+    EMPTY_WINDOW_FILTERS,
+    setWindowFilters,
+} from "@crafting/logic/windowFilters"
 import { CraftPlanPanel } from "@crafting/plan/CraftPlanPanel"
 import type { PlanSettings } from "@crafting/types"
 import { getRouteApi } from "@tanstack/react-router"
@@ -51,6 +56,7 @@ export const CraftingPage = () => {
         changeSuccess,
         changeBought,
         changeProficiency,
+        changeFavorite,
     } = useCraftingSettings()
     const sharedPrices = useSharedPrices(settings.server)
     const characters = useGameCharacters(settings.server)
@@ -80,11 +86,11 @@ export const CraftingPage = () => {
     const [craftWindow, setCraftWindow] = useState<CraftingWindow>(() => {
         return getStartWindow(data, search.item)
     })
-    const [query, setQuery] = useState("")
-    const [profession, setProfession] = useState<ProfessionId | null>(null)
-    const [category, setCategory] = useState<CategoryId | null>(null)
+    // Each window's search, profession and tab, kept apart (user-asked).
+    const [filters, setFilters] = useState(EMPTY_WINDOW_FILTERS)
 
-    const deferredQuery = useDeferredValue(query)
+    const windowFilters = filters[craftWindow]
+    const deferredQuery = useDeferredValue(windowFilters.query)
 
     // Picks the character the game says is being played, once per change, so
     // a pick made by hand stays until the next character.
@@ -104,10 +110,26 @@ export const CraftingPage = () => {
         }
     }, [playingServer, playingName])
 
-    // Each profession has its own tabs.
-    const handleProfessionChange = (next: ProfessionId | null) => {
-        setProfession(next)
-        setCategory(null)
+    const handleQueryChange = (query: string) => {
+        setFilters(setWindowFilters(filters, craftWindow, { query: query }))
+    }
+
+    // Each profession has its own tabs: a new one starts at All.
+    const handleProfessionChange = (profession: ProfessionId | null) => {
+        setFilters(
+            setWindowFilters(filters, craftWindow, { profession: profession }),
+        )
+    }
+
+    // A star on a section of the open window's list.
+    const handleFavoriteChange = (groupKey: string, favorite: boolean) => {
+        changeFavorite(getSectionKey(craftWindow, groupKey), favorite)
+    }
+
+    const handleCategoryChange = (category: CategoryId | null) => {
+        setFilters(
+            setWindowFilters(filters, craftWindow, { category: category }),
+        )
     }
 
     // From the list or a Crafted from link: the list switches to the item's
@@ -135,8 +157,8 @@ export const CraftingPage = () => {
         getRecipeEntries(data, server.faction),
         craftWindow,
         deferredQuery,
-        profession,
-        category,
+        windowFilters.profession,
+        windowFilters.category,
     )
     const recipe =
         search.item === undefined ? undefined : data.recipes.get(search.item)
@@ -210,19 +232,24 @@ export const CraftingPage = () => {
                         <RecipeFinder
                             entries={entries}
                             craftWindow={craftWindow}
-                            query={query}
-                            profession={profession}
-                            category={category}
+                            query={windowFilters.query}
+                            profession={windowFilters.profession}
+                            category={windowFilters.category}
+                            favoriteKeys={getFavoriteSections(
+                                settings,
+                                craftWindow,
+                            )}
                             selectedId={
                                 recipe
                                     ? getListedId(data, recipe.id)
                                     : undefined
                             }
                             onWindowChange={setCraftWindow}
-                            onQueryChange={setQuery}
+                            onQueryChange={handleQueryChange}
                             onProfessionChange={handleProfessionChange}
-                            onCategoryChange={setCategory}
+                            onCategoryChange={handleCategoryChange}
                             onSelect={handleSelect}
+                            onFavoriteChange={handleFavoriteChange}
                         />
 
                         {recipe ? (

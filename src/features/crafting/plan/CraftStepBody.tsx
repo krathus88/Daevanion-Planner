@@ -1,6 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import type { CraftingData } from "@crafting/data/craftingData"
-import { getPriceState, type CraftStep } from "@crafting/logic/craftPlan"
+import type { CraftStep } from "@crafting/logic/craftPlan"
 import { getTreeLines, type PlanIndex } from "@crafting/logic/craftTree"
 import { describeCombo, describeStepStatus } from "@crafting/logic/stepLabels"
 import { describeSuccess, getSuccessInfo } from "@crafting/logic/successChance"
@@ -22,7 +22,8 @@ type CraftStepBodyProps = {
 }
 
 // A crafted item opened in the tree: how many crafts, its fields, then what
-// each craft of it uses (lines that open in turn).
+// each craft of it uses (lines that open in turn); the main craft just its
+// fields and what it uses.
 export const CraftStepBody = ({
     data,
     step,
@@ -32,18 +33,21 @@ export const CraftStepBody = ({
     handlers,
 }: CraftStepBodyProps) => {
     const success = getSuccessInfo(data, settings, step.recipe)
-    const combo = describeCombo(data, step)
-    // The "set your proficiency" note once, on the main craft.
+    // The main craft's status, combo and chance are in the summary and combo
+    // card above (user-trimmed).
+    const combo = isTarget ? null : describeCombo(data, step)
     const successText =
-        success.source === "unknown" && !isTarget
+        isTarget || success.source === "unknown"
             ? null
             : describeSuccess(success, step.recipe)
 
     return (
         <Flex flexDir="column" gap="2.5">
-            <Text color="app.fg" fontSize="sm">
-                {describeStepStatus(step, isTarget, success)}
-            </Text>
+            {!isTarget && (
+                <Text color="app.fg" fontSize="sm">
+                    {describeStepStatus(step, isTarget, success)}
+                </Text>
+            )}
 
             {/* Fields right under the status, so Buy instead stays put when
             it swaps this body for the bought one. */}
@@ -54,7 +58,6 @@ export const CraftStepBody = ({
                 owned={settings.owned[step.item.id] ?? 0}
                 success={success}
                 manualSuccess={settings.success[step.item.id] ?? null}
-                priceState={getPriceState(settings, step.item.id)}
                 handlers={handlers}
             />
 

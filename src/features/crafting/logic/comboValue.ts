@@ -1,10 +1,10 @@
 import type { CraftingData, Recipe } from "@crafting/data/craftingData"
 import type { PlanSettings } from "@crafting/types"
-import { getAverageYield, getCraftChance, getPrice } from "./craftPlan"
+import { getPrice } from "./craftPlan"
 import { afterTax } from "./marketTax"
 import { getSuccessInfo } from "./successChance"
 import { isTradable } from "./tradable"
-import { getCraftCost } from "./unitCost"
+import { getAttemptCost } from "./unitCost"
 
 // How sure to be of at least one proc: crafts needed for each.
 const CONFIDENCES = [50, 75, 90, 95]
@@ -14,14 +14,19 @@ export type ComboValue = {
     procChance: number
     // Chance one attempt makes the regular item instead.
     regularChance: number
+    // The craft's success, 0-100.
+    success: number
     // Success is known: the game's table, set by hand, or Transfer Crafting
     // (always 100%); else taken as 100% until a proficiency is set.
     successKnown: boolean
     // Attempts for one proc on average.
     attemptsPerProc: number
+    // Regular items made on the way to one proc, on average.
+    regularsPerProc: number
     // Crafts for a 50/75/90/95% chance of at least one.
     craftsFor: { confidence: number; crafts: number }[]
-    // Kinah one attempt uses; null while a material has no price.
+    // Kinah one attempt uses, as the summary's "per craft"; null while a
+    // material has no price.
     attemptCost: number | null
     // Null too when the market doesn't sell it (Transfer Crafting).
     regularPrice: number | null
@@ -34,11 +39,6 @@ export type ComboValue = {
     netCostPerProc: number | null
     // Average Kinah per attempt when selling everything made, after tax.
     profitPerAttempt: number | null
-}
-
-// Chance of at least one proc in a number of attempts.
-export const getProcOdds = (procChance: number, attempts: number) => {
-    return 1 - (1 - procChance) ** attempts
 }
 
 const getCraftsFor = (procChance: number, confidence: number) => {
@@ -70,14 +70,7 @@ export const getComboValue = (
     }
 
     const regularChance = successRate - procChance
-    const craftCost = getCraftCost(data, settings, recipe.id)
-    // Cost each is per successful craft; back to per attempt.
-    const attemptCost =
-        craftCost === null
-            ? null
-            : craftCost *
-              getAverageYield(recipe) *
-              getCraftChance(recipe, success.value)
+    const attemptCost = getAttemptCost(data, settings, recipe.id)
     const regularTradable = isTradable(data, recipe.id)
     const splendentTradable = isTradable(data, splendentId)
     const regularPrice = regularTradable ? getPrice(settings, recipe.id) : null
@@ -96,9 +89,11 @@ export const getComboValue = (
     return {
         procChance: procChance,
         regularChance: regularChance,
+        success: success.value,
         // Transfer Crafting always succeeds.
         successKnown: success.source !== "unknown",
         attemptsPerProc: 1 / procChance,
+        regularsPerProc: regularChance / procChance,
         craftsFor: craftsFor,
         attemptCost: attemptCost,
         regularPrice: regularPrice,

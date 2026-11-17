@@ -9,7 +9,7 @@ import {
     SPLENDENT_SWORD,
     SWORD,
 } from "@test/craftingFixture"
-import { getCraftCost, getThisCraftCost } from "./unitCost"
+import { getAttemptCost, getCraftCost, getCraftsEach } from "./unitCost"
 
 const data = makeCraftingData()
 const PRICES = { [ORE]: 10, [SOLVENT]: 5 }
@@ -174,15 +174,11 @@ describe("getCraftCost", () => {
     })
 })
 
-describe("getThisCraftCost", () => {
+describe("getAttemptCost", () => {
     it("takes the bound item it upgrades as already had", () => {
         // 2 Solvent; the White Greatsword and its own chain left out.
         expect(
-            getThisCraftCost(
-                transferChain,
-                makeSettings({ prices: PRICES }),
-                42,
-            ),
+            getAttemptCost(transferChain, makeSettings({ prices: PRICES }), 42),
         ).toBe(10)
     })
 
@@ -193,17 +189,70 @@ describe("getThisCraftCost", () => {
             marketPrices: { [INGOT]: 20 },
         })
 
-        expect(getThisCraftCost(data, settings, SWORD)).toBe(110)
+        expect(getAttemptCost(data, settings, SWORD)).toBe(110)
         expect(getCraftCost(data, settings, SWORD)).toBe(125)
+    })
+
+    it("is one craft's materials, whatever the success", () => {
+        const settings = makeSettings({
+            prices: PRICES,
+            success: { [SWORD]: 50 },
+        })
+
+        expect(getAttemptCost(data, settings, SWORD)).toBe(125)
+        expect(getCraftCost(data, settings, SWORD)).toBe(250)
     })
 
     it("is unknown while a material has no price", () => {
         expect(
-            getThisCraftCost(
+            getAttemptCost(
                 data,
                 makeSettings({ prices: { [ORE]: 10 } }),
                 SWORD,
             ),
         ).toBeNull()
+    })
+})
+
+describe("getCraftsEach", () => {
+    const getRecipe = (craftingData: typeof data, id: number) => {
+        const recipe = craftingData.recipes.get(id)
+
+        if (!recipe) {
+            throw new Error("The fixture has this recipe.")
+        }
+
+        return recipe
+    }
+
+    it("is 1 for a craft that always succeeds", () => {
+        expect(
+            getCraftsEach(data, makeSettings(), getRecipe(data, SWORD)),
+        ).toBe(1)
+    })
+
+    it("counts failures", () => {
+        const settings = makeSettings({ success: { [SWORD]: 50 } })
+
+        expect(getCraftsEach(data, settings, getRecipe(data, SWORD))).toBe(2)
+    })
+
+    it("counts a combo-only item's misses", () => {
+        expect(
+            getCraftsEach(
+                data,
+                makeSettings(),
+                getRecipe(data, SPLENDENT_SWORD),
+            ),
+        ).toBe(4)
+    })
+
+    it("splits a craft over its yield and a Cooking double", () => {
+        expect(
+            getCraftsEach(data, makeSettings(), getRecipe(data, INGOT)),
+        ).toBe(0.1)
+        expect(
+            getCraftsEach(cooking, makeSettings(), getRecipe(cooking, STEW)),
+        ).toBeCloseTo(1 / 1.3)
     })
 })

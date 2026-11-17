@@ -25,6 +25,29 @@ describe("getPlanItemIds", () => {
 
         expect(getPlanItemIds(transfer, 41)).toEqual([ORE])
     })
+
+    it("asks for a proc as sold, not the bound transfer it skips", () => {
+        // A Splendent Sword the game also lists as a transfer from a Sword.
+        const skipping = makeCraftingData(
+            [
+                { id: SWORD, materials: [[ORE, 5]] },
+                {
+                    id: 21,
+                    materials: [[ORE, 5]],
+                    combo: { base: SWORD, chance: 25, only: true },
+                },
+                { id: 22, transfer: true, materials: [[SWORD, 1]] },
+            ],
+            [
+                [ORE, "Ore", "common"],
+                [SWORD, "Sword", "rare"],
+                [21, "Splendent Sword", "epic"],
+                [22, "Splendent Sword", "epic"],
+            ],
+        )
+
+        expect(getPlanItemIds(skipping, SWORD)).toEqual([ORE, SWORD, 21])
+    })
 })
 
 describe("getTreeItemIds", () => {

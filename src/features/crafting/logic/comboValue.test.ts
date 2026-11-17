@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    INGOT,
     makeCraftingData,
     makeSettings,
     ORE,
@@ -7,7 +8,7 @@ import {
     SPLENDENT_SWORD,
     SWORD,
 } from "@test/craftingFixture"
-import { getComboValue, getProcOdds } from "./comboValue"
+import { getComboValue } from "./comboValue"
 
 const data = makeCraftingData()
 const sword = data.recipes.get(SWORD) ?? null
@@ -29,8 +30,10 @@ describe("getComboValue", () => {
         expect(value).toMatchObject({
             procChance: 0.25,
             regularChance: 0.75,
+            success: 100,
             successKnown: false,
             attemptsPerProc: 4,
+            regularsPerProc: 3,
         })
         expect(value?.craftsFor).toEqual([
             { confidence: 50, crafts: 3 },
@@ -80,8 +83,21 @@ describe("getComboValue", () => {
     })
 })
 
-describe("getProcOdds", () => {
-    it("gives the chance of at least one proc", () => {
-        expect(getProcOdds(0.25, 4)).toBeCloseTo(0.684, 3)
+describe("getComboValue's cost per craft", () => {
+    it("is the summary's: each material at the cheaper of buying and crafting", () => {
+        if (!sword) {
+            throw new Error("The fixture has a Sword recipe.")
+        }
+
+        // Ingots cost 25 to craft, 20 to buy: 3 Ingots and 5 Ore.
+        const value = getComboValue(
+            data,
+            makeSettings({ prices: PRICES, marketPrices: { [INGOT]: 20 } }),
+            sword,
+            SPLENDENT_SWORD,
+            25,
+        )
+
+        expect(value?.attemptCost).toBe(110)
     })
 })

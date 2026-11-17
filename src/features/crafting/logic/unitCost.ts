@@ -1,4 +1,4 @@
-import type { CraftingData } from "@crafting/data/craftingData"
+import type { CraftingData, Recipe } from "@crafting/data/craftingData"
 import type { PlanSettings } from "@crafting/types"
 import {
     getAverageYield,
@@ -108,11 +108,11 @@ export const getItemCost = (
         : getBuyPrice(settings, id).value
 }
 
-// Average Kinah for one of an item counting only its own craft: the bound
-// item it upgrades (or any bound material) is taken as already had, and every
-// other material at the cheaper of buying and crafting it. Null when any of
-// those has no price.
-export const getThisCraftCost = (
+// Kinah one craft (one attempt) uses, success or not: the bound item it
+// upgrades (or any bound material) is taken as already had, and every other
+// material at the cheaper of buying and crafting it. Null when any of those
+// has no price.
+export const getAttemptCost = (
     data: CraftingData,
     settings: PlanSettings,
     id: number,
@@ -123,7 +123,6 @@ export const getThisCraftCost = (
         return null
     }
 
-    const success = getRecipeSuccess(data, settings, recipe)
     let total = 0
 
     for (const [materialId, count] of recipe.materials) {
@@ -145,5 +144,17 @@ export const getThisCraftCost = (
         total += Math.min(...prices) * count
     }
 
-    return total / getCraftChance(recipe, success) / getAverageYield(recipe)
+    return total
+}
+
+// Crafts it takes on average to make one of an item: failures, a combo-only
+// item's misses and a Cooking double counted.
+export const getCraftsEach = (
+    data: CraftingData,
+    settings: PlanSettings,
+    recipe: Recipe,
+) => {
+    const success = getRecipeSuccess(data, settings, recipe)
+
+    return 1 / getCraftChance(recipe, success) / getAverageYield(recipe)
 }

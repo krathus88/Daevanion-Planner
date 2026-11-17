@@ -5,6 +5,7 @@ import {
     entriesOf,
     finiteNumber,
     guarded,
+    itemsOf,
     parseStored,
     validEntries,
     validItems,
@@ -31,6 +32,7 @@ const EMPTY_SETTINGS: CraftingSettings = {
     bought: [],
     success: {},
     proficiency: {},
+    favorites: {},
 }
 
 const amount = (min: number) => {
@@ -58,6 +60,15 @@ const SettingsSchema = v.object({
     // 100 is the default, so it isn't kept.
     success: validEntries(wholeNumber(1, 100)),
     proficiency: validEntries(wholeNumber(1, MAX_PROFICIENCY), isProfessionId),
+    // Per character; a character's list that isn't an array is dropped.
+    favorites: validEntries(
+        v.pipe(
+            itemsOf(v.pipe(v.string(), v.minLength(1))),
+            v.transform((ids) => {
+                return [...new Set(ids)]
+            }),
+        ),
+    ),
 })
 
 export const parseCraftingSettings = (value: unknown): CraftingSettings => {

@@ -3,6 +3,7 @@ import { Card } from "@common/Card"
 import { SearchField } from "@common/SearchField"
 import type { CategoryId, ProfessionId } from "@crafting/config/professions"
 import { useScrollToSelected } from "@crafting/hooks/useScrollToSelected"
+import { useWindowScroll } from "@crafting/hooks/useWindowScroll"
 import type { CraftingWindow, RecipeEntry } from "@crafting/logic/recipeList"
 import { useRef } from "react"
 import { CategorySelect } from "./CategorySelect"
@@ -17,12 +18,15 @@ type RecipeFinderProps = {
     profession: ProfessionId | null
     // The profession's tab; null is All.
     category: CategoryId | null
+    // The picked character's starred sections in this window, listed first.
+    favoriteKeys: readonly string[]
     selectedId?: number
     onWindowChange: (craftWindow: CraftingWindow) => void
     onQueryChange: (query: string) => void
     onProfessionChange: (profession: ProfessionId | null) => void
     onCategoryChange: (category: CategoryId | null) => void
     onSelect: (itemId: number) => void
+    onFavoriteChange: (groupKey: string, favorite: boolean) => void
 }
 
 export const RecipeFinder = ({
@@ -31,14 +35,18 @@ export const RecipeFinder = ({
     query,
     profession,
     category,
+    favoriteKeys,
     selectedId,
     onWindowChange,
     onQueryChange,
     onProfessionChange,
     onCategoryChange,
     onSelect,
+    onFavoriteChange,
 }: RecipeFinderProps) => {
     const listRef = useRef<HTMLDivElement>(null)
+
+    const handleListScroll = useWindowScroll(listRef, craftWindow)
 
     useScrollToSelected(listRef, selectedId)
 
@@ -86,12 +94,15 @@ export const RecipeFinder = ({
                 flexDir="column"
                 gap="3"
                 overflowY="auto"
+                onScroll={handleListScroll}
             >
                 {entries.length > 0 ? (
                     <RecipeList
                         entries={entries}
+                        favoriteKeys={favoriteKeys}
                         selectedId={selectedId}
                         onSelect={onSelect}
+                        onFavoriteChange={onFavoriteChange}
                     />
                 ) : (
                     <Text py="4" color="app.muted" fontSize="sm">

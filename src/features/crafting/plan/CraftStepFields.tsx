@@ -1,12 +1,9 @@
 import { Flex, Grid } from "@chakra-ui/react"
 import { NumberField } from "@common/NumberField"
-import type { CraftStep, PriceState } from "@crafting/logic/craftPlan"
+import type { CraftStep } from "@crafting/logic/craftPlan"
 import { formatSuccess, type SuccessInfo } from "@crafting/logic/successChance"
-import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import { BagCountField } from "./BagCountField"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
-import { ListedPriceText } from "./ListedPriceText"
-import { PriceLoading } from "./PriceLoading"
 import type { PlanHandlers } from "./planHandlers"
 import { STEP_FIELD_COLUMNS } from "./stepFieldColumns"
 
@@ -19,13 +16,11 @@ type CraftStepFieldsProps = {
     success: SuccessInfo
     // A percent set by hand, or null to use the game's table.
     manualSuccess: number | null
-    // What its price spot shows: fixed, loading, or the field.
-    priceState: PriceState
     handlers: PlanHandlers
 }
 
 // A crafted item's bag count, success and Buy instead (its price is on its
-// tree line); the main craft has only success and what it sells for.
+// tree line); nothing for the main craft (its fields are in the item card).
 export const CraftStepFields = ({
     step,
     isTarget,
@@ -33,7 +28,6 @@ export const CraftStepFields = ({
     owned,
     success,
     manualSuccess,
-    priceState,
     handlers,
 }: CraftStepFieldsProps) => {
     const itemId = step.item.id
@@ -46,12 +40,13 @@ export const CraftStepFields = ({
         handlers.onSuccessChange(itemId, value)
     }
 
-    const handlePriceChange = (value: number | null) => {
-        handlers.onPriceChange(itemId, value)
-    }
-
     const handleBoughtChange = (bought: boolean) => {
         handlers.onBoughtChange(itemId, bought)
+    }
+
+    // The main craft's success and sell price are in the item card.
+    if (isTarget) {
+        return null
     }
 
     return (
@@ -60,8 +55,9 @@ export const CraftStepFields = ({
                 <BagCountField owned={owned} onChange={handleOwnedChange} />
             )}
 
-            {/* Transfer Crafting is guaranteed to succeed. */}
-            {!step.recipe.transfer && (
+            {/* Transfer Crafting is guaranteed to succeed; the main craft's
+            is in its card's corner. */}
+            {!isTarget && !step.recipe.transfer && (
                 <NumberField
                     value={manualSuccess}
                     label="Success %"
@@ -70,29 +66,6 @@ export const CraftStepFields = ({
                     max={100}
                     placeholder={formatSuccess(success)}
                     onChange={handleSuccessChange}
-                />
-            )}
-
-            {/* Other crafts' prices are on their tree line. */}
-            {isTarget && tradable && priceState.kind === "listed" && (
-                <ListedPriceText
-                    label="Sells for (Kinah)"
-                    price={priceState.price}
-                />
-            )}
-
-            {isTarget && tradable && priceState.kind === "loading" && (
-                <PriceLoading label="Sells for (Kinah)" />
-            )}
-
-            {isTarget && tradable && priceState.kind === "own" && (
-                <NumberField
-                    value={priceState.value}
-                    label="Sells for (Kinah)"
-                    fallback={null}
-                    max={MAX_AMOUNT}
-                    placeholder="—"
-                    onChange={handlePriceChange}
                 />
             )}
 

@@ -1,47 +1,42 @@
 import { supabase } from "@account/supabaseClient"
+import { PERSIST_MAX_AGE_MS } from "@layout/queryCache"
 
 // Market prices from Aion2Market (aion2.exchange). Its API doesn't let other
 // sites read it (no CORS), so a Supabase Edge Function, `market-prices`,
 // fetches them server-side (the user's dashboard; code in memory, not the
-// repo). Kept in memory only: never saved to the shared prices table.
+// repo). Cached by TanStack Query, in the browser too, for 10 minutes (the
+// market updates only so often); never saved to the shared prices table.
 
 const FUNCTION_NAME = "market-prices"
 
-// How long a fetched price is used before it's asked for again.
-const MAX_AGE_MS = 30 * 60 * 1000
 // Items per request to the relay.
 const BATCH = 100
 
-type Entry = {
-    // Kinah, the lowest listing; null when not on the market or unreadable.
-    price: number | null
-    at: number
+type Waiting = {
+    id: number
+    resolve: (price: number | null) => void
+    reject: (error: unknown) => void
 }
 
-const entries = new Map<number, Entry>()
-const queue: number[] = []
-const queued = new Set<number>()
-const listeners = new Set<() => void>()
+const queue: Waiting[] = []
 let busy = false
-// What the page reads: known prices, and the items still being fetched.
-export type MarketPrices = {
-    prices: Record<string, number>
-    pending: Record<string, true>
-}
-
-let snapshot: MarketPrices = { prices: {}, pending: {} }
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null
 }
 
 // The relay's answer, `{ prices: { "<id>": number | null } }`: each asked
-// item's price, null when it has none.
+// item's price, null when it isn't on the market; an item it left out
+// couldn't be looked up (Aion2Market refused or failed) and isn't in the map.
 export const readRelayPrices = (json: unknown, ids: number[]) => {
     const prices = isObject(json) && isObject(json.prices) ? json.prices : {}
     const result = new Map<number, number | null>()
 
     for (const id of ids) {
+        if (!(id in prices)) {
+            continue
+        }
+
         const price = prices[id]
 
         result.set(
@@ -53,97 +48,72 @@ export const readRelayPrices = (json: unknown, ids: number[]) => {
     return result
 }
 
-const publish = () => {
-    const prices: Record<string, number> = {}
-    const pending: Record<string, true> = {}
-
-    for (const [id, entry] of entries) {
-        if (entry.price !== null) {
-            prices[id] = entry.price
-        }
+// One request at a time, up to BATCH items each; a failed request, or an
+// item the relay left out, fails its query: not saved, asked again when next
+// needed.
+const pump = async () => {
+    if (busy || queue.length === 0) {
+        return
     }
 
-    for (const id of queued) {
-        pending[id] = true
-    }
+    const batch = queue.splice(0, BATCH)
+    const ids = batch.map((waiting) => waiting.id)
 
-    snapshot = { prices: prices, pending: pending }
+    busy = true
 
-    for (const listener of listeners) {
-        listener()
-    }
-}
-
-const fetchPrices = async (ids: number[]) => {
     try {
         const { data, error } = await supabase.functions.invoke(FUNCTION_NAME, {
             body: { ids: ids },
         })
 
-        return readRelayPrices(error ? null : data, ids)
-    } catch {
-        return readRelayPrices(null, ids)
-    }
-}
-
-// One request at a time, up to BATCH items each.
-const pump = () => {
-    if (busy || queue.length === 0) {
-        return
-    }
-
-    const ids = queue.splice(0, BATCH)
-
-    busy = true
-
-    void fetchPrices(ids).then((prices) => {
-        const at = Date.now()
-
-        for (const [id, price] of prices) {
-            queued.delete(id)
-            entries.set(id, { price: price, at: at })
+        if (error) {
+            throw error
         }
 
-        busy = false
-        publish()
-        pump()
+        const prices = readRelayPrices(data, ids)
+
+        for (const waiting of batch) {
+            const price = prices.get(waiting.id)
+
+            // Left out: not looked up, so not cached as "no price".
+            if (price === undefined) {
+                waiting.reject(new Error("Not looked up"))
+            } else {
+                waiting.resolve(price)
+            }
+        }
+    } catch (error) {
+        for (const waiting of batch) {
+            waiting.reject(error)
+        }
+    }
+
+    busy = false
+    void pump()
+}
+
+// One item's price, asked for with the others asked in the same moment:
+// Kinah, the lowest listing, or null when it's not on the market.
+export const loadMarketPrice = (id: number) => {
+    return new Promise<number | null>((resolve, reject) => {
+        queue.push({ id: id, resolve: resolve, reject: reject })
+        // After this render's other queries have queued theirs.
+        queueMicrotask(() => {
+            void pump()
+        })
     })
 }
 
-// Asks for the prices of these items, skipping fresh and pending ones.
-export const requestMarketPrices = (ids: number[]) => {
-    const now = Date.now()
-    let added = false
-
-    for (const id of ids) {
-        const entry = entries.get(id)
-
-        if (queued.has(id) || (entry && now - entry.at < MAX_AGE_MS)) {
-            continue
-        }
-
-        queued.add(id)
-        queue.push(id)
-        added = true
+// An item's market price as a query: fresh for 10 minutes, kept in the
+// browser for that long, not retried (a field is better than a long wait).
+export const marketPriceQuery = (id: number) => {
+    return {
+        queryKey: ["market-price", id],
+        queryFn: () => {
+            return loadMarketPrice(id)
+        },
+        staleTime: PERSIST_MAX_AGE_MS,
+        retry: false,
+        meta: { persist: true },
     }
-
-    if (added) {
-        publish()
-    }
-
-    pump()
-}
-
-export const subscribeToMarketPrices = (listener: () => void) => {
-    listeners.add(listener)
-
-    return () => {
-        listeners.delete(listener)
-    }
-}
-
-// Every known market price by item id, and the ones loading; a new object on
-// each change.
-export const getMarketPrices = () => {
-    return snapshot
 }

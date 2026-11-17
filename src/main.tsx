@@ -1,4 +1,5 @@
 import { AppError } from "@layout/AppError"
+import { QueryProvider } from "@layout/QueryProvider"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { Provider } from "@ui/provider"
 import { StrictMode } from "react"
@@ -23,8 +24,10 @@ declare module "@tanstack/react-router" {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <Provider>
-            <RouterProvider router={router} />
-        </Provider>
+        <QueryProvider>
+            <Provider>
+                <RouterProvider router={router} />
+            </Provider>
+        </QueryProvider>
     </StrictMode>,
 )

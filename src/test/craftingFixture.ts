@@ -109,6 +109,7 @@ export const makeCraftingSettings = (
         bought: [],
         success: {},
         proficiency: {},
+        favorites: {},
         ...settings,
     }
 }

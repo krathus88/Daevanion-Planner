@@ -44,13 +44,13 @@ describe("describeNeed and describeCrafts", () => {
         )
 
         expect(describeNeed(plan.steps[0], true)).toBe("3 to make")
-        expect(describeCrafts(plan.steps[0])).toBe(
-            "3 crafts · about 6 attempts",
-        )
+        // Failures aren't counted in the plan.
+        expect(describeCrafts(plan.steps[0])).toBe("3 crafts")
+        // 3 Ingots for each of 3 Swords.
         expect(describeNeed(plan.steps[1], false)).toBe(
-            "18 needed · 2 in the bag",
+            "9 needed · 2 in the bag",
         )
-        expect(describeCrafts(plan.steps[1])).toBe("2 crafts of 10")
+        expect(describeCrafts(plan.steps[1])).toBe("1 craft of 10")
     })
 
     it("mentions Cooking's double chance", () => {

@@ -13,7 +13,6 @@ import {
 import { MERCHANT_PRICES } from "@crafting/config/merchantPrices"
 import { getMorphSource } from "@crafting/config/substanceMorph"
 import type { PlanSettings } from "@crafting/types"
-import { getRecipeSuccess } from "./successChance"
 import { isTradable } from "./tradable"
 
 // One item crafted along the way, the target first.
@@ -26,14 +25,15 @@ export type CraftStep = {
     owned: number
     // Successful crafts: what's left over the average yield, rounded up.
     crafts: number
-    // Crafts to start, counting failures and, for a combo item, the crafts
-    // that make only the base item. Rounded up from the average.
+    // Crafts to start: for a combo item, the crafts that make only the base
+    // item too, rounded up from the average. Failures aren't counted (user:
+    // like the game's materials window; they're in the expected cost).
     attempts: number
-    // Chance one attempt gives this item, 0-1.
+    // Chance one attempt gives this item if it succeeds, 0-1: its combo's
+    // for a combo-only item, else 1.
     chance: number
     // A combo item's base item, made by the attempts that don't proc (each
-    // attempt uses up every material, lower-tier gear included). About this
-    // many, on average.
+    // attempt uses up every material, lower-tier gear included).
     leftover: { item: CraftingItem; count: number } | null
     // Made straight from its base's combo instead of crafting it from the
     // base (e.g. White Dragon Lord Ring procs Splendent White, skipping that
@@ -333,8 +333,7 @@ export const buildCraftPlan = (
             0,
             Math.ceil((need - owned) / getAverageYield(recipe) - 1e-9),
         )
-        const success = getRecipeSuccess(data, settings, recipe)
-        const chance = getCraftChance(recipe, success)
+        const chance = getCraftChance(recipe, 100)
         const skip = getSkipChance(recipe, (baseId) => {
             return (
                 isCrafted(data, settings, baseId, targetId) &&
@@ -373,9 +372,7 @@ export const buildCraftPlan = (
                 combo?.only && stepAttempts > crafts
                     ? {
                           item: getItem(data, combo.base),
-                          count: Math.round(
-                              stepAttempts * (success / 100) - crafts,
-                          ),
+                          count: stepAttempts - crafts,
                       }
                     : null,
             skipped:
@@ -386,9 +383,7 @@ export const buildCraftPlan = (
                 return {
                     item: getItem(data, proc.id),
                     chance: proc.chance,
-                    count: Math.round(
-                        stepAttempts * (success / 100) * (proc.chance / 100),
-                    ),
+                    count: Math.round(stepAttempts * (proc.chance / 100)),
                 }
             }),
             uses: uses,

@@ -3,6 +3,7 @@ import { makeCraftingSettings } from "@test/craftingFixture"
 import {
     setBought,
     setCharacter,
+    setFavorite,
     setOwned,
     setPrice,
     setProficiency,
@@ -87,5 +88,36 @@ describe("settings edits", () => {
 
         expect(settings.bought).toEqual([5])
         expect(setBought(settings, 5, false).bought).toEqual([])
+    })
+
+    it("stars sections per character, dropping an emptied list", () => {
+        const none = setFavorite(
+            makeCraftingSettings(),
+            "crafting/blacksmithing:mace",
+            true,
+        )
+        const kryx = setFavorite(
+            setCharacter(none, "Kryx"),
+            "transfer/blacksmithing:mace",
+            true,
+        )
+
+        expect(kryx.favorites).toEqual({
+            "": ["crafting/blacksmithing:mace"],
+            "siel/Kryx": ["transfer/blacksmithing:mace"],
+        })
+        expect(
+            setFavorite(kryx, "transfer/blacksmithing:mace", false).favorites,
+        ).toEqual({ "": ["crafting/blacksmithing:mace"] })
+    })
+
+    it("stars a section once", () => {
+        const twice = setFavorite(
+            setFavorite(makeCraftingSettings(), "crafting/cooking:food", true),
+            "crafting/cooking:food",
+            true,
+        )
+
+        expect(twice.favorites).toEqual({ "": ["crafting/cooking:food"] })
     })
 })

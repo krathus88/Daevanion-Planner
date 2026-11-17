@@ -22,7 +22,8 @@ describe("buildCraftingData", () => {
         const transfer = data.recipes.get(110730096)
 
         expect(getProcs(data, 110730015)).toEqual([
-            { id: 110730096, chance: 25 },
+            // What the craft makes, sellable, is the combo item's own id.
+            { id: 110730096, chance: 25, soldId: 110730017 },
         ])
         expect(transfer?.transfer).toBe(true)
         expect(transfer?.combo).toEqual({

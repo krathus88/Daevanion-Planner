@@ -16,13 +16,12 @@ test.describe("crafting", () => {
         await page.getByRole("button", { name: /Orichalcum Ingot/ }).click()
 
         await expect(page).toHaveURL(/item=610710001/)
-        await expect(page.getByText(/^1 to make · 1 craft of 10/)).toBeVisible()
+        // The summary's chance boxes start at the crafts it takes.
+        await expect(page.getByText("1 craft", { exact: true })).toBeVisible()
 
         await page.getByLabel("How many").fill("25")
         await expect(page).toHaveURL(/count=25/)
-        await expect(
-            page.getByText(/^25 to make · 3 crafts of 10/),
-        ).toBeVisible()
+        await expect(page.getByText("3 crafts", { exact: true })).toBeVisible()
 
         const ore = page.getByRole("group", { name: "Orichalcum Ore" })
 
@@ -84,15 +83,47 @@ test.describe("crafting", () => {
         ).toBeHidden()
     })
 
+    test("lists starred sections first, kept after a reload", async ({
+        page,
+    }) => {
+        await page.goto("/crafting")
+
+        const stars = page.getByRole("button", { name: /^Favorite / })
+
+        await expect(stars.first()).toHaveAccessibleName("Favorite Greatsword")
+
+        await page.getByRole("button", { name: "Favorite Mace" }).click()
+
+        await expect(stars.first()).toHaveAccessibleName("Favorite Mace")
+        await expect(stars.first()).toHaveAttribute("aria-pressed", "true")
+
+        await page.reload()
+
+        await expect(stars.first()).toHaveAccessibleName("Favorite Mace")
+    })
+
+    test("keeps each window's search apart", async ({ page }) => {
+        await page.goto("/crafting")
+        await page.getByLabel("Search recipes").fill("mace")
+
+        // Chakra draws the segment over its radio.
+        await page
+            .getByRole("radio", { name: "Transfer Crafting" })
+            .check({ force: true })
+        await expect(page.getByLabel("Search recipes")).toHaveValue("")
+
+        await page
+            .getByRole("radio", { name: "Crafting", exact: true })
+            .check({ force: true })
+        await expect(page.getByLabel("Search recipes")).toHaveValue("mace")
+    })
+
     test("counts the attempts a combo item takes", async ({ page }) => {
         // Artisan's Splendent Orichalcum Greatsword procs 25% of the time.
         await page.goto("/crafting?item=110130013")
 
         await expect(
-            page.getByText(/^1 to make · 1 craft · about 4 attempts/),
-        ).toBeVisible()
-        await expect(
-            page.getByText(/^Not crafted directly/).first(),
+            page.getByText("These count the 25% combo too."),
         ).toBeVisible()
 
         // Every attempt uses an Expert's piece: 4 of them, about 16 attempts.
@@ -105,6 +136,10 @@ test.describe("crafting", () => {
             .click()
         await expect(
             page.getByText(/^4 needed · 4 crafts · about 16 attempts/),
+        ).toBeVisible()
+        // An opened combo item says how it's made.
+        await expect(
+            page.getByText(/^Not crafted directly/).first(),
         ).toBeVisible()
     })
 

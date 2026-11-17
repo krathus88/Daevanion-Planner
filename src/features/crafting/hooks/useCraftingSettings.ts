@@ -5,6 +5,7 @@ import type { ProfessionId } from "@crafting/config/professions"
 import {
     setBought,
     setCharacter,
+    setFavorite,
     setOwned,
     setPrice,
     setProficiency,
@@ -95,6 +96,14 @@ export const useCraftingSettings = () => {
         writeCraftingSettings(setBought(readCraftingSettings(), id, bought))
     }
 
+    // A list section ("crafting/blacksmithing:mace"), for the picked
+    // character.
+    const changeFavorite = (section: string, favorite: boolean) => {
+        writeCraftingSettings(
+            setFavorite(readCraftingSettings(), section, favorite),
+        )
+    }
+
     return {
         settings: settings,
         sharing: auth.status === "signedIn",
@@ -106,5 +115,6 @@ export const useCraftingSettings = () => {
         changeSuccess: changeSuccess,
         changeProficiency: changeProficiency,
         changeBought: changeBought,
+        changeFavorite: changeFavorite,
     }
 }

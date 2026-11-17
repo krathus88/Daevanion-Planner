@@ -1,35 +1,32 @@
-import { Flex, Text } from "@chakra-ui/react"
+import { Flex, Grid, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
-import { NumberField } from "@common/NumberField"
 import {
     getItem,
     type CraftingData,
     type Recipe,
 } from "@crafting/data/craftingData"
 import { ItemName } from "@crafting/ItemName"
+import { ItemText } from "@crafting/mention/ItemText"
+import {
+    describeComboChance,
+    describeComboHint,
+} from "@crafting/logic/comboLabels"
 import { getComboValue } from "@crafting/logic/comboValue"
 import { arePricesLoading, getPriceState } from "@crafting/logic/craftPlan"
-import { ItemMention } from "@crafting/mention/ItemMention"
-import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import type { PlanSettings } from "@crafting/types"
 import { LuSparkles } from "react-icons/lu"
 import { ComboOdds } from "./ComboOdds"
+import { ComboSellAll } from "./ComboSellAll"
 import { ComboVerdict } from "./ComboVerdict"
-import { ListedPriceText } from "./ListedPriceText"
-import { PriceLoading } from "./PriceLoading"
 
 type ComboCardProps = {
     data: CraftingData
     recipe: Recipe
     settings: PlanSettings
-    // The plan's attempts at the main craft.
-    attempts: number
     splendentId: number
     comboChance: number
     onPriceChange: (itemId: number, price: number | null) => void
 }
-
-const oneDecimal = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 })
 
 // The main craft's combo: its odds of making the Splendent item, and whether
 // crafting for it beats buying one or pays to sell.
@@ -37,7 +34,6 @@ export const ComboCard = ({
     data,
     recipe,
     settings,
-    attempts,
     splendentId,
     comboChance,
     onPriceChange,
@@ -47,7 +43,6 @@ export const ComboCard = ({
     }
 
     const splendent = getItem(data, splendentId)
-    const priceState = getPriceState(settings, splendentId)
     const regular = getItem(data, recipe.id)
     const value = getComboValue(
         data,
@@ -61,6 +56,9 @@ export const ComboCard = ({
         return null
     }
 
+    const pricesLoading = arePricesLoading(settings)
+    const hint = describeComboHint(value, regular)
+
     return (
         <Card borderColor="app.accent">
             <Flex alignItems="center" gap="2" color="app.accent">
@@ -71,49 +69,41 @@ export const ComboCard = ({
                 </Text>
             </Flex>
 
-            <Flex flexWrap="wrap" alignItems="flex-end" gap="4">
-                <Flex minW="0" flex="1" flexDir="column" gap="1.5">
+            <Grid
+                templateColumns={{
+                    base: "1fr",
+                    md: "repeat(2, minmax(0, 1fr))",
+                }}
+                columnGap="8"
+                rowGap="4"
+            >
+                <Flex minW="0" flexDir="column" gap="2">
                     <ItemName item={splendent} wrap />
 
                     <Text color="app.muted" fontSize="sm">
-                        About 1 in {oneDecimal.format(value.attemptsPerProc)}{" "}
-                        crafts instead of <ItemMention item={regular} />
-                        {value.successKnown ? "" : " (at 100% success)"}
+                        {describeComboChance(value, comboChance)}
                     </Text>
+
+                    <ComboOdds value={value} />
                 </Flex>
 
-                {value.splendentTradable && priceState.kind === "listed" && (
-                    <ListedPriceText
-                        label="Its price (Kinah)"
-                        price={priceState.price}
-                    />
-                )}
+                <ComboVerdict
+                    value={value}
+                    priceState={getPriceState(settings, splendentId)}
+                    pricesLoading={pricesLoading}
+                    onPriceChange={handlePriceChange}
+                />
+            </Grid>
 
-                {value.splendentTradable && priceState.kind === "loading" && (
-                    <PriceLoading w="32" label="Its price (Kinah)" />
-                )}
+            {value.profitPerAttempt !== null && !pricesLoading && (
+                <ComboSellAll profit={value.profitPerAttempt} />
+            )}
 
-                {value.splendentTradable && priceState.kind === "own" && (
-                    <Flex w="32">
-                        <NumberField
-                            value={priceState.value}
-                            label="Its price (Kinah)"
-                            fallback={null}
-                            max={MAX_AMOUNT}
-                            placeholder="—"
-                            onChange={handlePriceChange}
-                        />
-                    </Flex>
-                )}
-            </Flex>
-
-            <ComboOdds value={value} attempts={attempts} />
-
-            <ComboVerdict
-                value={value}
-                regular={regular}
-                pricesLoading={arePricesLoading(settings)}
-            />
+            {hint && !pricesLoading && (
+                <Text textStyle="hint">
+                    <ItemText parts={hint} />
+                </Text>
+            )}
         </Card>
     )
 }

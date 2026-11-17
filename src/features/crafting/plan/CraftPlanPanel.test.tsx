@@ -108,12 +108,49 @@ describe("CraftPlanPanel", () => {
     it("shows what each craft of the main craft uses", () => {
         setup()
 
-        expect(
-            screen.getByText("2 to make · 2 crafts · — success"),
-        ).toBeVisible()
+        // Its status is in the summary above, not repeated here.
+        expect(screen.queryByText(/^2 to make/)).toBeNull()
         expect(within(getTreeLine("Ingot")).getByText("3×")).toBeVisible()
         expect(within(getTreeLine("Ingot")).getByText("6")).toBeVisible()
         expect(within(getTreeLine("Ore")).getByText("30")).toBeVisible()
+    })
+
+    it("sets the main craft's success beside How many", async () => {
+        const { onSuccessChange } = setup()
+        const card = screen.getByText("Main craft").parentElement
+
+        // Not in the Main craft card: in the item's, with How many.
+        expect(
+            within(card ?? document.body).queryByLabelText("Success %"),
+        ).toBeNull()
+
+        // The one field before any tree line opens: the item card's.
+        await userEvent.type(screen.getByLabelText("Success %"), "5")
+
+        expect(onSuccessChange).toHaveBeenLastCalledWith(SWORD, 5)
+    })
+
+    it("shows Sells for beside the profit, only without a market price", async () => {
+        const { onPriceChange } = setup(
+            makeSettings({ prices: { [ORE]: 10, [SOLVENT]: 5 } }),
+        )
+        const card = screen.getByText("Main craft").parentElement
+
+        // Not in the Main craft card any more.
+        expect(
+            within(card ?? document.body).queryByLabelText("Sells for (Kinah)"),
+        ).toBeNull()
+
+        await userEvent.click(screen.getByLabelText("Sells for (Kinah)"))
+        await userEvent.paste("300")
+
+        expect(onPriceChange).toHaveBeenLastCalledWith(SWORD, 300)
+    })
+
+    it("leaves a listed sell price to the summary", () => {
+        setup(makeSettings({ marketPrices: { [SWORD]: 300 } }))
+
+        expect(screen.queryByLabelText("Sells for (Kinah)")).toBeNull()
     })
 
     it("takes a price on any tree line", async () => {
@@ -173,38 +210,100 @@ describe("CraftPlanPanel", () => {
         expect(within(rows[0]).getByText("Crafted")).toBeVisible()
     })
 
-    it("shows this craft's own cost beside the whole chain's", () => {
-        // Ingots cost 25 to craft, 20 to buy.
+    it("leads with one craft's cost and what's left to buy", () => {
+        // Ingots cost 25 to craft, 20 to buy: one Sword craft is 3 Ingots and
+        // 5 Ore, and half of them fail.
         setup(
             makeSettings({
                 prices: { [ORE]: 10, [SOLVENT]: 5 },
                 marketPrices: { [INGOT]: 20 },
+                success: { [SWORD]: 50 },
             }),
         )
 
-        // The amounts are spans inside the line.
+        expect(screen.getByText("110 Kinah")).toBeVisible()
+        expect(screen.getByText("per craft")).toBeVisible()
+        // 2 Swords, no failures: 1 Ingot craft (200 + 50) and 10 Ore.
+        expect(screen.getByText("350 Kinah")).toBeVisible()
+        expect(screen.getByText("to buy, after your bag")).toBeVisible()
+    })
+
+    it("takes the bag off what's left to buy, not off one craft's cost", () => {
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5 },
+                owned: { [ORE]: 10 },
+            }),
+        )
+
+        // One Sword craft: 3 Ingots at 25 and 5 Ore, bag or not.
+        expect(screen.getByText("125 Kinah")).toBeVisible()
+        // 30 Ore needed, 10 in the bag: 20 at 10, and 10 Solvent at 5.
+        expect(screen.getByText("250 Kinah")).toBeVisible()
+    })
+
+    it("shows how sure the crafts it takes, and 2 more, are", () => {
+        setup(makeSettings({ success: { [SWORD]: 50 } }))
+
+        // 2 Swords at 50%.
+        expect(screen.getByText("25% sure")).toBeVisible()
+        expect(screen.getByText("50% sure")).toBeVisible()
+        expect(screen.getByText("68.75% sure")).toBeVisible()
+    })
+
+    it("counts the profit against the expected cost", () => {
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5, [SWORD]: 300 },
+                success: { [SWORD]: 50 },
+            }),
+        )
+
+        // 270 after tax, less 2 crafts at 125. The amount is a span.
         const line = screen.getByText((_, element) => {
             return (
                 element?.tagName === "P" &&
-                (element.textContent ?? "").startsWith("Whole chain")
+                (element.textContent ?? "").startsWith("Profit +")
             )
         })
 
-        expect(line).toHaveTextContent(
-            "Whole chain 125 Kinah each · this craft only 110 Kinah",
-        )
+        expect(line).toHaveTextContent("Profit +20 Kinah each")
     })
 
     it("sums up the combo in numbers, asking only for a missing price", () => {
         setup(makeSettings({ prices: { [ORE]: 10, [SOLVENT]: 5 } }))
 
-        // 2 attempts at 25%: 1 - 0.75² is about 44%.
-        expect(screen.getByText("Your plan: 44% sure")).toBeVisible()
+        expect(screen.getByText("50% sure of one")).toBeVisible()
         expect(
             // Sword is an item mention inside the line.
-            screen.getByText(/sells for \(Main craft\) to count the ones/),
+            screen.getByText(
+                /sells for \(beside the profit above\) to count the ones/,
+            ),
         ).toBeVisible()
         expect(screen.queryByText(/Crafting 100/)).toBeNull()
+    })
+
+    it("sets the Splendent's price under Buy it", async () => {
+        const { onPriceChange } = setup(
+            makeSettings({ prices: { [ORE]: 10, [SOLVENT]: 5 } }),
+        )
+
+        await userEvent.click(screen.getByLabelText("Splendent price (Kinah)"))
+        await userEvent.paste("600")
+
+        expect(onPriceChange).toHaveBeenLastCalledWith(SPLENDENT_SWORD, 600)
+    })
+
+    it("shows the Splendent's market price under Buy it, read-only", () => {
+        setup(
+            makeSettings({
+                prices: { [ORE]: 10, [SOLVENT]: 5 },
+                marketPrices: { [SPLENDENT_SWORD]: 600 },
+            }),
+        )
+
+        expect(screen.getByText("600 Kinah")).toBeVisible()
+        expect(screen.queryByLabelText("Splendent price (Kinah)")).toBeNull()
     })
 
     it("opens the item it's crafted from", async () => {
@@ -269,9 +368,11 @@ describe("CraftPlanPanel", () => {
             }),
         )
 
-        // To spend, the cost line and the Ingot's craft cost wait.
-        expect(screen.queryByText("350 Kinah")).toBeNull()
-        expect(screen.queryByText(/^Cost/)).toBeNull()
+        // One craft's cost, the profit and the Ingot's craft cost wait.
+        expect(screen.queryByText("125 Kinah")).toBeNull()
+        // Buy it waits too, rather than showing its field.
+        expect(screen.queryByLabelText("Splendent price (Kinah)")).toBeNull()
+        expect(screen.queryByText("Profit")).toBeNull()
         expect(
             within(getTreeLine("Ingot")).getByLabelText("Loading prices"),
         ).toBeVisible()
@@ -316,8 +417,8 @@ describe("CraftPlanPanel", () => {
         const card = screen.getByText("Main craft").parentElement
 
         expect(
-            within(card ?? document.body).getAllByText("Success %"),
-        ).toHaveLength(1)
+            within(card ?? document.body).queryByText("Success %"),
+        ).toBeNull()
         expect(
             within(card ?? document.body).queryByText("Buy instead"),
         ).toBeNull()
@@ -386,9 +487,8 @@ describe("CraftPlanPanel", () => {
             }),
         )
 
-        // To spend, cost each, then the profit: its 200 Kinah price pays out
+        // One craft's cost, then the profit: its 200 Kinah price pays out
         // 180 after the 10% Market tax.
-        expect(screen.getByText("350 Kinah")).toBeVisible()
         expect(screen.getByText("125 Kinah")).toBeVisible()
         expect(screen.getByText("+55 Kinah")).toBeVisible()
     })
@@ -396,10 +496,9 @@ describe("CraftPlanPanel", () => {
     it("says how many materials still need a price", () => {
         setup(makeSettings({ prices: { [ORE]: 10 } }))
 
-        // Solvent is missing too, so To spend counts the Ore alone.
         expect(
             screen.getByText(
-                "Price 1 more material to see the cost each and profit. To spend leaves out 1 unpriced material.",
+                "Price 1 more material to see the cost and profit.",
             ),
         ).toBeVisible()
     })
