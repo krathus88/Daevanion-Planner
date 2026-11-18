@@ -607,6 +607,47 @@ func TestPurchaseLimits(t *testing.T) {
 	}
 }
 
+func weeklyShop(kind string, entries ...uint32) wire.Message {
+	// The merchant: a varint when listing, a u32 when buying.
+	merchant := u32(33134)
+	if kind == game.TypeWeeklyShopCounts {
+		merchant = []byte{0xee, 0x82, 0x02}
+	}
+	body := join([]byte{0, 0}, merchant, []byte{byte(len(entries) / 2)})
+	for k := 0; k+1 < len(entries); k += 2 {
+		body = join(body, u32(entries[k]), u32(entries[k+1]))
+	}
+	if kind == game.TypeWeeklyShopCounts {
+		body = join(body, u64(1))
+	}
+	return msg(kind, body)
+}
+
+func TestWeeklyShopCounts(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	// Bought with no list read this run: nothing to add to.
+	tr.Handle("a", weeklyShop(game.TypeWeeklyShopPurchase, 133019901, 2), now)
+	if got := tr.All()[0]; got.Limits != nil {
+		t.Fatalf("got %+v", got.Limits)
+	}
+	// An earlier list read 134019901 at 3; this week's lists only 133019901.
+	tr.Handle("a", weeklyShop(game.TypeWeeklyShopCounts, 134019901, 3), now)
+	open := now.Add(time.Minute)
+	tr.Handle("a", weeklyShop(game.TypeWeeklyShopCounts, 133019901, 3), open)
+	later := open.Add(time.Second)
+	tr.Handle("a", weeklyShop(game.TypeWeeklyShopPurchase, 133019901, 1, 134019901, 2), later)
+	got := tr.All()[0]
+	want := map[string][2]int64{
+		"133019901": {4, later.UnixMilli()},
+		// Not listed when the shop opened: none were bought this week.
+		"134019901": {2, later.UnixMilli()},
+	}
+	if !reflect.DeepEqual(got.Limits, want) {
+		t.Fatalf("got %+v", got.Limits)
+	}
+}
+
 func TestKeepMergesLimits(t *testing.T) {
 	previous := Snapshot{Version: SnapshotVersion, Limits: map[string][2]int64{"1209": {4, 1}, "1210": {9, 1}}, LimitsAt: 1}
 	s := Snapshot{Version: SnapshotVersion, Limits: map[string][2]int64{"1209": {1, 2}}, LimitsAt: 2}

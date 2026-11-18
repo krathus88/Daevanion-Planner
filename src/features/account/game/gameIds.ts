@@ -106,16 +106,24 @@ export const CRAFT_TASKS: Record<
     "odyle-craft": { recipe: "31070002", limit: "character" },
 }
 
-// Tracker tasks a weekly purchase limit counts: task id → the limit's id and
-// whether it's server-wide (its count then is the server's, read on any of
-// its characters). 1209/1210 are the Odyle Energy shop items, 4 a week per
-// character and 16 per server (recorded 2026-11-18).
+// Tracker tasks weekly purchase counts fill: task id → the ids it adds up
+// (snapshot `limits`) and whether it's server-wide (its count then is the
+// server's, read on any of its characters). 1209/1210 are the Odyle Energy
+// shop's limits, 4 a week per character and 16 per server. The Command
+// merchants' entries: 133019901 the Faction Command quest (any town's
+// merchant), 134019901-904 the Abyss ones, 4 kinds of 5 (all recorded
+// 2026-11-18).
 export const LIMIT_TASKS: Record<
     string,
-    { limit: string; scope: "server" | "character" }
+    { limits: string[]; scope: "server" | "character" }
 > = {
-    "odyle-shop": { limit: "1209", scope: "character" },
-    "odyle-shop-server": { limit: "1210", scope: "server" },
+    "odyle-shop": { limits: ["1209"], scope: "character" },
+    "odyle-shop-server": { limits: ["1210"], scope: "server" },
+    "command-faction": { limits: ["133019901"], scope: "server" },
+    "command-abyss": {
+        limits: ["134019901", "134019902", "134019903", "134019904"],
+        scope: "server",
+    },
 }
 
 // One-off tracker tasks a shop's lifetime purchase counts fill: task id →

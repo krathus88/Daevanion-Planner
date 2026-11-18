@@ -83,7 +83,8 @@ export const getCompanionLocks = (
                     ARENA_TASKS[task.id] !== undefined &&
                     isArenaTaskKnown(arena[character.id], week, task.id)) ||
                 (craft !== undefined && section === `crafts.${craft.recipe}`) ||
-                (limit !== undefined && section === `limits.${limit.limit}`)
+                (limit !== undefined &&
+                    limit.limits.some((id) => section === `limits.${id}`))
 
             if (filled) {
                 lock(getTaskOwner(task, character), task.id)

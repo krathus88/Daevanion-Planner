@@ -148,6 +148,12 @@ describe("getCompanionLocks", () => {
             "server:siel": ["odyle-shop-server"],
         })
     })
+
+    it("locks a Command task on any of its entries", () => {
+        expect(locked(["1301:Kryx:limits.134019903"])).toEqual({
+            "server:siel": ["command-abyss"],
+        })
+    })
 })
 
 describe("hasGameSection", () => {

@@ -180,7 +180,9 @@ const applyCrafts = (
     return next
 }
 
-// Weekly purchase limits (Odyle Energy from the shop).
+// Weekly purchase counts (Odyle Energy from the shop, Command quests). A
+// weekly shop lists only entries bought this week, so of a task's entries
+// only those read in the same week as its newest one count.
 const applyLimits = (
     data: TrackerData,
     character: TrackerCharacter,
@@ -194,13 +196,22 @@ const applyLimits = (
 
     for (const task of getTasks(data)) {
         const source = LIMIT_TASKS[task.id]
-        const limit = source && snapshot.limits[source.limit]
+        const limits = snapshot.limits
+        const reads = (source?.limits ?? [])
+            .map((id) => limits[id])
+            .filter((read) => read !== undefined)
 
-        if (source === undefined || limit === undefined) {
+        if (source === undefined || reads.length === 0) {
             continue
         }
 
-        const [value, at] = limit
+        const at = Math.max(...reads.map(([, readAt]) => readAt))
+        const week = getResetPeriods(at)[task.reset]
+        const value = reads
+            .filter(
+                ([, readAt]) => getResetPeriods(readAt)[task.reset] === week,
+            )
+            .reduce((total, [count]) => total + count, 0)
 
         next = setWeeklyCount(next, task, character, {
             value: value,

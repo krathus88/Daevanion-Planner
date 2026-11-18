@@ -660,4 +660,53 @@ describe("applyToTracker", () => {
             })
         })
     })
+
+    describe("Command quests", () => {
+        const week = getResetPeriods(AT).weekly
+        const lastWeek = AT - 7 * 24 * 3_600_000
+
+        it("adds up this week's Abyss entries and the Faction one", () => {
+            const next = applyToTracker(
+                data(),
+                snapshot({
+                    limits: {
+                        "133019901": [5, AT],
+                        "134019901": [1, AT],
+                        "134019902": [2, AT],
+                        "134019903": [3, AT],
+                        "134019904": [4, AT],
+                    },
+                    limitsAt: AT,
+                }),
+            )
+
+            expect(next.counts["server:siel"]["command-faction"]).toEqual({
+                period: week,
+                count: 5,
+            })
+            expect(next.counts["server:siel"]["command-abyss"]).toEqual({
+                period: week,
+                count: 10,
+            })
+        })
+
+        it("leaves out entries last read in an earlier week", () => {
+            // This week's list had only 134019904: the others are at 0.
+            const next = applyToTracker(
+                data(),
+                snapshot({
+                    limits: {
+                        "134019901": [5, lastWeek],
+                        "134019904": [2, AT],
+                    },
+                    limitsAt: AT,
+                }),
+            )
+
+            expect(next.counts["server:siel"]["command-abyss"]).toEqual({
+                period: week,
+                count: 2,
+            })
+        })
+    })
 })

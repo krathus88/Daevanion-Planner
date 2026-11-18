@@ -74,6 +74,13 @@ const (
 	// (ParseShopPurchase).
 	TypeShopCounts   = "078c"
 	TypeShopPurchase = "098c"
+	// Shops with weekly purchase limits (the Command merchants): this week's
+	// counts when one opens (ParseWeeklyShopCounts), listing only entries
+	// bought this week, then one purchase (ParseShopPurchase's shape). The
+	// shop field names the merchant (each town's differs); the entries are
+	// the same everywhere.
+	TypeWeeklyShopCounts   = "018c"
+	TypeWeeklyShopPurchase = "038c"
 	// Weekly purchase limits (the Odyle Energy shop items): every limit's
 	// count when a shop opens, then the one a purchase changed, same shape
 	// (ParsePurchaseLimits).
@@ -954,6 +961,22 @@ func ParsePurchaseLimits(body []byte) (map[uint32]PurchaseLimit, bool) {
 		limits[id] = PurchaseLimit{Count: count, Resets: int64(r.u64())}
 	}
 	return limits, r.ok
+}
+
+// ParseWeeklyShopCounts reads 018c: u16, varint merchant, u8 n, n x (u32
+// entry, u32 bought this week), u64 server now ms.
+func ParseWeeklyShopCounts(body []byte) (counts map[uint32]int, ok bool) {
+	r := newReader(body)
+	r.skip(2)
+	r.varint()
+	n := int(r.u8())
+	counts = make(map[uint32]int, n)
+	for k := 0; k < n && r.ok; k++ {
+		entry := r.u32()
+		counts[entry] = int(r.u32())
+	}
+	r.u64()
+	return counts, r.ok
 }
 
 // ParseShopBuy reads 9556: u16 (0 so far), u8 tab, u32 entry bought.

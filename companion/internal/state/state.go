@@ -60,10 +60,14 @@ type Character struct {
 	// opened this run (game.TypeShopCounts).
 	Shops   map[uint32]map[uint32]int
 	ShopsAt time.Time
-	// Weekly purchase limits by id (game.TypePurchaseLimits), each with when
-	// it was read.
+	// Weekly purchase counts, each with when it was read: purchase limits by
+	// id (game.TypePurchaseLimits) and weekly shop entries by entry id
+	// (game.TypeWeeklyShopCounts).
 	Limits   map[uint32]Limit
 	LimitsAt time.Time
+	// When a weekly shop last listed its counts this run: an entry not read
+	// since then wasn't bought this week.
+	WeeklyShopAt time.Time
 }
 
 // Progress counters that changed this long before they were read are left
@@ -479,6 +483,42 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			c.Limits = next
 			c.LimitsAt = now
 		}
+	case game.TypeWeeklyShopCounts:
+		counts, ok := game.ParseWeeklyShopCounts(m.Body)
+		if !ok {
+			t.Log("Couldn't read a weekly shop's purchase counts")
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			next := copyMap(c.Limits)
+			for entry, n := range counts {
+				next[entry] = Limit{Count: n, At: now}
+			}
+			c.Limits = next
+			c.LimitsAt = now
+			c.WeeklyShopAt = now
+		}
+	case game.TypeWeeklyShopPurchase:
+		_, bought, ok := game.ParseShopPurchase(m.Body)
+		if !ok {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			// Buying needs the shop open, whose list came first: an entry
+			// it didn't list (or that was bought since) had none this week.
+			if c.WeeklyShopAt.IsZero() {
+				return
+			}
+			next := copyMap(c.Limits)
+			for entry, n := range bought {
+				if before := next[entry]; !before.At.Before(c.WeeklyShopAt) {
+					n += before.Count
+				}
+				next[entry] = Limit{Count: n, At: now}
+			}
+			c.Limits = next
+			c.LimitsAt = now
+		}
 	case game.TypeDuty:
 		duty, ok := game.ParseDuty(m.Body)
 		if !ok {
@@ -669,8 +709,10 @@ type Snapshot struct {
 	// opened so far (an entry never bought is missing).
 	Shops   map[string]map[string]int `json:"shops,omitempty"`
 	ShopsAt int64                     `json:"shopsAt,omitempty"`
-	// Weekly purchase limit id → [count this week, read at (ms)], read when
-	// a shop opens; a server-wide limit's count is the server's.
+	// Weekly purchase counts, read when a shop opens: purchase limit id or
+	// weekly shop entry id → [count this week, read at (ms)]. A weekly shop
+	// lists only entries bought this week, so an entry read in an earlier
+	// week than its shop's newest is at 0.
 	Limits   map[string][2]int64 `json:"limits,omitempty"`
 	LimitsAt int64               `json:"limitsAt,omitempty"`
 }

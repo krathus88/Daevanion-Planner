@@ -83,9 +83,11 @@ export type GameSnapshot = {
     // never bought are left out.
     shops?: Record<string, Record<string, number>>
     shopsAt?: number
-    // Weekly purchase limit id (gameIds LIMIT_TASKS) → [count, read at (ms)],
-    // counted in the week of that time; sent when a shop opens. A
-    // server-wide limit's count is the server's.
+    // Weekly purchase counts (gameIds LIMIT_TASKS): purchase limit id or
+    // weekly shop entry id → [count, read at (ms)], counted in the week of
+    // that time; sent when a shop opens. A weekly shop lists only entries
+    // bought this week, so an entry read in an earlier week than the
+    // shop's newest is at 0. A server-wide limit's count is the server's.
     limits?: Record<string, [number, number]>
     limitsAt?: number
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -508,6 +509,28 @@ func TestParsePurchaseLimits(t *testing.T) {
 		t.Fatalf("purchase: got %+v %v", limits, ok)
 	}
 	if _, ok := ParsePurchaseLimits(h("000001b904000002000000")); ok {
+		t.Fatal("read a cut list")
+	}
+}
+
+// Kryx at the Abyss Command merchant, 2026-11-18: one of each of the 4
+// Command quests, then +1, +2, +3 of the last three; the shop field is the
+// merchant (20172: a varint when listing, a u32 when buying).
+func TestParseWeeklyShop(t *testing.T) {
+	counts, ok := ParseWeeklyShopCounts(h("0000cc9d010053900befa1010000"))
+	if !ok || len(counts) != 0 {
+		t.Fatalf("nothing bought: got %v %v", counts, ok)
+	}
+	_, bought, ok := ParseShopPurchase(h("0006cc4e0000043dfbfc07010000003efbfc07010000003ffbfc070100000040fbfc0701000000"))
+	if !ok || len(bought) != 4 || bought[134019901] != 1 || bought[134019904] != 1 {
+		t.Fatalf("purchase: got %v %v", bought, ok)
+	}
+	counts, ok = ParseWeeklyShopCounts(h("0000cc9d01043dfbfc07010000003efbfc07020000003ffbfc070300000040fbfc0704000000901e0defa1010000"))
+	want := map[uint32]int{134019901: 1, 134019902: 2, 134019903: 3, 134019904: 4}
+	if !ok || !reflect.DeepEqual(counts, want) {
+		t.Fatalf("after: got %v %v", counts, ok)
+	}
+	if _, ok := ParseWeeklyShopCounts(h("0000cc9d01043dfbfc0701000000")); ok {
 		t.Fatal("read a cut list")
 	}
 }
