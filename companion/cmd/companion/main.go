@@ -985,6 +985,9 @@ func describe(snapshots map[string]state.Snapshot) {
 		if s.Shops != nil {
 			parts = append(parts, "shop purchases")
 		}
+		if s.Limits != nil {
+			parts = append(parts, "purchase limits")
+		}
 		if len(parts) == 0 {
 			parts = append(parts, "character (items and entries load at login or a character switch)")
 		}

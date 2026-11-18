@@ -585,6 +585,38 @@ func TestShopPurchaseCounts(t *testing.T) {
 	}
 }
 
+func purchaseLimits(entries ...uint32) wire.Message {
+	body := join([]byte{0, 0}, []byte{byte(len(entries) / 2)})
+	for k := 0; k+1 < len(entries); k += 2 {
+		body = join(body, u32(entries[k]), u32(entries[k+1]), u64(1))
+	}
+	return msg(game.TypePurchaseLimits, body)
+}
+
+func TestPurchaseLimits(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", character("Testchar", 30), now)
+	tr.Handle("a", purchaseLimits(1209, 0, 1210, 3), now)
+	later := now.Add(time.Minute)
+	// A purchase sends only the limit it changed.
+	tr.Handle("a", purchaseLimits(1209, 2), later)
+	got := tr.All()[0]
+	want := map[string][2]int64{"1209": {2, later.UnixMilli()}, "1210": {3, now.UnixMilli()}}
+	if !reflect.DeepEqual(got.Limits, want) || got.LimitsAt != later.UnixMilli() {
+		t.Fatalf("got %+v at %d", got.Limits, got.LimitsAt)
+	}
+}
+
+func TestKeepMergesLimits(t *testing.T) {
+	previous := Snapshot{Version: SnapshotVersion, Limits: map[string][2]int64{"1209": {4, 1}, "1210": {9, 1}}, LimitsAt: 1}
+	s := Snapshot{Version: SnapshotVersion, Limits: map[string][2]int64{"1209": {1, 2}}, LimitsAt: 2}
+	got := s.Keep(previous)
+	want := map[string][2]int64{"1209": {1, 2}, "1210": {9, 1}}
+	if !reflect.DeepEqual(got.Limits, want) || got.LimitsAt != 2 {
+		t.Fatalf("got %+v %d", got.Limits, got.LimitsAt)
+	}
+}
+
 func TestKeepMergesShops(t *testing.T) {
 	previous := Snapshot{Version: SnapshotVersion, Shops: map[string]map[string]int{"990003": {"402024518": 36}, "990001": {"7": 1}}, ShopsAt: 1}
 	s := Snapshot{Version: SnapshotVersion, Shops: map[string]map[string]int{"990003": {"402024517": 3}}, ShopsAt: 2}

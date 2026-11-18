@@ -60,6 +60,10 @@ type Character struct {
 	// opened this run (game.TypeShopCounts).
 	Shops   map[uint32]map[uint32]int
 	ShopsAt time.Time
+	// Weekly purchase limits by id (game.TypePurchaseLimits), each with when
+	// it was read.
+	Limits   map[uint32]Limit
+	LimitsAt time.Time
 }
 
 // Progress counters that changed this long before they were read are left
@@ -72,6 +76,12 @@ type Craft struct {
 	Server    uint32
 	Character uint32
 	At        time.Time
+}
+
+// Limit is a weekly purchase limit's count (see game.PurchaseLimit).
+type Limit struct {
+	Count int
+	At    time.Time
 }
 
 // Key names the character the way the site stores it.
@@ -451,6 +461,24 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			c.Shops = shops
 			c.ShopsAt = now
 		}
+	case game.TypePurchaseLimits:
+		limits, ok := game.ParsePurchaseLimits(m.Body)
+		if !ok {
+			t.Log("Couldn't read the purchase limits")
+			return nil
+		}
+		if len(limits) == 0 {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			// A purchase sends only its own limit: the others keep theirs.
+			next := copyMap(c.Limits)
+			for id, limit := range limits {
+				next[id] = Limit{Count: limit.Count, At: now}
+			}
+			c.Limits = next
+			c.LimitsAt = now
+		}
 	case game.TypeDuty:
 		duty, ok := game.ParseDuty(m.Body)
 		if !ok {
@@ -641,6 +669,10 @@ type Snapshot struct {
 	// opened so far (an entry never bought is missing).
 	Shops   map[string]map[string]int `json:"shops,omitempty"`
 	ShopsAt int64                     `json:"shopsAt,omitempty"`
+	// Weekly purchase limit id → [count this week, read at (ms)], read when
+	// a shop opens; a server-wide limit's count is the server's.
+	Limits   map[string][2]int64 `json:"limits,omitempty"`
+	LimitsAt int64               `json:"limitsAt,omitempty"`
 }
 
 // SnapshotCharacter names the character.
@@ -666,7 +698,8 @@ const SnapshotVersion = 1
 // Keep fills the sections this snapshot lacks from an earlier one of the same
 // character (the account's copy from before the companion started): a
 // companion started after login never gets the inventory or counters, and
-// must not wipe them. Crafting counts merge by recipe, proficiency by
+// must not wipe them. Crafting counts merge by recipe, purchase limits by id,
+// proficiency by
 // profession.
 func (s Snapshot) Keep(previous Snapshot) Snapshot {
 	if previous.Version != s.Version {
@@ -719,6 +752,14 @@ func (s Snapshot) Keep(previous Snapshot) Snapshot {
 		}
 		s.Shops = shops
 		s.ShopsAt = max(s.ShopsAt, previous.ShopsAt)
+	}
+	if previous.Limits != nil {
+		limits := copyMap(previous.Limits)
+		for id, limit := range s.Limits {
+			limits[id] = limit
+		}
+		s.Limits = limits
+		s.LimitsAt = max(s.LimitsAt, previous.LimitsAt)
 	}
 	if previous.Crafts != nil {
 		crafts := copyMap(previous.Crafts)
@@ -872,6 +913,14 @@ func (c *Character) Snapshot() Snapshot {
 			s.Shops[strconv.FormatUint(uint64(shop), 10)] = entries
 		}
 		s.ShopsAt = millis(c.ShopsAt)
+	}
+
+	if c.Limits != nil {
+		s.Limits = make(map[string][2]int64, len(c.Limits))
+		for id, limit := range c.Limits {
+			s.Limits[strconv.FormatUint(uint64(id), 10)] = [2]int64{int64(limit.Count), millis(limit.At)}
+		}
+		s.LimitsAt = millis(c.LimitsAt)
 	}
 
 	if c.Arena != nil {

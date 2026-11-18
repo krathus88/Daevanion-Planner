@@ -106,6 +106,18 @@ export const CRAFT_TASKS: Record<
     "odyle-craft": { recipe: "31070002", limit: "character" },
 }
 
+// Tracker tasks a weekly purchase limit counts: task id → the limit's id and
+// whether it's server-wide (its count then is the server's, read on any of
+// its characters). 1209/1210 are the Odyle Energy shop items, 4 a week per
+// character and 16 per server (recorded 2026-11-18).
+export const LIMIT_TASKS: Record<
+    string,
+    { limit: string; scope: "server" | "character" }
+> = {
+    "odyle-shop": { limit: "1209", scope: "character" },
+    "odyle-shop-server": { limit: "1210", scope: "server" },
+}
+
 // One-off tracker tasks a shop's lifetime purchase counts fill: task id →
 // the shop and the entries it adds up. A shop's list leaves out entries never
 // bought. The Abyss shop sells Stigma Shards in 4 stages of 50, one entry

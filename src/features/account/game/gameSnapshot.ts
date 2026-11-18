@@ -83,6 +83,11 @@ export type GameSnapshot = {
     // never bought are left out.
     shops?: Record<string, Record<string, number>>
     shopsAt?: number
+    // Weekly purchase limit id (gameIds LIMIT_TASKS) → [count, read at (ms)],
+    // counted in the week of that time; sent when a shop opens. A
+    // server-wide limit's count is the server's.
+    limits?: Record<string, [number, number]>
+    limitsAt?: number
 }
 
 const count = wholeNumber(0)
@@ -146,6 +151,8 @@ const SectionsSchema = v.object({
     artifactsAt: time,
     shops: section(counts),
     shopsAt: time,
+    limits: section(entriesOf(pair)),
+    limitsAt: time,
 })
 
 // The version only decides whether the site understands it.
@@ -174,5 +181,6 @@ export const getSnapshotTime = (snapshot: GameSnapshot) => {
         snapshot.corridorsAt ?? 0,
         snapshot.artifactsAt ?? 0,
         snapshot.shopsAt ?? 0,
+        snapshot.limitsAt ?? 0,
     )
 }

@@ -74,6 +74,10 @@ const (
 	// (ParseShopPurchase).
 	TypeShopCounts   = "078c"
 	TypeShopPurchase = "098c"
+	// Weekly purchase limits (the Odyle Energy shop items): every limit's
+	// count when a shop opens, then the one a purchase changed, same shape
+	// (ParsePurchaseLimits).
+	TypePurchaseLimits = "8e56"
 )
 
 // NightmareShop is the Nightmare shop's id in TypeShopCounts.
@@ -924,6 +928,32 @@ func ParseShopPurchase(body []byte) (shop uint32, bought map[uint32]int, ok bool
 		bought[entry] += int(r.u32())
 	}
 	return shop, bought, r.ok
+}
+
+// PurchaseLimit is how many of a weekly-limited item were bought this period,
+// and when the period ends.
+type PurchaseLimit struct {
+	Count int
+	// Unix ms (a weekly reset, Wednesday 07:00 UTC so far).
+	Resets int64
+}
+
+// ParsePurchaseLimits reads 8e56: u16 0, u8 n, n x (u32 limit id, u32 count,
+// u64 reset time ms). A server-wide limit's count is the server's, read on
+// any of its characters. Ids 1209 and 1210 are the Odyle Energy shop items,
+// 4 a week per character and 16 per server (2026-11-18 recording: Kryx bought
+// 2 and 1, Krathus then read 0 and 1); the site maps them to tasks.
+func ParsePurchaseLimits(body []byte) (map[uint32]PurchaseLimit, bool) {
+	r := newReader(body)
+	r.skip(2)
+	n := int(r.u8())
+	limits := make(map[uint32]PurchaseLimit, n)
+	for k := 0; k < n && r.ok; k++ {
+		id := r.u32()
+		count := int(r.u32())
+		limits[id] = PurchaseLimit{Count: count, Resets: int64(r.u64())}
+	}
+	return limits, r.ok
 }
 
 // ParseShopBuy reads 9556: u16 (0 so far), u8 tab, u32 entry bought.

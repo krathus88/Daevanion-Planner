@@ -11,6 +11,7 @@ import type {
     TaskEntries,
     TrackerCharacter,
     TrackerData,
+    TrackerTask,
 } from "@tracker/types"
 import {
     ARENA_PLAYED,
@@ -28,6 +29,7 @@ import {
     FACTION_NUMBERS,
     getServerId,
     HIDDEN_CUBE_KEY,
+    LIMIT_TASKS,
     SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
@@ -113,9 +115,39 @@ const applyCounters = (
     return next
 }
 
-// Weekly crafting limits (Odyle Energy by Substance Morph). A count from an
-// earlier week than the tracker's is stale. A server-wide count only grows
-// within a week, so a lower one there is another character's older news.
+// A weekly count the game read at `at`. A count from an earlier week than the
+// tracker's is stale. A server-wide count only grows within a week, so a
+// lower one there is another character's older news.
+const setWeeklyCount = (
+    data: TrackerData,
+    task: TrackerTask,
+    character: TrackerCharacter,
+    read: { value: number; at: number; server: boolean },
+) => {
+    const owner = getTaskOwner(task, character)
+    const before = data.counts[owner]?.[task.id]
+    const count: TaskCount = {
+        period: getResetPeriods(read.at)[task.reset],
+        count: Math.min(read.value, task.cap),
+    }
+
+    if (
+        before !== undefined &&
+        (before.period > count.period ||
+            (read.server &&
+                before.period === count.period &&
+                before.count > count.count))
+    ) {
+        return data
+    }
+
+    return {
+        ...data,
+        counts: setOwnerItem(data.counts, owner, task.id, count),
+    }
+}
+
+// Weekly crafting limits (Odyle Energy by Substance Morph).
 const applyCrafts = (
     data: TrackerData,
     character: TrackerCharacter,
@@ -136,27 +168,45 @@ const applyCrafts = (
         }
 
         const [server, own, at] = craft
-        const owner = getTaskOwner(task, character)
-        const before = next.counts[owner]?.[task.id]
-        const count: TaskCount = {
-            period: getResetPeriods(at)[task.reset],
-            count: Math.min(source.limit === "server" ? server : own, task.cap),
-        }
+        const isServer = source.limit === "server"
 
-        if (
-            before !== undefined &&
-            (before.period > count.period ||
-                (source.limit === "server" &&
-                    before.period === count.period &&
-                    before.count > count.count))
-        ) {
+        next = setWeeklyCount(next, task, character, {
+            value: isServer ? server : own,
+            at: at,
+            server: isServer,
+        })
+    }
+
+    return next
+}
+
+// Weekly purchase limits (Odyle Energy from the shop).
+const applyLimits = (
+    data: TrackerData,
+    character: TrackerCharacter,
+    snapshot: GameSnapshot,
+) => {
+    if (snapshot.limits === undefined) {
+        return data
+    }
+
+    let next = data
+
+    for (const task of getTasks(data)) {
+        const source = LIMIT_TASKS[task.id]
+        const limit = source && snapshot.limits[source.limit]
+
+        if (source === undefined || limit === undefined) {
             continue
         }
 
-        next = {
-            ...next,
-            counts: setOwnerItem(next.counts, owner, task.id, count),
-        }
+        const [value, at] = limit
+
+        next = setWeeklyCount(next, task, character, {
+            value: value,
+            at: at,
+            server: source.scope === "server",
+        })
     }
 
     return next
@@ -549,6 +599,7 @@ export const applyToTracker = (
     const withShops = applyShops(withArena, character, snapshot)
 
     const withCrafts = applyCrafts(withShops, character, snapshot)
+    const withLimits = applyLimits(withCrafts, character, snapshot)
 
-    return applyCorridors(withCrafts, character, snapshot)
+    return applyCorridors(withLimits, character, snapshot)
 }

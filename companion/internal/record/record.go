@@ -58,6 +58,7 @@ var Labels = map[string]string{
 	game.TypeArena:            "arena stats",
 	game.TypeShopTab:          "shop tab",
 	game.TypeShopBuy:          "shop purchase",
+	game.TypePurchaseLimits:   "purchase limits",
 	game.TypeZone:             "zone",
 	game.TypeArtifacts:        "artifact owners",
 	game.TypeArtifactsWorld:   "artifact owners",

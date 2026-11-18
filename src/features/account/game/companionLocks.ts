@@ -7,6 +7,7 @@ import {
     CRAFT_TASKS,
     DUTY_TASK,
     getServerId,
+    LIMIT_TASKS,
     SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
@@ -70,6 +71,7 @@ export const getCompanionLocks = (
 
         for (const task of tasks) {
             const craft = CRAFT_TASKS[task.id]
+            const limit = LIMIT_TASKS[task.id]
             const filled =
                 (section === "counters" &&
                     TASK_COUNTERS[task.id] !== undefined &&
@@ -80,7 +82,8 @@ export const getCompanionLocks = (
                 (section === "arena" &&
                     ARENA_TASKS[task.id] !== undefined &&
                     isArenaTaskKnown(arena[character.id], week, task.id)) ||
-                (craft !== undefined && section === `crafts.${craft.recipe}`)
+                (craft !== undefined && section === `crafts.${craft.recipe}`) ||
+                (limit !== undefined && section === `limits.${limit.limit}`)
 
             if (filled) {
                 lock(getTaskOwner(task, character), task.id)

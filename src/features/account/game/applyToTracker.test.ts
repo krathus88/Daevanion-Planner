@@ -609,4 +609,55 @@ describe("applyToTracker", () => {
             expect(next.counts.a["odyle-craft"].count).toBe(4)
         })
     })
+
+    describe("Odyle Energy shop", () => {
+        const week = getResetPeriods(AT).weekly
+        const bought = (server: number, own: number, at = AT) => {
+            return snapshot({
+                limits: { "1209": [own, at], "1210": [server, at] },
+                limitsAt: at,
+            })
+        }
+
+        it("counts the server-wide and the character's own purchases", () => {
+            const next = applyToTracker(data(), bought(1, 2))
+
+            expect(next.counts["server:siel"]["odyle-shop-server"]).toEqual({
+                period: week,
+                count: 1,
+            })
+            expect(next.counts.a["odyle-shop"]).toEqual({
+                period: week,
+                count: 2,
+            })
+        })
+
+        it("keeps a higher server count from this week", () => {
+            const before = data({
+                counts: {
+                    "server:siel": {
+                        "odyle-shop-server": { period: week, count: 5 },
+                    },
+                },
+            })
+            const next = applyToTracker(before, bought(1, 0))
+
+            expect(next.counts["server:siel"]["odyle-shop-server"].count).toBe(
+                5,
+            )
+        })
+
+        it("leaves this week's counts alone for last week's purchases", () => {
+            const lastWeek = AT - 7 * 24 * 3_600_000
+            const before = data({
+                counts: { a: { "odyle-shop": { period: week, count: 1 } } },
+            })
+            const next = applyToTracker(before, bought(16, 4, lastWeek))
+
+            expect(next.counts.a["odyle-shop"]).toEqual({
+                period: week,
+                count: 1,
+            })
+        })
+    })
 })

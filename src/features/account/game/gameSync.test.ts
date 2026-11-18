@@ -222,6 +222,8 @@ describe("applyGameSnapshots", () => {
                 itemsAt: 1,
                 crafts: { "31070002": [0, 1, 1] },
                 craftsAt: 1,
+                limits: { "1209": [2, 1] },
+                limitsAt: 1,
                 pets: {},
                 petsAt: 1,
             },
@@ -229,7 +231,7 @@ describe("applyGameSnapshots", () => {
         )
 
         expect(readGameSections()).toBe(
-            "1302:Zed:crafts.31070002\n1302:Zed:items\n1302:Zed:pets",
+            "1302:Zed:crafts.31070002\n1302:Zed:items\n1302:Zed:limits.1209\n1302:Zed:pets",
         )
     })
 

@@ -493,6 +493,25 @@ func TestParseShopCounts(t *testing.T) {
 	}
 }
 
+// The Odyle Energy shop on 2026-11-18: Kryx opening it before buying (all 10
+// limits at 0), then buying 2 of the per-character item (1209), which sends
+// just that limit.
+func TestParsePurchaseLimits(t *testing.T) {
+	limits, ok := ParsePurchaseLimits(h("00000a9104000000000000800d8111a20100009404000000000000800d8111a2010000b904000000000000800d8111a2010000ba04000000000000800d8111a2010000bb04000000000000800d8111a2010000e6040000000000008075d52abb030000ee0400000000000080356730a20100000487010000000000800d8111a20100002d87010000000000800d8111a20100004d87010000000000800d8111a2010000"))
+	// Wednesday 2026-11-25 07:00 UTC.
+	reset := int64(1795590000000)
+	if !ok || len(limits) != 10 || limits[1209] != (PurchaseLimit{Count: 0, Resets: reset}) || limits[1210].Resets != reset {
+		t.Fatalf("got %+v %v", limits, ok)
+	}
+	limits, ok = ParsePurchaseLimits(h("000001b904000002000000800d8111a2010000"))
+	if !ok || len(limits) != 1 || limits[1209] != (PurchaseLimit{Count: 2, Resets: reset}) {
+		t.Fatalf("purchase: got %+v %v", limits, ok)
+	}
+	if _, ok := ParsePurchaseLimits(h("000001b904000002000000")); ok {
+		t.Fatal("read a cut list")
+	}
+}
+
 func TestParseShopPurchase(t *testing.T) {
 	shop, bought, ok := ParseShopPurchase(h("0006331b0f00014568f61701000000"))
 	if !ok || shop != NightmareShop || len(bought) != 1 || bought[402024517] != 1 {

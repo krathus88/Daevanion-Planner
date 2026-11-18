@@ -139,6 +139,15 @@ describe("getCompanionLocks", () => {
             a: ["odyle-craft"],
         })
     })
+
+    it("locks the Odyle shop tasks whose limit it has", () => {
+        expect(locked(["1301:Kryx:limits.1209"])).toEqual({
+            a: ["odyle-shop"],
+        })
+        expect(locked(["1301:Kryx:limits.1210"])).toEqual({
+            "server:siel": ["odyle-shop-server"],
+        })
+    })
 })
 
 describe("hasGameSection", () => {

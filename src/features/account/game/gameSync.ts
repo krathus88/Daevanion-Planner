@@ -32,9 +32,11 @@ import {
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
 // corridors; v7: one row per corridor; v8: shop purchase counts; v9: the
-// Shugo Festival shop), so each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v9"
+// Shugo Festival shop; v10: weekly purchase limits), so each is applied once
+// more.
+const APPLIED_KEY = "daevanion:game-applied:v10"
 const OLD_APPLIED_KEYS = [
+    "daevanion:game-applied:v9",
     "daevanion:game-applied:v8",
     "daevanion:game-applied",
     "daevanion:game-applied:v2",
@@ -167,7 +169,7 @@ export const readGameCharacters = () => {
 }
 
 // What each character's snapshot holds, as `<server number>:<name>:<section>`
-// lines (crafts as `crafts.<recipe id>`), sorted, as one string so
+// lines (crafts as `crafts.<recipe id>`, likewise shops and limits), sorted, as one string so
 // useSyncExternalStore sees the same content as the same value.
 let sectionsCache: { stored: StoredSnapshot[] | null; sections: string } = {
     stored: null,
@@ -197,6 +199,7 @@ export const readGameSections = () => {
             snapshot.professions && "professions",
             ...Object.keys(snapshot.crafts ?? {}).map((id) => `crafts.${id}`),
             ...Object.keys(snapshot.shops ?? {}).map((id) => `shops.${id}`),
+            ...Object.keys(snapshot.limits ?? {}).map((id) => `limits.${id}`),
         ]
 
         for (const section of sections) {

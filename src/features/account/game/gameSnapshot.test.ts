@@ -29,6 +29,8 @@ describe("parseGameSnapshot", () => {
             arenaAt: 90,
             shops: { "990003": { "402024517": 3, "402024518": 50 } },
             shopsAt: 100,
+            limits: { "1209": [2, 110], "1210": [1, 110] },
+            limitsAt: 110,
         })
 
         expect(snapshot).toEqual({
@@ -54,6 +56,8 @@ describe("parseGameSnapshot", () => {
             arenaAt: 90,
             shops: { "990003": { "402024517": 3, "402024518": 50 } },
             shopsAt: 100,
+            limits: { "1209": [2, 110], "1210": [1, 110] },
+            limitsAt: 110,
         })
     })
 
