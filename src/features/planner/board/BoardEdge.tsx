@@ -18,7 +18,9 @@ export const BoardEdge = memo(function BoardEdge({
 }: BoardEdgeProps) {
     const x = CELL_SIZE / 2 + column * CELL_PITCH
     const y = CELL_SIZE / 2 + row * CELL_PITCH
-    const thickness = isActive ? "1" : "1px"
+    // 2px: the board is scaled down, and a 1px line then falls between screen
+    // pixels and some of them aren't drawn at all.
+    const thickness = isActive ? "1" : "0.5"
 
     // Not rotated: a rotated hairline can vanish when the board is scaled down.
     return (
