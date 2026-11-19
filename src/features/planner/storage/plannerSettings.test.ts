@@ -9,10 +9,13 @@ import { layouts } from "@planner/config/layouts"
 import { readAllocationSnapshot } from "./allocationSnapshot"
 import {
     DEFAULT_ARIEL_SETTINGS,
+    DEFAULT_STAT_BOARD_SETTINGS,
     readArielSettings,
-    readArielStatNodeCounts,
+    readStatBoardNodeCounts,
+    readStatBoardSettings,
     writeArielSettings,
-} from "./arielSettings"
+    writeStatBoardSettings,
+} from "./statBoardSettings"
 import {
     DEFAULT_TOTAL_POINTS,
     writeBoardProgress,
@@ -241,11 +244,64 @@ describe("Ariel settings", () => {
         ) ?? [""]
 
         writeBoardProgress(CLASS, "ariel", { ...progress, plannedPath: [key] })
-        const counts = readArielStatNodeCounts(CLASS)
+        const counts = readStatBoardNodeCounts(CLASS, "ariel")
 
         expect(counts["pve-attack"]).toEqual({ taken: 1, total: 24 })
         expect(counts["pve-defense"]).toEqual({ taken: 1, total: 24 })
-        expect(counts["pve-evasion"].taken).toBe(0)
+        expect(counts["pve-evasion"]?.taken).toBe(0)
+    })
+})
+
+describe("Azphel settings", () => {
+    const defaults = DEFAULT_STAT_BOARD_SETTINGS.azphel
+
+    it("ranks only Azphel's stats, with Max MP ignored and 36 points by default", () => {
+        expect(Object.keys(defaults.tiers)).toContain("pvp-damage-boost")
+        expect(Object.keys(defaults.tiers)).not.toContain("pve-attack")
+        expect(defaults.ignored).toEqual(["azphel-max-mp"])
+        expect(defaults.points).toBe(36)
+        expect(DEFAULT_ARIEL_SETTINGS.points).toBe(0)
+        expect(defaults.order).toEqual({
+            "special-offense": "more",
+            "special-defense": "equal",
+            "stat-offense": "less",
+            "stat-defense": "less",
+        })
+        expect(DEFAULT_ARIEL_SETTINGS.order["stat-offense"]).toBe("equal")
+    })
+
+    it("is kept apart from Ariel's", () => {
+        const settings = { ...defaults, points: 40 }
+
+        expect(writeStatBoardSettings(CLASS, "azphel", settings)).toBeNull()
+        expect(readStatBoardSettings(CLASS, "azphel")).toEqual(settings)
+        expect(readArielSettings(CLASS)).toBe(DEFAULT_ARIEL_SETTINGS)
+    })
+
+    it("drops another board's stats from a save", () => {
+        writeClassSettings(CLASS, "azphel", {
+            tiers: { "pve-attack": "best", "pvp-attack": "okay" },
+            ignored: ["pve-attack", "pvp-evasion"],
+        })
+        const settings = readStatBoardSettings(CLASS, "azphel")
+
+        expect(settings.tiers["pve-attack"]).toBeUndefined()
+        expect(settings.tiers["pvp-attack"]).toBe("okay")
+        expect(settings.ignored).toEqual(["pvp-evasion"])
+    })
+
+    it("counts a taken combined node for both of its stats", () => {
+        const [key] = Object.entries(layouts.azphel.nodeStats).find(
+            ([, node]) => node === "pvp-critical-hit-both",
+        ) ?? [""]
+
+        writeBoardProgress(CLASS, "azphel", { ...progress, plannedPath: [key] })
+        const counts = readStatBoardNodeCounts(CLASS, "azphel")
+
+        expect(counts["pvp-critical-hit"]?.taken).toBe(1)
+        expect(counts["pvp-critical-hit-resist"]?.taken).toBe(1)
+        expect(counts["pvp-damage-boost"]).toEqual({ taken: 0, total: 4 })
+        expect(counts["pve-attack"]).toBeUndefined()
     })
 })
 

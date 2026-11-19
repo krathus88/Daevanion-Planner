@@ -154,7 +154,7 @@ describe("shared allocation", () => {
     it("rejects a route on a board that doesn't exist", () => {
         localStorage.setItem(
             `daevanion:v1:${CLASS}:shared-allocation`,
-            '{"totalPoints":1,"selectedPlannerIds":{"azphel":"a"}}',
+            '{"totalPoints":1,"selectedPlannerIds":{"elyos":"a"}}',
         )
 
         expect(readSharedAllocation(CLASS).error).toBeTruthy()

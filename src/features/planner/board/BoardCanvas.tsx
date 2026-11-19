@@ -1,11 +1,11 @@
-import { isMainBoard } from "@config/boards"
+import { ARIEL_BOARD_ID, isStatBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
-import { useArielSettings } from "@planner/hooks/useArielSettings"
+import { useStatBoardSettings } from "@planner/hooks/useStatBoardSettings"
 import { useHighlightedStat } from "@planner/hooks/useStatHighlight"
 import {
-    arielMarkedCells,
     arielOrder,
     arielTiers,
+    statMarkedCells,
 } from "@planner/logic/arielRoute"
 import { gapsByCell } from "@planner/logic/gameGaps"
 import { statCells } from "@planner/logic/statCells"
@@ -27,19 +27,24 @@ export const BoardCanvas = () => {
         wants,
         gameGaps,
     } = useBoard()
-    const ariel = useArielSettings(classPreset.id)
+    const statBoard = useStatBoardSettings(
+        classPreset.id,
+        isStatBoard(layoutName) ? layoutName : ARIEL_BOARD_ID,
+    )
     const highlightedStat = useHighlightedStat()
 
     const isManual = view === "board"
-    // Ariel has no Route preferences; its Best/Good costly stats get the markers.
-    const arielCells = isMainBoard(layoutName)
-        ? null
-        : arielMarkedCells(
-              arielTiers(ariel.settings),
-              arielOrder(ariel.settings),
+    // Ariel and Azphel have no Route preferences; their Best/Good costly stats
+    // get the markers.
+    const statBoardCells = isStatBoard(layoutName)
+        ? statMarkedCells(
+              layoutName,
+              arielTiers(statBoard.settings),
+              arielOrder(statBoard.settings),
           )
-    const neededCells = arielCells?.best ?? wants.needCells
-    const preferredCells = arielCells?.good ?? wants.preferredCells
+        : null
+    const neededCells = statBoardCells?.best ?? wants.needCells
+    const preferredCells = statBoardCells?.good ?? wants.preferredCells
     const highlightedCells = highlightedStat
         ? statCells(layout, highlightedStat)
         : undefined

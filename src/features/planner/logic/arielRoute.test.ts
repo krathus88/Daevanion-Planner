@@ -8,16 +8,19 @@ import {
     type ArielPriorityStat,
 } from "@config/stats/stats"
 import {
-    arielNodeTier,
+    statNodeTier,
     DEFAULT_ARIEL_RANK_ORDER,
     DEFAULT_ARIEL_STAT_TIERS,
     type ArielRankOrder,
     type StatTier,
 } from "@planner/config/stats"
-import type { ArielSettings } from "@planner/storage/arielSettings"
 import {
-    arielMarkedCells,
-    arielNodeValues,
+    DEFAULT_STAT_BOARD_SETTINGS,
+    type ArielSettings,
+} from "@planner/storage/statBoardSettings"
+import {
+    statMarkedCells,
+    statNodeValues,
     arielOrder,
     arielTiers,
     searchArielRoute,
@@ -62,7 +65,7 @@ const seeded = () => {
 
 // Node values with the default same-rank order.
 const defaultValues = (tiers: Record<ArielPriorityStat, StatTier>) => {
-    return arielNodeValues(tiers, DEFAULT_ARIEL_RANK_ORDER)
+    return statNodeValues("ariel", tiers, DEFAULT_ARIEL_RANK_ORDER)
 }
 
 // Every group Equal except the ones given.
@@ -214,7 +217,7 @@ describe("searchArielRoute", () => {
     })
 })
 
-describe("arielNodeValues", () => {
+describe("statNodeValues", () => {
     it("prices every node of a kind the same", () => {
         const costs = new Map<string, number>()
 
@@ -328,7 +331,8 @@ describe("same-rank order", () => {
     })
 
     it("puts More ahead of Equal ahead of Less, whatever the cost", () => {
-        const values = arielNodeValues(
+        const values = statNodeValues(
+            "ariel",
             tiers,
             orderOf({ "special-offense": "less", "stat-offense": "more" }),
         )
@@ -343,7 +347,8 @@ describe("same-rank order", () => {
     })
 
     it("splits special nodes and stats into offense and defense", () => {
-        const values = arielNodeValues(
+        const values = statNodeValues(
+            "ariel",
             tiers,
             orderOf({ "special-defense": "more", "stat-defense": "more" }),
         )
@@ -357,7 +362,7 @@ describe("same-rank order", () => {
     })
 
     it("weighs Equal groups by value per point", () => {
-        const values = arielNodeValues(tiers, orderOf({}))
+        const values = statNodeValues("ariel", tiers, orderOf({}))
 
         expect(values["pve-attack"]).toBe(values["pve-defense"])
         // A 4-point Damage Boost node is worth the same as one stat node.
@@ -365,7 +370,8 @@ describe("same-rank order", () => {
     })
 
     it("keeps a higher tier ahead of a lower one set to More", () => {
-        const values = arielNodeValues(
+        const values = statNodeValues(
+            "ariel",
             only({ "pve-damage-boost": "good", "pve-attack": "best" }),
             orderOf({ "special-offense": "more", "stat-offense": "less" }),
         )
@@ -376,7 +382,8 @@ describe("same-rank order", () => {
     })
 
     it("makes an ignored group worth nothing, whatever its tier", () => {
-        const values = arielNodeValues(
+        const values = statNodeValues(
+            "ariel",
             tiers,
             orderOf({ "special-offense": "ignore" }),
         )
@@ -484,9 +491,10 @@ describe("arielOrder", () => {
     })
 })
 
-describe("arielMarkedCells", () => {
+describe("statMarkedCells", () => {
     it("marks nodes of 2 points or more by their best stat", () => {
-        const marked = arielMarkedCells(
+        const marked = statMarkedCells(
+            "ariel",
             DEFAULT_ARIEL_STAT_TIERS,
             DEFAULT_ARIEL_RANK_ORDER,
         )
@@ -497,7 +505,7 @@ describe("arielMarkedCells", () => {
         for (const key of marked.best) {
             expect(nodeCost(layout, positionOf(key))).toBeGreaterThanOrEqual(2)
             expect(
-                arielNodeTier(
+                statNodeTier(
                     layout.nodeStats[key],
                     DEFAULT_ARIEL_STAT_TIERS,
                     DEFAULT_ARIEL_RANK_ORDER,
@@ -507,7 +515,7 @@ describe("arielMarkedCells", () => {
 
         for (const key of marked.good) {
             expect(
-                arielNodeTier(
+                statNodeTier(
                     layout.nodeStats[key],
                     DEFAULT_ARIEL_STAT_TIERS,
                     DEFAULT_ARIEL_RANK_ORDER,
@@ -517,7 +525,8 @@ describe("arielMarkedCells", () => {
     })
 
     it("marks a combined node when either of its stats is Best", () => {
-        const marked = arielMarkedCells(
+        const marked = statMarkedCells(
+            "ariel",
             only({ "pve-defense": "best" }),
             DEFAULT_ARIEL_RANK_ORDER,
         )
@@ -530,7 +539,8 @@ describe("arielMarkedCells", () => {
     })
 
     it("leaves out stats of an ignored group", () => {
-        const marked = arielMarkedCells(
+        const marked = statMarkedCells(
+            "ariel",
             only({ "pve-attack": "best", "pve-defense": "best" }),
             orderOf({ "stat-defense": "ignore" }),
         )
@@ -540,6 +550,36 @@ describe("arielMarkedCells", () => {
                 expect(marked.best.has(key)).toBe(false)
             }
             if (node === "pve-attack-defense") {
+                expect(marked.best.has(key)).toBe(true)
+            }
+        }
+    })
+})
+
+describe("Azphel", () => {
+    const tiers = arielTiers(DEFAULT_STAT_BOARD_SETTINGS.azphel)
+    const order = arielOrder(DEFAULT_STAT_BOARD_SETTINGS.azphel)
+
+    it("values its nodes by Azphel's own tiers", () => {
+        const values = statNodeValues("azphel", tiers, order)
+
+        // Both Best; offensive special nodes rank More, defensive ones Equal.
+        expect(values["pvp-damage-boost"]).toBeGreaterThan(
+            values["pvp-damage-tolerance"] ?? 0,
+        )
+        expect(values["pvp-attack"]).toBeGreaterThan(values["pvp-evasion"] ?? 0)
+        expect(values["azphel-max-mp"]).toBe(0)
+        expect(values["pve-attack"]).toBeUndefined()
+    })
+
+    it("marks both its special nodes Best by default", () => {
+        const marked = statMarkedCells("azphel", tiers, order)
+
+        for (const [key, node] of Object.entries(layouts.azphel.nodeStats)) {
+            if (node === "pvp-damage-boost") {
+                expect(marked.best.has(key)).toBe(true)
+            }
+            if (node === "pvp-damage-tolerance") {
                 expect(marked.best.has(key)).toBe(true)
             }
         }

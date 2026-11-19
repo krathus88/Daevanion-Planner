@@ -1,7 +1,7 @@
 import type { ClassPreset } from "@config/classPresets"
 import { useEffect, useRef, useState } from "react"
 import {
-    BOARD_IDS,
+    ALL_BOARDS_IDS,
     BOARD_NAMES,
     MAIN_BOARD_IDS,
     type BoardId,
@@ -37,7 +37,7 @@ import {
 import {
     readArielSettings,
     type ArielSettings,
-} from "@planner/storage/arielSettings"
+} from "@planner/storage/statBoardSettings"
 import { readRankOrder } from "@planner/storage/rankOrder"
 import {
     readSpecialPriorities,
@@ -108,7 +108,7 @@ export const usePriorityOptimizer = ({
         const plans = { ...mainPlans, ariel: arielPlan }
         // Ariel's route is left as is until it has points to spend.
         const hasArielPoints = arielSettings.points > 0
-        const boards = hasArielPoints ? BOARD_IDS : MAIN_BOARD_IDS
+        const boards = hasArielPoints ? ALL_BOARDS_IDS : MAIN_BOARD_IDS
         const now = Date.now()
         const planName = `Priority plan · ${formatPlanTime(now)}`
         const entries: RecordedPlans = {}

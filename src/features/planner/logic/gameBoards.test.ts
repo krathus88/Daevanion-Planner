@@ -20,9 +20,17 @@ describe("toGameReadings", () => {
         expect(readings.ariel).toEqual(["0,0", "7,7"])
     })
 
-    it("leaves out Azphel, cells off the board and gaps", () => {
+    it("places Azphel at the corner", () => {
+        // Azphel's (0,12) and its start (7,7).
+        const readings = toGameReadings({ "6": [13, 113] })
+
+        expect(readings.azphel).toEqual(["0,12", "7,7"])
+        expect(layouts.azphel.grid[7][7]).toBe("S")
+    })
+
+    it("leaves out unknown boards, cells off the board and gaps", () => {
         // 1 lies outside Nezekan's grid; 36 is its (0,3), a gap.
-        const readings = toGameReadings({ "1": [1, 36], "6": [13] })
+        const readings = toGameReadings({ "1": [1, 36], "7": [13] })
 
         expect(layouts.nezekan.grid[0][3]).toBe(".")
         expect(readings).toEqual({ nezekan: [] })
@@ -30,14 +38,22 @@ describe("toGameReadings", () => {
 })
 
 describe("pickCheckedBoards", () => {
-    const readings = toGameReadings({ "1": [33], "2": [33], "5": [1] })
+    const readings = toGameReadings({
+        "1": [33],
+        "2": [33],
+        "5": [1],
+        "6": [1],
+    })
 
     it("reads only the open board from This board", () => {
         expect(pickCheckedBoards(readings, "board", "zikel")).toEqual(["zikel"])
         expect(pickCheckedBoards(readings, "board", "triniel")).toEqual([])
+        expect(pickCheckedBoards(readings, "board", "azphel")).toEqual([
+            "azphel",
+        ])
     })
 
-    it("reads every board the game sent from All boards", () => {
+    it("reads every board the game sent from All boards but Azphel", () => {
         expect(pickCheckedBoards(readings, "all", "zikel")).toEqual([
             "nezekan",
             "zikel",

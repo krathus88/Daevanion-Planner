@@ -1,7 +1,7 @@
 import { Button, Flex, Text } from "@chakra-ui/react"
 import type { GameBoards } from "@account/game/gameSync"
 import { Card } from "@common/Card"
-import { BOARD_IDS } from "@config/boards"
+import { ALL_BOARDS_IDS } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { useGameBoards } from "@planner/hooks/useGameBoards"
 import { pickCheckedBoards, toGameReadings } from "@planner/logic/gameBoards"
@@ -40,7 +40,7 @@ export const GameCheckCard = ({ scope }: GameCheckCardProps) => {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    const readBoardIds = BOARD_IDS.filter((boardId) => {
+    const readBoardIds = ALL_BOARDS_IDS.filter((boardId) => {
         return gameCheck.readings[boardId]
     })
     const hasReading =

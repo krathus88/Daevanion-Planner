@@ -6,7 +6,7 @@ import {
     optimizePriorityPlans,
     type PriorityPlannerProgress,
 } from "@planner/logic/priorityPlanner"
-import type { ArielSettings } from "@planner/storage/arielSettings"
+import type { ArielSettings } from "@planner/storage/statBoardSettings"
 import type { RankOrder } from "@planner/storage/rankOrder"
 import type {
     SpecialPriorities,

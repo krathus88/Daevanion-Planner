@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
-import { isMainBoard, type BoardId } from "@config/boards"
+import { BOARD_NAMES, isMainBoard, type BoardId } from "@config/boards"
 import {
-    readArielSettings,
-    writeArielSettings,
-} from "@planner/storage/arielSettings"
+    readStatBoardSettings,
+    writeStatBoardSettings,
+} from "@planner/storage/statBoardSettings"
 import {
     readRouteCostOfOtherBoards,
     readSharedTotalPoints,
@@ -22,7 +22,7 @@ const readBudget = (classId: string, layout: BoardId): SharedBudget => {
     if (!isMainBoard(layout)) {
         let points = 0
         try {
-            points = readArielSettings(classId).points
+            points = readStatBoardSettings(classId, layout).points
         } catch {
             // Unreadable settings leave nothing to spend.
         }
@@ -65,15 +65,15 @@ export const useSharedBudget = (classId: string, layout: BoardId) => {
             error = writeSharedTotalPoints(classId, totalPoints)
         } else {
             try {
-                error = writeArielSettings(classId, {
-                    ...readArielSettings(classId),
+                error = writeStatBoardSettings(classId, layout, {
+                    ...readStatBoardSettings(classId, layout),
                     points: totalPoints,
                 })
             } catch (readError) {
                 error =
                     readError instanceof Error
                         ? readError.message
-                        : "Could not read Ariel settings."
+                        : `Could not read ${BOARD_NAMES[layout]} settings.`
             }
         }
 

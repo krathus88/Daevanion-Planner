@@ -1,6 +1,6 @@
 import { Text } from "@chakra-ui/react"
 import { useState } from "react"
-import { useArielSettings } from "@planner/hooks/useArielSettings"
+import { useStatBoardSettings } from "@planner/hooks/useStatBoardSettings"
 import {
     readPrioritiesOpen,
     writePrioritiesOpen,
@@ -8,14 +8,14 @@ import {
 import { PointsField } from "@common/PointsField"
 import { Section } from "@common/Section"
 import { Term } from "@common/Term"
-import { ArielPriorities } from "../priorities/ArielPriorities"
+import { StatBoardPriorities } from "../priorities/StatBoardPriorities"
 
 type ArielSectionProps = {
     classId: string
 }
 
 export const ArielSection = ({ classId }: ArielSectionProps) => {
-    const { settings, update } = useArielSettings(classId)
+    const { settings, update } = useStatBoardSettings(classId, "ariel")
 
     const [isOpen, setIsOpen] = useState(() => readPrioritiesOpen("ariel"))
 
@@ -46,7 +46,7 @@ export const ArielSection = ({ classId }: ArielSectionProps) => {
                 onChange={handlePointsChange}
             />
 
-            <ArielPriorities classId={classId} />
+            <StatBoardPriorities classId={classId} board="ariel" />
         </Section>
     )
 }

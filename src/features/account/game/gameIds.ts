@@ -48,14 +48,14 @@ export const GAME_PROFESSIONS: Record<string, ProfessionId> = {
     "5": "cooking",
 }
 
-// Daevanion boards as the game numbers them; 6 is Azphel (PvP), which the
-// planner leaves out.
+// Daevanion boards as the game numbers them.
 export const GAME_BOARDS: Record<string, BoardId> = {
     "1": "nezekan",
     "2": "zikel",
     "3": "vaizel",
     "4": "triniel",
     "5": "ariel",
+    "6": "azphel",
 }
 
 export const ENERGY_COUNTER = "60000001"

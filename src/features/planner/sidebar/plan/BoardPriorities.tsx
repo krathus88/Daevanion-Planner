@@ -1,6 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react"
 import { useState } from "react"
-import { isMainBoard } from "@config/boards"
+import { BOARD_NAMES, isMainBoard } from "@config/boards"
 import { NeedMarker } from "@planner/board/cell/NeedMarker"
 import { PreferMarker } from "@planner/board/cell/PreferMarker"
 import { useBoard } from "@planner/context/boardContext"
@@ -12,7 +12,7 @@ import {
 import { Section } from "@common/Section"
 import { StatusText } from "@common/StatusText"
 import { Term } from "@common/Term"
-import { ArielPriorities } from "../priorities/ArielPriorities"
+import { StatBoardPriorities } from "../priorities/StatBoardPriorities"
 import { StatPriorityList } from "../priorities/StatPriorityList"
 import { BoardWantList } from "./BoardWantList"
 
@@ -44,12 +44,16 @@ export const BoardPriorities = () => {
     if (!isMainBoard(layoutName)) {
         return (
             <Section
-                title="Ariel priorities"
+                title={`${BOARD_NAMES[layoutName]} priorities`}
                 variant="featured"
                 open={isOpen}
                 onOpenChange={handleOpenChange}
             >
-                <ArielPriorities classId={classPreset.id} />
+                <StatBoardPriorities
+                    key={layoutName}
+                    classId={classPreset.id}
+                    board={layoutName}
+                />
             </Section>
         )
     }

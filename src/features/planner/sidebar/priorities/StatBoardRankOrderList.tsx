@@ -4,7 +4,8 @@ import {
     ARIEL_RANK_GROUPS,
     type ArielRankGroup,
 } from "@planner/config/stats"
-import { useArielSettings } from "@planner/hooks/useArielSettings"
+import type { StatBoardId } from "@config/boards"
+import { useStatBoardSettings } from "@planner/hooks/useStatBoardSettings"
 import {
     SAME_RANK_ORDER_NAMES,
     SAME_RANK_ORDERS,
@@ -15,12 +16,16 @@ import { Term } from "@common/Term"
 import { SameRankOrderRow } from "./SameRankOrderRow"
 import { SAME_RANK_ORDER_COLORS } from "./tierColors"
 
-type ArielRankOrderListProps = {
+type StatBoardRankOrderListProps = {
     classId: string
+    board: StatBoardId
 }
 
-export const ArielRankOrderList = ({ classId }: ArielRankOrderListProps) => {
-    const { settings, error, update } = useArielSettings(classId)
+export const StatBoardRankOrderList = ({
+    classId,
+    board,
+}: StatBoardRankOrderListProps) => {
+    const { settings, error, update } = useStatBoardSettings(classId, board)
 
     const handleChange = (group: ArielRankGroup, value: SameRankOrder) => {
         update({ ...settings, order: { ...settings.order, [group]: value } })

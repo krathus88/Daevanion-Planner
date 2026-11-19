@@ -3,6 +3,7 @@ import { BOARD_IDS } from "@config/boards"
 import { neighborsOf, positionOf } from "@planner/logic/boardLogic"
 import { validateLayoutBonuses } from "@planner/logic/abilityAssignments"
 import { makeLayout } from "@test/boardFixture"
+import { nodeCost } from "@planner/logic/boardLogic"
 import { getStart, isNode, keyOf } from "./boardConfig"
 import { appearanceCost, layouts, POINTS_PER_NODE_TYPE } from "./layouts"
 import { routeStatScore, statWeights } from "./stats"
@@ -126,5 +127,28 @@ describe("routeStatScore", () => {
                 ]),
             ),
         ).toBe(7)
+    })
+})
+
+describe("Azphel", () => {
+    const layout = layouts.azphel
+
+    it("costs 232 points in all, like the game's crystal cap", () => {
+        let total = 0
+
+        for (const key of Object.keys(layout.nodeStats)) {
+            total += nodeCost(layout, positionOf(key))
+        }
+
+        expect(total).toBe(232)
+    })
+
+    it("has only its PvP Damage Boost and Tolerance nodes as 4-point specials", () => {
+        for (const [key, node] of Object.entries(layout.nodeStats)) {
+            const isSpecial =
+                node === "pvp-damage-boost" || node === "pvp-damage-tolerance"
+
+            expect(nodeCost(layout, positionOf(key)) === 4).toBe(isSpecial)
+        }
     })
 })

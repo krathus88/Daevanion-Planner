@@ -1,10 +1,10 @@
 import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
-import { readArielSettings } from "@planner/storage/arielSettings"
+import { readArielSettings } from "@planner/storage/statBoardSettings"
 import { readRankOrder } from "@planner/storage/rankOrder"
 import { renderWithChakra } from "@test/renderWithChakra"
-import { ArielRankOrderList } from "./ArielRankOrderList"
+import { StatBoardRankOrderList } from "./StatBoardRankOrderList"
 import { RankOrderList } from "./RankOrderList"
 
 const CLASS = "gladiator"
@@ -26,9 +26,11 @@ afterEach(() => {
     localStorage.clear()
 })
 
-describe("ArielRankOrderList", () => {
+describe("StatBoardRankOrderList", () => {
     it("lists offensive and defensive special nodes and stats", () => {
-        renderWithChakra(<ArielRankOrderList classId={CLASS} />)
+        renderWithChakra(
+            <StatBoardRankOrderList classId={CLASS} board="ariel" />,
+        )
 
         for (const name of [
             "Offensive special nodes",
@@ -45,7 +47,9 @@ describe("ArielRankOrderList", () => {
     })
 
     it("saves a group's level", async () => {
-        renderWithChakra(<ArielRankOrderList classId={CLASS} />)
+        renderWithChakra(
+            <StatBoardRankOrderList classId={CLASS} board="ariel" />,
+        )
 
         const group = screen.getByRole("radiogroup", {
             name: "Defensive stats order within a rank",
@@ -60,7 +64,9 @@ describe("ArielRankOrderList", () => {
     })
 
     it("ignores a group by its name and brings it back at its level", async () => {
-        renderWithChakra(<ArielRankOrderList classId={CLASS} />)
+        renderWithChakra(
+            <StatBoardRankOrderList classId={CLASS} board="ariel" />,
+        )
 
         const name = screen.getByRole("button", {
             name: "Ignore Defensive stats",

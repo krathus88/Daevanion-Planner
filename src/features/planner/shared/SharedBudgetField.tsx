@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { isMainBoard } from "@config/boards"
+import { BOARD_NAMES, isMainBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { PointsField } from "@common/PointsField"
 
@@ -9,7 +9,7 @@ export const SharedBudgetField = ({ disabled }: { disabled?: boolean }) => {
     if (!isMainBoard(layoutName)) {
         return (
             <PointsField
-                label="Ariel points"
+                label={`${BOARD_NAMES[layoutName]} points`}
                 value={budget.totalPoints}
                 disabled={disabled}
                 onChange={budget.updateTotalPoints}

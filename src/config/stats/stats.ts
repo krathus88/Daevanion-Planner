@@ -47,7 +47,7 @@ export type ArielStatType =
     | "ariel-max-hp"
     | "ariel-max-mp"
 
-export const ARIEL_STAT_NAMES: Record<ArielStatType, string> = {
+const ARIEL_STAT_NAMES: Record<ArielStatType, string> = {
     "pve-damage-boost": "PvE Damage Boost",
     "pve-damage-tolerance": "PvE Damage Tolerance",
     "boss-damage-boost": "Boss Damage Boost",
@@ -146,14 +146,139 @@ export const ARIEL_NODE_GIVES: Record<
     "ariel-max-mp": ["ariel-max-mp"],
 }
 
-export type BoardStat = StatType | ArielStatType
+// Azphel's node kinds (PvP); each gives one or two stats
+// (`AZPHEL_NODE_GIVES`).
+export type AzphelStatType =
+    | "pvp-damage-boost"
+    | "pvp-damage-tolerance"
+    | "pvp-attack"
+    | "pvp-defense"
+    | "pvp-attack-defense"
+    | "pvp-accuracy"
+    | "pvp-evasion"
+    | "pvp-accuracy-evasion"
+    | "pvp-critical-hit"
+    | "pvp-critical-hit-resist"
+    | "pvp-critical-hit-both"
+    | "status-effect-chance"
+    | "status-effect-resist"
+    | "azphel-max-hp"
+    | "azphel-max-mp"
+
+const AZPHEL_STAT_NAMES: Record<AzphelStatType, string> = {
+    "pvp-damage-boost": "PvP Damage Boost",
+    "pvp-damage-tolerance": "PvP Damage Tolerance",
+    "pvp-attack": "PvP Attack",
+    "pvp-defense": "PvP Defense",
+    "pvp-attack-defense": "PvP Attack + Defense",
+    "pvp-accuracy": "PvP Accuracy",
+    "pvp-evasion": "PvP Evasion",
+    "pvp-accuracy-evasion": "PvP Accuracy + Evasion",
+    "pvp-critical-hit": "PvP Critical Hit",
+    "pvp-critical-hit-resist": "PvP Critical Hit Resist",
+    "pvp-critical-hit-both": "PvP Critical Hit + Resist",
+    "status-effect-chance": "Status Effect Chance",
+    "status-effect-resist": "Status Effect Resist",
+    "azphel-max-hp": "Max HP",
+    "azphel-max-mp": "Max MP",
+}
+
+const AZPHEL_STAT_TOOLTIPS: Record<AzphelStatType, string> = {
+    "pvp-damage-boost": "PvP Damage Boost +1.5%",
+    "pvp-damage-tolerance": "PvP Damage Tolerance +1.5%",
+    "pvp-attack": "PvP Attack +3",
+    "pvp-defense": "PvP Defense +30",
+    "pvp-attack-defense": "PvP Attack +3\nPvP Defense +30",
+    "pvp-accuracy": "PvP Accuracy +5",
+    "pvp-evasion": "PvP Evasion +3",
+    "pvp-accuracy-evasion": "PvP Accuracy +5\nPvP Evasion +3",
+    "pvp-critical-hit": "PvP Critical Hit +5",
+    "pvp-critical-hit-resist": "PvP Critical Hit Resist +5",
+    "pvp-critical-hit-both": "PvP Critical Hit +5\nPvP Critical Hit Resist +5",
+    "status-effect-chance": "Status Effect Chance +100",
+    "status-effect-resist": "Status Effect Resist +100",
+    "azphel-max-hp": "Max HP +100",
+    "azphel-max-mp": "Max MP +50",
+}
+
+// What Azphel's priorities rank, like Ariel's.
+export const AZPHEL_SPECIAL_STATS = [
+    "pvp-damage-boost",
+    "pvp-damage-tolerance",
+] as const
+
+export const AZPHEL_PLAIN_STATS = [
+    "pvp-attack",
+    "pvp-accuracy",
+    "pvp-critical-hit",
+    "status-effect-chance",
+    "pvp-defense",
+    "pvp-evasion",
+    "pvp-critical-hit-resist",
+    "status-effect-resist",
+    "azphel-max-hp",
+    "azphel-max-mp",
+] as const
+
+export const AZPHEL_PRIORITY_STATS = [
+    ...AZPHEL_SPECIAL_STATS,
+    ...AZPHEL_PLAIN_STATS,
+] as const
+
+export type AzphelPriorityStat = (typeof AZPHEL_PRIORITY_STATS)[number]
+
+const AZPHEL_NODE_GIVES: Record<
+    AzphelStatType,
+    readonly AzphelPriorityStat[]
+> = {
+    "pvp-damage-boost": ["pvp-damage-boost"],
+    "pvp-damage-tolerance": ["pvp-damage-tolerance"],
+    "pvp-attack": ["pvp-attack"],
+    "pvp-defense": ["pvp-defense"],
+    "pvp-attack-defense": ["pvp-attack", "pvp-defense"],
+    "pvp-accuracy": ["pvp-accuracy"],
+    "pvp-evasion": ["pvp-evasion"],
+    "pvp-accuracy-evasion": ["pvp-accuracy", "pvp-evasion"],
+    "pvp-critical-hit": ["pvp-critical-hit"],
+    "pvp-critical-hit-resist": ["pvp-critical-hit-resist"],
+    "pvp-critical-hit-both": ["pvp-critical-hit", "pvp-critical-hit-resist"],
+    "status-effect-chance": ["status-effect-chance"],
+    "status-effect-resist": ["status-effect-resist"],
+    "azphel-max-hp": ["azphel-max-hp"],
+    "azphel-max-mp": ["azphel-max-mp"],
+}
+
+// The stat boards' (Ariel's and Azphel's) node kinds and ranked stats.
+export type StatBoardNode = ArielStatType | AzphelStatType
+export type StatBoardStat = ArielPriorityStat | AzphelPriorityStat
+
+export const STAT_BOARD_NODE_GIVES: Record<
+    StatBoardNode,
+    readonly StatBoardStat[]
+> = {
+    ...ARIEL_NODE_GIVES,
+    ...AZPHEL_NODE_GIVES,
+}
+
+export const STAT_BOARD_STAT_NAMES: Record<StatBoardStat, string> = {
+    ...ARIEL_STAT_NAMES,
+    ...AZPHEL_STAT_NAMES,
+}
+
+export const isStatBoardNode = (stat: BoardStat): stat is StatBoardNode => {
+    return Object.hasOwn(STAT_BOARD_NODE_GIVES, stat)
+}
+
+export type BoardStat = StatType | StatBoardNode
 
 export const BOARD_STAT_NAMES: Record<BoardStat, string> = {
     ...STAT_NAMES,
     ...ARIEL_STAT_NAMES,
+    ...AZPHEL_STAT_NAMES,
 }
 
 export const BOARD_STAT_TOOLTIPS: Record<BoardStat, string> = {
     ...STAT_TOOLTIPS,
     ...ARIEL_STAT_TOOLTIPS,
+    ...AZPHEL_STAT_TOOLTIPS,
 }

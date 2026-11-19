@@ -12,7 +12,7 @@ import { loadClassPreset, type ClassPreset } from "@config/classPresets"
 import {
     writeArielSettings,
     DEFAULT_ARIEL_SETTINGS,
-} from "@planner/storage/arielSettings"
+} from "@planner/storage/statBoardSettings"
 import {
     readBoardProgress,
     readPlannerHistory,

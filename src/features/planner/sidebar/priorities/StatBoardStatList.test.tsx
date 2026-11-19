@@ -2,9 +2,12 @@ import { renderHook, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { useHighlightedStat } from "@planner/hooks/useStatHighlight"
-import { readArielSettings } from "@planner/storage/arielSettings"
+import {
+    readArielSettings,
+    readStatBoardSettings,
+} from "@planner/storage/statBoardSettings"
 import { renderWithChakra } from "@test/renderWithChakra"
-import { ArielStatPriorityList } from "./ArielStatPriorityList"
+import { StatBoardStatList } from "./StatBoardStatList"
 
 const CLASS = "gladiator"
 
@@ -25,11 +28,12 @@ afterEach(() => {
     localStorage.clear()
 })
 
-describe("ArielStatPriorityList", () => {
+describe("StatBoardStatList", () => {
     it("ignores a stat by its name and brings it back, keeping its tier", async () => {
         renderWithChakra(
-            <ArielStatPriorityList
+            <StatBoardStatList
                 classId={CLASS}
+                board="ariel"
                 stats={["pve-attack", "boss-attack"]}
             />,
         )
@@ -56,9 +60,37 @@ describe("ArielStatPriorityList", () => {
         expect(readArielSettings(CLASS).tiers["pve-attack"]).toBe(tier)
     })
 
+    it("names Azphel's stats and saves them as Azphel's", async () => {
+        renderWithChakra(
+            <StatBoardStatList
+                classId={CLASS}
+                board="azphel"
+                stats={["pvp-attack"]}
+            />,
+        )
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Ignore PvP Attack" }),
+        )
+
+        expect(
+            screen.getByRole("radiogroup", {
+                name: "Azphel PvP Attack priority",
+            }),
+        ).toBeDefined()
+        expect(readStatBoardSettings(CLASS, "azphel").ignored).toContain(
+            "pvp-attack",
+        )
+        expect(readArielSettings(CLASS).ignored).not.toContain("pvp-attack")
+    })
+
     it("offers no Ignore tier", () => {
         renderWithChakra(
-            <ArielStatPriorityList classId={CLASS} stats={["pve-attack"]} />,
+            <StatBoardStatList
+                classId={CLASS}
+                board="ariel"
+                stats={["pve-attack"]}
+            />,
         )
 
         expect(screen.queryByText("Ignore")).toBeNull()
@@ -69,7 +101,11 @@ describe("ArielStatPriorityList", () => {
             return useHighlightedStat()
         })
         renderWithChakra(
-            <ArielStatPriorityList classId={CLASS} stats={["pve-attack"]} />,
+            <StatBoardStatList
+                classId={CLASS}
+                board="ariel"
+                stats={["pve-attack"]}
+            />,
         )
 
         const name = screen.getByRole("button", { name: "Ignore PvE Attack" })

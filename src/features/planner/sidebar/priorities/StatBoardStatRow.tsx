@@ -1,28 +1,31 @@
 import { Flex, Text } from "@chakra-ui/react"
-import { ARIEL_STAT_NAMES, type ArielPriorityStat } from "@config/stats/stats"
+import { BOARD_NAMES, type StatBoardId } from "@config/boards"
+import { STAT_BOARD_STAT_NAMES, type StatBoardStat } from "@config/stats/stats"
 import type { StatTier } from "@planner/config/stats"
 import { useStatHighlight } from "@planner/hooks/useStatHighlight"
 import type { StatNodeCount } from "@planner/storage/statPriorities"
 import { AbilitySkipName } from "./AbilitySkipName"
 import { StatTierPicker } from "./StatTierPicker"
 
-type ArielStatRowProps = {
-    stat: ArielPriorityStat
+type StatBoardStatRowProps = {
+    board: StatBoardId
+    stat: StatBoardStat
     tier: StatTier
     ignored: boolean
     count?: StatNodeCount
-    onTierChange: (stat: ArielPriorityStat, tier: StatTier) => void
-    onIgnoredChange: (stat: ArielPriorityStat, ignored: boolean) => void
+    onTierChange: (stat: StatBoardStat, tier: StatTier) => void
+    onIgnoredChange: (stat: StatBoardStat, ignored: boolean) => void
 }
 
-export const ArielStatRow = ({
+export const StatBoardStatRow = ({
+    board,
     stat,
     tier,
     ignored,
     count,
     onTierChange,
     onIgnoredChange,
-}: ArielStatRowProps) => {
+}: StatBoardStatRowProps) => {
     const highlight = useStatHighlight(stat)
 
     const handleTierChange = (next: StatTier) => {
@@ -42,7 +45,8 @@ export const ArielStatRow = ({
         }
     }
 
-    const name = ARIEL_STAT_NAMES[stat]
+    const name = STAT_BOARD_STAT_NAMES[stat]
+    const boardName = BOARD_NAMES[board]
 
     return (
         <Flex minW="0" alignItems="center" gap="2">
@@ -60,7 +64,7 @@ export const ArielStatRow = ({
                     color={count.taken > 0 ? "app.success" : "app.subtle"}
                     fontSize="xs"
                     whiteSpace="nowrap"
-                    title={`${count.taken} of ${count.total} ${name} nodes taken on Ariel`}
+                    title={`${count.taken} of ${count.total} ${name} nodes taken on ${boardName}`}
                 >
                     {count.taken} / {count.total}
                 </Text>
@@ -70,7 +74,7 @@ export const ArielStatRow = ({
             <StatTierPicker
                 value={ignored ? null : tier}
                 disabled={ignored}
-                label={`Ariel ${name} priority`}
+                label={`${boardName} ${name} priority`}
                 onChange={handleTierChange}
             />
         </Flex>

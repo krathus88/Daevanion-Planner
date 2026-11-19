@@ -8,6 +8,7 @@ export type ClassSettingsSection =
     | "rankOrder"
     | "stats"
     | "ariel"
+    | "azphel"
 
 const SETTINGS_CHANGE_EVENT = "daevanion-settings-change"
 

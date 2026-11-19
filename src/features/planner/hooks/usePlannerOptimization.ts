@@ -22,9 +22,9 @@ import {
 } from "@planner/logic/improvementStatus"
 import { statWeights } from "@planner/config/stats"
 import {
-    arielNodeValues,
     arielOrder,
     arielTiers,
+    statNodeValues,
 } from "@planner/logic/arielRoute"
 import {
     pathPriorities,
@@ -32,9 +32,9 @@ import {
 } from "@planner/logic/pathPriorities"
 import { statValues } from "@planner/logic/statOrder"
 import {
-    DEFAULT_ARIEL_SETTINGS,
-    readArielSettings,
-} from "@planner/storage/arielSettings"
+    DEFAULT_STAT_BOARD_SETTINGS,
+    readStatBoardSettings,
+} from "@planner/storage/statBoardSettings"
 import {
     defaultStatSettings,
     readStatSettings,
@@ -125,16 +125,17 @@ export const usePlannerOptimization = ({
         priorities: PathPriorities
     } => {
         if (!isMainBoard(layoutName)) {
-            let arielSettings = DEFAULT_ARIEL_SETTINGS
+            let boardSettings = DEFAULT_STAT_BOARD_SETTINGS[layoutName]
             try {
-                arielSettings = readArielSettings(classId)
+                boardSettings = readStatBoardSettings(classId, layoutName)
             } catch {
-                // Use the default Ariel priorities.
+                // Use the board's default priorities.
             }
 
-            const values = arielNodeValues(
-                arielTiers(arielSettings),
-                arielOrder(arielSettings),
+            const values = statNodeValues(
+                layoutName,
+                arielTiers(boardSettings),
+                arielOrder(boardSettings),
             )
             return {
                 statValues: values,

@@ -1,17 +1,37 @@
 import { Text } from "@chakra-ui/react"
-import { ARIEL_PLAIN_STATS, ARIEL_SPECIAL_STATS } from "@config/stats/stats"
+import type { StatBoardId } from "@config/boards"
+import {
+    ARIEL_PLAIN_STATS,
+    ARIEL_SPECIAL_STATS,
+    AZPHEL_PLAIN_STATS,
+    AZPHEL_SPECIAL_STATS,
+    type StatBoardStat,
+} from "@config/stats/stats"
 import { NeedMarker } from "@planner/board/cell/NeedMarker"
 import { PreferMarker } from "@planner/board/cell/PreferMarker"
 import { Section } from "@common/Section"
 import { Term } from "@common/Term"
-import { ArielRankOrderList } from "./ArielRankOrderList"
-import { ArielStatPriorityList } from "./ArielStatPriorityList"
+import { StatBoardRankOrderList } from "./StatBoardRankOrderList"
+import { StatBoardStatList } from "./StatBoardStatList"
 
-type ArielPrioritiesProps = {
-    classId: string
+const BOARD_STATS: Record<
+    StatBoardId,
+    { special: readonly StatBoardStat[]; plain: readonly StatBoardStat[] }
+> = {
+    ariel: { special: ARIEL_SPECIAL_STATS, plain: ARIEL_PLAIN_STATS },
+    azphel: { special: AZPHEL_SPECIAL_STATS, plain: AZPHEL_PLAIN_STATS },
 }
 
-export const ArielPriorities = ({ classId }: ArielPrioritiesProps) => {
+type StatBoardPrioritiesProps = {
+    classId: string
+    board: StatBoardId
+}
+
+// Ariel's or Azphel's stat tiers and same-rank order.
+export const StatBoardPriorities = ({
+    classId,
+    board,
+}: StatBoardPrioritiesProps) => {
     return (
         <>
             <Text textStyle="hint">
@@ -25,21 +45,23 @@ export const ArielPriorities = ({ classId }: ArielPrioritiesProps) => {
             </Text>
 
             <Section title="Special nodes" variant="sub">
-                <ArielStatPriorityList
+                <StatBoardStatList
                     classId={classId}
-                    stats={ARIEL_SPECIAL_STATS}
+                    board={board}
+                    stats={BOARD_STATS[board].special}
                 />
             </Section>
 
             <Section title="Stats" variant="sub">
-                <ArielStatPriorityList
+                <StatBoardStatList
                     classId={classId}
-                    stats={ARIEL_PLAIN_STATS}
+                    board={board}
+                    stats={BOARD_STATS[board].plain}
                 />
             </Section>
 
             <Section title="Same-rank order" variant="sub">
-                <ArielRankOrderList classId={classId} />
+                <StatBoardRankOrderList classId={classId} board={board} />
             </Section>
         </>
     )

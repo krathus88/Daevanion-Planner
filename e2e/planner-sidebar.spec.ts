@@ -210,6 +210,35 @@ test.describe("clear and undo", () => {
             await readStored(page, "daevanion:v1:gladiator:ariel:progress"),
         ).toMatchObject({ plannedCost: 120 })
     })
+    test("plans Azphel on its own points, apart from Ariel's", async ({
+        page,
+    }) => {
+        await page.goto("/planner/gladiator/azphel")
+        await expect(
+            page.getByRole("button", { name: "Azphel priorities" }),
+        ).toBeVisible()
+        await expect(
+            page.getByRole("tab", { name: /All boards/ }),
+        ).toBeDisabled()
+        await page.getByRole("textbox", { name: "Azphel points" }).fill("40")
+        await page.getByRole("textbox", { name: "Azphel points" }).blur()
+        await page
+            .getByRole("combobox", { name: "Stop after no improvement for" })
+            .selectOption({ label: "30s" })
+        await page.getByRole("button", { name: "Find a good path" }).click()
+        await expect(page.getByText(/No better route for/)).toBeVisible()
+        await page.getByRole("button", { name: "Stop & keep" }).click()
+
+        await expect(
+            page.getByText(/saved to optimization history/),
+        ).toBeVisible()
+        expect(
+            await readStored(page, "daevanion:v1:gladiator:azphel:progress"),
+        ).toMatchObject({ plannedCost: 40 })
+        expect(
+            await readStored(page, "daevanion:v1:gladiator:settings"),
+        ).toMatchObject({ azphel: { points: 40 } })
+    })
 })
 
 test.describe("manual boards", () => {

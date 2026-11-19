@@ -1,10 +1,10 @@
 import { GAME_BOARDS } from "@account/game/gameIds"
-import { BOARD_IDS, type BoardId } from "@config/boards"
+import { ALL_BOARDS_IDS, BOARD_IDS, type BoardId } from "@config/boards"
 import { layouts } from "@planner/config/layouts"
 import type { GameReadings } from "@planner/hooks/useGameCheck"
 
 // The game numbers a board's cells 1-225, row by row, in a 15 x 15 grid with
-// the board centered in it (Ariel fills it, the main boards sit 1-2 cells in).
+// the board centered in it (Ariel and Azphel fill it, the main boards sit 1-2 cells in).
 const GAME_GRID = 15
 
 // The companion's acquired cells as the planner's "row,col" keys, per board.
@@ -40,13 +40,14 @@ export const toGameReadings = (boards: Record<string, number[]>) => {
 }
 
 // The boards a check against the game reads: only the open one from This
-// board, every board the game sent from All boards.
+// board, every All boards board the game sent from All boards.
 export const pickCheckedBoards = (
     readings: GameReadings,
     scope: "board" | "all",
     openBoardId: BoardId,
 ) => {
-    return BOARD_IDS.filter((boardId) => {
+    const boards = scope === "all" ? ALL_BOARDS_IDS : BOARD_IDS
+    return boards.filter((boardId) => {
         return (
             readings[boardId] !== undefined &&
             (scope === "all" || boardId === openBoardId)

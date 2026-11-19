@@ -1,6 +1,6 @@
 import { Text } from "@chakra-ui/react"
 import { ARIEL_BOARD_ID, MAIN_BOARD_IDS } from "@config/boards"
-import { useArielSettings } from "@planner/hooks/useArielSettings"
+import { useStatBoardSettings } from "@planner/hooks/useStatBoardSettings"
 import type { SharedAllocationState } from "@planner/hooks/useSharedAllocation"
 import { Section } from "@common/Section"
 import { Term } from "@common/Term"
@@ -20,7 +20,7 @@ export const CompareRoutes = ({
     open,
     onOpenChange,
 }: CompareRoutesProps) => {
-    const { settings } = useArielSettings(classId)
+    const { settings } = useStatBoardSettings(classId, "ariel")
 
     const arielAllocated = allocation.snapshot.routeCosts.ariel
     const isSharedOver = allocation.remainingPoints < 0

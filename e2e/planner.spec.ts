@@ -38,7 +38,7 @@ test.describe("the board", () => {
         ).toHaveAttribute("aria-selected", "true")
     })
 
-    for (const board of ["zikel", "vaizel", "triniel", "ariel"]) {
+    for (const board of ["zikel", "vaizel", "triniel", "ariel", "azphel"]) {
         test(`opens ${board}`, async ({ page }) => {
             await page.goto(BOARD)
             await page

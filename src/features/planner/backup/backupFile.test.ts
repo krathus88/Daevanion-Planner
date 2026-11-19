@@ -116,8 +116,8 @@ describe("planImport: rejecting files", () => {
         ],
         [
             "an unknown board",
-            gladiator({ boards: { azphel: {} } }),
-            'unknown board, "azphel"',
+            gladiator({ boards: { elyos: {} } }),
+            'unknown board, "elyos"',
         ],
         [
             "a board without lists",

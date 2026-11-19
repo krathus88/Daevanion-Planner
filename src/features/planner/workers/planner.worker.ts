@@ -128,7 +128,7 @@ const optimize = (message: StartMessage) => {
         if (best.cost === 0) {
             return {
                 ok: false as const,
-                reason: "No stat node fits in Ariel's points with these priorities.",
+                reason: "No stat node fits in this board's points with these priorities.",
             }
         }
 

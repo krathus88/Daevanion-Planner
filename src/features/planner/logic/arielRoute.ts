@@ -1,23 +1,22 @@
-import type { ArielPriorityStat, ArielStatType } from "@config/stats/stats"
+import type { StatBoardId } from "@config/boards"
+import type { StatBoardNode } from "@config/stats/stats"
 import { getStart, keyOf } from "@planner/config/boardConfig"
 import { layouts } from "@planner/config/layouts"
 import {
-    arielNodeTier,
-    arielNodeTierValue,
+    statNodeTier,
+    statNodeTierValue,
     statWeights,
     type ArielRankOrder,
-    type StatTier,
+    type StatBoardTiers,
 } from "@planner/config/stats"
-import type { ArielSettings } from "@planner/storage/arielSettings"
+import type { StatBoardSettings } from "@planner/storage/statBoardSettings"
 import { nodeCost, positionOf } from "./boardLogic"
 import type { SearchLimit } from "./plannerLogic"
 import { searchStatFill } from "./statFillSearch"
 
-type ArielTiers = Readonly<Record<ArielPriorityStat, StatTier>>
-
 // Each group's level, Ignore for the ones clicked off.
 export const arielOrder = (
-    settings: Pick<ArielSettings, "order" | "ignoredGroups">,
+    settings: Pick<StatBoardSettings, "order" | "ignoredGroups">,
 ): ArielRankOrder => {
     const order = { ...settings.order }
     for (const group of settings.ignoredGroups) {
@@ -29,8 +28,8 @@ export const arielOrder = (
 
 // Each stat's tier, Ignore for the ones clicked off.
 export const arielTiers = (
-    settings: Pick<ArielSettings, "tiers" | "ignored">,
-): ArielTiers => {
+    settings: Pick<StatBoardSettings, "tiers" | "ignored">,
+): StatBoardTiers => {
     const tiers = { ...settings.tiers }
     for (const stat of settings.ignored) {
         tiers[stat] = "ignore"
@@ -39,15 +38,24 @@ export const arielTiers = (
     return tiers
 }
 
+// The stat board's cells by node kind.
+const statNodesOf = (board: StatBoardId) => {
+    return Object.entries(layouts[board].nodeStats) as [string, StatBoardNode][]
+}
+
 // Per point of the node's cost (every node of a kind costs the same), so
 // within a tier the cheapest nodes go first.
-export const arielNodeValues = (tiers: ArielTiers, order: ArielRankOrder) => {
-    const layout = layouts.ariel
-    const values: Partial<Record<ArielStatType, number>> = {}
-    for (const [key, node] of Object.entries(layout.nodeStats)) {
+export const statNodeValues = (
+    board: StatBoardId,
+    tiers: StatBoardTiers,
+    order: ArielRankOrder,
+) => {
+    const layout = layouts[board]
+    const values: Partial<Record<StatBoardNode, number>> = {}
+    for (const [key, node] of statNodesOf(board)) {
         if (values[node] === undefined) {
             values[node] =
-                arielNodeTierValue(node, tiers, order) /
+                statNodeTierValue(node, tiers, order) /
                 nodeCost(layout, positionOf(key))
         }
     }
@@ -58,7 +66,7 @@ export const arielNodeValues = (tiers: ArielTiers, order: ArielRankOrder) => {
 // Ariel's route for All boards: the same search as This board, until `limit`
 // ends it.
 export const searchArielRoute = async (
-    settings: ArielSettings,
+    settings: StatBoardSettings,
     limit: SearchLimit,
     random?: () => number,
 ) => {
@@ -76,7 +84,7 @@ export const searchArielRoute = async (
         budget: settings.points,
         weights: statWeights(
             layout.nodeStats,
-            arielNodeValues(arielTiers(settings), arielOrder(settings)),
+            statNodeValues("ariel", arielTiers(settings), arielOrder(settings)),
         ),
         limit: limit,
         random: random,
@@ -95,16 +103,20 @@ export const searchArielRoute = async (
 
 // Display only (Best as Need, Good as Prefer, by the node's best stat); the
 // route still goes by value.
-export const arielMarkedCells = (tiers: ArielTiers, order: ArielRankOrder) => {
-    const layout = layouts.ariel
+export const statMarkedCells = (
+    board: StatBoardId,
+    tiers: StatBoardTiers,
+    order: ArielRankOrder,
+) => {
+    const layout = layouts[board]
     const best = new Set<string>()
     const good = new Set<string>()
-    for (const [key, node] of Object.entries(layout.nodeStats)) {
+    for (const [key, node] of statNodesOf(board)) {
         if (nodeCost(layout, positionOf(key)) < 2) {
             continue
         }
 
-        const tier = arielNodeTier(node, tiers, order)
+        const tier = statNodeTier(node, tiers, order)
         if (tier === "best") {
             best.add(key)
         } else if (tier === "good") {

@@ -80,6 +80,8 @@ export const colors = defineSemanticTokens.colors({
         labelBg: { value: "{colors.blackAlpha.600}" },
         ariel: { value: "{colors.bronze.500}" },
         arielActive: { value: "{colors.bronze.400}" },
+        azphel: { value: "{colors.red.400}" },
+        azphelActive: { value: "{colors.red.300}" },
     },
     pet: {
         cogni: { value: "{colors.periwinkle.400}" },

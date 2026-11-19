@@ -145,7 +145,7 @@ describe("encodeSharedPlan / decodeSharedPlan", () => {
         ["no version", { c: CLASS, b: {} }],
         ["no boards or settings", { v: 1, c: CLASS, b: {} }],
         ["bad settings", { v: 1, c: CLASS, b: {}, s: 5 }],
-        ["an unknown board", { v: 1, c: CLASS, b: { azphel: { m: [[], 1] } } }],
+        ["an unknown board", { v: 1, c: CLASS, b: { elyos: { m: [[], 1] } } }],
         ["an empty board", { v: 1, c: CLASS, b: { nezekan: {} } }],
         [
             "negative points",

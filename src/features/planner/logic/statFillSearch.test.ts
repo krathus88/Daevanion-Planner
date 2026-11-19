@@ -7,7 +7,7 @@ import {
     statWeights,
 } from "@planner/config/stats"
 import { makeLayout } from "@test/boardFixture"
-import { arielNodeValues } from "./arielRoute"
+import { statNodeValues } from "./arielRoute"
 import { neighborsOf, nodeCost, positionOf } from "./boardLogic"
 import type { SearchLimit } from "./plannerLogic"
 import { growByStatValue } from "./statFill"
@@ -139,7 +139,11 @@ describe("searchStatFill", () => {
         const startKey = keyOf(getStart(layout))
         const weights = statWeights(
             layout.nodeStats,
-            arielNodeValues(DEFAULT_ARIEL_STAT_TIERS, DEFAULT_ARIEL_RANK_ORDER),
+            statNodeValues(
+                "ariel",
+                DEFAULT_ARIEL_STAT_TIERS,
+                DEFAULT_ARIEL_RANK_ORDER,
+            ),
         )
         const value = (path: ReadonlySet<string>) => {
             let total = 0n

@@ -1,4 +1,5 @@
 import { Box, Tabs, type TabsValueChangeDetails } from "@chakra-ui/react"
+import { isAllBoardsBoard } from "@config/boards"
 import { useBoard } from "@planner/context/boardContext"
 import { differsFromGame } from "@planner/game-check/screenshotResults"
 import { useAllBoardsResults } from "@planner/hooks/useAllBoardsResults"
@@ -30,6 +31,12 @@ export const Sidebar = () => {
         allBoards.changeTab(details.value as SidebarTab)
     }
 
+    // Azphel has no All boards: its tab is locked there, and an open one shows
+    // This board until another board is opened.
+    const allBoardsLocked = !isAllBoardsBoard(layoutName)
+    const shownTab =
+        allBoardsLocked && sidebarTab === "all-boards" ? "plan" : sidebarTab
+
     const savedCount = planner.savedPlanners.length + manual.savedBoards.length
     const gameWarnings = board.gameCheck.unseen.filter((boardId) => {
         return differsFromGame(board, boardId)
@@ -53,7 +60,7 @@ export const Sidebar = () => {
                 <Tabs.Root
                     variant="line"
                     fitted
-                    value={sidebarTab}
+                    value={shownTab}
                     lazyMount
                     minH="0"
                     display="flex"
@@ -62,6 +69,7 @@ export const Sidebar = () => {
                 >
                     <SidebarTabList
                         hasUnseenResults={allBoards.hasUnseenResults}
+                        allBoardsLocked={allBoardsLocked}
                         savedCount={savedCount}
                     />
 

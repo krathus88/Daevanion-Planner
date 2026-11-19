@@ -31,7 +31,7 @@ describe("readPlannerLocation", () => {
         "{",
         "[]",
         '{"classId":"nobody","layout":"zikel"}',
-        `{"classId":"${DEFAULT_CLASS_ID}","layout":"azphel"}`,
+        `{"classId":"${DEFAULT_CLASS_ID}","layout":"elyos"}`,
     ])("defaults on %s", (raw) => {
         localStorage.setItem(KEY, raw)
 

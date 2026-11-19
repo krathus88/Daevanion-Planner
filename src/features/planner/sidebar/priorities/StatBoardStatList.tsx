@@ -1,28 +1,31 @@
 import { Flex } from "@chakra-ui/react"
-import type { ArielPriorityStat } from "@config/stats/stats"
+import type { StatBoardId } from "@config/boards"
+import type { StatBoardStat } from "@config/stats/stats"
 import type { StatTier } from "@planner/config/stats"
-import { useArielSettings } from "@planner/hooks/useArielSettings"
-import { useArielStatNodeCounts } from "@planner/hooks/useArielStatNodeCounts"
+import { useStatBoardNodeCounts } from "@planner/hooks/useStatBoardNodeCounts"
+import { useStatBoardSettings } from "@planner/hooks/useStatBoardSettings"
 import { StatusText } from "@common/StatusText"
-import { ArielStatRow } from "./ArielStatRow"
+import { StatBoardStatRow } from "./StatBoardStatRow"
 
-type ArielStatPriorityListProps = {
+type StatBoardStatListProps = {
     classId: string
-    stats: readonly ArielPriorityStat[]
+    board: StatBoardId
+    stats: readonly StatBoardStat[]
 }
 
-export const ArielStatPriorityList = ({
+export const StatBoardStatList = ({
     classId,
+    board,
     stats,
-}: ArielStatPriorityListProps) => {
-    const { settings, error, update } = useArielSettings(classId)
-    const nodeCounts = useArielStatNodeCounts(classId)
+}: StatBoardStatListProps) => {
+    const { settings, error, update } = useStatBoardSettings(classId, board)
+    const nodeCounts = useStatBoardNodeCounts(classId, board)
 
-    const handleTierChange = (stat: ArielPriorityStat, tier: StatTier) => {
+    const handleTierChange = (stat: StatBoardStat, tier: StatTier) => {
         update({ ...settings, tiers: { ...settings.tiers, [stat]: tier } })
     }
 
-    const handleIgnoredChange = (stat: ArielPriorityStat, ignored: boolean) => {
+    const handleIgnoredChange = (stat: StatBoardStat, ignored: boolean) => {
         const rest = settings.ignored.filter((other) => other !== stat)
         update({ ...settings, ignored: ignored ? [...rest, stat] : rest })
     }
@@ -30,10 +33,11 @@ export const ArielStatPriorityList = ({
     return (
         <Flex flexDir="column" gap="2">
             {stats.map((stat) => (
-                <ArielStatRow
+                <StatBoardStatRow
                     key={stat}
+                    board={board}
                     stat={stat}
-                    tier={settings.tiers[stat]}
+                    tier={settings.tiers[stat] ?? "okay"}
                     ignored={settings.ignored.includes(stat)}
                     count={nodeCounts.counts?.[stat]}
                     onTierChange={handleTierChange}
