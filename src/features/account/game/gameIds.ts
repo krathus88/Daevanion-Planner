@@ -152,8 +152,9 @@ export const SHOP_NAMES: Record<string, string> = {
     "990007": "Shugo Festival shop",
 }
 
-// The Hidden Cube key item, kept per character.
-export const HIDDEN_CUBE_KEY = "630900003"
+// The Hidden Cube key items, kept per character: the tradable one and "Key:
+// Hidden Cube (Bound)", an item of its own.
+export const HIDDEN_CUBE_KEYS = ["630900003", "660900003"]
 
 // The supply request tab the daily task tracks.
 export const EMERGENCY_SUPPLY = 1

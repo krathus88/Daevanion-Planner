@@ -32,10 +32,12 @@ import {
 // when the site reads more from snapshots (v2: Hidden Cube keys, crafts; v3:
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
 // corridors; v7: one row per corridor; v8: shop purchase counts; v9: the
-// Shugo Festival shop; v10: weekly purchase limits; v11: Command quests), so
-// each is applied once more.
-const APPLIED_KEY = "daevanion:game-applied:v11"
+// Shugo Festival shop; v10: weekly purchase limits; v11: Command quests; v12:
+// bound crafting materials and Hidden Cube keys), so each is applied once
+// more.
+const APPLIED_KEY = "daevanion:game-applied:v12"
 const OLD_APPLIED_KEYS = [
+    "daevanion:game-applied:v11",
     "daevanion:game-applied:v10",
     "daevanion:game-applied:v9",
     "daevanion:game-applied:v8",

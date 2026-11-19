@@ -56,6 +56,29 @@ describe("getOwnedItems", () => {
         expect(getOwnedItems(snapshots, "siel", null)).toEqual({})
     })
 
+    // Kryx's bag (2026-11-19): 6 Wrathful Mind (Bound), 4 Wrathful Mind in
+    // Server Storage.
+    it("counts the chosen character's bound materials as their tradable twin", () => {
+        const snapshots = [
+            snapshot("Kryx", 20, {
+                "1": { "660511001": 6 },
+                "2": { "610511013": 4 },
+            }),
+            snapshot("Krathus", 10, { "15": { "660530004": 3 } }),
+        ]
+
+        expect(getOwnedItems(snapshots, "siel", "Kryx")).toEqual({
+            "610511013": 10,
+        })
+        expect(getOwnedItems(snapshots, "siel", "Krathus")).toEqual({
+            "610511013": 4,
+            "610530010": 3,
+        })
+        expect(getOwnedItems(snapshots, "siel", null)).toEqual({
+            "610511013": 4,
+        })
+    })
+
     it("only counts characters on the server", () => {
         const owned = getOwnedItems(
             [

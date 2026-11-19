@@ -28,7 +28,7 @@ import {
     ENERGY_COUNTER,
     FACTION_NUMBERS,
     getServerId,
-    HIDDEN_CUBE_KEY,
+    HIDDEN_CUBE_KEYS,
     LIMIT_TASKS,
     SHOP_TASKS,
     SUPPLY_TASK,
@@ -223,7 +223,7 @@ const applyLimits = (
     return next
 }
 
-// Hidden Cube keys in the bag and Character Storage.
+// Hidden Cube keys, bound ones too, in the bag and Character Storage.
 const applyCubeKeys = (
     data: TrackerData,
     character: TrackerCharacter,
@@ -236,8 +236,10 @@ const applyCubeKeys = (
     let count = 0
 
     for (const storage of [BAG_STORAGE, CHARACTER_STORAGE]) {
-        count += snapshot.items[storage]?.[HIDDEN_CUBE_KEY] ?? 0
-        count += snapshot.bound?.[storage]?.[HIDDEN_CUBE_KEY] ?? 0
+        for (const key of HIDDEN_CUBE_KEYS) {
+            count += snapshot.items[storage]?.[key] ?? 0
+            count += snapshot.bound?.[storage]?.[key] ?? 0
+        }
     }
 
     return setCubeKeys(data, character.id, count)

@@ -99,7 +99,7 @@ describe("applyToTracker", () => {
             data(),
             snapshot({
                 items: {
-                    "1": { "630900003": 34 },
+                    "1": { "630900003": 34, "660900003": 5 },
                     "15": { "630900003": 2 },
                     "2": { "630900003": 100 },
                 },
@@ -107,7 +107,8 @@ describe("applyToTracker", () => {
             }),
         )
 
-        expect(next.cubeKeys).toEqual({ a: 36 })
+        // Key: Hidden Cube (Bound), 660900003, counts too.
+        expect(next.cubeKeys).toEqual({ a: 41 })
     })
 
     it("reads counters left out as 0", () => {

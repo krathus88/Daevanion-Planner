@@ -1,3 +1,4 @@
+import { BOUND_MATERIALS } from "@crafting/config/boundMaterials"
 import type { CraftingSettings } from "@crafting/types"
 import {
     BAG_STORAGE,
@@ -9,24 +10,31 @@ import {
 import type { GameSnapshot } from "./gameSnapshot"
 
 // A character's own storages: anything there can reach any character
-// through Server Storage, unless it's soulbound.
+// through Server Storage, unless it's soulbound or a bound material.
 const OWN_STORAGES = [BAG_STORAGE, CHARACTER_STORAGE]
 
+// A bound material counts as its tradable twin, and only when `chosen`
+// (the chosen character's own): it never leaves its character.
 const addCounts = (
     owned: Record<string, number>,
     counts: Record<string, number> | undefined,
+    chosen: boolean,
 ) => {
     for (const [id, count] of Object.entries(counts ?? {})) {
-        if (count > 0) {
-            owned[id] = (owned[id] ?? 0) + count
+        const tradable = BOUND_MATERIALS[id]
+
+        if (count > 0 && (tradable === undefined || chosen)) {
+            const key = tradable ?? id
+
+            owned[key] = (owned[key] ?? 0) + count
         }
     }
 }
 
 // What the crafting calculator counts as owned on a server: every
-// character's Bag and Character Storage (what isn't soulbound), Server
-// Storage once, and the chosen character's soulbound items. Null before the
-// companion sent any inventory.
+// character's Bag and Character Storage (what isn't soulbound or a bound
+// material), Server Storage once, and the chosen character's soulbound items
+// and bound materials. Null before the companion sent any inventory.
 export const getOwnedItems = (
     snapshots: GameSnapshot[],
     server: string,
@@ -43,13 +51,15 @@ export const getOwnedItems = (
             continue
         }
 
+        const chosen = snapshot.character.name === character
+
         for (const storage of OWN_STORAGES) {
-            addCounts(owned, snapshot.items[storage])
+            addCounts(owned, snapshot.items[storage], chosen)
         }
 
-        if (snapshot.character.name === character) {
+        if (chosen) {
             for (const storage of OWN_STORAGES) {
-                addCounts(owned, snapshot.bound?.[storage])
+                addCounts(owned, snapshot.bound?.[storage], true)
             }
         }
 
@@ -66,7 +76,7 @@ export const getOwnedItems = (
         return null
     }
 
-    addCounts(owned, shared.items?.[SHARED_STORAGE])
+    addCounts(owned, shared.items?.[SHARED_STORAGE], true)
 
     return owned
 }
