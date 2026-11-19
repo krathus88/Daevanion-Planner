@@ -1,6 +1,6 @@
 import { MARKET_TAX } from "@crafting/config/market"
 import type { ComboValue } from "./comboValue"
-import type { CraftPlan } from "./craftPlan"
+import type { CraftPlan, PlanMaterial } from "./craftPlan"
 import { formatCount, formatKinah } from "./formatKinah"
 import { afterTax } from "./marketTax"
 
@@ -88,6 +88,45 @@ export const getToBuyRows = (plan: CraftPlan): KinahRow[] => {
     }
 
     rows.push({ label: "To buy", value: plan.cost, total: true })
+
+    return rows
+}
+
+// A material priced at its Odyle's (Substance Morph): the missing ones as
+// Odyle, then, when it has a price of its own, buying it instead and what
+// morphing saves; empty without a morph.
+export const getMorphRows = (material: PlanMaterial): KinahRow[] => {
+    if (material.morph === null || material.cost === null) {
+        return []
+    }
+
+    const count = formatCount(material.missing)
+    const rows: KinahRow[] = [
+        {
+            label: `${count}× ${material.morph.item.name}`,
+            value: material.cost,
+            total: false,
+        },
+    ]
+
+    if (material.price === null) {
+        return rows
+    }
+
+    const bought = material.price * material.missing
+
+    rows.push(
+        {
+            label: `${count}× ${material.item.name} bought instead`,
+            value: bought,
+            total: false,
+        },
+        {
+            label: "Morphing saves",
+            value: bought - material.cost,
+            total: true,
+        },
+    )
 
     return rows
 }

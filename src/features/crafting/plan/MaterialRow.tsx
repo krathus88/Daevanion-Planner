@@ -5,13 +5,16 @@ import { WholeNumberInput } from "@common/WholeNumberInput"
 import { ItemName } from "@crafting/ItemName"
 import type { PlanMaterial, PriceState } from "@crafting/logic/craftPlan"
 import { formatCount } from "@crafting/logic/formatKinah"
+import { getMorphRows } from "@crafting/logic/kinahBreakdown"
 import { describeMorph } from "@crafting/logic/stepLabels"
 import { MAX_AMOUNT } from "@crafting/storage/craftingSettings"
 import { Tooltip } from "@ui/tooltip"
 import type { ChangeEvent } from "react"
 import { LuCheck } from "react-icons/lu"
 import { BuyInsteadSwitch } from "./BuyInsteadSwitch"
+import { HoverAmount } from "./HoverAmount"
 import { ItemNameLink } from "./ItemNameLink"
+import { KinahBreakdown } from "./KinahBreakdown"
 import { ListedPriceText } from "./ListedPriceText"
 import { AmountLoading } from "./AmountLoading"
 import { PriceLoading } from "./PriceLoading"
@@ -91,6 +94,8 @@ export const MaterialRow = ({
     const done = material.missing === 0
     const have = material.need - material.missing
     const showCost = material.cost !== null && !done
+    const cost = formatCount(Math.round(material.cost ?? 0))
+    const morphRows = getMorphRows(material)
 
     return (
         <Grid
@@ -209,8 +214,22 @@ export const MaterialRow = ({
             >
                 {pricesLoading && !crafted && !done ? (
                     <AmountLoading w="full" />
+                ) : showCost && morphRows.length > 0 && material.morph ? (
+                    <HoverAmount
+                        content={
+                            <KinahBreakdown
+                                rows={morphRows}
+                                caption={describeMorph(
+                                    material.morph.item.name,
+                                    material.morph.price,
+                                )}
+                            />
+                        }
+                    >
+                        {cost}
+                    </HoverAmount>
                 ) : showCost ? (
-                    formatCount(Math.round(material.cost ?? 0))
+                    cost
                 ) : (
                     "—"
                 )}

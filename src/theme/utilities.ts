@@ -15,4 +15,15 @@ export const utilities = {
             none: "none",
         },
     },
+    scrollbarGutter: {
+        values: { auto: "auto", stable: "stable" },
+    },
+    scrollbarWidth: {
+        values: { auto: "auto", thin: "thin", none: "none" },
+    },
+    scrollbarColor: {
+        values: {
+            subtle: "var(--chakra-colors-app-border-strong) transparent",
+        },
+    },
 } satisfies SystemConfig["utilities"]

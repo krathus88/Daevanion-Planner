@@ -8,10 +8,11 @@ import {
     SWORD,
 } from "@test/craftingFixture"
 import type { ComboValue } from "./comboValue"
-import { buildCraftPlan } from "./craftPlan"
+import { buildCraftPlan, type PlanMaterial } from "./craftPlan"
 import {
     getCraftItRows,
     getExpectedRows,
+    getMorphRows,
     getProfitRows,
     getToBuyRows,
 } from "./kinahBreakdown"
@@ -104,6 +105,46 @@ describe("getToBuyRows", () => {
         )
 
         expect(getToBuyRows(plan)).toEqual([])
+    })
+})
+
+// The user's Radiant Orichalcum Ore (2026-11-19): 9 missing, cheaper as
+// Radiant Odyle.
+const ORE_MATERIAL: PlanMaterial = {
+    item: { id: 1, name: "Radiant Orichalcum Ore", grade: null },
+    need: 9,
+    owned: 0,
+    missing: 9,
+    price: 1_099_999,
+    cost: 6_999_993,
+    morph: {
+        item: { id: 2, name: "Radiant Odyle", grade: null },
+        price: 777_777,
+    },
+    craftable: false,
+}
+
+describe("getMorphRows", () => {
+    it("prices the missing ones as Odyle, then buying them instead", () => {
+        expect(getMorphRows(ORE_MATERIAL)).toEqual([
+            { label: "9× Radiant Odyle", value: 6_999_993, total: false },
+            {
+                label: "9× Radiant Orichalcum Ore bought instead",
+                value: 9_899_991,
+                total: false,
+            },
+            { label: "Morphing saves", value: 2_899_998, total: true },
+        ])
+    })
+
+    it("leaves out buying it when it has no price of its own", () => {
+        expect(getMorphRows({ ...ORE_MATERIAL, price: null })).toEqual([
+            { label: "9× Radiant Odyle", value: 6_999_993, total: false },
+        ])
+    })
+
+    it("is empty without a morph", () => {
+        expect(getMorphRows({ ...ORE_MATERIAL, morph: null })).toEqual([])
     })
 })
 

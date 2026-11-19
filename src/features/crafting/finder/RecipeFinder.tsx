@@ -1,4 +1,4 @@
-import { Flex, Grid, Text } from "@chakra-ui/react"
+import { Flex, Grid, type SystemStyleObject, Text } from "@chakra-ui/react"
 import { Card } from "@common/Card"
 import { SearchField } from "@common/SearchField"
 import type { CategoryId, ProfessionId } from "@crafting/config/professions"
@@ -27,6 +27,20 @@ type RecipeFinderProps = {
     onCategoryChange: (category: CategoryId | null) => void
     onSelect: (itemId: number) => void
     onFavoriteChange: (groupKey: string, favorite: boolean) => void
+}
+
+// A styled scrollbar takes its own lane beside the rows; the browser's overlay one
+// (Edge on Windows 11) grows on hover over them. Chromium skips the ::-webkit-scrollbar
+// rules once scrollbar-width or scrollbar-color is set, so those are Firefox only.
+const listScrollbar: SystemStyleObject = {
+    scrollbarGutter: "stable",
+    "&::-webkit-scrollbar": { w: "1.5", bg: "transparent" },
+    "&::-webkit-scrollbar-thumb": { bg: "app.borderStrong", rounded: "full" },
+    "&::-webkit-scrollbar-thumb:hover": { bg: "app.muted" },
+    "@supports not selector(::-webkit-scrollbar)": {
+        scrollbarWidth: "thin",
+        scrollbarColor: "subtle",
+    },
 }
 
 export const RecipeFinder = ({
@@ -88,12 +102,14 @@ export const RecipeFinder = ({
             <Flex
                 ref={listRef}
                 mx="-1"
-                px="1"
+                pl="1"
+                pr="2"
                 minH="0"
                 flex="1"
                 flexDir="column"
                 gap="3"
                 overflowY="auto"
+                css={listScrollbar}
                 onScroll={handleListScroll}
             >
                 {entries.length > 0 ? (
