@@ -85,6 +85,11 @@ const (
 	// count when a shop opens, then the one a purchase changed, same shape
 	// (ParsePurchaseLimits).
 	TypePurchaseLimits = "8e56"
+	// Item level (ParseItemLevel) and power score (ParsePower): at login and
+	// character switch, then on every gear change. Power comes a few times
+	// at login, settling as buffs apply; the last one is the game's.
+	TypeItemLevel = "1d56"
+	TypePower     = "5636"
 )
 
 // NightmareShop is the Nightmare shop's id in TypeShopCounts.
@@ -243,6 +248,8 @@ const (
 	StorageShared = 2
 	// Character Storage: a bank for this character only.
 	StorageCharacter = 15
+	// The character's equipped gear; equipping soulbinds an item.
+	StorageEquipped = 11
 )
 
 // ParseStacks finds the item stacks in 1156 or 1b56. Each stack is
@@ -986,4 +993,32 @@ func ParseShopBuy(body []byte) (tab int, entry uint32, ok bool) {
 	tab = int(r.u8())
 	entry = r.u32()
 	return tab, entry, r.ok
+}
+
+// ParseItemLevel reads 1d56: u32 item level, then a u32 that matched it at
+// rest and stayed at the old level while a lower piece was being equipped
+// (not read). Kryx, 2026-11-22: 27 0b 00 00 = 2855.
+func ParseItemLevel(body []byte) (int, bool) {
+	if len(body) != 8 {
+		return 0, false
+	}
+	level := binary.LittleEndian.Uint32(body)
+	if level == 0 || level > 100_000 {
+		return 0, false
+	}
+	return int(level), true
+}
+
+// ParsePower reads 5636: u64 power score, then a u64 not read (higher, and
+// steady while the first changed). Kryx, 2026-11-22: 0e cd 02 … = 183566,
+// the game's 183.5k.
+func ParsePower(body []byte) (int, bool) {
+	if len(body) != 16 {
+		return 0, false
+	}
+	power := binary.LittleEndian.Uint64(body)
+	if power == 0 || power > 1_000_000_000 {
+		return 0, false
+	}
+	return int(power), true
 }

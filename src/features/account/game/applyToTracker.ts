@@ -33,6 +33,7 @@ import {
     SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
+    USED_COUNTERS,
 } from "./gameIds"
 import type { GameSnapshot } from "./gameSnapshot"
 
@@ -88,6 +89,19 @@ const applyCounters = (
     }
 
     for (const task of getTasks(data)) {
+        const usedId = USED_COUNTERS[task.id]
+
+        if (usedId !== undefined && task.recharge === undefined) {
+            const [left] = counters[usedId] ?? [0, 0]
+
+            next = setWeeklyCount(next, task, character, {
+                value: Math.max(task.cap - left, 0),
+                at: snapshot.countersAt,
+                server: false,
+            })
+            continue
+        }
+
         const counterId = TASK_COUNTERS[task.id]
 
         if (counterId === undefined || task.recharge === undefined) {

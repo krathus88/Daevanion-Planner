@@ -10,6 +10,7 @@ import {
 import { getCharacterLink } from "@tracker/logic/characterLink"
 import { getCharacterName } from "@tracker/logic/characterName"
 import { withCorridorView } from "@tracker/logic/corridors"
+import { formatPower } from "@tracker/logic/gearScore"
 import {
     getCubeCost,
     getEnergyCap,
@@ -57,6 +58,10 @@ type CharacterCardProps = {
     ignored?: string[]
     // The companion app says this character is being played.
     playing?: boolean
+    // Item level and power score from the companion app (0 or missing: not
+    // sent), shown after the class and server.
+    itemLevel?: number
+    power?: number
     // How its Corridors task looks this siege (getCorridorView): the held
     // corridors (missing: as set up), and whether its entrances are unknown.
     corridors?: readonly string[] | null
@@ -87,6 +92,8 @@ export const CharacterCard = memo(function CharacterCard({
     goalsOpen,
     ignored,
     playing,
+    itemLevel = 0,
+    power = 0,
     corridors,
     corridorsUnknown = false,
     periods,
@@ -215,6 +222,8 @@ export const CharacterCard = memo(function CharacterCard({
                     <Text as="span" textStyle="caption">
                         {CLASS_NAMES[character.classId]} ·{" "}
                         {getServer(character.server).name}
+                        {itemLevel > 0 && ` · ${itemLevel} iLvl`}
+                        {power > 0 && ` · ${formatPower(power)} power`}
                     </Text>
                 }
                 onCountChange={onCountChange}

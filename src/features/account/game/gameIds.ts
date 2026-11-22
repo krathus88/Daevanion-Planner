@@ -96,6 +96,13 @@ export const TASK_COUNTERS: Record<string, string> = {
     "ascension-trial": "80000001",
 }
 
+// Weekly tasks done by using a counter's entries: task id → counter id (entries
+// left; the task counts its cap minus those). Ludra's entry is 1 a week (every
+// character read 1 until Kryx cleared it, 2026-11-21).
+export const USED_COUNTERS: Record<string, string> = {
+    ludra: "90000002",
+}
+
 // Tracker tasks a weekly crafting limit counts: task id → the recipe and
 // which of its counts (server-wide or the character's own).
 export const CRAFT_TASKS: Record<
@@ -184,7 +191,9 @@ export const DUTY_TASK = "duty-missions"
 export const SUPPLY_TASK = "supply-requests"
 
 // Storage codes in a snapshot's items: the character's bag, Server Storage
-// (the same on every character) and Character Storage (its own bank).
+// (the same on every character), Character Storage (its own bank) and the
+// gear it has equipped.
 export const BAG_STORAGE = "1"
 export const SHARED_STORAGE = "2"
 export const CHARACTER_STORAGE = "15"
+export const EQUIPPED_STORAGE = "11"

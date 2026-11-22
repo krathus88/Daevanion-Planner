@@ -253,6 +253,32 @@ describe("TrackerPage", () => {
         expect(readTrackerData().minimized).toEqual([])
     })
 
+    it("shows the item level and power score the companion app sent", () => {
+        withCharacters()
+        localStorage.setItem(
+            "daevanion:game:v1:1301:aria",
+            JSON.stringify({
+                v: 1,
+                character: { name: "aria", server: 1301, class: 30 },
+                itemLevel: 2855,
+                power: 183566,
+                gearAt: 1,
+            }),
+        )
+        renderWithChakra(<TrackerPage />)
+
+        expect(
+            within(screen.getByRole("article", { name: "Aria" })).getByText(
+                "Cleric · Siel · 2855 iLvl · 183.5k power",
+            ),
+        ).toBeInTheDocument()
+        expect(
+            within(screen.getByRole("article", { name: "Bran" })).getByText(
+                "Templar · Siel",
+            ),
+        ).toBeInTheDocument()
+    })
+
     it("shows each card's progress", async () => {
         withCharacters()
         renderWithChakra(<TrackerPage />)

@@ -3,15 +3,17 @@ import type { CraftingSettings } from "@crafting/types"
 import {
     BAG_STORAGE,
     CHARACTER_STORAGE,
+    EQUIPPED_STORAGE,
     GAME_PROFESSIONS,
     getServerId,
     SHARED_STORAGE,
 } from "./gameIds"
 import type { GameSnapshot } from "./gameSnapshot"
 
-// A character's own storages: anything there can reach any character
-// through Server Storage, unless it's soulbound or a bound material.
-const OWN_STORAGES = [BAG_STORAGE, CHARACTER_STORAGE]
+// A character's own storages (equipped gear included): anything there can
+// reach any character through Server Storage, unless it's soulbound or a
+// bound material.
+const OWN_STORAGES = [BAG_STORAGE, CHARACTER_STORAGE, EQUIPPED_STORAGE]
 
 // A bound material counts as its tradable twin, and only when `chosen`
 // (the chosen character's own): it never leaves its character.
@@ -32,8 +34,8 @@ const addCounts = (
 }
 
 // What the crafting calculator counts as owned on a server: every
-// character's Bag and Character Storage (what isn't soulbound or a bound
-// material), Server Storage once, and the chosen character's soulbound items
+// character's Bag, Character Storage and equipped gear (what isn't soulbound
+// or a bound material), Server Storage once, and the chosen character's soulbound items
 // and bound materials. Null before the companion sent any inventory.
 export const getOwnedItems = (
     snapshots: GameSnapshot[],

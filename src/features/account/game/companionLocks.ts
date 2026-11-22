@@ -11,6 +11,7 @@ import {
     SHOP_TASKS,
     SUPPLY_TASK,
     TASK_COUNTERS,
+    USED_COUNTERS,
 } from "./gameIds"
 
 // Ids the tracker locks besides task ids: a character's Odyle Energy and
@@ -76,6 +77,9 @@ export const getCompanionLocks = (
                 (section === "counters" &&
                     TASK_COUNTERS[task.id] !== undefined &&
                     task.recharge !== undefined) ||
+                (section === "counters" &&
+                    USED_COUNTERS[task.id] !== undefined &&
+                    task.recharge === undefined) ||
                 (section === "supply" && task.id === SUPPLY_TASK) ||
                 (section === "duty" && task.id === DUTY_TASK) ||
                 (section === "corridors" && task.id === CORRIDOR_TASK) ||

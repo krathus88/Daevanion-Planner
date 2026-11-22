@@ -1,3 +1,4 @@
+import { getCharacterGear } from "@account/game/gameCharacters"
 import { Button, Flex } from "@chakra-ui/react"
 import { CardGrid } from "@common/CardGrid"
 import { getCorridorView } from "@tracker/logic/corridors"
@@ -43,6 +44,8 @@ type TrackerBoardProps = {
     periods: ResetPeriods
     // The character the companion app says is being played.
     playingId?: string
+    // Item levels and power scores the companion app sent (readGameGear).
+    gear?: string
     onCountChange: CountChangeHandler
     onEntriesChange: EntriesChangeHandler
     onEnergyChange: EnergyChangeHandler
@@ -79,6 +82,7 @@ export const TrackerBoard = ({
     companionUsed,
     periods,
     playingId,
+    gear = "",
     onCountChange,
     onEntriesChange,
     onEnergyChange,
@@ -163,6 +167,12 @@ export const TrackerBoard = ({
                             companionUsed,
                         )
 
+                        const characterGear = getCharacterGear(
+                            gear,
+                            character.server,
+                            character.name,
+                        )
+
                         return (
                             <CharacterCard
                                 key={character.id}
@@ -178,6 +188,8 @@ export const TrackerBoard = ({
                                 goalsOpen={goalsOpen.includes(character.id)}
                                 ignored={ignored[character.id]}
                                 playing={character.id === playingId}
+                                itemLevel={characterGear?.itemLevel}
+                                power={characterGear?.power}
                                 corridors={corridors?.artifacts}
                                 corridorsUnknown={corridors?.unknown}
                                 periods={periods}

@@ -392,6 +392,24 @@ func TestDuty(t *testing.T) {
 	}
 }
 
+// Power is sent before the character message at login (it waits for it), and
+// a few times as it settles.
+func TestItemLevelAndPower(t *testing.T) {
+	tr := NewTracker()
+	tr.Handle("a", msg(game.TypePower, join(u64(135166), u64(220637))), now)
+	tr.Handle("a", character("Testchar", 30), now)
+	tr.Handle("a", msg(game.TypeItemLevel, join(u32(2855), u32(2855))), now)
+	tr.Handle("a", msg(game.TypePower, join(u64(183566), u64(220637))), now)
+	got := tr.All()[0]
+	if got.ItemLevel != 2855 || got.Power != 183566 || got.GearAt != now.UnixMilli() {
+		t.Fatalf("got %d %d %d", got.ItemLevel, got.Power, got.GearAt)
+	}
+	kept := (Snapshot{Version: SnapshotVersion}).Keep(got)
+	if kept.ItemLevel != 2855 || kept.Power != 183566 || kept.GearAt != got.GearAt {
+		t.Fatalf("Keep dropped the gear: %+v", kept)
+	}
+}
+
 func TestProgressKeepsOnlyRecentCounters(t *testing.T) {
 	tr := NewTracker()
 	tr.Handle("a", character("Testchar", 30), now)

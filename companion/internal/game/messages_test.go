@@ -546,3 +546,25 @@ func TestParseShopPurchase(t *testing.T) {
 		t.Fatalf("Abyss shop: got %d %v %v", shop, bought, ok)
 	}
 }
+
+// Real messages (Kryx and Krathus, 2026-11-22).
+func TestParseItemLevelAndPower(t *testing.T) {
+	if level, ok := ParseItemLevel(h("270b0000270b0000")); !ok || level != 2855 {
+		t.Fatalf("got %d %v", level, ok)
+	}
+	if level, ok := ParseItemLevel(h("e20a0000270b0000")); !ok || level != 2786 {
+		t.Fatalf("got %d %v", level, ok)
+	}
+	if power, ok := ParsePower(h("0ecd020000000000dd5d030000000000")); !ok || power != 183566 {
+		t.Fatalf("got %d %v", power, ok)
+	}
+	if power, ok := ParsePower(h("4a56020000000000da57020000000000")); !ok || power != 153162 {
+		t.Fatalf("got %d %v", power, ok)
+	}
+	if _, ok := ParseItemLevel(h("270b0000")); ok {
+		t.Fatal("read a short item level")
+	}
+	if _, ok := ParsePower(h("0000000000000000dd5d030000000000")); ok {
+		t.Fatal("read a zero power score")
+	}
+}

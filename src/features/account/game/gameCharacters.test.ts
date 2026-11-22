@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { getNewGameCharacters, getServerCharacters } from "./gameCharacters"
+import {
+    getCharacterGear,
+    getNewGameCharacters,
+    getServerCharacters,
+} from "./gameCharacters"
 
 describe("getServerCharacters", () => {
     it("lists a server's characters with their class", () => {
@@ -69,5 +73,25 @@ describe("getNewGameCharacters", () => {
                 classId: "cleric",
             },
         ])
+    })
+})
+
+describe("getCharacterGear", () => {
+    const lines = "1301:2855:183566:Kryx\n1302:2665:0:Krathus"
+
+    it("finds a character by server and name, ignoring case", () => {
+        expect(getCharacterGear(lines, "siel", " kryx ")).toEqual({
+            itemLevel: 2855,
+            power: 183566,
+        })
+        expect(getCharacterGear(lines, "nezekan", "Krathus")).toEqual({
+            itemLevel: 2665,
+            power: 0,
+        })
+    })
+
+    it("is null for a character on another server or not sent", () => {
+        expect(getCharacterGear(lines, "nezekan", "Kryx")).toBeNull()
+        expect(getCharacterGear("", "siel", "Kryx")).toBeNull()
     })
 })

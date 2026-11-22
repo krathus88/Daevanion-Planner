@@ -60,6 +60,11 @@ export type GameSnapshot = {
     // expiry it's yesterday's board.
     duty?: [number, number]
     dutyAt?: number
+    // Item level and power score, as the character window shows them; only
+    // shown (readGameGear), never applied.
+    itemLevel?: number
+    power?: number
+    gearAt?: number
     // Progress counters changed in the 8 days before progressAt: id →
     // [count, last change (ms)]. One missing wasn't counted lately.
     progress?: Record<string, [number, number]>
@@ -142,6 +147,9 @@ const SectionsSchema = v.object({
     boardsAt: time,
     duty: section(pair),
     dutyAt: time,
+    itemLevel: section(count),
+    power: section(count),
+    gearAt: time,
     progress: section(entriesOf(pair)),
     progressAt: time,
     arena: section(entriesOf(pair)),
@@ -167,7 +175,8 @@ export const parseGameSnapshot = (value: unknown): GameSnapshot | null => {
         : null
 }
 
-// The newest section's time: a snapshot with a later one has news.
+// The newest applied section's time: a snapshot with a later one has news.
+// Gear isn't applied, only shown.
 export const getSnapshotTime = (snapshot: GameSnapshot) => {
     return Math.max(
         snapshot.petsAt ?? 0,

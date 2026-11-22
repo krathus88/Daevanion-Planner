@@ -82,3 +82,28 @@ export const getNewGameCharacters = (
 
     return found
 }
+
+// A character's item level and power score, from readGameGear's lines; 0
+// for one not sent. Null when the companion sent neither. Matched by server
+// and name, ignoring case, like the tracker's game data.
+export const getCharacterGear = (
+    lines: string,
+    server: string,
+    name: string,
+) => {
+    const wanted = name.trim().toLowerCase()
+
+    for (const line of lines.split("\n")) {
+        const [serverNumber, itemLevel, power, ...rest] = line.split(":")
+
+        if (
+            rest.length > 0 &&
+            getServerId(Number(serverNumber)) === server &&
+            rest.join(":").toLowerCase() === wanted
+        ) {
+            return { itemLevel: Number(itemLevel), power: Number(power) }
+        }
+    }
+
+    return null
+}

@@ -9,6 +9,7 @@ import {
     readGameBoards,
     reapplyGameSnapshot,
     readGameCharacters,
+    readGameGear,
     readGameSections,
     readGameSnapshots,
 } from "./gameSync"
@@ -123,6 +124,14 @@ describe("applyGameSnapshots", () => {
 
         expect(readGameCharacters()).toBe("1301:30:Testchar\n1302:30:Zed")
         expect(readGameSnapshots()).toHaveLength(2)
+    })
+
+    it("lists item level and power score of the characters that sent them", () => {
+        store({ ...snapshot(1, 1), itemLevel: 2855, power: 183566 })
+        store({ ...snapshot(1, 1), power: 900 }, "daevanion:game:v1:1302:Zed")
+        store(snapshot(1, 1), "daevanion:game:v1:1303:None")
+
+        expect(readGameGear()).toBe("1301:2855:183566:Testchar\n1302:0:900:Zed")
     })
 
     it("orders characters by name, not class", () => {

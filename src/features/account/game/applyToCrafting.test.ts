@@ -23,7 +23,7 @@ const snapshot = (
 }
 
 describe("getOwnedItems", () => {
-    it("adds every character's bag and Character Storage, and Server Storage once", () => {
+    it("adds every character's bag, Character Storage and equipped gear, and Server Storage once", () => {
         const owned = getOwnedItems(
             [
                 snapshot("Old", 10, {
@@ -41,8 +41,8 @@ describe("getOwnedItems", () => {
             null,
         )
 
-        // Server Storage from the newest; equipped gear (11) left out.
-        expect(owned).toEqual({ ore: 8, log: 3, gem: 7 })
+        // Server Storage from the newest.
+        expect(owned).toEqual({ ore: 8, log: 3, gem: 7, worn: 1 })
     })
 
     it("counts soulbound items only for the chosen character", () => {
@@ -53,6 +53,19 @@ describe("getOwnedItems", () => {
 
         expect(getOwnedItems(snapshots, "siel", "Kept")).toEqual({ ring: 1 })
         expect(getOwnedItems(snapshots, "siel", "Other")).toEqual({ ring: 2 })
+        expect(getOwnedItems(snapshots, "siel", null)).toEqual({})
+    })
+
+    // Kryx equipping Artisan's Splendent Orichalcum Mace (2026-11-22): the
+    // game soulbinds it and moves it to the equipped storage (11).
+    it("counts the chosen character's soulbound equipped gear", () => {
+        const snapshots = [
+            snapshot("Kryx", 10, { "1": {} }, { "11": { "110730013": 1 } }),
+        ]
+
+        expect(getOwnedItems(snapshots, "siel", "Kryx")).toEqual({
+            "110730013": 1,
+        })
         expect(getOwnedItems(snapshots, "siel", null)).toEqual({})
     })
 

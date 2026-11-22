@@ -68,6 +68,7 @@ describe("getCompanionLocks", () => {
                 "ascension-trial",
                 CUBE_KEYS_LOCK,
                 ENERGY_LOCK,
+                "ludra",
                 "nightmare",
                 "odyle-craft",
                 "supply-requests",

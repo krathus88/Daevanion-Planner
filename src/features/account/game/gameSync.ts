@@ -33,10 +33,12 @@ import {
 // the duty board; v4: progress counters; v5: arena records; v6: Abyss
 // corridors; v7: one row per corridor; v8: shop purchase counts; v9: the
 // Shugo Festival shop; v10: weekly purchase limits; v11: Command quests; v12:
-// bound crafting materials and Hidden Cube keys), so each is applied once
-// more.
-const APPLIED_KEY = "daevanion:game-applied:v12"
+// bound crafting materials and Hidden Cube keys; v13: Ludra; v14: equipped
+// gear in crafting), so each is applied once more.
+const APPLIED_KEY = "daevanion:game-applied:v14"
 const OLD_APPLIED_KEYS = [
+    "daevanion:game-applied:v13",
+    "daevanion:game-applied:v12",
     "daevanion:game-applied:v11",
     "daevanion:game-applied:v10",
     "daevanion:game-applied:v9",
@@ -169,6 +171,42 @@ export const readGameCharacters = () => {
     charactersCache = { stored: stored, characters: characters }
 
     return characters
+}
+
+let gearCache: { stored: StoredSnapshot[] | null; gear: string } = {
+    stored: null,
+    gear: "",
+}
+
+// Each character's item level and power score (0 when not sent):
+// `<server number>:<item level>:<power>:<name>` lines, as one string so
+// useSyncExternalStore sees the same gear as the same value.
+export const readGameGear = () => {
+    const stored = listSnapshots()
+
+    if (stored === gearCache.stored) {
+        return gearCache.gear
+    }
+
+    const lines: string[] = []
+
+    for (const { key, snapshot } of stored) {
+        const { itemLevel = 0, power = 0 } = snapshot
+        const who = key.slice(GAME_KEY_PREFIX.length)
+        const at = who.indexOf(":")
+
+        if (itemLevel > 0 || power > 0) {
+            lines.push(
+                `${who.slice(0, at)}:${itemLevel}:${power}:${who.slice(at + 1)}`,
+            )
+        }
+    }
+
+    const gear = lines.sort((a, b) => a.localeCompare(b)).join("\n")
+
+    gearCache = { stored: stored, gear: gear }
+
+    return gear
 }
 
 // What each character's snapshot holds, as `<server number>:<name>:<section>`

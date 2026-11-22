@@ -136,6 +136,28 @@ describe("applyToTracker", () => {
         })
     })
 
+    it("marks Ludra done once its weekly entry is used", () => {
+        const periods = getResetPeriods(AT)
+        const unused = applyToTracker(
+            data(),
+            snapshot({ counters: { "90000002": [1, 0] }, countersAt: AT }),
+        )
+        // A used entry is 0, so the snapshot leaves it out.
+        const used = applyToTracker(
+            unused,
+            snapshot({ counters: {}, countersAt: AT }),
+        )
+
+        expect(unused.counts.a.ludra).toEqual({
+            period: periods.weekly,
+            count: 0,
+        })
+        expect(used.counts.a.ludra).toEqual({
+            period: periods.weekly,
+            count: 1,
+        })
+    })
+
     it("skips tasks removed from the user's list", () => {
         const tasks = STARTER_TASKS.filter((task) => {
             return task.id !== "ascension-trial"

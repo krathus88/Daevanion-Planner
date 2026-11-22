@@ -38,6 +38,10 @@ type Character struct {
 	// The daily duty board, once seen.
 	Duty   *game.Duty
 	DutyAt time.Time
+	// Item level and power score (0 until sent), and when either last changed.
+	ItemLevel int
+	Power     int
+	GearAt    time.Time
 	// Progress counters changed lately, by id (see progressWindow).
 	Progress   map[uint32]game.Progress
 	ProgressAt time.Time
@@ -519,6 +523,24 @@ func (t *Tracker) reader(m wire.Message) func(*Character, time.Time) {
 			c.Limits = next
 			c.LimitsAt = now
 		}
+	case game.TypeItemLevel:
+		level, ok := game.ParseItemLevel(m.Body)
+		if !ok {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			c.ItemLevel = level
+			c.GearAt = now
+		}
+	case game.TypePower:
+		power, ok := game.ParsePower(m.Body)
+		if !ok {
+			return nil
+		}
+		return func(c *Character, now time.Time) {
+			c.Power = power
+			c.GearAt = now
+		}
 	case game.TypeDuty:
 		duty, ok := game.ParseDuty(m.Body)
 		if !ok {
@@ -688,6 +710,10 @@ type Snapshot struct {
 	// The daily duty board: [quests turned in, expires at (ms)].
 	Duty   *[2]int64 `json:"duty,omitempty"`
 	DutyAt int64     `json:"dutyAt,omitempty"`
+	// Item level and power score, as the character window shows them.
+	ItemLevel int   `json:"itemLevel,omitempty"`
+	Power     int   `json:"power,omitempty"`
+	GearAt    int64 `json:"gearAt,omitempty"`
 	// Progress counters changed in the 8 days before progressAt: id →
 	// [count, last change (ms)]. One missing there wasn't counted lately.
 	Progress   map[string][2]int64 `json:"progress,omitempty"`
@@ -771,6 +797,13 @@ func (s Snapshot) Keep(previous Snapshot) Snapshot {
 	if s.Duty == nil {
 		s.Duty, s.DutyAt = previous.Duty, previous.DutyAt
 	}
+	if s.ItemLevel == 0 {
+		s.ItemLevel = previous.ItemLevel
+	}
+	if s.Power == 0 {
+		s.Power = previous.Power
+	}
+	s.GearAt = max(s.GearAt, previous.GearAt)
 	if s.Progress == nil {
 		s.Progress, s.ProgressAt = previous.Progress, previous.ProgressAt
 	}
@@ -935,6 +968,11 @@ func (c *Character) Snapshot() Snapshot {
 	if c.Duty != nil {
 		s.Duty = &[2]int64{int64(c.Duty.Done), c.Duty.Ends}
 		s.DutyAt = millis(c.DutyAt)
+	}
+
+	if !c.GearAt.IsZero() {
+		s.ItemLevel, s.Power = c.ItemLevel, c.Power
+		s.GearAt = millis(c.GearAt)
 	}
 
 	if c.Progress != nil {

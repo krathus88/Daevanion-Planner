@@ -84,7 +84,7 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         cap: 4,
         shared: false,
     },
-    // The raid's final boss kill; its weekly attempts aren't tracked.
+    // The raid's weekly entry, done once used (the companion reads it).
     {
         id: "ludra",
         name: "Ludra",

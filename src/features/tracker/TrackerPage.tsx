@@ -11,6 +11,7 @@ import {
     ArenaUnknownContext,
     CompanionLocksContext,
 } from "./context/companionLocks"
+import { useGameGear } from "./hooks/useGameGear"
 import { useNewGameCharacters } from "./hooks/useNewGameCharacters"
 import { isArenaTaskUnknown } from "./logic/arenaWeeks"
 import { useCompanionLocks } from "./hooks/useCompanionLocks"
@@ -70,6 +71,7 @@ export const TrackerPage = () => {
     const locks = useCompanionLocks(characters, tasks, arena, periods.weekly)
     const companionUsed = useCompanionUsed()
     const newCharacters = useNewGameCharacters(characters, declined)
+    const gear = useGameGear()
     const arenaUnknown = new Map(
         characters.map((character) => {
             const unknown = Object.keys(ARENA_TASKS).filter((taskId) => {
@@ -171,6 +173,7 @@ export const TrackerPage = () => {
                                 companionUsed={companionUsed}
                                 periods={periods}
                                 playingId={findPlayingId(companion, characters)}
+                                gear={gear}
                                 onCountChange={changeCount}
                                 onEntriesChange={changeEntries}
                                 onEnergyChange={changeEnergy}
