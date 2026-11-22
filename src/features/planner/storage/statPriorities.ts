@@ -66,6 +66,12 @@ const GLADIATOR_ATTACK_MAX: StatMax = {
     passiveAfter: 2,
 }
 
+const SORCERER_ATTACK_MAX: StatMax = {
+    enabled: true,
+    skillAfter: 4,
+    passiveAfter: 5,
+}
+
 const withAttackMax = (attackMax: StatMax): StatSettings => {
     return {
         ...DEFAULT_STAT_SETTINGS,
@@ -80,6 +86,7 @@ const withAttackMax = (attackMax: StatMax): StatSettings => {
 const CLASS_STAT_SETTINGS: Partial<Record<string, StatSettings>> = {
     chanter: withAttackMax(CHANTER_ATTACK_MAX),
     gladiator: withAttackMax(GLADIATOR_ATTACK_MAX),
+    sorcerer: withAttackMax(SORCERER_ATTACK_MAX),
 }
 
 export const defaultStatSettings = (classId: string) => {

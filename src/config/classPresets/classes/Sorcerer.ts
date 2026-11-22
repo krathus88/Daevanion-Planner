@@ -35,7 +35,7 @@ export default defineClassPreset({
             id: "h",
             name: "Hellfire",
             type: "skill",
-            priority: 1,
+            priority: 2,
             icon: Hellfire,
             tooltip:
                 "Selects a target within 20m and deals X Fire damage to up to 4 enemies within 4m of the target.\n\nMax 3 Charge Levels\n20-35 Stagger Gauge Damage",
@@ -55,7 +55,7 @@ export default defineClassPreset({
             id: "woc",
             name: "Wish of Concentration",
             type: "skill",
-            priority: 2,
+            priority: 1,
             icon: WishOfConcentration,
             tooltip:
                 "Increases the caster's Attack by 10% and Accuracy by 100 for Xs.",
@@ -72,7 +72,7 @@ export default defineClassPreset({
             id: "b",
             name: "Blaze",
             type: "skill",
-            priority: 2,
+            priority: 1,
             icon: Blaze,
             tooltip:
                 "Deals X Fire damage to a target afflicted with Fire Mark within 20m and restores 100 MP.\n\n7 Stagger Gauge Damage",
@@ -92,7 +92,7 @@ export default defineClassPreset({
             id: "f",
             name: "Firestorm",
             type: "skill",
-            priority: 2,
+            priority: 1,
             icon: Firestorm,
             tooltip:
                 "Deals X Fire damage to a target within 20m.\n\n5 Stagger Gauge Damage",
@@ -152,7 +152,7 @@ export default defineClassPreset({
             id: "fa",
             name: "Flame Arrow",
             type: "skill",
-            priority: 3,
+            priority: 1,
             icon: FlameArrow,
             tooltip:
                 "Deals X Fire damage to a target within 20m and restores 100 MP.",
@@ -174,7 +174,7 @@ export default defineClassPreset({
             id: "ic",
             name: "Ice Chain",
             type: "skill",
-            priority: 4,
+            priority: 99,
             icon: IceChain,
             tooltip:
                 "Selects a target within 20m and deals X Water damage to up to 4 enemies within 4m of the target and inflicts Slow, reducing Move Speed by 40% for 5s.\n\n2 Stagger Gauge Damage",
@@ -307,7 +307,7 @@ export default defineClassPreset({
             id: "pgoe",
             name: "Grace of Enhancement",
             type: "passive",
-            priority: 3,
+            priority: 1,
             icon: GraceOfEnhancement,
             tooltip:
                 "Increases the caster's PvE Damage Boost by 20% and PvP Damage Boost by 10% when the caster's MP is 25% or more, and has a 50% chance to deal X damage on landing an attack.\n\nCooldown: 1s",
@@ -325,7 +325,7 @@ export default defineClassPreset({
             id: "pve",
             name: "Vitality Evaporation",
             type: "passive",
-            priority: 4,
+            priority: 3,
             icon: VitalityEvaporation,
             tooltip:
                 "Deals X damage on hit if the target's HP is above X%.\n\nCooldown: 1s",
@@ -343,7 +343,7 @@ export default defineClassPreset({
             id: "pae",
             name: "Absorb Essence",
             type: "passive",
-            priority: 6,
+            priority: 98,
             icon: AbsorbEssence,
             tooltip:
                 "Increases Ailment-type and Mental-type Chance by X% and restores X MP on landing an attack.\n\nCooldown: 1s",
@@ -352,7 +352,7 @@ export default defineClassPreset({
             id: "pgor",
             name: "Grace of Resistance",
             type: "passive",
-            priority: 6,
+            priority: 99,
             icon: GraceOfResistance,
             tooltip:
                 "Increases the caster's Mental-type Resist and Impact-type Resist by X%.",

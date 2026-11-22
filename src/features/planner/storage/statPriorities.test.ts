@@ -56,6 +56,7 @@ describe("readStatSettings", () => {
     it.each([
         ["chanter", 3, 2],
         ["gladiator", 4, 2],
+        ["sorcerer", 4, 5],
     ])(
         "gives %s the same order with its own Max ranks",
         (classId, skillAfter, passiveAfter) => {
