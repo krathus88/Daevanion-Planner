@@ -1,10 +1,12 @@
 import { getCharacterGear } from "@account/game/gameCharacters"
 import { Button, Flex } from "@chakra-ui/react"
 import { CardGrid } from "@common/CardGrid"
-import { getCorridorView } from "@tracker/logic/corridors"
+import { getCardWeight } from "@tracker/logic/cardWeights"
+import { getCorridorView, withCorridorView } from "@tracker/logic/corridors"
 import type { ResetPeriods } from "@tracker/logic/resetPeriods"
 import {
     getCardOwners,
+    getPendingTasks,
     getServerGroups,
     getTaskGroups,
 } from "@tracker/logic/trackerCards"
@@ -56,13 +58,6 @@ type TrackerBoardProps = {
     onGoalsOpenChange: (owner: string, open: boolean) => void
 }
 
-// Rough card heights for placing the Characters cards: a card goes under the
-// column that's shortest so far, so one after a minimized card fills in
-// under it. By minimized state, not measured heights, so cards never jump
-// columns while tasks are ticked off.
-const OPEN_WEIGHT = 3
-const MINIMIZED_WEIGHT = 1
-
 // The server's shared tasks first, across the page (most players have one
 // server); then a card per character.
 export const TrackerBoard = ({
@@ -101,6 +96,36 @@ export const TrackerBoard = ({
         ownGroups.length > 0,
     )
     const allMinimized = owners.every((owner) => minimized.includes(owner))
+
+    const corridorViews = characters.map((character) =>
+        getCorridorView(
+            corridorHolds[character.server],
+            corridorsLeft[character.id],
+            periods.siege,
+            companionUsed,
+        ),
+    )
+
+    const weights = characters.map((character, index) => {
+        const cardMinimized = minimized.includes(character.id)
+
+        return getCardWeight({
+            minimized: cardMinimized,
+            hasNote: Boolean(notes[character.id]?.short),
+            hasPending:
+                cardMinimized &&
+                getPendingTasks(
+                    withCorridorView(
+                        ownGroups,
+                        corridorViews[index]?.artifacts,
+                    ),
+                    counts[character.id],
+                    entries[character.id],
+                    ignored[character.id] ?? [],
+                    periods,
+                ).length > 0,
+        })
+    })
 
     const handleToggleAll = () => {
         onMinimizedChange(owners, !allMinimized)
@@ -151,21 +176,9 @@ export const TrackerBoard = ({
                 })}
 
             {ownGroups.length > 0 && (
-                <CardGrid
-                    title="Characters"
-                    weights={characters.map((character) =>
-                        minimized.includes(character.id)
-                            ? MINIMIZED_WEIGHT
-                            : OPEN_WEIGHT,
-                    )}
-                >
-                    {characters.map((character) => {
-                        const corridors = getCorridorView(
-                            corridorHolds[character.server],
-                            corridorsLeft[character.id],
-                            periods.siege,
-                            companionUsed,
-                        )
+                <CardGrid title="Characters" weights={weights}>
+                    {characters.map((character, index) => {
+                        const corridors = corridorViews[index]
 
                         const characterGear = getCharacterGear(
                             gear,
