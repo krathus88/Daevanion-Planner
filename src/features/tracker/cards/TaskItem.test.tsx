@@ -256,7 +256,7 @@ describe("TaskItem", () => {
             screen.getByLabelText(
                 /^Stigma Shards \(Nightmare\), Testchar: not known/,
             ),
-        ).toHaveTextContent("?/35")
+        ).toHaveTextContent("?/50")
         expect(screen.queryByRole("group")).toBeNull()
         await userEvent.click(
             screen.getByRole("button", { name: /Testchar: no data/ }),
@@ -272,7 +272,7 @@ describe("TaskItem", () => {
         expect(screen.queryByRole("button", { name: /no data/ })).toBeNull()
         expect(
             screen.getByLabelText(/^Stigma Shards \(Nightmare\), Testchar: /),
-        ).toHaveTextContent("0/35")
+        ).toHaveTextContent("0/50")
     })
 
     it("locks a corridor row with the Corridors task once known", () => {

@@ -577,7 +577,7 @@ describe("TrackerPage", () => {
         const aria = screen.getByRole("article", { name: "Aria" })
         const goals = within(aria).getByRole("group", { name: "One-off" })
 
-        expect(goals).toHaveTextContent("0/5")
+        expect(goals).toHaveTextContent("0/6")
         // Per character only: the server card has none.
         expect(
             within(screen.getByRole("article", { name: "Siel" })).queryByRole(
@@ -588,7 +588,7 @@ describe("TrackerPage", () => {
 
         const label = "Stigma Shards (Abyss), Aria"
         const toggle = within(goals).getByRole("button", {
-            name: "One-off 0/5",
+            name: "One-off 0/6",
         })
 
         // Closed at first: only its header shows.
@@ -615,7 +615,7 @@ describe("TrackerPage", () => {
         expect(
             within(screen.getByRole("article", { name: "Bran" })).getByRole(
                 "button",
-                { name: "One-off 0/5" },
+                { name: "One-off 0/6" },
             ),
         ).toHaveAttribute("aria-expanded", "false")
 

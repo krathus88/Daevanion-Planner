@@ -732,4 +732,31 @@ describe("applyToTracker", () => {
             })
         })
     })
+
+    describe("Wind Breeze Merchant Stigma Shards", () => {
+        it("counts the character's lifetime purchases, whenever read", () => {
+            const lastMonth = AT - 30 * 24 * 3_600_000
+            const next = applyToTracker(
+                data(),
+                snapshot({
+                    limits: { "100242": [3, lastMonth] },
+                    limitsAt: lastMonth,
+                }),
+            )
+
+            expect(next.counts.a["shards-wind-breeze"]).toEqual({
+                period: 0,
+                count: 3,
+            })
+        })
+
+        it("keeps the count within the cap of 20", () => {
+            const next = applyToTracker(
+                data(),
+                snapshot({ limits: { "100242": [25, AT] }, limitsAt: AT }),
+            )
+
+            expect(next.counts.a["shards-wind-breeze"].count).toBe(20)
+        })
+    })
 })

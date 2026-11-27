@@ -55,6 +55,7 @@ const TASK_ICONS: Record<string, string> = {
     "shards-nightmare": StigmaShard,
     "shards-shugo": StigmaShard,
     "shards-abyss": StigmaShard,
+    "shards-wind-breeze": StigmaShard,
 }
 
 // Each corridor row (see logic/corridors) shows the Corridors task's icon.

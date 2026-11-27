@@ -23,6 +23,7 @@ describe("STARTER_TASKS", () => {
             "shards-nightmare",
             "shards-shugo",
             "shards-abyss",
+            "shards-wind-breeze",
         ])
         expect(FIRST_PRESETS.every((id) => ids.includes(id))).toBe(true)
     })
@@ -150,9 +151,10 @@ describe("STARTER_TASKS", () => {
         ).toEqual([
             ["Daevanion Crystals", "Nightmare", 50, false],
             ["Daevanion Crystals", "Shugo Festival", 50, false],
-            ["Stigma Shards", "Nightmare", 35, false],
-            ["Stigma Shards", "Shugo Festival", 35, false],
+            ["Stigma Shards", "Nightmare", 50, false],
+            ["Stigma Shards", "Shugo Festival", 50, false],
             ["Stigma Shards", "Abyss", 200, false],
+            ["Stigma Shards", "Wind Breeze Merchant", 20, false],
         ])
     })
 

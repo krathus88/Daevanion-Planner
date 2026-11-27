@@ -161,6 +161,7 @@ describe("parseTrackerData", () => {
             "shards-nightmare",
             "shards-shugo",
             "shards-abyss",
+            "shards-wind-breeze",
         ])
         expect(parsed.presets).toEqual(STARTER_IDS)
         expect(parsed.entries).toEqual({})

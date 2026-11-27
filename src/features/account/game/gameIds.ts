@@ -120,6 +120,9 @@ export const CRAFT_TASKS: Record<
 // merchants' entries: 133019901 the Faction Command quest (any town's
 // merchant), 134019901-904 the Abyss ones, 4 kinds of 5 (all recorded
 // 2026-11-18).
+// A one-off task works the same: its limit never resets. 100242 is the Wind
+// Breeze Merchant's Stigma Shards, 20 per character (Krathy bought one,
+// 2026-11-27; the limit reads 1 on the next login's shop opening).
 export const LIMIT_TASKS: Record<
     string,
     { limits: string[]; scope: "server" | "character" }
@@ -131,13 +134,15 @@ export const LIMIT_TASKS: Record<
         limits: ["134019901", "134019902", "134019903", "134019904"],
         scope: "server",
     },
+    "shards-wind-breeze": { limits: ["100242"], scope: "character" },
 }
 
 // One-off tracker tasks a shop's lifetime purchase counts fill: task id →
 // the shop and the entries it adds up. A shop's list leaves out entries never
 // bought. The Abyss shop sells Stigma Shards in 4 stages of 50, one entry
 // each (all four seen buying, 2026-11-14). The Shugo Festival shop sells
-// Daevanion Crystals in 4 stages (10, 10, 15, 15), one entry each.
+// Daevanion Crystals in 4 stages (10, 10, 15, 15), one entry each. Stigma
+// Shards from the Nightmare and Shugo Festival shops: 50 each, one entry.
 export const SHOP_TASKS: Record<string, { shop: string; entries: string[] }> = {
     "crystals-nightmare": { shop: "990003", entries: ["402024518"] },
     "crystals-shugo": {

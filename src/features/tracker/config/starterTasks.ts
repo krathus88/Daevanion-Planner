@@ -226,7 +226,7 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         name: "Stigma Shards",
         subtitle: "Nightmare",
         reset: "once",
-        cap: 35,
+        cap: 50,
         shared: false,
     },
     {
@@ -234,7 +234,7 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         name: "Stigma Shards",
         subtitle: "Shugo Festival",
         reset: "once",
-        cap: 35,
+        cap: 50,
         shared: false,
     },
     {
@@ -243,6 +243,14 @@ export const STARTER_TASKS: readonly TrackerTask[] = [
         subtitle: "Abyss",
         reset: "once",
         cap: 200,
+        shared: false,
+    },
+    {
+        id: "shards-wind-breeze",
+        name: "Stigma Shards",
+        subtitle: "Wind Breeze Merchant",
+        reset: "once",
+        cap: 20,
         shared: false,
     },
 ]
