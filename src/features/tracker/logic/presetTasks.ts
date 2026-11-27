@@ -89,3 +89,23 @@ export const renameOldPresets = (
             : task
     })
 }
+
+// Starter caps that went up after release: task id → [old cap, new cap]. A
+// saved copy still at the old cap takes the new one (one the user changed
+// keeps theirs). The Nightmare and Shugo Festival shards went 35 → 50
+// (2026-11-27). Not tied to the save's known presets: saves that already knew
+// the newer tasks kept the old caps.
+const RAISED_CAPS: Record<string, [number, number]> = {
+    "shards-nightmare": [35, 50],
+    "shards-shugo": [35, 50],
+}
+
+export const raiseOldCaps = (tasks: readonly TrackerTask[]) => {
+    return tasks.map((task) => {
+        const raised = RAISED_CAPS[task.id]
+
+        return raised !== undefined && task.cap === raised[0]
+            ? { ...task, cap: raised[1] }
+            : task
+    })
+}

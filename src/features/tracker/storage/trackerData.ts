@@ -17,6 +17,7 @@ import {
     addIgnored,
     addNewPresets,
     getNewIgnoredPresets,
+    raiseOldCaps,
     renameOldPresets,
     STARTER_IDS,
 } from "@tracker/logic/presetTasks"
@@ -229,7 +230,7 @@ export const parseTrackerData = (value: unknown): TrackerData => {
                 ? null
                 : [
                       ...addNewPresets(
-                          renameOldPresets(data.tasks, known),
+                          raiseOldCaps(renameOldPresets(data.tasks, known)),
                           known,
                       ),
                   ],

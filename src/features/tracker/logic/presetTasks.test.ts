@@ -6,6 +6,7 @@ import {
     addNewPresets,
     getNewIgnoredPresets,
     insertPreset,
+    raiseOldCaps,
     renameOldPresets,
     STARTER_IDS,
 } from "./presetTasks"
@@ -104,5 +105,16 @@ describe("renameOldPresets", () => {
 
     it("leaves saves that already know Arena 1v1 as they are", () => {
         expect(renameOldPresets([arena], STARTER_IDS)[0].name).toBe("Arena")
+    })
+})
+
+describe("raiseOldCaps", () => {
+    it("lifts the shard goals saved at 35 to 50, keeping caps the user changed", () => {
+        const nightmare = { ...getStarter("shards-nightmare"), cap: 35 }
+        const shugo = { ...getStarter("shards-shugo"), cap: 40 }
+
+        expect(
+            raiseOldCaps([nightmare, shugo, own]).map((task) => task.cap),
+        ).toEqual([50, 40, 1])
     })
 })
